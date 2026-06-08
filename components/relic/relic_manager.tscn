@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dclef022d1pdn"]
+
+[ext_resource type="Script" path="res://components/relic/relic_manager.gd" id="1_t10c5"]
+
+[node name="RelicManager" type="Node2D"]
+script = ExtResource("1_t10c5")
