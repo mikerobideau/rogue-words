@@ -1,0 +1,43 @@
+[gd_scene load_steps=5 format=3 uid="uid://de6htvlgyy3jo"]
+
+[ext_resource type="Texture2D" uid="uid://bqgbosjcb0cj6" path="res://assets/sprites/token/1x/Leaf.png" id="1_e45u5"]
+[ext_resource type="Script" path="res://components/token/token.gd" id="1_lmu4i"]
+[ext_resource type="Texture2D" uid="uid://bj8d3u6clj4ke" path="res://assets/sprites/token/1x/Leaf Highlight.png" id="2_0q856"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_w2tfj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_e45u5")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_0q856")
+}],
+"loop": true,
+"name": &"highlight",
+"speed": 5.0
+}]
+
+[node name="Token" type="AnimatedSprite2D"]
+sprite_frames = SubResource("SpriteFrames_w2tfj")
+animation = &"highlight"
+script = ExtResource("1_lmu4i")
+
+[node name="Letter" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -40.5
+offset_top = -20.5
+offset_right = -0.5
+offset_bottom = 13.5
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "A
+"
+horizontal_alignment = 1
