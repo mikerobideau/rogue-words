@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://ba21revbuqtid"]
+
+[ext_resource type="Script" path="res://components/relic_container/relic_container.gd" id="1_tx6to"]
+
+[node name="RelicContainer" type="MarginContainer"]
+offset_right = 100.0
+offset_bottom = 458.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+script = ExtResource("1_tx6to")
+
+[node name="Relics" type="VBoxContainer" parent="."]
+layout_mode = 2
