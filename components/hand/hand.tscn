@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://b784162vwvujp"]
+
+[ext_resource type="Script" path="res://components/hand/hand.gd" id="1_v6a6q"]
+
+[node name="Hand" type="Container"]
+offset_right = 360.0
+offset_bottom = 60.0
+script = ExtResource("1_v6a6q")
+
+[node name="Tokens" type="Container" parent="."]
+layout_mode = 2

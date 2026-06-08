@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://v6aub4m84xgt"]
+
+[ext_resource type="Script" path="res://components/space/space.gd" id="1_7pr7h"]
+[ext_resource type="Texture2D" uid="uid://dmbnoln2uvu3c" path="res://assets/sprites/space/1x/space.png" id="1_curc4"]
+
+[node name="Space" type="Sprite2D"]
+texture = ExtResource("1_curc4")
+script = ExtResource("1_7pr7h")
+
+[connection signal="clicked" from="." to="." method="_on_clicked"]
