@@ -1,7 +1,7 @@
 extends Node2D
 class_name WordFinder
 
-const MIN_WORD_LENGTH := 3
+const MIN_WORD_LENGTH := 4
 
 const DICTIONARY_PATH = "res://data/dictionary.txt"
 var dictionary: Dictionary = {}
@@ -26,14 +26,23 @@ func find_words(placed_space: Space):
 	var found_paths := []
 	var seen_words := {}
 	
-	var start_spaces := [placed_space]
-	for neighbor in placed_space.links:
-		if neighbor != null and neighbor.token != null:
-			start_spaces.append(neighbor)
+	var start_spaces := _get_connected_occupied(placed_space)
+	
 	for start in start_spaces:
 		_dfs([start], start.token.letter, placed_space, found_paths, seen_words)
 		
 	return found_paths
+	
+func _get_connected_occupied(start: Space) -> Array:
+	var visited = {start: true}
+	var queue := [start]
+	while queue.size() > 0:
+		var current = queue.pop_front()
+		for neighbor in current.links:
+			if neighbor != null and neighbor.token != null and not visited.has(neighbor):
+				visited[neighbor] = true
+				queue.append(neighbor)
+	return visited.keys()
 
 func _dfs(path: Array, word: String, must_include: Space, found: Array, seen: Dictionary):
 	if word.length() >= MIN_WORD_LENGTH and is_word(word) and path.has(must_include):

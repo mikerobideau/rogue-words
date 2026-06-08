@@ -19,7 +19,11 @@ func _show_title():
 func _on_new_game():
 	GameState.set_round_number(1)
 	var round = SCREENS.round.instantiate()
+	round.completed.connect(_on_round_completed)
 	_show_screen(round)
+	
+func _on_round_completed():
+	_show_title()
 	
 func _show_screen(screen: Control):
 	if current_screen:

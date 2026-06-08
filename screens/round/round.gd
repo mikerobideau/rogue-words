@@ -1,10 +1,18 @@
 extends Control
 class_name Round
 
+var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
+
+signal completed()
+
+@export var target_score := 100
+
 @onready var round_label = $Control/HBoxContainer/RoundLabel
 @onready var hand = $HandContainer/Hand
 @onready var board = $Board
 @onready var word_finder = $WordFinder
+@onready var scorer = $Scorer
+@onready var score = $Control/HBoxContainer/Score
 
 var selected_token: Token
 
@@ -13,6 +21,7 @@ func _ready():
 	round_label.text = 'Round ' + str(GameState.round_number)
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
+	score.target_score = target_score
 
 func _on_space_clicked(space: Space):
 	if !selected_token:
@@ -23,10 +32,21 @@ func _on_space_clicked(space: Space):
 	selected_token = null
 	var paths = word_finder.find_words(space)
 	for path in paths:
-		print_debug('Found: ' + _path_to_word(path))
+		var event = scorer.score(path)
+		var toast = ScoreToastScene.instantiate()
+		toast.text = str(event.score) + ' - ' + event.word
+		add_child(toast)
 		await board.highlight(path)
+		toast.queue_free()
+		score.add(event.score)
 	board.grow()
-	hand.draw_tokens(1)
+	var is_round_complete = _check_round_complete()
+	if !is_round_complete:
+		hand.draw_tokens(1)
+		
+func _check_round_complete():
+	if score.value >= score.target_score:
+		completed.emit()
 	
 func _path_to_word(path: Array):
 	var word := ""

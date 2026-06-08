@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dbw08w12l88i8"]
 
-[ext_resource type="Script" path="res://components/word_finder.gd" id="1_tawk7"]
+[ext_resource type="Script" path="res://components/word_finder/word_finder.gd" id="1_tawk7"]
 
 [node name="WordFinder" type="Node2D"]
 script = ExtResource("1_tawk7")
