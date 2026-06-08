@@ -1,11 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=5 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
-[ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
-[ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
-[ext_resource type="PackedScene" uid="uid://bt4v8aphkynrx" path="res://components/score/score.tscn" id="6_oeyad"]
+[ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder.tscn" id="4_0e5bs"]
 
 [node name="Round" type="Control"]
 layout_mode = 3
@@ -28,8 +26,10 @@ mouse_filter = 2
 [node name="Control" type="MarginContainer" parent="."]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 1
-offset_right = 132.0
+anchors_preset = 10
+anchor_right = 1.0
 offset_bottom = 50.0
+grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 0
@@ -42,11 +42,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="Score" parent="Control/HBoxContainer" instance=ExtResource("6_oeyad")]
-layout_mode = 2
-
 [node name="RoundLabel" type="Label" parent="Control/HBoxContainer"]
-visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 36
@@ -78,5 +74,3 @@ offset_right = 0.0
 offset_bottom = 0.0
 
 [node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
-
-[node name="Scorer" parent="." instance=ExtResource("5_va824")]

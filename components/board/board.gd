@@ -93,7 +93,6 @@ func _link_neighbors(space: Space):
 			neighbor.links[(dir + 3) % 6] = space
 	queue_redraw()
 	
-	
 func _connect_spaces(a: Space, dir: int, b: Space):
 	a.links[dir] = b
 	b.links[(dir + 3) % 6] = a
