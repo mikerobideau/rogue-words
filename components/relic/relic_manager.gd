@@ -11,12 +11,22 @@ func _ready():
 	
 func on_token_placed(context: RelicContext):
 	for relic in active_relics:
-		relic.data.on_token_placed(context)
+		if relic.data.on_token_placed(context):
+			relic.pulse()
 		
 func on_score_event(context: RelicContext):
 	for relic in active_relics:
 		if relic.data.on_score_event(context):
 			relic.pulse()
+			
+func add_grow_amount(context: RelicContext):
+	var expansions = 0
+	for relic in active_relics:
+		var bonus = relic.data.add_grow_amount(context)
+		if bonus > 0:
+			relic.pulse()
+		expansions += bonus
+	return expansions
 	
 func _add(data: RelicData):
 	var scene = RelicScene.instantiate()

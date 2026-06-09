@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ReportCard" load_steps=2 format=3 uid="uid://rw8t8ecltyby"]
+
+[ext_resource type="Script" path="res://components/relic/data/report_card/report_card.gd" id="1_f6nt6"]
+
+[resource]
+script = ExtResource("1_f6nt6")
+amount = 5
+relic_name = "Report Card"
+description = "If you place five A's before a B, C, D, or F, earn $5"

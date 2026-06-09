@@ -1,5 +1,7 @@
-extends Label
+extends MarginContainer
 class_name Score
+
+@onready var label = $Label
 
 @export var target_score: int = 0:
 	set(v):
@@ -7,7 +9,7 @@ class_name Score
 		if is_node_ready():
 			_update_label()
 		else:
-			push_warning('Score tried to set update label before node was ready')
+			push_warning('Score tried to update label before node was ready')
 
 var value := 0
 
@@ -19,4 +21,4 @@ func add(v: int):
 	_update_label()
 	
 func _update_label():
-		text = str(value) + ' / ' + str(target_score) 
+		label.text = str(value) + ' / ' + str(target_score) 

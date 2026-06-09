@@ -12,7 +12,7 @@ signal completed()
 @onready var board = $Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var score = $Score
+@onready var score = $TopRight/Score
 @onready var relic_manager = $"../RelicManager"
 @onready var relic_container = $RelicContainer
 
@@ -38,16 +38,14 @@ func _on_space_clicked(space: Space):
 	var paths = word_finder.find_words(space)
 	for path in paths:
 		context.score_event = scorer.score(path)	
-		relic_manager.on_score_event(context)
+		var triggered = relic_manager.on_score_event(context)
 		var toast = ScoreToastScene.instantiate()
 		toast.text = str(context.score_event.score) + ' - ' + context.score_event.word
 		add_child(toast)
 		await board.highlight(path)
 		toast.queue_free()
 		score.add(context.score_event.score)
-	var expansions = 3
-	for relic in relic_manager.active_relics:
-		expansions += relic.data.add_grow_amount(context)
+	var expansions = 3 + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
 	var is_round_complete = _check_round_complete()
 	if !is_round_complete:
@@ -72,5 +70,6 @@ func _on_token_clicked(token: Token):
 
 func _get_relic_context():
 	var context = RelicContext.new()
+	context.state = GameState
 	context.placed_token = selected_token
 	return context
