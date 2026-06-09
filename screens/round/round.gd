@@ -20,6 +20,7 @@ var selected_token: Token
 
 func _ready():
 	relic_container.setup(relic_manager.active_relics)
+	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	#round_label.text = 'Round ' + str(GameState.round_number)
 	hand.token_clicked.connect(_on_token_clicked)
@@ -35,14 +36,14 @@ func _on_space_clicked(space: Space):
 	relic_manager.on_token_placed(context)
 	selected_token.selected = false
 	selected_token = null
-	var paths = word_finder.find_words(space)
-	for path in paths:
-		context.score_event = scorer.score(path)	
+	var words = word_finder.find_words(space)
+	for word in words:
+		context.score_event = scorer.score(word)	
 		var triggered = relic_manager.on_score_event(context)
 		var toast = ScoreToastScene.instantiate()
 		toast.text = str(context.score_event.score) + ' - ' + context.score_event.word
 		add_child(toast)
-		await board.highlight(path)
+		await board.highlight(word.path)
 		toast.queue_free()
 		score.add(context.score_event.score)
 	var expansions = 3 + relic_manager.add_grow_amount(context)

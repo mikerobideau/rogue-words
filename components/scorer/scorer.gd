@@ -1,16 +1,12 @@
 extends Node2D
 class_name Scorer
 
-func score(path: Array) -> ScoreEvent:
+func score(word:Dictionary) -> ScoreEvent:
 	var event = ScoreEvent.new()
-	event.path = path
-	event.word = _path_to_word(path)
-	event.score = _path_to_score(path)
+	event.path = word.path
+	event.word = word.word
+	event.score = _path_to_score(word.path)
 	return event
-
-func _path_to_word(paths: Array):
-	var letters = paths.map(func(p): return p.token.letter)
-	return ''.join(letters)
 	
 func _path_to_score(path: Array) -> int:
 	var values = path.map(func(p): return p.token.value)

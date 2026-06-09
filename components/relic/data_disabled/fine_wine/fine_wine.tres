@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FineWine" load_steps=2 format=3 uid="uid://cxp5h1ur1pr77"]
+
+[ext_resource type="Script" path="res://components/relic/data_disabled/fine_wine/fine_wine.gd" id="1_onal4"]
+
+[resource]
+script = ExtResource("1_onal4")
+relic_name = "Fine Wine"
+description = "Earn $1 after every 5th word"
+scale_by = 0
+threshold = 5
+money_reward = 1
+has_bonus = false
+has_count = true

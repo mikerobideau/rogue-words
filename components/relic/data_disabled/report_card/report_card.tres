@@ -4,6 +4,10 @@
 
 [resource]
 script = ExtResource("1_f6nt6")
-amount = 5
 relic_name = "Report Card"
-description = "If you place five A's before a B, C, D, or F, earn $5"
+description = "Earn $5 if you place five A's before a B, C, D, or F"
+scale_by = 0
+threshold = 0
+money_reward = 5
+has_bonus = false
+has_count = true

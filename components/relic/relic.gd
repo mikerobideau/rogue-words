@@ -4,6 +4,7 @@ extends Control
 @onready var name_label = $NameContainer/Name
 @onready var description_label = $DescriptionContainer/Description
 @onready var bonus_label = $Bonus
+@onready var count_label = $Count
 
 @export var data: RelicData:
 	set(value):
@@ -20,10 +21,16 @@ func _update_labels():
 			name_label.text = data.relic_name
 		if description_label:
 			description_label.text = data.description
-		if data.bonus == null:
-			bonus_label.visible = false
-		elif bonus_label:
-			bonus_label.text = 'Bonus: ' + str(data.bonus)
+		if bonus_label:
+			if data.has_bonus:
+				bonus_label.text = 'Bonus: ' + str(data.bonus)
+			else:
+				bonus_label.visible = false
+		if count_label:
+			if data.has_count:
+				count_label.text = 'Count: ' + str(data.count)	
+			else:
+				count_label.visible = false	
 
 func pulse():
 	var tween = create_tween()
