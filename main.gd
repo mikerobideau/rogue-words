@@ -17,7 +17,8 @@ func _show_title():
 	title.new_game.connect(_on_new_game)
 	
 func _on_new_game():
-	GameState.set_round_number(1)
+	GameState.round_number = 1
+	GameState.money = 0
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
 	_show_screen(round)

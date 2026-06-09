@@ -1,7 +1,11 @@
 extends Node
 class_name GameStateGlobal
 
-var round_number = 1
+signal money_changed(value: int)
 
-func set_round_number(r: int):
-	round_number = r
+var round_number := 0
+
+var money: int = 0:
+	set(v):
+		money = v
+		money_changed.emit(v)

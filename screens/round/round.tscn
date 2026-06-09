@@ -1,6 +1,7 @@
-[gd_scene load_steps=8 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=9 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
+[ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
@@ -17,7 +18,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_51id5")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,11 +27,21 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Score" parent="." instance=ExtResource("6_oeyad")]
+[node name="TopRight" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -67.0
+offset_bottom = 44.0
+grow_horizontal = 0
+theme_override_constants/separation = 100
+
+[node name="Money" parent="TopRight" instance=ExtResource("2_12kyf")]
 layout_mode = 2
-offset_left = 1798.0
-offset_right = 1820.0
-offset_bottom = 50.0
+
+[node name="Score" parent="TopRight" instance=ExtResource("6_oeyad")]
+layout_mode = 2
 
 [node name="HandContainer" type="MarginContainer" parent="."]
 layout_mode = 1
