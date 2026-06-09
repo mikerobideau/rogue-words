@@ -119,13 +119,13 @@ func expand_around(space: Space):
 			expansions += 1
 	expanding = false
 
-func grow():
+func grow(expansions: int):
 	var growable = spaces.values().filter(func(s): return s.links.has(null))
 	if growable.is_empty():
 		return
 	growable.shuffle()
 	var grown := 0
-	while grown < 3:
+	while grown < expansions:
 		var space = growable[randi() % growable.size()]
 		if _grow_one_direction(space):
 			grown += 1
