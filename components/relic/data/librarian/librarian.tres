@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Librarian" load_steps=2 format=3 uid="uid://u8rwv3lhsq7"]
+
+[ext_resource type="Script" path="res://components/relic/data/librarian/librarian.gd" id="1_4swpn"]
+
+[resource]
+script = ExtResource("1_4swpn")
+relic_name = "Librarian"
+description = "S optionally counts as SH"
+scale_by = 0
+threshold = 0
+money_reward = 0
+has_bonus = false
+has_count = false

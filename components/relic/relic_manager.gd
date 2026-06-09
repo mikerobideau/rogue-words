@@ -28,6 +28,12 @@ func add_grow_amount(context: RelicContext):
 		expansions += bonus
 	return expansions
 	
+func get_letter_matches(letter: String) -> Array:
+	var matches = [letter]
+	for relic in relics:
+		matches = relic.data.modify_letter_matches(letter, matches)
+	return matches
+	
 func _add(data: RelicData):
 	var scene = RelicScene.instantiate()
 	scene.data = data
