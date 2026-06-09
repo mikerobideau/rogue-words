@@ -45,7 +45,10 @@ func _on_space_clicked(space: Space):
 		await board.highlight(path)
 		toast.queue_free()
 		score.add(context.score_event.score)
-	board.grow()
+	var expansions = 3
+	for relic in relic_manager.active_relics:
+		expansions += relic.data.add_grow_amount(context)
+	board.grow(expansions)
 	var is_round_complete = _check_round_complete()
 	if !is_round_complete:
 		hand.draw_tokens(1)
