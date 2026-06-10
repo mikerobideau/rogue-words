@@ -23,10 +23,11 @@ func _ready():
 	_pop_open()
 	
 func place_token(t: Token):
+	texture = null
 	token = t
 	add_child(t)
 	t.position = Vector2.ZERO
-	#visible = false
+	t.on_token_placed()
 	
 func _pop_open():
 	var tween = create_tween()

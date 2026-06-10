@@ -1,14 +1,28 @@
-[gd_scene load_steps=5 format=3 uid="uid://de6htvlgyy3jo"]
+[gd_scene load_steps=10 format=3 uid="uid://de6htvlgyy3jo"]
 
-[ext_resource type="Texture2D" uid="uid://bqgbosjcb0cj6" path="res://assets/sprites/token/1x/Leaf.png" id="1_e45u5"]
 [ext_resource type="Script" path="res://components/token/token.gd" id="1_lmu4i"]
-[ext_resource type="Texture2D" uid="uid://bj8d3u6clj4ke" path="res://assets/sprites/token/1x/Leaf Highlight.png" id="2_0q856"]
+[ext_resource type="Texture2D" uid="uid://cwwp8gjs7jkau" path="res://assets/sprites/token/1x/Grape.png" id="2_wv32a"]
+[ext_resource type="Texture2D" uid="uid://c68mgo5iq2w3g" path="res://assets/sprites/token/1x/Grape Highlighted.png" id="3_ve4ri"]
+[ext_resource type="Texture2D" uid="uid://snvlmb4x6auy" path="res://assets/sprites/token/1x/Clover.png" id="4_qj611"]
+[ext_resource type="Texture2D" uid="uid://7fyedb3y6h5c" path="res://assets/sprites/token/1x/Clover Highlight.png" id="5_cu67f"]
+[ext_resource type="FontFile" uid="uid://dfyg6b01x1atm" path="res://assets/fonts/Nunito-VariableFont_wght.ttf" id="6_57chv"]
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_w2tfj"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_qtqfy"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_e45u5")
+"texture": ExtResource("2_wv32a")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_8i81q"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_wv32a")
 }],
 "loop": true,
 "name": &"default",
@@ -16,7 +30,26 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("2_0q856")
+"texture": ExtResource("3_ve4ri")
+}],
+"loop": true,
+"name": &"highlight",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_l2qmh"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_qj611")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_cu67f")
 }],
 "loop": true,
 "name": &"highlight",
@@ -24,20 +57,26 @@ animations = [{
 }]
 
 [node name="Token" type="AnimatedSprite2D"]
-sprite_frames = SubResource("SpriteFrames_w2tfj")
-animation = &"highlight"
+sprite_frames = SubResource("SpriteFrames_qtqfy")
 script = ExtResource("1_lmu4i")
+grape_frames = SubResource("SpriteFrames_8i81q")
+clover_frames = SubResource("SpriteFrames_l2qmh")
 
 [node name="Letter" type="Label" parent="."]
-anchors_preset = 5
+anchors_preset = 8
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-offset_left = -40.5
-offset_top = -20.5
-offset_right = -0.5
-offset_bottom = 13.5
+anchor_bottom = 0.5
+offset_left = -55.5
+offset_top = -53.0
+offset_right = -15.5
+offset_bottom = -18.0
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 24
-text = "A
-"
+grow_vertical = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("6_57chv")
+theme_override_font_sizes/font_size = 36
+text = "A"
 horizontal_alignment = 1
+vertical_alignment = 1

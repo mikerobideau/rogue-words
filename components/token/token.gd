@@ -11,13 +11,20 @@ enum Type {
 }
 
 @onready var letter_label = $Letter
+
+@export var grape_frames: SpriteFrames
+@export var clover_frames: SpriteFrames
 @export var letter: String
 @export var value: int
-@export var type: Type
+
+@export var type: = Type.GRAPE:
+	set(v):
+		type = v
+		_update_sprite()
 
 var selected: bool = false:
-	set(value):
-		selected = value
+	set(v):
+		selected = v
 		_on_selected_changed()
 
 func _ready():
@@ -29,11 +36,24 @@ func _ready():
 func enhance(t: Type):
 	type = t
 	
-func animate_highlight():
-	animation = 'highlight'
+func pulse():
+	var tween = create_tween()
+	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.05)
+	tween.tween_property(self, 'scale', Vector2(0.8, 0.8), 0.05)
+	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.05)
+	tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.05)
+	tween.tween_property(self, 'scale', Vector2(1, 1), 0.15)
+	
+#func animate_highlight():
+#	animation = 'highlight'
 
-func animate_default():	
-	animation = 'default'
+#func animate_default():	
+#	animation = 'default'
+	
+func on_token_placed():
+	if type == Type.CLOVER:
+		if randf() <= 0.25:
+			GameState.money += 5
 
 func _update_label():
 	letter_label.text = letter
@@ -57,3 +77,15 @@ func _on_selected_changed():
 	var tween = create_tween()
 	var target = Vector2(1.2, 1.2) if selected else Vector2(1, 1)
 	tween.tween_property(self, "scale", target, 0.15)
+	
+func _update_sprite():
+	if not is_node_ready():
+		return
+		
+	match type:
+		Type.GRAPE:
+			sprite_frames = grape_frames
+		Type.CLOVER:
+			sprite_frames = clover_frames
+			
+	animation = 'default'

@@ -13,3 +13,4 @@ script = ExtResource("1_tx6to")
 
 [node name="Relics" type="VBoxContainer" parent="."]
 layout_mode = 2
+theme_override_constants/separation = 20

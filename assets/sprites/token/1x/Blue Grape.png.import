@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bj8d3u6clj4ke"
-path="res://.godot/imported/Leaf Highlight.png-1565076c8bc963201e5f8baeab24d922.ctex"
+uid="uid://w2kfcyq1sdmi"
+path="res://.godot/imported/Blue Grape.png-9eb4477f1b052384fdb70035d5a1b44c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/Leaf Highlight.png"
-dest_files=["res://.godot/imported/Leaf Highlight.png-1565076c8bc963201e5f8baeab24d922.ctex"]
+source_file="res://assets/sprites/token/1x/Blue Grape.png"
+dest_files=["res://.godot/imported/Blue Grape.png-9eb4477f1b052384fdb70035d5a1b44c.ctex"]
 
 [params]
 
