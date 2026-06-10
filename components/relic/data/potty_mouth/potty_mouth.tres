@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="PottyMouth" load_steps=2 format=3 uid="uid://icym3ak2xno0"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/potty_mouth/potty_mouth.gd" id="1_v22pl"]
+[ext_resource type="Script" path="res://components/relic/data/potty_mouth/potty_mouth.gd" id="1_v22pl"]
 
 [resource]
 script = ExtResource("1_v22pl")

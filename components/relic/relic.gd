@@ -3,8 +3,9 @@ extends Control
 
 @onready var name_label = $NameContainer/Name
 @onready var description_label = $DescriptionContainer/Description
-@onready var bonus_label = $Bonus
-@onready var count_label = $Count
+@onready var bonus_label = $Footer/HBoxContainer/Bonus
+@onready var count_label = $Footer/HBoxContainer/Count
+@onready var border = $Border
 
 @export var data: RelicData:
 	set(value):
@@ -12,6 +13,8 @@ extends Control
 		_update_labels()
 		
 func _ready():
+	pivot_offset = size / 2
+	border.color = Color.REBECCA_PURPLE
 	data.data_changed.connect(_update_labels)
 	_update_labels()
 
@@ -34,5 +37,9 @@ func _update_labels():
 
 func pulse():
 	var tween = create_tween()
-	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.15)
-	tween.tween_property(self, 'scale', Vector2(1, 1), 0.15)
+	var original = rotation
+	tween.tween_property(self, 'rotation', deg_to_rad(5), 0.05)
+	tween.tween_property(self, 'rotation', deg_to_rad(-5), 0.05)
+	tween.tween_property(self, 'rotation', deg_to_rad(3), 0.05)
+	tween.tween_property(self, 'rotation', deg_to_rad(-3), 0.05)
+	tween.tween_property(self, 'rotation', original, 0.05)

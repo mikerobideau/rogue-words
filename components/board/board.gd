@@ -41,10 +41,11 @@ func place(token: Token, space: Space):
 
 func highlight(path: Array):
 	for space in path:
-		space.token.animate_highlight()
-	await get_tree().create_timer(0.5).timeout
-	for space in path:
-		space.token.animate_default()
+		space.token.pulse()
+		#space.token.animate_highlight()
+	#await get_tree().create_timer(0.5).timeout
+	#for space in path:
+	#	space.token.animate_default()
 		
 func _draw():
 	var drawn := {}
