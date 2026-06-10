@@ -14,12 +14,18 @@ signal completed()
 @onready var scorer = $Scorer
 @onready var score = $TopRight/Score
 @onready var relic_manager = $"../RelicManager"
-@onready var relic_container = $RelicContainer
+@onready var item_manager = $"../ItemManager"
+@onready var relic_container = $Inventory/RelicContainer
+@onready var item_container = $Inventory/ItemContainer
 
 var selected_token: Token
+var selected_item: Item
 
 func _ready():
 	relic_container.setup(relic_manager.active_relics)
+	item_container.setup(item_manager.active_items)
+	item_container.item_selected.connect(_on_item_selected)
+	item_manager.items_changed.connect(item_container.refresh)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	#round_label.text = 'Round ' + str(GameState.round_number)
@@ -61,8 +67,27 @@ func _path_to_word(path: Array):
 	for p in path:
 		word += p.token.letter
 	return word
+	
+func _on_item_selected(item: Item):
+	selected_token = null
+	var prev_selected = selected_item
+	selected_item = null if selected_item == item else item
+	if prev_selected != null and prev_selected != selected_item:
+		prev_selected.selected = false
+	item.selected = item == selected_item
 			
 func _on_token_clicked(token: Token):
+	if selected_item:
+		if selected_item.data.can_enhance_token:
+			selected_item.data.enhance_token(token)
+			selected_item.selected = false
+			selected_item.played.emit(selected_item)
+			selected_item = null
+			selected_token = null
+			return
+		else:
+			selected_item = null
+	
 	var prev_selected = selected_token
 	selected_token = null if selected_token == token else token
 	if prev_selected != null and prev_selected != selected_token:

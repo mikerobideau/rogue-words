@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://components/relic_container/relic_container.gd" id="1_tx6to"]
 
 [node name="RelicContainer" type="MarginContainer"]
-offset_right = 100.0
-offset_bottom = 458.0
+offset_right = 20.0
+offset_bottom = 20.0
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10

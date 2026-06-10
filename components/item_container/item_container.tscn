@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://m6v4h0pfyoj4"]
+
+[ext_resource type="Script" path="res://components/item_container/item_container.gd" id="1_ggere"]
+
+[node name="ItemContainer" type="MarginContainer"]
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+script = ExtResource("1_ggere")
+
+[node name="Items" type="VBoxContainer" parent="."]
+layout_mode = 2

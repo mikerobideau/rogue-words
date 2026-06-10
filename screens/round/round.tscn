@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=10 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
 [ext_resource type="PackedScene" uid="uid://bt4v8aphkynrx" path="res://components/score/score.tscn" id="6_oeyad"]
 [ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="7_b21c7"]
+[ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="9_qy1ux"]
 
 [node name="Round" type="Control"]
 layout_mode = 3
@@ -72,5 +73,16 @@ offset_bottom = 0.0
 
 [node name="Scorer" parent="." instance=ExtResource("5_va824")]
 
-[node name="RelicContainer" parent="." instance=ExtResource("7_b21c7")]
-layout_mode = 0
+[node name="Inventory" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 44.0
+grow_vertical = 2
+theme_override_constants/separation = 50
+
+[node name="RelicContainer" parent="Inventory" instance=ExtResource("7_b21c7")]
+layout_mode = 2
+
+[node name="ItemContainer" parent="Inventory" instance=ExtResource("9_qy1ux")]
+layout_mode = 2

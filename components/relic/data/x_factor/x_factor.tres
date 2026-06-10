@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="XFactor" load_steps=2 format=3 uid="uid://ci8ofhwsmuk22"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/x_factor/x_factor.gd" id="1_tgndy"]
+[ext_resource type="Script" path="res://components/relic/data/x_factor/x_factor.gd" id="1_tgndy"]
 
 [resource]
 script = ExtResource("1_tgndy")
