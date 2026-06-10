@@ -51,7 +51,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 28
-text = "The word placement roguelike"
+text = "A word roguelike"
 horizontal_alignment = 1
 
 [node name="PlayButton" type="Button" parent="Body"]
@@ -63,7 +63,7 @@ text = "PLAY"
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 16
-text = "Spell words - Chain combos - Build your deck"
+text = "The game of tangled vines and massive word combos"
 horizontal_alignment = 1
 
 [connection signal="pressed" from="Body/PlayButton" to="." method="_on_play_button_pressed"]
