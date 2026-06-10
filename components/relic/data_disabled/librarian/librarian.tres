@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Librarian" load_steps=2 format=3 uid="uid://u8rwv3lhsq7"]
 
-[ext_resource type="Script" path="res://components/relic/data/librarian/librarian.gd" id="1_4swpn"]
+[ext_resource type="Script" path="res://components/relic/data_disabled/librarian/librarian.gd" id="1_4swpn"]
 
 [resource]
 script = ExtResource("1_4swpn")
