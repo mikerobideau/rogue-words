@@ -5,9 +5,15 @@ signal clicked()
 
 const RADIUS = 40
 
+enum Type {
+	GRAPE,
+	CLOVER
+}
+
 @onready var letter_label = $Letter
 @export var letter: String
 @export var value: int
+@export var type: Type
 
 var selected: bool = false:
 	set(value):
@@ -15,9 +21,13 @@ var selected: bool = false:
 		_on_selected_changed()
 
 func _ready():
+	type = Type.GRAPE
 	animation = 'default'
 	_update_label()
 	_init_click_detection()
+	
+func enhance(t: Type):
+	type = t
 	
 func animate_highlight():
 	animation = 'highlight'
