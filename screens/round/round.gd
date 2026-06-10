@@ -49,8 +49,7 @@ func _on_space_clicked(space: Space):
 		var toast = ScoreToastScene.instantiate()
 		toast.text = str(context.score_event.score) + ' - ' + context.score_event.word
 		add_child(toast)
-		await board.highlight(word.path)
-		toast.queue_free()
+		board.highlight(word.path)
 		score.add(context.score_event.score)
 	var expansions = 3 + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
