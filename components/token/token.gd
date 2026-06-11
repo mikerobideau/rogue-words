@@ -4,9 +4,13 @@ class_name Token
 signal clicked()
 
 const RADIUS = 40
+const VOWELS = ['A', 'E', 'I', 'O', 'U']
+const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z']
 
 enum Type {
 	GRAPE,
+	GREEN_GRAPE,
+	YELLOW_GRAPE,
 	CLOVER
 }
 
@@ -22,6 +26,8 @@ enum Type {
 		value = v
 		_update_label()
 @export var grape_frames: SpriteFrames
+@export var green_grape_frames: SpriteFrames
+@export var yellow_grape_frames: SpriteFrames
 @export var clover_frames: SpriteFrames
 @export var type: = Type.GRAPE:
 	set(v):
@@ -47,6 +53,12 @@ func next_letter():
 	var code = letter.to_upper().unicode_at(0)
 	letter = char((code - 65 + 1) % 26 + 65)
 	
+func swap_random_consonant_vowel():
+	if letter in VOWELS:
+		letter = CONSONANTS[randi() % CONSONANTS.size()]
+	else:
+		letter = VOWELS[randi() % VOWELS.size()]
+	
 func pulse():
 	var tween = create_tween()
 	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.05)
@@ -59,6 +71,8 @@ func on_token_placed():
 	if type == Type.CLOVER:
 		if randf() <= 0.25:
 			GameState.money += 5
+	if type == Type.GREEN_GRAPE:
+		GameState.money += 1
 
 func _update_label():
 	if letter_label:
@@ -93,6 +107,10 @@ func _update_sprite():
 	match type:
 		Type.GRAPE:
 			sprite_frames = grape_frames
+		Type.GREEN_GRAPE:
+			sprite_frames = green_grape_frames
+		Type.YELLOW_GRAPE:
+			sprite_frames = yellow_grape_frames
 		Type.CLOVER:
 			sprite_frames = clover_frames
 			
