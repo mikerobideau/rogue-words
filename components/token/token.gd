@@ -11,12 +11,18 @@ enum Type {
 }
 
 @onready var letter_label = $Letter
+@onready var value_label = $Value
 
+@export var letter: String:
+	set(v):
+		letter = v
+		_update_label()
+@export var value: int:
+	set(v):
+		value = v
+		_update_label()
 @export var grape_frames: SpriteFrames
 @export var clover_frames: SpriteFrames
-@export var letter: String
-@export var value: int
-
 @export var type: = Type.GRAPE:
 	set(v):
 		type = v
@@ -36,6 +42,11 @@ func _ready():
 func enhance(t: Type):
 	type = t
 	
+func next_letter():
+	print_debug('next letter')
+	var code = letter.to_upper().unicode_at(0)
+	letter = char((code - 65 + 1) % 26 + 65)
+	
 func pulse():
 	var tween = create_tween()
 	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.05)
@@ -44,19 +55,16 @@ func pulse():
 	tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.05)
 	tween.tween_property(self, 'scale', Vector2(1, 1), 0.15)
 	
-#func animate_highlight():
-#	animation = 'highlight'
-
-#func animate_default():	
-#	animation = 'default'
-	
 func on_token_placed():
 	if type == Type.CLOVER:
 		if randf() <= 0.25:
 			GameState.money += 5
 
 func _update_label():
-	letter_label.text = letter
+	if letter_label:
+		letter_label.text = letter
+	if value_label:
+		value_label.text = str(value)
 	
 func _init_click_detection():
 	var area = Area2D.new()

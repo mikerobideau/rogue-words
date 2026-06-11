@@ -25,7 +25,6 @@ func _ready():
 	relic_container.setup(relic_manager.active_relics)
 	item_container.setup(item_manager.active_items)
 	item_container.item_selected.connect(_on_item_selected)
-	item_manager.items_changed.connect(item_container.refresh)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	#round_label.text = 'Round ' + str(GameState.round_number)
