@@ -16,11 +16,11 @@ func _add(data: ItemData):
 	scene.data = data
 	scene.played.connect(_on_item_played)
 	items.append(scene)
-	items_changed.emit()
+	items_changed.emit(active_items)
 	
 func _on_item_played(item: Item):
 	active_items.erase(item)
-	items_changed.emit(active_items)
+	item.queue_free()
 	
 func _load_all_items():
 	var base_path = "res://components/item/data"

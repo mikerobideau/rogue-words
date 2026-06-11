@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Leprechaun" load_steps=2 format=3 uid="uid://busoh2fecte3c"]
 
-[ext_resource type="Script" path="res://components/item/data/leprechaun.gd" id="1_4gpt1"]
+[ext_resource type="Script" path="res://components/item/data/leprechaun/leprechaun.gd" id="1_4gpt1"]
 
 [resource]
 script = ExtResource("1_4gpt1")
