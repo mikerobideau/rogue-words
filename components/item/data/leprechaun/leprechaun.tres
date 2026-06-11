@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_4gpt1")
 item_name = "Leprechaun"
-description = "Converts selected token into a clover"
+description = "Enhances selected token into a clover"
 can_enhance_token = true

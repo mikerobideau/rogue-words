@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_tk0r8")
 item_name = "Sun"
-description = "Increase token value by 1"
+description = "Increases selected token value by 1"
 can_enhance_token = true
