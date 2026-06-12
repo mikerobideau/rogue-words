@@ -47,6 +47,66 @@ layout_mode = 2
 [node name="Score" parent="TopRight" instance=ExtResource("6_oeyad")]
 layout_mode = 2
 
+[node name="WordMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -363.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 400
+
+[node name="Center" type="CenterContainer" parent="WordMargin"]
+layout_mode = 2
+
+[node name="Word" parent="WordMargin/Center" instance=ExtResource("11_xr5ut")]
+layout_mode = 2
+
+[node name="WordScoreMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -148.0
+offset_top = -345.0
+offset_right = 148.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 250
+
+[node name="Center" type="CenterContainer" parent="WordScoreMargin"]
+layout_mode = 2
+
+[node name="WordScore" parent="WordScoreMargin/Center" instance=ExtResource("11_yj1au")]
+layout_mode = 2
+
+[node name="RelicMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -120.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 150
+
+[node name="Center" type="CenterContainer" parent="RelicMargin"]
+layout_mode = 2
+
+[node name="RelicContainer" parent="RelicMargin/Center" instance=ExtResource("7_b21c7")]
+layout_mode = 2
+
 [node name="HandContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 7
@@ -65,12 +125,19 @@ theme_override_constants/margin_bottom = 100
 [node name="Hand" parent="HandContainer" instance=ExtResource("3_thhj8")]
 layout_mode = 2
 
-[node name="Board" parent="." instance=ExtResource("3_jxqlj")]
+[node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_constants/margin_top = 300
+
+[node name="Board" parent="MarginContainer" instance=ExtResource("3_jxqlj")]
+layout_mode = 2
 
 [node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
 
@@ -78,56 +145,16 @@ offset_bottom = 0.0
 
 [node name="Inventory" type="HBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -10.0
 offset_right = 44.0
+offset_bottom = 10.0
 grow_vertical = 2
 theme_override_constants/separation = 50
-
-[node name="RelicContainer" parent="Inventory" instance=ExtResource("7_b21c7")]
-layout_mode = 2
 
 [node name="ItemContainer" parent="Inventory" instance=ExtResource("9_qy1ux")]
 layout_mode = 2
 
 [node name="ScoringAnimator" parent="." instance=ExtResource("10_e5r4v")]
-
-[node name="WordMargin" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -20.0
-offset_top = -363.0
-offset_right = 20.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/margin_bottom = 300
-
-[node name="Center" type="CenterContainer" parent="WordMargin"]
-layout_mode = 2
-
-[node name="Word" parent="WordMargin/Center" instance=ExtResource("11_xr5ut")]
-layout_mode = 2
-
-[node name="WordScoreMargin" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -103.5
-offset_top = -344.0
-offset_right = 103.5
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/margin_bottom = 150
-
-[node name="Center" type="CenterContainer" parent="WordScoreMargin"]
-layout_mode = 2
-
-[node name="WordScore" parent="WordScoreMargin/Center" instance=ExtResource("11_yj1au")]
-layout_mode = 2

@@ -11,6 +11,6 @@ theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 script = ExtResource("1_tx6to")
 
-[node name="Relics" type="VBoxContainer" parent="."]
+[node name="Relics" type="HBoxContainer" parent="."]
 layout_mode = 2
 theme_override_constants/separation = 20
