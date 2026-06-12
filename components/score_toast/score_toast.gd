@@ -8,7 +8,6 @@ class_name ScoreToast
 
 func _ready() -> void:
 	label.text = text
-	position = Vector2(get_viewport_rect().size.x / 2, get_viewport_rect().size.y / 2)
 	label.size = label.get_minimum_size()
 	background.size = label.size + Vector2(20, 0)
 	background.position = -background.size / 2

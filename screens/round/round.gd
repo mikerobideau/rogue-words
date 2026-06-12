@@ -2,6 +2,8 @@ extends Control
 class_name Round
 
 var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
+var WordScene = preload("res://components/scorer/word.tscn")
+var WordScoreScene = preload("res://components/scorer/word_score.tscn")
 
 signal completed()
 
@@ -17,6 +19,9 @@ signal completed()
 @onready var item_manager = $"../ItemManager"
 @onready var relic_container = $Inventory/RelicContainer
 @onready var item_container = $Inventory/ItemContainer
+@onready var animator = $ScoringAnimator
+@onready var word = $WordMargin/Center/Word
+@onready var word_score = $WordScoreMargin/Center/WordScore
 
 var selected_token: Token
 var selected_item: Item
@@ -41,16 +46,39 @@ func _on_space_clicked(space: Space):
 	relic_manager.on_token_placed(context)
 	selected_token.selected = false
 	selected_token = null
-	var words = word_finder.find_words(space)
-	for word in words:
-		context.score_event = scorer.score(word)	
-		var triggered = relic_manager.on_score_event(context)
-		var toast = ScoreToastScene.instantiate()
-		toast.text = str(context.score_event.score) + ' - ' + context.score_event.word
-		board.highlight(word.path)
-		add_child(toast)
-		await toast.animate()
-		score.add(context.score_event.score)
+	
+	var all_relic_events = [] 
+	var results = word_finder.find_words(space)
+	for result in results:
+		var event = scorer.score(result)	
+		result.event = event
+		context.score_event = event
+		
+		for s in result.path:
+			var token = s.token
+			var letter = token.letter
+			word.add_letter(letter)
+			token.pulse(0.3)
+			word_score.add(token.value)
+			await get_tree().create_timer(0.3).timeout
+		word.clear()
+		word_score.clear()
+		await get_tree().create_timer(0.3).timeout
+		
+		#var relic_results = relic_manager.on_score_event(context)
+		#all_relic_events.append(relic_results)
+		
+		#var triggered = relic_manager.on_score_event(context)
+		#var toast = ScoreToastScene.instantiate()
+		#toast.text = str(context.score_event.score) + ' - ' + context.score_event.word
+		#board.highlight(word.path)
+		#add_child(toast)
+		#await toast.animate()
+		
+	#print_debug(str(results.size()))
+	#if results.size() > 0:
+	#	await animator.play(results, all_relic_events)
+		
 	var expansions = 3 + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
 	var is_round_complete = _check_round_complete()
