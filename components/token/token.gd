@@ -40,7 +40,7 @@ var selected: bool = false:
 		_on_selected_changed()
 
 func _ready():
-	type = Type.GRAPE
+	#type = Type.GRAPE
 	animation = 'default'
 	_update_label()
 	_init_click_detection()
@@ -66,6 +66,14 @@ func pulse(letter_delay: float):
 	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), letter_delay / 5)
 	tween.tween_property(self, 'scale', Vector2(0.9, 0.9), letter_delay / 5)
 	tween.tween_property(self, 'scale', Vector2(1, 1), letter_delay / 5)
+	
+func scale_up():
+	var tween = create_tween()
+	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.3)
+	
+func scale_down():
+	var tween = create_tween()
+	tween.tween_property(self, 'scale', Vector2(1, 1), 0.3)
 	
 func on_token_placed():
 	if type == Type.CLOVER:

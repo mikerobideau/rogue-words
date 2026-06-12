@@ -6,6 +6,6 @@
 custom_minimum_size = Vector2(0, 63)
 script = ExtResource("1_k6b5l")
 
-[node name="Letters" type="HBoxContainer" parent="."]
+[node name="Tokens" type="HBoxContainer" parent="."]
 layout_mode = 2
 theme_override_constants/separation = 10
