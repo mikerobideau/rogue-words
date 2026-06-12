@@ -19,5 +19,4 @@ func _path_to_mult(path: Array) -> int:
 	for space in path:
 		if space.token.type == Token.Type.YELLOW_GRAPE:
 			mult *= 2
-	print_debug('mult is ' + str(mult))
 	return mult

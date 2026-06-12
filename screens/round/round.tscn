@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=13 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
@@ -9,6 +9,9 @@
 [ext_resource type="PackedScene" uid="uid://bt4v8aphkynrx" path="res://components/score/score.tscn" id="6_oeyad"]
 [ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="7_b21c7"]
 [ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="9_qy1ux"]
+[ext_resource type="PackedScene" uid="uid://bbbiy6uaavb1a" path="res://components/scorer/scoring_animator.tscn" id="10_e5r4v"]
+[ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/scorer/word.tscn" id="11_xr5ut"]
+[ext_resource type="PackedScene" uid="uid://cpsiv7fo0t0c0" path="res://components/scorer/word_score.tscn" id="11_yj1au"]
 
 [node name="Round" type="Control"]
 layout_mode = 3
@@ -85,4 +88,46 @@ theme_override_constants/separation = 50
 layout_mode = 2
 
 [node name="ItemContainer" parent="Inventory" instance=ExtResource("9_qy1ux")]
+layout_mode = 2
+
+[node name="ScoringAnimator" parent="." instance=ExtResource("10_e5r4v")]
+
+[node name="WordMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -363.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 300
+
+[node name="Center" type="CenterContainer" parent="WordMargin"]
+layout_mode = 2
+
+[node name="Word" parent="WordMargin/Center" instance=ExtResource("11_xr5ut")]
+layout_mode = 2
+
+[node name="WordScoreMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -59.0
+offset_top = -266.0
+offset_right = 59.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 200
+
+[node name="Center" type="CenterContainer" parent="WordScoreMargin"]
+layout_mode = 2
+
+[node name="WordScore" parent="WordScoreMargin/Center" instance=ExtResource("11_yj1au")]
 layout_mode = 2

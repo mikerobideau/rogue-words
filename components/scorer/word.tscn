@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://ejiashxsho2h"]
+
+[ext_resource type="Script" path="res://components/scorer/word.gd" id="1_k6b5l"]
+
+[node name="Word" type="MarginContainer"]
+custom_minimum_size = Vector2(0, 63)
+script = ExtResource("1_k6b5l")
+
+[node name="Letters" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10

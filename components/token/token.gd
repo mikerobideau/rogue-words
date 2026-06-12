@@ -59,13 +59,13 @@ func swap_random_consonant_vowel():
 	else:
 		letter = VOWELS[randi() % VOWELS.size()]
 	
-func pulse():
+func pulse(letter_delay: float):
 	var tween = create_tween()
-	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.05)
-	tween.tween_property(self, 'scale', Vector2(0.8, 0.8), 0.05)
-	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.05)
-	tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.05)
-	tween.tween_property(self, 'scale', Vector2(1, 1), 0.15)
+	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), letter_delay / 5)
+	tween.tween_property(self, 'scale', Vector2(0.8, 0.8), letter_delay / 5)
+	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), letter_delay / 5)
+	tween.tween_property(self, 'scale', Vector2(0.9, 0.9), letter_delay / 5)
+	tween.tween_property(self, 'scale', Vector2(1, 1), letter_delay / 5)
 	
 func on_token_placed():
 	if type == Type.CLOVER:

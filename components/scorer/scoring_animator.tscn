@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bbbiy6uaavb1a"]
+
+[ext_resource type="Script" path="res://components/scorer/scoring_animator.gd" id="1_pwe0x"]
+
+[node name="ScoringAnimator" type="Node2D"]
+script = ExtResource("1_pwe0x")

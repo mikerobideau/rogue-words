@@ -46,9 +46,9 @@ func _layout_tokens():
 		tokens[i].position = Vector2(x, y)
 
 func _create_mock_bag(n: int) -> Array:
-	#var letters = ['C', 'E', 'W', 'S']
+	var letters = ['I', 'N', 'C', 'E', 'A', 'R']
 	#var letters = ['Z', 'Z', 'Z', 'L', 'N', 'A', 'E', 'I']
-	var letters = LETTERS.keys()
+	#var letters = LETTERS.keys()
 	var mock_bag: Array = []
 	for i in range(n):
 		var token = TokenScene.instantiate()
