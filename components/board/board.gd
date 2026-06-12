@@ -5,9 +5,9 @@ signal space_clicked(space: Space)
 
 var SpaceScene = preload("res://components/space/space.tscn")
 
-const SPACING := 50
+const SPACING := 70
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
-const BOARD_SIZE = Vector2(500, 500)
+const BOARD_SIZE = Vector2(450, 450)
 const LINK_COLOR = Color(0.75, 0.75, 0.75)
 const LINK_WIDTH = 2.0
 

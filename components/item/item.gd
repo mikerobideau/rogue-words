@@ -35,5 +35,5 @@ func _on_gui_input(event: InputEvent) -> void:
 func _on_selected_changed():
 	queue_redraw()
 	var tween = create_tween()
-	var target = Vector2(1.2, 1.2) if selected else Vector2(1, 1)
+	var target = Vector2(1.1, 1.1) if selected else Vector2(1, 1)
 	tween.tween_property(self, "scale", target, 0.15)

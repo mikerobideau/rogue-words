@@ -13,13 +13,13 @@ const DEBUG = false
 
 @onready var round_label = $Control/HBoxContainer/RoundLabel
 @onready var hand = $HandContainer/Hand
-@onready var board = $Board
+@onready var board = $MarginContainer/Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var score = $TopRight/Score
 @onready var relic_manager = $"../RelicManager"
 @onready var item_manager = $"../ItemManager"
-@onready var relic_container = $Inventory/RelicContainer
+@onready var relic_container = $RelicMargin/Center/RelicContainer
 @onready var item_container = $Inventory/ItemContainer
 @onready var animator = $ScoringAnimator
 @onready var word = $WordMargin/Center/Word

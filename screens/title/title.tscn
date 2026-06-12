@@ -1,7 +1,25 @@
-[gd_scene load_steps=3 format=3 uid="uid://s4433o5tkgfd"]
+[gd_scene load_steps=9 format=3 uid="uid://s4433o5tkgfd"]
 
 [ext_resource type="Script" path="res://screens/title/title.gd" id="1_nw644"]
 [ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="2_oqjts"]
+
+[sub_resource type="Theme" id="Theme_cj03g"]
+default_font = ExtResource("2_oqjts")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_17416"]
+bg_color = Color(0.227451, 0.945098, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_syhd5"]
+bg_color = Color(0.227451, 0.945098, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j02le"]
+bg_color = Color(0.229043, 0.944736, 0.599805, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vof7n"]
+bg_color = Color(0.227451, 0.945098, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_85yu6"]
+bg_color = Color(0.168627, 0.713726, 0.45098, 1)
 
 [node name="Title" type="Control"]
 layout_mode = 3
@@ -42,7 +60,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.286275, 0, 0.545098, 1)
 theme_override_fonts/font = ExtResource("2_oqjts")
-theme_override_font_sizes/font_size = 96
+theme_override_font_sizes/font_size = 150
 text = "Grapevine"
 horizontal_alignment = 1
 
@@ -54,8 +72,16 @@ text = "A word roguelike"
 horizontal_alignment = 1
 
 [node name="PlayButton" type="Button" parent="Body"]
+custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
+size_flags_horizontal = 4
+theme = SubResource("Theme_cj03g")
 theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_styles/focus = SubResource("StyleBoxFlat_17416")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_syhd5")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j02le")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_vof7n")
+theme_override_styles/normal = SubResource("StyleBoxFlat_85yu6")
 text = "PLAY"
 
 [node name="Description" type="Label" parent="Body"]
