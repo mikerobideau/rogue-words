@@ -7,6 +7,8 @@ var WordScoreScene = preload("res://components/scorer/word_score.tscn")
 
 signal completed()
 
+const DEBUG = false
+
 @export var target_score := 100
 
 @onready var round_label = $Control/HBoxContainer/RoundLabel
@@ -27,6 +29,8 @@ var selected_token: Token
 var selected_item: Item
 
 func _ready():
+	if DEBUG:
+		_debug()
 	relic_container.setup(relic_manager.active_relics)
 	item_container.setup(item_manager.active_items)
 	item_container.item_selected.connect(_on_item_selected)
@@ -47,23 +51,51 @@ func _on_space_clicked(space: Space):
 	selected_token.selected = false
 	selected_token = null
 	
-	var all_relic_events = [] 
-	var results = word_finder.find_words(space)
-	for result in results:
-		var event = scorer.score(result)	
-		result.event = event
-		context.score_event = event
+	#var all_relic_events = [] 
+	
+	var found_words = word_finder.find_words(space)
+	for found_word in found_words:
+		var word_report = scorer.get_word_report(found_word)
 		
-		for s in result.path:
-			var token = s.token
-			var letter = token.letter
-			word.add_letter(letter)
-			token.pulse(0.3)
-			word_score.add(token.value)
+		#scale up
+		for letter_report in word_report.letter_reports:
+			letter_report.space.token.scale_up()
+		
+		for letter_report in word_report.letter_reports:
+			var token = letter_report.space.token
+			word.add_token(token)
+			#token.pulse(0.3)
+			word_score.add(letter_report.score)
 			await get_tree().create_timer(0.3).timeout
+		await get_tree().create_timer(0.3).timeout
 		word.clear()
 		word_score.clear()
+		
+		#scale down
+		for letter_report in word_report.letter_reports:
+			letter_report.space.token.scale_down()
+		
 		await get_tree().create_timer(0.3).timeout
+		
+		
+		#for letter_report in word_report.letter_reports:
+		#	print_debug(letter_report.letter + ' - ' + str(letter_report.score) + ' ' + letter_report.bonus_label)
+		#print_debug(word_report.word + ' ' + str(word_report.score))
+
+		#var event = scorer.score(result)	
+		#result.event = event
+		#context.score_event = event
+		
+		#for s in result.path:
+		#	var token = s.token
+		#	var letter = token.letter
+		#	word.add_letter(letter)
+		#	token.pulse(0.3)
+		#	word_score.add(token.value)
+		#	await get_tree().create_timer(0.3).timeout
+		#word.clear()
+		#word_score.clear()
+		#await get_tree().create_timer(0.3).timeout
 		
 		#var relic_results = relic_manager.on_score_event(context)
 		#all_relic_events.append(relic_results)
@@ -126,3 +158,14 @@ func _get_relic_context():
 	context.state = GameState
 	context.placed_token = selected_token
 	return context
+
+#---debug---
+
+func _debug():
+	var line = Line2D.new()
+	var center_x = get_viewport().get_visible_rect().size.x / 2
+	line.add_point(Vector2(center_x, 0))
+	line.add_point(Vector2(center_x, get_viewport().get_visible_rect().size.y))
+	line.default_color = Color.WEB_GRAY
+	line.width = 2
+	add_child(line)

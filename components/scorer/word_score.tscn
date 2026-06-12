@@ -14,5 +14,5 @@ script = ExtResource("1_myfgp")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.168627, 0.713726, 0.45098, 1)
 theme_override_fonts/font = ExtResource("2_8jbl5")
-theme_override_font_sizes/font_size = 64
+theme_override_font_sizes/font_size = 100
 text = "1000"

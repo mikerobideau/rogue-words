@@ -119,12 +119,12 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -59.0
-offset_top = -266.0
-offset_right = 59.0
+offset_left = -103.5
+offset_top = -344.0
+offset_right = 103.5
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/margin_bottom = 200
+theme_override_constants/margin_bottom = 150
 
 [node name="Center" type="CenterContainer" parent="WordScoreMargin"]
 layout_mode = 2

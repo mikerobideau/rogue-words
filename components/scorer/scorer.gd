@@ -1,7 +1,48 @@
 extends Node2D
 class_name Scorer
 
-func score(word:Dictionary) -> ScoreEvent:
+func get_word_report(found_word: Dictionary):
+	var report = WordReport.new()
+	report.word = found_word.word
+	report.spaces = found_word.path
+	report.letter_reports = [] as Array[LetterReport] 
+	var score = 0
+	for space in report.spaces:
+		var letter_report = _get_letter_report(space)
+		report.letter_reports.append(letter_report)
+		score += letter_report.score
+	report.score = score
+	return report
+
+func _get_letter_report(space: Space):
+	var report = LetterReport.new()
+	var token = space.token
+	report.letter = token.letter
+	report.space = space
+	var score = token.value
+	var mult := _mult_enhancement(space)
+	
+	#note that letter can only have mult OR plus, but not both
+	if mult > 1:
+		score *= mult
+		var bonus_label = 'x' + str(mult)
+	else:
+		var plus := _plus_enhancement(space)
+		if plus > 0:
+			score += plus
+			var bonus_label = '+' + str(plus)
+	report.score = score
+	return report
+	
+func _mult_enhancement(space: Space) -> int:
+	if space.token.type == Token.Type.YELLOW_GRAPE:
+		return 2
+	return 1
+
+func _plus_enhancement(space: Space) -> int:
+	return 0
+
+func score(word: Dictionary) -> ScoreEvent:
 	var event = ScoreEvent.new()
 	event.path = word.path
 	event.word = word.word
