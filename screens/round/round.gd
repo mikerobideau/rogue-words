@@ -56,6 +56,7 @@ func _on_space_clicked(space: Space):
 	var found_words = word_finder.find_words(space)
 	for found_word in found_words:
 		var word_report = scorer.get_word_report(found_word)
+		context.word = word_report.word
 		
 		#scale up
 		for letter_report in word_report.letter_reports:
@@ -77,6 +78,11 @@ func _on_space_clicked(space: Space):
 		
 		await get_tree().create_timer(0.3).timeout
 		
+		var relic_report = relic_manager.get_score_report(context)
+		
+		for report in relic_report.items:
+			print_debug(report.relic.data.relic_name + ' - ' + report.text)
+			report.relic.pulse()
 		
 		#for letter_report in word_report.letter_reports:
 		#	print_debug(letter_report.letter + ' - ' + str(letter_report.score) + ' ' + letter_report.bonus_label)
