@@ -13,18 +13,22 @@ func on_token_placed(context: RelicContext):
 	for relic in active_relics:
 		relic.data.on_token_placed(context)
 		
-func on_score_event(context: RelicContext) -> Array:
-	var reports = []
+func get_score_report(context: RelicContext) -> RelicReport:
+	var report = RelicReport.new()
+	var items: Array[RelicReportItem] = []
+	report.prev_score = context.word_score
 	for relic in active_relics:
-		var score_before = context.score_event.score
-		if relic.data.on_score_event(context):
-			reports.append({
-				'name': relic.data.relic_name,
-				'bonus_text': 'placeholder bonus text',
-				'new_total': context.score_event.score
-			})
-			relic.pulse()
-	return reports
+		context.relic = relic
+		var score = context.word_score
+		var report_item = relic.data.get_score_report(context)
+		if report_item:
+			items.append(report_item)
+	if items.size() > 0:
+		report.new_score = items[-1].new_score
+	else:
+		report.new_score = context.word_score
+	report.items = items
+	return report
 			
 func add_grow_amount(context: RelicContext):
 	var expansions = 0

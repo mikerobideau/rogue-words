@@ -3,4 +3,6 @@ class_name RelicContext
 
 @export var state: GameStateGlobal
 @export var placed_token: Token
-@export var score_event: ScoreEvent
+@export var word: String
+@export var word_score: int
+@export var relic: Relic

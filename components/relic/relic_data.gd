@@ -20,6 +20,9 @@ func on_token_placed(context: RelicContext) -> bool:
 func on_score_event(context: RelicContext) -> bool:
 	return false
 	
+func get_score_report(context: RelicContext) -> RelicReportItem:
+	return null
+	
 func add_grow_amount(context: RelicContext) -> int:
 	return 0
 	
