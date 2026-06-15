@@ -9,6 +9,5 @@ func get_score_report(context: RelicContext) -> RelicReportItem:
 		report.prev_score = context.word_score
 		report.new_score = report.prev_score + bonus
 		report.text = '+' + str(bonus)
-		print_debug('returning report for relic ' + context.relic.data.relic_name)
 		return report
 	return null

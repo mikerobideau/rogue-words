@@ -11,6 +11,7 @@ const DEBUG = false
 
 @export var target_score := 100
 
+@onready var sound = $Sound
 @onready var round_label = $Control/HBoxContainer/RoundLabel
 @onready var hand = $HandContainer/Hand
 @onready var board = $MarginContainer/Board
@@ -42,6 +43,7 @@ func _ready():
 	score.target_score = target_score
 
 func _on_space_clicked(space: Space):
+	var delay = 0.2
 	if !selected_token:
 		return
 	hand.remove_token(selected_token)
@@ -63,26 +65,35 @@ func _on_space_clicked(space: Space):
 			letter_report.space.token.scale_up()
 		
 		for letter_report in word_report.letter_reports:
+			sound.play()
 			var token = letter_report.space.token
 			word.add_token(token)
 			#token.pulse(0.3)
 			word_score.add(letter_report.score)
+			await get_tree().create_timer(delay).timeout
+		context.word_score = word_score.score
+		var relic_report = relic_manager.get_score_report(context)
+		
+		for report in relic_report.items:
+			sound.play()
+			report.relic.pulse()
+			var toast = ScoreToastScene.instantiate()
+			toast.text = report.text
+			print_debug(report.text)
+			var x =  report.relic.global_position.x + report.relic.size.x / 2
+			var y = report.relic.global_position.y + report.relic.size.y + 10
+			toast.position = Vector2(x, y)
+			add_child(toast)
+			toast.animate()
+			word_score.score = report.new_score
 			await get_tree().create_timer(0.3).timeout
+		
 		await get_tree().create_timer(0.3).timeout
 		word.clear()
 		word_score.clear()
 		
-		#scale down
 		for letter_report in word_report.letter_reports:
 			letter_report.space.token.scale_down()
-		
-		await get_tree().create_timer(0.3).timeout
-		
-		var relic_report = relic_manager.get_score_report(context)
-		
-		for report in relic_report.items:
-			print_debug(report.relic.data.relic_name + ' - ' + report.text)
-			report.relic.pulse()
 		
 		#for letter_report in word_report.letter_reports:
 		#	print_debug(letter_report.letter + ' - ' + str(letter_report.score) + ' ' + letter_report.bonus_label)
