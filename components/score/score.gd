@@ -11,7 +11,10 @@ class_name Score
 		else:
 			push_warning('Score tried to update label before node was ready')
 
-var value := 0
+var value := 0:
+	set(v):
+		value = v
+		_update_label()
 
 func _ready():
 	_update_label()

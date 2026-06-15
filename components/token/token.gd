@@ -7,16 +7,19 @@ const RADIUS = 40
 const VOWELS = ['A', 'E', 'I', 'O', 'U']
 const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z']
 
-enum Type {
-	GRAPE,
-	GREEN_GRAPE,
-	YELLOW_GRAPE,
-	CLOVER
-}
-
 @onready var letter_label = $Letter
 @onready var value_label = $Value
 
+@export var data: TokenData:
+	set(v):
+		data = v
+		type = data.type
+		letter = data.letter
+		value = data.value
+@export var type: TokenData.Type:
+	set(v):
+		type = v
+		_update_sprite()
 @export var letter: String:
 	set(v):
 		letter = v
@@ -29,10 +32,6 @@ enum Type {
 @export var green_grape_frames: SpriteFrames
 @export var yellow_grape_frames: SpriteFrames
 @export var clover_frames: SpriteFrames
-@export var type: = Type.GRAPE:
-	set(v):
-		type = v
-		_update_sprite()
 
 var selected: bool = false:
 	set(v):
@@ -40,12 +39,16 @@ var selected: bool = false:
 		_on_selected_changed()
 
 func _ready():
-	#type = Type.GRAPE
+	if data:
+		type = data.type
+		letter = data.letter
+		value = data.value
 	animation = 'default'
 	_update_label()
+	_update_sprite()
 	_init_click_detection()
 	
-func enhance(t: Type):
+func enhance(t: TokenData.Type):
 	type = t
 	
 func next_letter():
@@ -76,10 +79,10 @@ func scale_down():
 	tween.tween_property(self, 'scale', Vector2(1, 1), 0.3)
 	
 func on_token_placed():
-	if type == Type.CLOVER:
+	if type == TokenData.Type.CLOVER:
 		if randf() <= 0.25:
 			GameState.money += 5
-	if type == Type.GREEN_GRAPE:
+	if type == TokenData.Type.GREEN_GRAPE:
 		GameState.money += 1
 
 func _update_label():
@@ -113,13 +116,13 @@ func _update_sprite():
 		return
 		
 	match type:
-		Type.GRAPE:
+		TokenData.Type.GRAPE:
 			sprite_frames = grape_frames
-		Type.GREEN_GRAPE:
+		TokenData.Type.GREEN_GRAPE:
 			sprite_frames = green_grape_frames
-		Type.YELLOW_GRAPE:
+		TokenData.Type.YELLOW_GRAPE:
 			sprite_frames = yellow_grape_frames
-		Type.CLOVER:
+		TokenData.Type.CLOVER:
 			sprite_frames = clover_frames
 			
 	animation = 'default'

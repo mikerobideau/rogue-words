@@ -32,19 +32,24 @@ const LETTERS: Dictionary = {
 	"Z": {'letter': 'Z', 'value': 10, 'freq': 1}
 }
 
-func create(config: Dictionary, type: Token.Type):
+func create_data(config: Dictionary, type: TokenData.Type) -> TokenData:
+	var data = TokenData.new()
+	data.type = type
+	data.letter = config.letter
+	data.value = config.value
+	return data
+
+func create_scene(data: TokenData):
 	var scene = TokenScene.instantiate()
-	scene.type = type
-	scene.letter = config.letter
-	scene.value = config.value
+	scene.data = data
 	return scene
 
-func create_starting_tokens() -> Array[Token]:
-	var tokens = [] as Array[Token]
+func create_starting_tokens() -> Array[TokenData]:
+	var tokens = [] as Array[TokenData]
 	for key in LETTERS.keys():
 		var config = LETTERS[key]
 		for i in config.freq:
-			var scene = create(config, Token.Type.GRAPE)
-			tokens.append(scene)
+			var data = create_data(config, TokenData.Type.GRAPE)
+			tokens.append(data)
 	tokens.shuffle()
 	return tokens

@@ -35,7 +35,7 @@ func _get_letter_report(space: Space):
 	return report
 	
 func _mult_enhancement(space: Space) -> int:
-	if space.token.type == Token.Type.YELLOW_GRAPE:
+	if space.token.type == TokenData.Type.YELLOW_GRAPE:
 		return 2
 	return 1
 
@@ -58,6 +58,6 @@ func _path_to_base_score(path: Array) -> int:
 func _path_to_mult(path: Array) -> int:
 	var mult = 1
 	for space in path:
-		if space.token.type == Token.Type.YELLOW_GRAPE:
+		if space.token.type == TokenData.Type.YELLOW_GRAPE:
 			mult *= 2
 	return mult
