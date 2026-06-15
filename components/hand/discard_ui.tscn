@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://7vyeh5egh0p8"]
+
+[ext_resource type="Script" path="res://components/hand/discard_ui.gd" id="1_bmaju"]
+[ext_resource type="Theme" uid="uid://vn3yglhuvq41" path="res://theme/theme.tres" id="2_n26jf"]
+
+[node name="DiscardUi" type="HBoxContainer"]
+script = ExtResource("1_bmaju")
+
+[node name="Discard" type="Button" parent="."]
+layout_mode = 2
+theme = ExtResource("2_n26jf")
+text = "DISCARD"
+
+[node name="CancelDiscard" type="Button" parent="."]
+layout_mode = 2
+text = "CANCEL"
+
+[node name="ConfirmDiscard" type="Button" parent="."]
+layout_mode = 2
+text = "CONFIRM"
+
+[connection signal="pressed" from="Discard" to="." method="_on_discard_pressed"]
+[connection signal="pressed" from="CancelDiscard" to="." method="_on_cancel_discard_pressed"]
+[connection signal="pressed" from="ConfirmDiscard" to="." method="_on_confirm_discard_pressed"]

@@ -25,12 +25,20 @@ func remove_token(token: Token):
 func draw_tokens(n: int):
 	for i in range(n):
 		if bag.is_empty():
-			push_warning('Hand attempted to draw from an empty bag.')
+			bag = GameState.discarded_tokens.duplicate()
+			GameState.discarded_tokens = [] as Array[Token]
 			return
 		var token = bag.pop_back()
 		token_container.add_child(token)
 		token.clicked.connect(_on_token_clicked)
 		_layout_tokens()
+		
+func discard(tokens: Array[Token]):
+	for token in tokens:
+		GameState.discarded_tokens.append(token)
+		token_container.remove_child(token)
+	draw_tokens(tokens.size())
+	_layout_tokens()
 		
 func _layout_tokens():
 	var diameter = Token.RADIUS * 2

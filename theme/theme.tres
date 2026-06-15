@@ -1,0 +1,41 @@
+[gd_resource type="Theme" load_steps=6 format=3 uid="uid://vn3yglhuvq41"]
+
+[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="1_30fvq"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n5gim"]
+content_margin_left = 50.0
+content_margin_top = 10.0
+content_margin_right = 50.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ndcf7"]
+bg_color = Color(0.227451, 0.945098, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wknj8"]
+content_margin_left = 50.0
+content_margin_top = 10.0
+content_margin_right = 50.0
+content_margin_bottom = 10.0
+bg_color = Color(0.166022, 0.712535, 0.448548, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gync2"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0.227451, 0.945098, 0.6, 1)
+
+[resource]
+default_font_size = 18
+Button/colors/font_color = Color(0, 0, 0, 1)
+Button/colors/font_focus_color = Color(0, 0, 0, 1)
+Button/colors/font_hover_color = Color(0, 0, 0, 1)
+Button/colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+Button/colors/font_outline_color = Color(0, 0, 0, 1)
+Button/colors/font_pressed_color = Color(0, 0, 0, 1)
+Button/constants/h_separation = 4
+Button/fonts/font = ExtResource("1_30fvq")
+Button/styles/disabled = SubResource("StyleBoxFlat_n5gim")
+Button/styles/hover = SubResource("StyleBoxFlat_ndcf7")
+Button/styles/normal = SubResource("StyleBoxFlat_wknj8")
+Button/styles/pressed = SubResource("StyleBoxFlat_gync2")

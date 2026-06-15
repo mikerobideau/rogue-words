@@ -46,4 +46,5 @@ func create_starting_tokens() -> Array[Token]:
 		for i in config.freq:
 			var scene = create(config, Token.Type.GRAPE)
 			tokens.append(scene)
+	tokens.shuffle()
 	return tokens

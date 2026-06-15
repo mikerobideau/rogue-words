@@ -29,5 +29,6 @@ window/stretch/mode="viewport"
 
 [gui]
 
+theme/custom="res://theme/theme.tres"
 theme/custom_font="res://assets/fonts/Nunito-VariableFont_wght.ttf"
 theme/default_font_antialiasing=0

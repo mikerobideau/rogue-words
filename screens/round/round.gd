@@ -25,13 +25,30 @@ const DEBUG = false
 @onready var animator = $ScoringAnimator
 @onready var word = $WordMargin/Center/Word
 @onready var word_score = $WordScoreMargin/Center/WordScore
+@onready var discard_ui = $DiscardUiContainer/DiscardUi
 
+var selected_tokens: Array[Token]
 var selected_token: Token
+var discard_mode := false:
+	set(v):
+		discard_mode = v
+		_clear_selected_token()
+		_clear_selected_tokens()
+		_clear_selected_item()
+		
 var selected_item: Item
+var discards_remaining: int:
+	set(v):
+		discards_remaining = v if v >= 0 else 0
+		discard_ui.discard_text = 'DISCARD (' + str(v) + ')'
+		if discards_remaining < 1:
+			discard_ui.discard_disabled = true
 
 func _ready():
 	if DEBUG:
 		_debug()
+	discards_remaining = GameState.discards_per_round
+	GameState.discarded_tokens = [] as Array[Token]
 	relic_container.setup(relic_manager.active_relics)
 	item_container.setup(item_manager.active_items)
 	item_container.item_selected.connect(_on_item_selected)
@@ -41,6 +58,37 @@ func _ready():
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
 	score.target_score = target_score
+	discard_ui.discard_clicked.connect(_on_discard_clicked)
+	discard_ui.cancel_discard_clicked.connect(_on_cancel_discard_clicked)
+	discard_ui.confirm_discard_clicked.connect(_on_confirm_discard_clicked)
+	
+func _clear_selected_token():
+	if selected_token:
+		selected_token.selected = false
+		selected_token = null
+
+func _clear_selected_item():
+	if selected_item:
+		selected_item.selected = false
+		selected_item = null
+		
+func _clear_selected_tokens():
+	for token in selected_tokens:
+		token.selected = false
+	selected_tokens = []
+	
+func _on_discard_clicked():
+	discard_mode = true
+	discard_ui.confirm_disabled = true
+	discard_ui.confirm_text = 'DISCARD'
+	
+func _on_cancel_discard_clicked():
+	discard_mode = false
+	
+func _on_confirm_discard_clicked():
+	hand.discard(selected_tokens)
+	discards_remaining -= 1
+	discard_mode = false
 
 func _on_space_clicked(space: Space):
 	var delay = 0.2
@@ -117,16 +165,25 @@ func _on_item_selected(item: Item):
 	item.selected = item == selected_item
 			
 func _on_token_clicked(token: Token):
+	if discard_mode:
+		if token in selected_tokens:
+			selected_tokens.erase(token)
+			token.selected = false
+		else:
+			selected_tokens.append(token)
+			token.selected = true
+		discard_ui.confirm_text = 'DISCARD ' + str(selected_tokens.size()) if selected_tokens.size() > 0 else 'DISCARD'
+		discard_ui.confirm_disabled = selected_tokens.size() < 1
+		return
+		
 	if selected_item:
 		if selected_item.data.can_enhance_token:
 			selected_item.data.enhance_token(token)
 			selected_item.selected = false
 			selected_item.played.emit(selected_item)
-			selected_item = null
-			selected_token = null
+			_clear_selected_token()
+			_clear_selected_item()
 			return
-		else:
-			selected_item = null
 	
 	var prev_selected = selected_token
 	selected_token = null if selected_token == token else token
