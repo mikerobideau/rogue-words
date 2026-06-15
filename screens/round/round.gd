@@ -53,8 +53,6 @@ func _on_space_clicked(space: Space):
 	selected_token.selected = false
 	selected_token = null
 	
-	#var all_relic_events = [] 
-	
 	var found_words = word_finder.find_words(space)
 	for found_word in found_words:
 		var word_report = scorer.get_word_report(found_word)
@@ -79,7 +77,6 @@ func _on_space_clicked(space: Space):
 			report.relic.pulse()
 			var toast = ScoreToastScene.instantiate()
 			toast.text = report.text
-			print_debug(report.text)
 			var x =  report.relic.global_position.x + report.relic.size.x / 2
 			var y = report.relic.global_position.y + report.relic.size.y + 10
 			toast.position = Vector2(x, y)
@@ -94,39 +91,6 @@ func _on_space_clicked(space: Space):
 		
 		for letter_report in word_report.letter_reports:
 			letter_report.space.token.scale_down()
-		
-		#for letter_report in word_report.letter_reports:
-		#	print_debug(letter_report.letter + ' - ' + str(letter_report.score) + ' ' + letter_report.bonus_label)
-		#print_debug(word_report.word + ' ' + str(word_report.score))
-
-		#var event = scorer.score(result)	
-		#result.event = event
-		#context.score_event = event
-		
-		#for s in result.path:
-		#	var token = s.token
-		#	var letter = token.letter
-		#	word.add_letter(letter)
-		#	token.pulse(0.3)
-		#	word_score.add(token.value)
-		#	await get_tree().create_timer(0.3).timeout
-		#word.clear()
-		#word_score.clear()
-		#await get_tree().create_timer(0.3).timeout
-		
-		#var relic_results = relic_manager.on_score_event(context)
-		#all_relic_events.append(relic_results)
-		
-		#var triggered = relic_manager.on_score_event(context)
-		#var toast = ScoreToastScene.instantiate()
-		#toast.text = str(context.score_event.score) + ' - ' + context.score_event.word
-		#board.highlight(word.path)
-		#add_child(toast)
-		#await toast.animate()
-		
-	#print_debug(str(results.size()))
-	#if results.size() > 0:
-	#	await animator.play(results, all_relic_events)
 		
 	var expansions = 3 + relic_manager.add_grow_amount(context)
 	board.grow(expansions)

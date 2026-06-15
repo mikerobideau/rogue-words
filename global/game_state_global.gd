@@ -9,3 +9,5 @@ var money: int = 0:
 	set(v):
 		money = v
 		money_changed.emit(v)
+
+var tokens: Array[Token]
