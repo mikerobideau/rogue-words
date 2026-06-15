@@ -16,7 +16,7 @@ func _ready() -> void:
 func animate():
 	var tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(self, 'position:y', position.y - 50, 0.5).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, 'position:y', position.y + 20, 0.5).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, 'modulate:a', 0.0, 0.5).set_delay(0.3)
 	await tween.finished
 	queue_free()
