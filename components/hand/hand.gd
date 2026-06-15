@@ -7,14 +7,14 @@ signal token_clicked()
 
 @onready var token_container = $Tokens
 
-const LETTERS: Dictionary = {"A": 1, "B": 3, "C": 3, "D": 2, "E": 1, "F": 4, "G": 2, "H": 4, "I": 1, "J": 8, "K": 5, "L": 1, "M": 3, "N": 1, "O": 1, "P": 3, "Q": 10, "R": 1, "S": 1, "T": 1, "U": 1, "V": 4, "W": 4, "X": 8, "Y": 4, "Z": 10}
 const HAND_SIZE = 7
 const H_PAD = 10
 const V_PAD = 0
 	
-var bag = _create_mock_bag(50)
+var bag: Array[Token]
 
 func _ready():
+	bag = GameState.tokens.duplicate()
 	draw_tokens(HAND_SIZE)
 	
 func remove_token(token: Token):
@@ -44,21 +44,6 @@ func _layout_tokens():
 		var x = H_PAD + token.RADIUS + i * (diameter + H_PAD)
 		var y = V_PAD + token.RADIUS
 		tokens[i].position = Vector2(x, y)
-
-func _create_mock_bag(n: int) -> Array:
-	var letters = ['I', 'N', 'C', 'E', 'A', 'R']
-	#var letters = ['Z', 'Z', 'Z', 'L', 'N', 'A', 'E', 'I']
-	#var letters = LETTERS.keys()
-	var mock_bag: Array = []
-	for i in range(n):
-		var token = TokenScene.instantiate()
-		var letter = letters[randi() % letters.size()]
-		token.letter = letter
-		token.value = LETTERS[letter]
-		mock_bag.append(token)
-	mock_bag.shuffle()
-	return mock_bag
 	
 func _on_token_clicked(token: Token):
 	token_clicked.emit(token)
-	

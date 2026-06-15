@@ -19,6 +19,8 @@ func _show_title():
 func _on_new_game():
 	GameState.round_number = 1
 	GameState.money = 0
+	GameState.tokens = TokenFactory.create_starting_tokens()
+	print_debug('created ' + str(GameState.tokens.size()) + ' starting tokens')
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
 	_show_screen(round)
