@@ -9,8 +9,6 @@ signal completed()
 
 const DEBUG = false
 
-@export var target_score := 100
-
 @onready var sound = $Sound
 @onready var round_label = $Control/HBoxContainer/RoundLabel
 @onready var hand = $HandContainer/Hand
@@ -45,10 +43,12 @@ var discards_remaining: int:
 			discard_ui.discard_disabled = true
 
 func _ready():
+	print_debug('round started')
 	if DEBUG:
 		_debug()
+	hand.on_round_start()
 	discards_remaining = GameState.discards_per_round
-	GameState.discarded_tokens = [] as Array[Token]
+	GameState.discarded_tokens = [] as Array[TokenData]
 	relic_container.setup(relic_manager.active_relics)
 	item_container.setup(item_manager.active_items)
 	item_container.item_selected.connect(_on_item_selected)
@@ -57,7 +57,7 @@ func _ready():
 	#round_label.text = 'Round ' + str(GameState.round_number)
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
-	score.target_score = target_score
+	score.target_score = GameState.target_score
 	discard_ui.discard_clicked.connect(_on_discard_clicked)
 	discard_ui.cancel_discard_clicked.connect(_on_cancel_discard_clicked)
 	discard_ui.confirm_discard_clicked.connect(_on_confirm_discard_clicked)
@@ -136,6 +136,8 @@ func _on_space_clicked(space: Space):
 		await get_tree().create_timer(0.3).timeout
 		word.clear()
 		word_score.clear()
+		print_debug('new score ' + str(relic_report.new_score))
+		score.value += relic_report.new_score
 		
 		for letter_report in word_report.letter_reports:
 			letter_report.space.token.scale_down()

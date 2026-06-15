@@ -7,13 +7,13 @@ signal token_clicked()
 
 @onready var token_container = $Tokens
 
-const HAND_SIZE = 7
+const HAND_SIZE = 5
 const H_PAD = 10
 const V_PAD = 0
 	
-var bag: Array[Token]
-
-func _ready():
+var bag: Array[TokenData]
+	
+func on_round_start():
 	bag = GameState.tokens.duplicate()
 	draw_tokens(HAND_SIZE)
 	
@@ -25,17 +25,19 @@ func remove_token(token: Token):
 func draw_tokens(n: int):
 	for i in range(n):
 		if bag.is_empty():
+			if GameState.discarded_tokens.is_empty():
+				return
 			bag = GameState.discarded_tokens.duplicate()
-			GameState.discarded_tokens = [] as Array[Token]
-			return
-		var token = bag.pop_back()
-		token_container.add_child(token)
-		token.clicked.connect(_on_token_clicked)
+			GameState.discarded_tokens = [] as Array[TokenData]
+		var token_data = bag.pop_back()
+		var token_scene = TokenFactory.create_scene(token_data)
+		token_container.add_child(token_scene)
+		token_scene.clicked.connect(_on_token_clicked)
 		_layout_tokens()
 		
 func discard(tokens: Array[Token]):
 	for token in tokens:
-		GameState.discarded_tokens.append(token)
+		GameState.discarded_tokens.append(token.data)
 		token_container.remove_child(token)
 	draw_tokens(tokens.size())
 	_layout_tokens()

@@ -24,8 +24,14 @@ func _on_new_game():
 	round.completed.connect(_on_round_completed)
 	_show_screen(round)
 	
+func _next_round():
+	GameState.round_number += 1
+	var round = SCREENS.round.instantiate()
+	round.completed.connect(_on_round_completed)
+	_show_screen(round)
+	
 func _on_round_completed():
-	_show_title()
+	_next_round()
 	
 func _show_screen(screen: Control):
 	if current_screen:
