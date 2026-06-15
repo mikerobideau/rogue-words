@@ -11,3 +11,5 @@ var money: int = 0:
 		money_changed.emit(v)
 
 var tokens: Array[Token]
+var discarded_tokens: Array[Token]
+var discards_per_round := 2
