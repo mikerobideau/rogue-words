@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://bb6evfnlmn04c"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_dnsmp"]
+[ext_resource type="PackedScene" uid="uid://dclef022d1pdn" path="res://components/relic/relic_manager.tscn" id="2_h6jec"]
+[ext_resource type="Script" path="res://components/item/item_manager.gd" id="3_l4tx6"]
+
+[node name="Main" type="Control"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+script = ExtResource("1_dnsmp")
+
+[node name="RelicManager" parent="." instance=ExtResource("2_h6jec")]
+
+[node name="ItemManager" type="Node" parent="."]
+script = ExtResource("3_l4tx6")

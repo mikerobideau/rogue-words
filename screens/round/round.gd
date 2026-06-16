@@ -9,8 +9,8 @@ signal completed()
 
 const DEBUG = false
 
+@onready var round_label = $RoundLabelContainer/RoundLabel
 @onready var sound = $Sound
-@onready var round_label = $Control/HBoxContainer/RoundLabel
 @onready var hand = $HandContainer/Hand
 @onready var board = $MarginContainer/Board
 @onready var word_finder = $WordFinder
@@ -43,14 +43,14 @@ var discards_remaining: int:
 			discard_ui.discard_disabled = true
 
 func _ready():
-	print_debug('round started')
 	if DEBUG:
 		_debug()
+	round_label.text = 'Round ' + str(GameState.round_number)
 	hand.on_round_start()
 	discards_remaining = GameState.discards_per_round
 	GameState.discarded_tokens = [] as Array[TokenData]
 	relic_container.setup(GameState.relics)
-	item_container.setup(item_manager.active_items)
+	item_container.setup(GameState.items)
 	item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

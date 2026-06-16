@@ -21,6 +21,7 @@ func _on_new_game():
 	GameState.money = 0
 	GameState.tokens = TokenFactory.create_starting_tokens()
 	GameState.relics = RelicFactory.load_all_relics()
+	GameState.items = ItemFactory.load_all_items()
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
 	_show_screen(round)
