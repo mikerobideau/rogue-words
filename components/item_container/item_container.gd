@@ -5,10 +5,11 @@ signal item_selected(item: Item)
 
 @onready var items = $Items
 
-func setup(active_items: Array[Item]):
-	for item in active_items:
-		items.add_child(item)
-		item.clicked.connect(_on_item_selected)
+func setup(active_items: Array[ItemData]):
+	for data in active_items:
+		var scene = ItemFactory.create_scene(data)
+		items.add_child(scene)
+		scene.clicked.connect(_on_item_selected)
 		
 func _on_item_selected(item: Item):
 	item_selected.emit(item)

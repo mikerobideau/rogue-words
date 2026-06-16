@@ -30,3 +30,5 @@ var discarded_tokens: Array[TokenData]
 var discards_per_round := 2
 
 var relics: Array[RelicData]
+
+var items: Array[ItemData]

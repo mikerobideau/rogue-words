@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameState="*res://global/game_state_global.gd"
 TokenFactory="*res://global/token_factory_global.gd"
 RelicFactory="*res://global/relic_factory_global.gd"
+ItemFactory="*res://global/item_factory_global.gd"
 
 [display]
 

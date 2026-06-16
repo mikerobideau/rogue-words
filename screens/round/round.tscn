@@ -1,7 +1,8 @@
-[gd_scene load_steps=15 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=16 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
+[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="2_ndfw7"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
@@ -32,6 +33,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="RoundLabelContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+offset_right = 278.0
+offset_bottom = 94.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 0
+
+[node name="RoundLabel" type="Label" parent="RoundLabelContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_ndfw7")
+theme_override_font_sizes/font_size = 64
+text = "ROUND 1"
 
 [node name="TopRight" type="HBoxContainer" parent="."]
 layout_mode = 1
