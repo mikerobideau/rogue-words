@@ -4,63 +4,47 @@ class_name Token
 signal clicked()
 
 const RADIUS = 40
-const VOWELS = ['A', 'E', 'I', 'O', 'U']
-const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z']
 
 @onready var letter_label = $Letter
 @onready var value_label = $Value
 
-@export var data: TokenData:
-	set(v):
-		data = v
-		type = data.type
-		letter = data.letter
-		value = data.value
-@export var type: TokenData.Type:
-	set(v):
-		type = v
-		_update_sprite()
-@export var letter: String:
-	set(v):
-		letter = v
-		_update_label()
-@export var value: int:
-	set(v):
-		value = v
-		_update_label()
 @export var grape_frames: SpriteFrames
 @export var green_grape_frames: SpriteFrames
 @export var yellow_grape_frames: SpriteFrames
 @export var clover_frames: SpriteFrames
 
+@export var data: TokenData
+		
+@export var type: TokenData.Type:
+	get(): return data.type
+	set(v): type = v; _update_sprite()
+
+@export var letter: String:
+	get(): return data.letter
+	set(v): data.letter = v; _update_label()
+		
+@export var value: int:
+	get(): return data.value
+	set(v): value = v; _update_label()
+		
 var selected: bool = false:
-	set(v):
-		selected = v
-		_on_selected_changed()
+	set(v): selected = v; _on_selected_changed()
 
 func _ready():
-	if data:
-		type = data.type
-		letter = data.letter
-		value = data.value
 	animation = 'default'
 	_update_label()
 	_update_sprite()
 	_init_click_detection()
 	
 func enhance(t: TokenData.Type):
-	type = t
+	data.enhance(t)
+	_update_sprite()
 	
 func next_letter():
-	print_debug('next letter')
-	var code = letter.to_upper().unicode_at(0)
-	letter = char((code - 65 + 1) % 26 + 65)
+	data.next_letter()
 	
 func swap_random_consonant_vowel():
-	if letter in VOWELS:
-		letter = CONSONANTS[randi() % CONSONANTS.size()]
-	else:
-		letter = VOWELS[randi() % VOWELS.size()]
+	data.swap_random_consonant_vowel()
 	
 func pulse(letter_delay: float):
 	var tween = create_tween()
@@ -114,7 +98,6 @@ func _on_selected_changed():
 func _update_sprite():
 	if not is_node_ready():
 		return
-		
 	match type:
 		TokenData.Type.GRAPE:
 			sprite_frames = grape_frames
@@ -123,6 +106,5 @@ func _update_sprite():
 		TokenData.Type.YELLOW_GRAPE:
 			sprite_frames = yellow_grape_frames
 		TokenData.Type.CLOVER:
-			sprite_frames = clover_frames
-			
+			sprite_frames = clover_frames	
 	animation = 'default'

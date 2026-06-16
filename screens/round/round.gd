@@ -49,7 +49,7 @@ func _ready():
 	hand.on_round_start()
 	discards_remaining = GameState.discards_per_round
 	GameState.discarded_tokens = [] as Array[TokenData]
-	relic_container.setup(relic_manager.active_relics)
+	relic_container.setup(GameState.relics)
 	item_container.setup(item_manager.active_items)
 	item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
@@ -195,6 +195,7 @@ func _on_token_clicked(token: Token):
 
 func _get_relic_context():
 	var context = RelicContext.new()
+	context.relics = relic_container.get_relics()
 	context.state = GameState
 	context.placed_token = selected_token
 	return context
