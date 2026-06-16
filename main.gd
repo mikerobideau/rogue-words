@@ -20,17 +20,20 @@ func _on_new_game():
 	GameState.round_number = 1
 	GameState.money = 0
 	GameState.tokens = TokenFactory.create_starting_tokens()
+	GameState.relics = RelicFactory.load_all_relics()
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
 	_show_screen(round)
 	
 func _next_round():
 	GameState.round_number += 1
+	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
 	_show_screen(round)
 	
 func _on_round_completed():
+	GameState.discarded_tokens = [] as Array[TokenData]
 	_next_round()
 	
 func _show_screen(screen: Control):

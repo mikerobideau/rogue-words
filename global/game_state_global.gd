@@ -4,7 +4,7 @@ class_name GameStateGlobal
 signal money_changed(value: int)
 
 var target_scores: Array[int] = [
-	100, 130, 170, 220, 280,
+	10, 130, 170, 220, 280,
 	350, 430, 520, 620, 730,
 	860, 1000, 1150, 1320, 1500,
 	1700, 1950, 2250, 2600, 3000, 3500
@@ -28,3 +28,5 @@ var tokens: Array[TokenData]
 var discarded_tokens: Array[TokenData]
 
 var discards_per_round := 2
+
+var relics: Array[RelicData]
