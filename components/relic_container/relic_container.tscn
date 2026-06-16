@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://components/relic_container/relic_container.gd" id="1_tx6to"]
 
 [node name="RelicContainer" type="MarginContainer"]
+custom_minimum_size = Vector2(200, 100)
 offset_right = 20.0
 offset_bottom = 20.0
 theme_override_constants/margin_left = 10
@@ -12,5 +13,6 @@ theme_override_constants/margin_bottom = 10
 script = ExtResource("1_tx6to")
 
 [node name="Relics" type="HBoxContainer" parent="."]
+custom_minimum_size = Vector2(200, 100)
 layout_mode = 2
 theme_override_constants/separation = 20

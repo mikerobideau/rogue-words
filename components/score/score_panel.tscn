@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckaty23vp3elb"]
+
+[ext_resource type="Script" path="res://components/score/score_panel.gd" id="1_xuam4"]
+
+[node name="ScorePanel" type="Panel"]
+custom_minimum_size = Vector2(700, 0)
+script = ExtResource("1_xuam4")

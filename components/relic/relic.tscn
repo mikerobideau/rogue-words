@@ -21,6 +21,7 @@ grow_vertical = 2
 color = Color(0.4, 0.176471, 0.568627, 1)
 
 [node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(190, 90)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5

@@ -1,6 +1,6 @@
-[gd_resource type="Theme" load_steps=6 format=3 uid="uid://vn3yglhuvq41"]
+[gd_resource type="Theme" load_steps=7 format=3 uid="uid://vn3yglhuvq41"]
 
-[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="1_30fvq"]
+[ext_resource type="FontFile" uid="uid://dfyg6b01x1atm" path="res://assets/fonts/Nunito-VariableFont_wght.ttf" id="1_klwp0"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n5gim"]
 content_margin_left = 50.0
@@ -9,33 +9,48 @@ content_margin_right = 50.0
 content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ndcf7"]
-bg_color = Color(0.227451, 0.945098, 0.6, 1)
+bg_color = Color(0.458824, 0.12549, 0.878431, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wknj8"]
 content_margin_left = 50.0
 content_margin_top = 10.0
 content_margin_right = 50.0
 content_margin_bottom = 10.0
-bg_color = Color(0.166022, 0.712535, 0.448548, 1)
+bg_color = Color(0.34902, 0.0705882, 0.682353, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gync2"]
 content_margin_left = 10.0
 content_margin_top = 5.0
 content_margin_right = 10.0
 content_margin_bottom = 5.0
-bg_color = Color(0.227451, 0.945098, 0.6, 1)
+bg_color = Color(0.460037, 0.126639, 0.879087, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w5fpi"]
+bg_color = Color(0.933708, 0.917649, 0.998752, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.77131, 0.702276, 0.996757, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [resource]
 default_font_size = 18
-Button/colors/font_color = Color(0, 0, 0, 1)
-Button/colors/font_focus_color = Color(0, 0, 0, 1)
-Button/colors/font_hover_color = Color(0, 0, 0, 1)
-Button/colors/font_hover_pressed_color = Color(0, 0, 0, 1)
-Button/colors/font_outline_color = Color(0, 0, 0, 1)
-Button/colors/font_pressed_color = Color(0, 0, 0, 1)
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_disabled_color = Color(0, 0, 0, 0.5)
+Button/colors/font_focus_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_pressed_color = Color(1, 1, 1, 1)
+Button/colors/font_outline_color = Color(1, 1, 1, 1)
+Button/colors/font_pressed_color = Color(1, 1, 1, 1)
 Button/constants/h_separation = 4
-Button/fonts/font = ExtResource("1_30fvq")
+Button/fonts/font = ExtResource("1_klwp0")
 Button/styles/disabled = SubResource("StyleBoxFlat_n5gim")
 Button/styles/hover = SubResource("StyleBoxFlat_ndcf7")
 Button/styles/normal = SubResource("StyleBoxFlat_wknj8")
 Button/styles/pressed = SubResource("StyleBoxFlat_gync2")
+HeaderMedium/fonts/font = null
+Panel/styles/panel = SubResource("StyleBoxFlat_w5fpi")
