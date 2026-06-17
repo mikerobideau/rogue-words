@@ -3,5 +3,10 @@
 [ext_resource type="Script" path="res://components/score/score_panel.gd" id="1_xuam4"]
 
 [node name="ScorePanel" type="Panel"]
-custom_minimum_size = Vector2(700, 0)
+custom_minimum_size = Vector2(500, 0)
 script = ExtResource("1_xuam4")
+
+[node name="WordRows" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

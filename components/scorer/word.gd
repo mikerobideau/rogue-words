@@ -7,6 +7,12 @@ func _ready():
 	pass
 	#pivot_offset = size / 2
 
+func play(word: String):
+	for letter in word:
+		var token = TokenFactory.create_scene_by_letter_and_type(letter, TokenData.Type.GRAPE)
+		add_token(token)
+		await get_tree().create_timer(0.1).timeout
+
 func add_token(token: Token):
 	var dupe_token = token.duplicate()
 	var wrapper = Control.new()
