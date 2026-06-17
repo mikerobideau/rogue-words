@@ -1,6 +1,7 @@
-[gd_resource type="Theme" load_steps=7 format=3 uid="uid://vn3yglhuvq41"]
+[gd_resource type="Theme" load_steps=8 format=3 uid="uid://vn3yglhuvq41"]
 
 [ext_resource type="FontFile" uid="uid://dfyg6b01x1atm" path="res://assets/fonts/Nunito-VariableFont_wght.ttf" id="1_klwp0"]
+[ext_resource type="FontFile" uid="uid://cg5oah04hhmuk" path="res://assets/fonts/ElmsSans-VariableFont_wght.ttf" id="2_5hvym"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n5gim"]
 content_margin_left = 50.0
@@ -54,5 +55,7 @@ Button/styles/normal = SubResource("StyleBoxFlat_wknj8")
 Button/styles/pressed = SubResource("StyleBoxFlat_gync2")
 HBoxContainer/constants/separation = 10
 HeaderMedium/fonts/font = null
+Label/colors/font_color = Color(1, 1, 1, 1)
+Label/font_sizes/font_size = 24
+Label/fonts/font = ExtResource("2_5hvym")
 Panel/styles/panel = SubResource("StyleBoxFlat_w5fpi")
-VBoxContainer/constants/separation = 20

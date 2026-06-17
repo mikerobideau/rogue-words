@@ -48,11 +48,12 @@ func swap_random_consonant_vowel():
 	
 func pulse(letter_delay: float):
 	var tween = create_tween()
-	tween.tween_property(self, 'scale', Vector2(1.2, 1.2), letter_delay / 5)
-	tween.tween_property(self, 'scale', Vector2(0.8, 0.8), letter_delay / 5)
-	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), letter_delay / 5)
-	tween.tween_property(self, 'scale', Vector2(0.9, 0.9), letter_delay / 5)
-	tween.tween_property(self, 'scale', Vector2(1, 1), letter_delay / 5)
+	var base_scale = scale
+	tween.tween_property(self, 'scale', base_scale * 1.2, letter_delay / 5)
+	tween.tween_property(self, 'scale', base_scale * 0.8, letter_delay / 5)
+	tween.tween_property(self, 'scale', base_scale * 1.1, letter_delay / 5)
+	tween.tween_property(self, 'scale', base_scale * 0.9, letter_delay / 5)
+	tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
 	
 func scale_up():
 	var tween = create_tween()
