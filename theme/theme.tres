@@ -52,5 +52,7 @@ Button/styles/disabled = SubResource("StyleBoxFlat_n5gim")
 Button/styles/hover = SubResource("StyleBoxFlat_ndcf7")
 Button/styles/normal = SubResource("StyleBoxFlat_wknj8")
 Button/styles/pressed = SubResource("StyleBoxFlat_gync2")
+HBoxContainer/constants/separation = 10
 HeaderMedium/fonts/font = null
 Panel/styles/panel = SubResource("StyleBoxFlat_w5fpi")
+VBoxContainer/constants/separation = 20

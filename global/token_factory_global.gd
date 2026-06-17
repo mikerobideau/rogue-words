@@ -32,6 +32,11 @@ const LETTERS: Dictionary = {
 	"Z": {'letter': 'Z', 'value': 10, 'freq': 1}
 }
 
+func create_scene_by_letter_and_type(letter: String, type: TokenData.Type):
+	var config = LETTERS[letter]
+	var data = create_data(config, type)
+	return create_scene(data)
+
 func create_data(config: Dictionary, type: TokenData.Type) -> TokenData:
 	var data = TokenData.new()
 	data.type = type

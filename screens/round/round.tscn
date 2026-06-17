@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=15 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
@@ -13,8 +13,6 @@
 [ext_resource type="PackedScene" uid="uid://7vyeh5egh0p8" path="res://components/hand/discard_ui.tscn" id="8_qwjml"]
 [ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="9_qy1ux"]
 [ext_resource type="PackedScene" uid="uid://bbbiy6uaavb1a" path="res://components/scorer/scoring_animator.tscn" id="10_e5r4v"]
-[ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/scorer/word.tscn" id="11_xr5ut"]
-[ext_resource type="PackedScene" uid="uid://cpsiv7fo0t0c0" path="res://components/scorer/word_score.tscn" id="11_yj1au"]
 [ext_resource type="AudioStream" uid="uid://ddibofm2i1etu" path="res://assets/sound/ping.wav" id="13_21jhs"]
 
 [node name="Round" type="Control"]
@@ -36,7 +34,6 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="ScorePanelMargin" type="MarginContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
@@ -82,6 +79,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="RelicMarginContainer" type="MarginContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -91,10 +89,10 @@ offset_right = 220.0
 grow_vertical = 0
 
 [node name="RelicContainer" parent="RelicMarginContainer" instance=ExtResource("7_b21c7")]
+visible = false
 layout_mode = 2
 
 [node name="WordMargin" type="MarginContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -103,30 +101,9 @@ offset_left = -20.0
 offset_right = 20.0
 offset_bottom = 363.0
 grow_horizontal = 2
-theme_override_constants/margin_top = 200
+theme_override_constants/margin_top = 50
 
 [node name="Center" type="CenterContainer" parent="WordMargin"]
-layout_mode = 2
-
-[node name="Word" parent="WordMargin/Center" instance=ExtResource("11_xr5ut")]
-layout_mode = 2
-
-[node name="WordScoreMargin" type="MarginContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -148.0
-offset_right = 148.0
-offset_bottom = 495.0
-grow_horizontal = 2
-theme_override_constants/margin_top = 300
-
-[node name="Center" type="CenterContainer" parent="WordScoreMargin"]
-layout_mode = 2
-
-[node name="WordScore" parent="WordScoreMargin/Center" instance=ExtResource("11_yj1au")]
 layout_mode = 2
 
 [node name="HandContainer" type="MarginContainer" parent="."]
@@ -173,7 +150,7 @@ offset_left = -20.0
 offset_right = 20.0
 offset_bottom = 40.0
 grow_horizontal = 2
-theme_override_constants/margin_top = 600
+theme_override_constants/margin_top = 300
 
 [node name="Board" parent="MarginContainer" instance=ExtResource("3_jxqlj")]
 layout_mode = 2

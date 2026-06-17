@@ -9,7 +9,7 @@ signal completed()
 
 const DEBUG = false
 
-@onready var round_label = $RoundLabelContainer/RoundLabel
+@onready var round_label = $RoundLabelContainer/RoundLabel	
 @onready var sound = $Sound
 @onready var hand = $HandContainer/Hand
 @onready var board = $MarginContainer/Board
@@ -21,8 +21,8 @@ const DEBUG = false
 @onready var relic_container = $RelicMarginContainer/RelicContainer
 @onready var item_container = $Inventory/ItemContainer
 @onready var animator = $ScoringAnimator
-@onready var word = $WordMargin/Center/Word
-@onready var word_score = $WordScoreMargin/Center/WordScore
+@onready var word = $WordContainer/Word
+@onready var word_score = $WordContainer/WordScore
 @onready var discard_ui = $DiscardUiContainer/DiscardUi
 
 var selected_tokens: Array[Token]

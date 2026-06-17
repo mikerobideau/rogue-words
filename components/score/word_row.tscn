@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://d138ce0uhxmoc"]
+
+[ext_resource type="Script" path="res://components/score/word_row.gd" id="1_3raip"]
+
+[node name="WordRow" type="HBoxContainer"]
+script = ExtResource("1_3raip")
