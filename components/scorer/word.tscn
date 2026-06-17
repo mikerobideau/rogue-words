@@ -3,9 +3,21 @@
 [ext_resource type="Script" path="res://components/scorer/word.gd" id="1_k6b5l"]
 
 [node name="Word" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 63)
+custom_minimum_size = Vector2(600, 63)
 script = ExtResource("1_k6b5l")
 
-[node name="Tokens" type="HBoxContainer" parent="."]
+[node name="TokenContainer" type="Control" parent="."]
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
-theme_override_constants/separation = 10
+
+[node name="Tokens" type="FlowContainer" parent="TokenContainer"]
+layout_mode = 2
+offset_right = 500.0
+offset_bottom = 63.0
+
+[node name="Score" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "SCORE"

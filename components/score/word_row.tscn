@@ -1,6 +1,16 @@
-[gd_scene load_steps=2 format=3 uid="uid://d138ce0uhxmoc"]
+[gd_scene load_steps=2 format=3 uid="uid://c61eio45low7b"]
 
-[ext_resource type="Script" path="res://components/score/word_row.gd" id="1_3raip"]
+[sub_resource type="GDScript" id="GDScript_4yu7l"]
+script/source = "extends HBoxContainer
+class_name WordRow
+"
 
 [node name="WordRow" type="HBoxContainer"]
-script = ExtResource("1_3raip")
+custom_minimum_size = Vector2(500, 0)
+script = SubResource("GDScript_4yu7l")
+
+[node name="Score" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "SCORE"

@@ -45,6 +45,7 @@ theme_override_constants/margin_right = 25
 theme_override_constants/margin_bottom = 25
 
 [node name="ScorePanel" parent="ScorePanelMargin" instance=ExtResource("2_bpvex")]
+custom_minimum_size = Vector2(700, 0)
 layout_mode = 2
 
 [node name="RoundLabelContainer" type="MarginContainer" parent="."]
