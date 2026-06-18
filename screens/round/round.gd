@@ -1,9 +1,9 @@
 extends Control
 class_name Round
 
-signal game_over()
+signal game_over(message: String)
 
-const TURNS_PER_ROUND = 3
+const TURNS_PER_ROUND = 15
 
 var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
 var WordScene = preload("res://components/scorer/word.tscn")
@@ -50,8 +50,6 @@ var turns_remaining := TURNS_PER_ROUND:
 	set(v):
 		turns_remaining = clamp(v, 0, INF)
 		turns_remaining_label.text = str(turns_remaining) + ' turns remaining'
-		if turns_remaining == 0:
-			_game_over()
 
 func _ready():
 	if DEBUG:
@@ -121,16 +119,19 @@ func _on_space_clicked(space: Space):
 	await get_tree().create_timer(0.5).timeout
 	score_panel.clear_words()
 	
-	if !_check_round_complete():
-		turns_remaining -= 1
-		if turns_remaining > 0:
-			var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
-			board.grow(expansions)
-			hand.draw_tokens(1)
-		
-func _check_round_complete():
 	if score_panel.target_met():
 		completed.emit()
+		return
+	turns_remaining -= 1
+	if turns_remaining < 1:
+		game_over.emit('You ran out of turns')
+		return
+	hand.draw_tokens(1)
+	if hand.is_empty():
+		game_over.emit('You ran out of tokens')
+		return
+	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
+	board.grow(expansions)
 	
 func _path_to_word(path: Array):
 	var word := ""
@@ -180,8 +181,8 @@ func _get_relic_context():
 	context.placed_token = selected_token
 	return context
 
-func _game_over():
-	game_over.emit()
+func _on_no_tokens_remaining():
+	game_over.emit('You ran out of tokens')
 
 #---debug---
 

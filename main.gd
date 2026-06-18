@@ -14,13 +14,14 @@ func _ready():
 	
 func _show_title():
 	var title = SCREENS.title.instantiate()
-	_show_screen(title)
+	_show_screen(title, {})
 	title.new_game.connect(_on_new_game)
 	
-func _on_game_over():
+func _on_game_over(message: String):
 	var game_over = SCREENS.game_over.instantiate()
-	_show_screen(game_over)
+	_show_screen(game_over, {'message': message})
 	game_over.new_game.connect(_on_new_game)
+	game_over.subtitle = message
 	
 func _on_new_game():
 	GameState.round_number = 0
@@ -37,13 +38,13 @@ func _next_round():
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
 	round.game_over.connect(_on_game_over)
-	_show_screen(round)
+	_show_screen(round, {})
 	
 func _on_round_completed():
 	GameState.discarded_tokens = [] as Array[TokenData]
 	_next_round()
 	
-func _show_screen(screen: Control):
+func _show_screen(screen: Control, config: Dictionary):
 	if current_screen:
 		current_screen.queue_free()
 		current_screen = null
