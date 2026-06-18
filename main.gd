@@ -2,7 +2,8 @@ extends Control
 
 var SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
-	'round': preload("res://screens/round/round.tscn")
+	'round': preload("res://screens/round/round.tscn"),
+	'game_over': preload("res://screens/game_over/game_over.tscn")
 }
 
 var current_screen: Control = null
@@ -16,21 +17,26 @@ func _show_title():
 	_show_screen(title)
 	title.new_game.connect(_on_new_game)
 	
+func _on_game_over():
+	var game_over = SCREENS.game_over.instantiate()
+	_show_screen(game_over)
+	game_over.new_game.connect(_on_new_game)
+	
 func _on_new_game():
-	GameState.round_number = 1
+	GameState.round_number = 0
 	GameState.money = 0
 	GameState.tokens = TokenFactory.create_starting_tokens()
 	GameState.relics = RelicFactory.load_all_relics()
 	GameState.items = ItemFactory.load_all_items()
 	var round = SCREENS.round.instantiate()
-	round.completed.connect(_on_round_completed)
-	_show_screen(round)
+	_next_round()
 	
 func _next_round():
 	GameState.round_number += 1
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)
+	round.game_over.connect(_on_game_over)
 	_show_screen(round)
 	
 func _on_round_completed():

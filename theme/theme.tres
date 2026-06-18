@@ -27,7 +27,7 @@ content_margin_bottom = 5.0
 bg_color = Color(0.460037, 0.126639, 0.879087, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w5fpi"]
-bg_color = Color(0.933708, 0.917649, 0.998752, 1)
+bg_color = Color(1, 1, 1, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
