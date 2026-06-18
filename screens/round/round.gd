@@ -1,6 +1,10 @@
 extends Control
 class_name Round
 
+signal game_over()
+
+const TURNS_PER_ROUND = 3
+
 var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
 var WordScene = preload("res://components/scorer/word.tscn")
 var WordScoreScene = preload("res://components/scorer/word_score.tscn")
@@ -22,7 +26,8 @@ const DEBUG = false
 @onready var animator = $ScoringAnimator
 @onready var word = $WordContainer/Word
 @onready var word_score = $WordContainer/WordScore
-@onready var discard_ui = $DiscardUiContainer/DiscardUi
+@onready var discard_ui = $BottomRight/HBoxContainer/DiscardUi
+@onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
 
 var selected_tokens: Array[Token]
 var selected_token: Token
@@ -40,10 +45,18 @@ var discards_remaining: int:
 		discard_ui.discard_text = 'DISCARD (' + str(v) + ')'
 		if discards_remaining < 1:
 			discard_ui.discard_disabled = true
+			
+var turns_remaining := TURNS_PER_ROUND:
+	set(v):
+		turns_remaining = clamp(v, 0, INF)
+		turns_remaining_label.text = str(turns_remaining) + ' turns remaining'
+		if turns_remaining == 0:
+			_game_over()
 
 func _ready():
 	if DEBUG:
 		_debug()
+	turns_remaining = TURNS_PER_ROUND
 	hand.on_round_start()
 	discards_remaining = GameState.discards_per_round
 	GameState.discarded_tokens = [] as Array[TokenData]
@@ -89,7 +102,7 @@ func _on_confirm_discard_clicked():
 	discard_mode = false
 
 func _on_space_clicked(space: Space):
-	if !selected_token:
+	if space.token != null or !selected_token:
 		return
 	hand.remove_token(selected_token)
 	board.place(selected_token, space)
@@ -109,9 +122,11 @@ func _on_space_clicked(space: Space):
 	score_panel.clear_words()
 	
 	if !_check_round_complete():
-		var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
-		board.grow(expansions)
-		hand.draw_tokens(1)
+		turns_remaining -= 1
+		if turns_remaining > 0:
+			var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
+			board.grow(expansions)
+			hand.draw_tokens(1)
 		
 func _check_round_complete():
 	if score_panel.target_met():
@@ -164,6 +179,9 @@ func _get_relic_context():
 	context.state = GameState
 	context.placed_token = selected_token
 	return context
+
+func _game_over():
+	game_over.emit()
 
 #---debug---
 

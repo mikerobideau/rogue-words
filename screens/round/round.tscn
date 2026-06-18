@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=12 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
@@ -10,7 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="7_b21c7"]
 [ext_resource type="PackedScene" uid="uid://7vyeh5egh0p8" path="res://components/hand/discard_ui.tscn" id="8_qwjml"]
 [ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="9_qy1ux"]
-[ext_resource type="PackedScene" uid="uid://bbbiy6uaavb1a" path="res://components/scorer/scoring_animator.tscn" id="10_e5r4v"]
 [ext_resource type="AudioStream" uid="uid://ddibofm2i1etu" path="res://assets/sound/ping.wav" id="13_21jhs"]
 
 [node name="Round" type="Control"]
@@ -107,7 +106,7 @@ theme_override_constants/margin_bottom = 100
 [node name="Hand" parent="HandContainer" instance=ExtResource("3_thhj8")]
 layout_mode = 2
 
-[node name="DiscardUiContainer" type="MarginContainer" parent="."]
+[node name="BottomRight" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -118,11 +117,20 @@ offset_left = -40.0
 offset_top = -40.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_constants/margin_right = 500
+theme_override_constants/margin_right = 50
 theme_override_constants/margin_bottom = 30
 
-[node name="DiscardUi" parent="DiscardUiContainer" instance=ExtResource("8_qwjml")]
+[node name="HBoxContainer" type="HBoxContainer" parent="BottomRight"]
 layout_mode = 2
+theme_override_constants/separation = 100
+
+[node name="DiscardUi" parent="BottomRight/HBoxContainer" instance=ExtResource("8_qwjml")]
+layout_mode = 2
+
+[node name="TurnsRemaining" type="Label" parent="BottomRight/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Turns Remaining"
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -157,8 +165,6 @@ theme_override_constants/separation = 50
 
 [node name="ItemContainer" parent="Inventory" instance=ExtResource("9_qy1ux")]
 layout_mode = 2
-
-[node name="ScoringAnimator" parent="." instance=ExtResource("10_e5r4v")]
 
 [node name="Sound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("13_21jhs")
