@@ -3,7 +3,8 @@ class_name JuiceTube
 
 @onready var fill = $Fill
 
-@export var max_value: float = 100
+@export var max_value: int
+
 @export var value: float = 0:
 	set(v):
 		value = clampf(v, 0, max_value)

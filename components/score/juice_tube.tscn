@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://components/score/juice_tube.gd" id="1_c2dtg"]
 
 [node name="JuiceTube" type="Control"]
-custom_minimum_size = Vector2(400, 50)
+custom_minimum_size = Vector2(600, 50)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_c2dtg")

@@ -1,35 +1,69 @@
 extends MarginContainer
 class_name Word
 
-@onready var tokens = $TokenContainer/Tokens
-@onready var score_label = $Score
+const DUPE_TOKEN_SCALE = Vector2(0.6, 0.6)
+
+@onready var tokens = $TokenContainer/TokenMarginContainer/Tokens
+@onready var plunger_container = $PlungerContainer
+@onready var plunger = $Plunger
+@onready var word_label = $WordLabelContainer/WordLabel
+
+var word: String
 
 @export var score := 0:
 	set(v):
 		score = v
-		_update_score()
+		if plunger:
+			plunger.score = score
+			plunger.shake_score()
 		
 func _ready():
-	_update_score(false)
 	pivot_offset = size / 2
+	
+func _plunge():
+	await plunger.plunge_in()
+	_collapse()
+	await plunger.plunge_out()
 
-func play(word: String):
-	for letter in word:
-		var token = TokenFactory.create_scene_by_letter_and_type(letter, TokenData.Type.GRAPE)
+func _collapse():
+	for wrapper in tokens.get_children():
+		wrapper.queue_free()
+	word_label.text = word
+	word_label.visible = true
+
+func play(word_report: WordReport, relic_report: RelicReport):
+	word = word_report.word
+	for letter_report in word_report.letter_reports:
+		var token = letter_report.space.token
 		add_token(token)
-		add_score(1)
-		await get_tree().create_timer(0.1).timeout
+		add_score(letter_report.score)
+		await get_tree().create_timer(0.3).timeout
+	
+	for report in relic_report.items:
+		#sound.play()
+		report.relic.pulse()
+		#var toast = ScoreToastScene.instantiate()
+		#toast.text = report.text
+		#var x =  report.relic.global_position.x + report.relic.size.x / 2
+		#var y = report.relic.global_position.y + report.relic.size.y + 10
+		#toast.position = Vector2(x, y)
+		#add_child(toast)
+		#toast.animate()
+		score = report.new_score
+		await get_tree().create_timer(0.3).timeout
+	
+	await _plunge()
 
 func add_token(token: Token):
 	var dupe_token = token.duplicate()
-	dupe_token.scale = Vector2(0.6, 0.6)
+	dupe_token.scale = DUPE_TOKEN_SCALE
 	var wrapper = Control.new()
 	var token_size = _get_token_size(dupe_token) * dupe_token.scale
 	wrapper.custom_minimum_size = token_size
+	wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	tokens.add_child(wrapper)
 	wrapper.add_child(dupe_token) 
-	#dupe_token.centered = false #properly centers token alignment inside center container > hbox container
-	dupe_token.position += token_size / 2
+	dupe_token.position += wrapper.size / 2
 	await get_tree().process_frame
 	dupe_token.pulse(0.3)
 	
@@ -44,18 +78,3 @@ func clear():
 
 func add_score(value: int):
 	score += value
-	
-func _update_score(shake := true):
-	if score_label:
-		score_label.text = str(score) if score > 0 else ''
-		if shake:
-			_shake()
-
-func _shake():
-	var tween = create_tween()
-	var start_rotation = 0
-	tween.tween_property(score_label, 'scale', Vector2(1.2, 1.2), 0.03)
-	tween.tween_property(score_label, 'rotation', start_rotation + deg_to_rad(3), 0.05)
-	tween.tween_property(score_label, 'rotation', start_rotation - deg_to_rad(3), 0.05)
-	tween.tween_property(score_label, 'rotation', start_rotation, 0.03)
-	tween.tween_property(score_label, 'scale', Vector2(1.0, 1.0), 0.06)

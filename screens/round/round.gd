@@ -9,13 +9,12 @@ signal completed()
 
 const DEBUG = false
 
-@onready var round_label = $RoundLabelContainer/RoundLabel	
 @onready var sound = $Sound
+@onready var score_panel = $ScorePanelMargin/ScorePanel
 @onready var hand = $HandContainer/Hand
 @onready var board = $MarginContainer/Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var score = $TopRight/Score
 @onready var relic_manager = $"../RelicManager"
 @onready var item_manager = $"../ItemManager"
 @onready var relic_container = $RelicMarginContainer/RelicContainer
@@ -45,7 +44,6 @@ var discards_remaining: int:
 func _ready():
 	if DEBUG:
 		_debug()
-	round_label.text = 'Round ' + str(GameState.round_number)
 	hand.on_round_start()
 	discards_remaining = GameState.discards_per_round
 	GameState.discarded_tokens = [] as Array[TokenData]
@@ -54,10 +52,10 @@ func _ready():
 	item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	#round_label.text = 'Round ' + str(GameState.round_number)
+	score_panel.round_number = GameState.round_number
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
-	score.target_score = GameState.target_score
+	score_panel.target_score = GameState.target_score
 	discard_ui.discard_clicked.connect(_on_discard_clicked)
 	discard_ui.cancel_discard_clicked.connect(_on_cancel_discard_clicked)
 	discard_ui.confirm_discard_clicked.connect(_on_confirm_discard_clicked)
@@ -91,6 +89,31 @@ func _on_confirm_discard_clicked():
 	discard_mode = false
 
 func _on_space_clicked(space: Space):
+	if !selected_token:
+		return
+	hand.remove_token(selected_token)
+	board.place(selected_token, space)
+	var context = _get_relic_context()
+	relic_manager.on_token_placed(context)
+	selected_token.selected = false
+	selected_token = null
+	var found_words = word_finder.find_words(space)
+	for found_word in found_words:
+		var word_report = scorer.get_word_report(found_word)
+		context.word = word_report.word
+		context.word_score = word_report.score
+		var relic_report = relic_manager.get_score_report(context)
+		await score_panel.play_word(word_report, relic_report)
+		
+	await get_tree().create_timer(0.5).timeout
+	score_panel.clear_words()
+	
+	if !_check_round_complete():
+		var expansions = 3 + relic_manager.add_grow_amount(context)
+		board.grow(expansions)
+		hand.draw_tokens(1)
+
+func _on_space_clicked_old(space: Space):
 	var delay = 0.2
 	if !selected_token:
 		return
@@ -137,7 +160,7 @@ func _on_space_clicked(space: Space):
 		word.clear()
 		word_score.clear()
 		print_debug('new score ' + str(relic_report.new_score))
-		score.value += relic_report.new_score
+		#score.value += relic_report.new_score
 		
 		for letter_report in word_report.letter_reports:
 			letter_report.space.token.scale_down()
@@ -149,7 +172,7 @@ func _on_space_clicked(space: Space):
 		hand.draw_tokens(1)
 		
 func _check_round_complete():
-	if score.value >= score.target_score:
+	if score_panel.target_met():
 		completed.emit()
 	
 func _path_to_word(path: Array):
