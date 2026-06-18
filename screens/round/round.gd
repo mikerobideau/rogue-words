@@ -112,64 +112,6 @@ func _on_space_clicked(space: Space):
 		var expansions = 3 + relic_manager.add_grow_amount(context)
 		board.grow(expansions)
 		hand.draw_tokens(1)
-
-func _on_space_clicked_old(space: Space):
-	var delay = 0.2
-	if !selected_token:
-		return
-	hand.remove_token(selected_token)
-	board.place(selected_token, space)
-	var context = _get_relic_context()
-	relic_manager.on_token_placed(context)
-	selected_token.selected = false
-	selected_token = null
-	
-	var found_words = word_finder.find_words(space)
-	for found_word in found_words:
-		var word_report = scorer.get_word_report(found_word)
-		context.word = word_report.word
-		
-		#scale up
-		for letter_report in word_report.letter_reports:
-			letter_report.space.token.scale_up()
-		
-		for letter_report in word_report.letter_reports:
-			sound.play()
-			var token = letter_report.space.token
-			word.add_token(token)
-			#token.pulse(0.3)
-			word_score.add(letter_report.score)
-			await get_tree().create_timer(delay).timeout
-		context.word_score = word_score.score
-		var relic_report = relic_manager.get_score_report(context)
-		
-		for report in relic_report.items:
-			sound.play()
-			report.relic.pulse()
-			var toast = ScoreToastScene.instantiate()
-			toast.text = report.text
-			var x =  report.relic.global_position.x + report.relic.size.x / 2
-			var y = report.relic.global_position.y + report.relic.size.y + 10
-			toast.position = Vector2(x, y)
-			add_child(toast)
-			toast.animate()
-			word_score.score = report.new_score
-			await get_tree().create_timer(0.3).timeout
-		
-		await get_tree().create_timer(0.3).timeout
-		word.clear()
-		word_score.clear()
-		print_debug('new score ' + str(relic_report.new_score))
-		#score.value += relic_report.new_score
-		
-		for letter_report in word_report.letter_reports:
-			letter_report.space.token.scale_down()
-		
-	var expansions = 3 + relic_manager.add_grow_amount(context)
-	board.grow(expansions)
-	var is_round_complete = _check_round_complete()
-	if !is_round_complete:
-		hand.draw_tokens(1)
 		
 func _check_round_complete():
 	if score_panel.target_met():
