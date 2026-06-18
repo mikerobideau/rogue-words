@@ -5,9 +5,11 @@ signal space_clicked(space: Space)
 
 var SpaceScene = preload("res://components/space/space.tscn")
 
+const BOARD_SIZE = Vector2(450, 450)
+const NUM_EXPANSIONS = 1
+const MAX_RADIUS := 3
 const SPACING := 70
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
-const BOARD_SIZE = Vector2(450, 450)
 const LINK_COLOR = Color(0.75, 0.75, 0.75)
 const LINK_WIDTH = 2.0
 
@@ -59,6 +61,9 @@ func _draw():
 				continue
 			drawn[key] = true
 			draw_line(space.position, neighbor.position, LINK_COLOR, LINK_WIDTH)
+	
+func _hex_dist_from_center(coord: Vector2i) -> int:
+	return max(abs(coord.x), abs(coord.y), abs(coord.x + coord.y))
 	
 func _edge_key(a: Space, b: Space):
 	if a.get_instance_id() < b.get_instance_id():
@@ -115,6 +120,8 @@ func expand_around(space: Space):
 		var target_coord = space.coord + DIR_OFFSETS[dir]
 		var neighbor = spaces.get(target_coord)
 		if neighbor == null:
+			if _hex_dist_from_center(target_coord) > MAX_RADIUS:
+				continue
 			neighbor = _create_space(target_coord)
 			await get_tree().create_timer(0.15).timeout
 			expansions += 1
@@ -141,5 +148,7 @@ func _grow_one_direction(space):
 		return false
 	var dir = open_dirs[randi() % open_dirs.size()]
 	var target_coord = space.coord + DIR_OFFSETS[dir]
+	if _hex_dist_from_center(target_coord) > MAX_RADIUS:
+		return false
 	_create_space(target_coord)
 	return true
