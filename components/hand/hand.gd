@@ -41,6 +41,9 @@ func discard(tokens: Array[Token]):
 		token_container.remove_child(token)
 	draw_tokens(tokens.size())
 	_layout_tokens()
+	
+func is_empty() -> bool:
+	return token_container.get_children().size() < 1
 		
 func _layout_tokens():
 	var diameter = Token.RADIUS * 2
