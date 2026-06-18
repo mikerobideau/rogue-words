@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_b87st")
 relic_name = "Juice"
-description = "+50 score"
+description = "+10 score"
 scale_by = 0
 threshold = 0
 money_reward = 0

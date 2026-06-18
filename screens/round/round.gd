@@ -109,7 +109,7 @@ func _on_space_clicked(space: Space):
 	score_panel.clear_words()
 	
 	if !_check_round_complete():
-		var expansions = 3 + relic_manager.add_grow_amount(context)
+		var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
 		board.grow(expansions)
 		hand.draw_tokens(1)
 		
