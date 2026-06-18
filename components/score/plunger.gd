@@ -25,6 +25,7 @@ var plunger_width: float = 0.0:
 	
 func _ready():
 	plunger_width = PLUNGER_DEFAULT_WIDTH
+	label.pivot_offset = label.size / 2
 	
 func _draw():
 	draw_rect(
@@ -48,7 +49,6 @@ func plunge_out():
 	await tween.finished
 	
 func shake_score():
-	return
 	var tween = create_tween()
 	label.rotation = 0
 	tween.tween_property(label, 'scale', Vector2(1.2, 1.2), 0.03)
@@ -56,4 +56,3 @@ func shake_score():
 	tween.tween_property(label, 'rotation', deg_to_rad(3), 0.05)
 	tween.tween_property(label, 'rotation', 0.0, 0.03)
 	tween.tween_property(label, 'scale', Vector2(1.0, 1.0), 0.06)
-		
