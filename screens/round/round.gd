@@ -3,7 +3,7 @@ class_name Round
 
 signal game_over(message: String)
 
-const TURNS_PER_ROUND = 15
+const TURNS_PER_ROUND = 12
 
 var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
 var WordScene = preload("res://components/scorer/word.tscn")

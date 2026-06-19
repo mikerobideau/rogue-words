@@ -21,6 +21,8 @@ GameState="*res://global/game_state_global.gd"
 TokenFactory="*res://global/token_factory_global.gd"
 RelicFactory="*res://global/relic_factory_global.gd"
 ItemFactory="*res://global/item_factory_global.gd"
+SpaceFactory="*res://global/space_factory_global.gd"
+ScorePopup="*res://global/score_popup_global.gd"
 
 [display]
 

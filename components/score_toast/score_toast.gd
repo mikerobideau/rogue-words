@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 class_name ScoreToast
 
 @export var text: String
@@ -12,6 +12,7 @@ func _ready() -> void:
 	background.size = label.size + Vector2(20, 0)
 	background.position = -background.size / 2
 	label.position = -label.size / 2
+	#pivot_offset = size / 2
 	
 func animate():
 	var tween = create_tween()
