@@ -6,7 +6,7 @@ signal space_clicked(space: Space)
 var SpaceScene = preload("res://components/space/space.tscn")
 
 const BOARD_SIZE = Vector2(450, 450)
-const NUM_EXPANSIONS = 1
+const NUM_EXPANSIONS = 2
 const MAX_RADIUS := 3
 const SPACING := 70
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
@@ -81,7 +81,7 @@ func _coord_to_pixel(coord: Vector2i):
 	return Vector2(x, y)
 	
 func _create_space(coord: Vector2i) -> Space:
-	var space = SpaceScene.instantiate()
+	var space = SpaceFactory.create_random_scene()
 	space.coord = coord
 	space.position = _coord_to_pixel(coord)
 	add_child(space)

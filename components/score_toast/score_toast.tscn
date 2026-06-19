@@ -7,18 +7,21 @@
 base_font = ExtResource("2_6bv0v")
 variation_embolden = 0.57
 
-[node name="ScoreToast" type="Node2D"]
+[node name="ScoreToast" type="Control"]
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1_nn6cf")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="Panel" parent="."]
+layout_mode = 0
 offset_right = 90.0
 offset_bottom = 25.0
-color = Color(0.168627, 0.713726, 0.45098, 1)
 
 [node name="Label" type="Label" parent="."]
+layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = SubResource("FontVariation_8kg6j")
 theme_override_font_sizes/font_size = 24
 text = "Word found!"

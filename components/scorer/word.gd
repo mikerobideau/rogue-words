@@ -1,6 +1,8 @@
 extends MarginContainer
 class_name Word
 
+var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
+
 const DUPE_TOKEN_SCALE = Vector2(0.6, 0.6)
 
 @onready var tokens = $TokenContainer/TokenMarginContainer/Tokens
@@ -34,9 +36,17 @@ func _collapse():
 func play(word_report: WordReport, relic_report: RelicReport):
 	word = word_report.word
 	for letter_report in word_report.letter_reports:
-		var token = letter_report.space.token
-		add_token(token)
-		add_score(letter_report.score)
+		var token = await add_token(letter_report.space.token)
+		for item in letter_report.items:
+			score = item.new_score
+			token.pulse(0.3)
+			ScorePopup.show(item.text, token, 1.0, -30.0)
+			await get_tree().create_timer(0.3).timeout
+	
+	if word_report.word_mult_report:
+		var report = word_report.word_mult_report
+		score = report.new_score
+		ScorePopup.show(report.text, plunger.label, 1.0)
 		await get_tree().create_timer(0.3).timeout
 	
 	for report in relic_report.items:
@@ -54,7 +64,7 @@ func play(word_report: WordReport, relic_report: RelicReport):
 	
 	await _plunge()
 
-func add_token(token: Token):
+func add_token(token: Token) -> Token:
 	var dupe_token = token.duplicate()
 	dupe_token.scale = DUPE_TOKEN_SCALE
 	var wrapper = Control.new()
@@ -63,14 +73,10 @@ func add_token(token: Token):
 	wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	tokens.add_child(wrapper)
 	wrapper.add_child(dupe_token) 
-	dupe_token.position += wrapper.size / 2
 	await get_tree().process_frame
-	dupe_token.pulse(0.3)
-	
-func _get_token_size(token: Token) -> Vector2:
-	var frames = token.sprite_frames
-	return frames.get_frame_texture(token.animation, token.frame).get_size()
-	
+	dupe_token.position += wrapper.size / 2
+	return dupe_token
+
 func clear():
 	for letter in tokens.get_children():
 		letter.queue_free()
@@ -78,3 +84,8 @@ func clear():
 
 func add_score(value: int):
 	score += value
+	
+func _get_token_size(token: Token) -> Vector2:
+	var frames = token.sprite_frames
+	return frames.get_frame_texture(token.animation, token.frame).get_size()
+	

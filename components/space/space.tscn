@@ -1,10 +1,45 @@
-[gd_scene load_steps=3 format=3 uid="uid://v6aub4m84xgt"]
+[gd_scene load_steps=8 format=3 uid="uid://v6aub4m84xgt"]
 
 [ext_resource type="Script" path="res://components/space/space.gd" id="1_7pr7h"]
-[ext_resource type="Texture2D" uid="uid://dmbnoln2uvu3c" path="res://assets/sprites/space/1x/Space.png" id="1_curc4"]
+[ext_resource type="Texture2D" uid="uid://cfclxrlh3cj1v" path="res://assets/sprites/space/1x/1x/standard.png" id="2_hahxp"]
+[ext_resource type="Texture2D" uid="uid://bro4qtifwtqwu" path="res://assets/sprites/space/1x/1x/double_letter.png" id="2_janix"]
+[ext_resource type="Texture2D" uid="uid://cuxsc0qddvqcd" path="res://assets/sprites/space/1x/1x/double_word.png" id="4_hxwoa"]
 
-[node name="Space" type="Sprite2D"]
-texture = ExtResource("1_curc4")
+[sub_resource type="SpriteFrames" id="SpriteFrames_42uhu"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_hahxp")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_plxfq"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_janix")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7qbqq"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_hxwoa")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Space" type="AnimatedSprite2D"]
 script = ExtResource("1_7pr7h")
-
-[connection signal="clicked" from="." to="." method="_on_clicked"]
+standard_frames = SubResource("SpriteFrames_42uhu")
+double_letter_frames = SubResource("SpriteFrames_plxfq")
+double_word_frames = SubResource("SpriteFrames_7qbqq")
