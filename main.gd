@@ -3,6 +3,7 @@ extends Control
 var SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
 	'round': preload("res://screens/round/round.tscn"),
+	'boss_intro': preload("res://screens/boss/boss_intro.tscn"),
 	'game_over': preload("res://screens/game_over/game_over.tscn")
 }
 
@@ -16,6 +17,14 @@ func _show_title():
 	var title = SCREENS.title.instantiate()
 	_show_screen(title, {})
 	title.new_game.connect(_on_new_game)
+	
+func _show_boss_intro():
+	var boss_intro = SCREENS.boss_intro.instantiate()
+	Sound.play('boss_intro')
+	boss_intro.title = GameState.current_boss.boss_name
+	boss_intro.description = GameState.current_boss.description
+	_show_screen(boss_intro, {})
+	await get_tree().create_timer(2.5).timeout
 	
 func _on_game_over(message: String):
 	var game_over = SCREENS.game_over.instantiate()
@@ -34,6 +43,10 @@ func _on_new_game():
 	
 func _next_round():
 	GameState.round_number += 1
+	print_debug(str(GameState.round_number))
+	if GameState.is_boss_round:
+		print_debug('showing boss intro')
+		await _show_boss_intro()
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
 	round.completed.connect(_on_round_completed)

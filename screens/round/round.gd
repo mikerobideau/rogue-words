@@ -4,6 +4,7 @@ class_name Round
 signal game_over(message: String)
 
 const TURNS_PER_ROUND = 12
+const DISCARDS_PER_ROUND = 2
 
 signal completed()
 
@@ -52,7 +53,7 @@ func _ready():
 		_debug()
 	turns_remaining = TURNS_PER_ROUND
 	hand.on_round_start()
-	discards_remaining = GameState.discards_per_round
+	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	GameState.discarded_tokens = [] as Array[TokenData]
 	relic_container.setup(GameState.relics)
 	item_container.setup(GameState.items)

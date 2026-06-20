@@ -17,6 +17,9 @@ var round_number := 0:
 		round_number = v
 		target_score = target_scores[v - 1]
 		discarded_tokens = [] as Array[TokenData]
+		is_boss_round = round_number % 1 == 0
+		current_boss = BossFactory.random_boss_data() if is_boss_round else BossData.new()
+		print_debug(current_boss.boss_name)
 
 var money: int = 0:
 	set(v):
@@ -27,8 +30,9 @@ var tokens: Array[TokenData]
 
 var discarded_tokens: Array[TokenData]
 
-var discards_per_round := 2
-
 var relics: Array[RelicData]
 
 var items: Array[ItemData]
+
+var current_boss: BossData
+var is_boss_round: bool

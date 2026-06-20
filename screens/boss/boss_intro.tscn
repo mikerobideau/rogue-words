@@ -1,0 +1,57 @@
+[gd_scene load_steps=4 format=3 uid="uid://3ayubhlkh1y6"]
+
+[ext_resource type="Script" path="res://screens/boss/boss_intro.gd" id="1_uyule"]
+[ext_resource type="Theme" uid="uid://vn3yglhuvq41" path="res://theme/theme.tres" id="2_hw4ai"]
+[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="3_f7ec5"]
+
+[node name="BossIntro" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_uyule")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_hw4ai")
+color = Color(0, 0, 0, 1)
+
+[node name="Body" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -117.0
+offset_right = 200.0
+offset_bottom = 117.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 75
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Body"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Body/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.286275, 0, 0.545098, 1)
+theme_override_fonts/font = ExtResource("3_f7ec5")
+theme_override_font_sizes/font_size = 150
+text = "Incoming Boss"
+horizontal_alignment = 1
+
+[node name="Description" type="Label" parent="Body/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "I hope you prepared for this"
+horizontal_alignment = 1
