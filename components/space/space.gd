@@ -41,6 +41,9 @@ func place_token(t: Token):
 func modify_letter_score(v: int) -> int:
 	return data.modify_letter_score(v)
 	
+func has_enhancement():
+	return data.has_enhancement()
+	
 func _pop_open():
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
