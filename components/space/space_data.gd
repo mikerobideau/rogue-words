@@ -33,3 +33,6 @@ func has_letter_effect():
 			return true
 		_:
 			return false
+			
+func has_enhancement():
+	return type != Type.STANDARD

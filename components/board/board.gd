@@ -5,6 +5,7 @@ signal space_clicked(space: Space)
 
 var SpaceScene = preload("res://components/space/space.tscn")
 
+const SOUND_ENHANCED_SPACE = 'small_bonus' 
 const BOARD_SIZE = Vector2(450, 450)
 const NUM_STARTING_SPACES = 5
 const NUM_EXPANSIONS = 1
@@ -13,6 +14,7 @@ const SPACING := 70
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
 const LINK_COLOR = Color(0.75, 0.75, 0.75)
 const LINK_WIDTH = 2.0
+
 
 var start_space_coord = Vector2(0, 0)
 var start_space_pos: Vector2
@@ -34,8 +36,8 @@ func _ready():
 	custom_minimum_size = BOARD_SIZE
 	start_space_pos = BOARD_SIZE / 2
 	_add_background()
-	_create_space(start_space_coord)
-	grow(NUM_STARTING_SPACES - 1)
+	_create_space(start_space_coord, true)
+	grow(NUM_STARTING_SPACES - 1, true)
 	
 func get_spaces():
 	return spaces
@@ -82,7 +84,7 @@ func _coord_to_pixel(coord: Vector2i):
 	var y = SPACING * 1.5 * coord.y + start_space_pos.y
 	return Vector2(x, y)
 	
-func _create_space(coord: Vector2i) -> Space:
+func _create_space(coord: Vector2i, is_starting_space := false) -> Space:
 	var space = SpaceFactory.create_random_scene()
 	space.coord = coord
 	space.position = _coord_to_pixel(coord)
@@ -90,6 +92,8 @@ func _create_space(coord: Vector2i) -> Space:
 	space.clicked.connect(_on_space_clicked)
 	spaces[coord] = space
 	_link_neighbors(space)
+	if !is_starting_space and space.has_enhancement():
+		Sound.play(SOUND_ENHANCED_SPACE)
 	return space
 	
 func _link_neighbors(space: Space):
@@ -129,7 +133,7 @@ func expand_around(space: Space):
 			expansions += 1
 	expanding = false
 
-func grow(expansions: int):
+func grow(expansions: int, is_starting_space := false):
 	var growable = spaces.values().filter(func(s): return s.links.has(null))
 	if growable.is_empty():
 		return
@@ -137,10 +141,10 @@ func grow(expansions: int):
 	var grown := 0
 	while grown < expansions:
 		var space = growable[randi() % growable.size()]
-		if _grow_one_direction(space):
+		if _grow_one_direction(space, is_starting_space):
 			grown += 1
 			
-func _grow_one_direction(space):
+func _grow_one_direction(space, is_starting_space := false):
 	var open_dirs := []
 	for dir in range(6):
 		var target_coord = space.coord + DIR_OFFSETS[dir]
@@ -152,5 +156,5 @@ func _grow_one_direction(space):
 	var target_coord = space.coord + DIR_OFFSETS[dir]
 	if _hex_dist_from_center(target_coord) > MAX_RADIUS:
 		return false
-	_create_space(target_coord)
+	_create_space(target_coord, is_starting_space)
 	return true
