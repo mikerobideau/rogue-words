@@ -17,8 +17,8 @@ func modify_letter_score(v: int) -> int:
 func type_label():
 	match type:
 		Type.STANDARD: return ''
-		Type.DOUBLE_LETTER: return '2L'
-		Type.DOUBLE_WORD: return '2W'
+		Type.DOUBLE_LETTER: return 'Letter x2'
+		Type.DOUBLE_WORD: return 'Word x2'
 
 func get_word_mult():
 	match type:

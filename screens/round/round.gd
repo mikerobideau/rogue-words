@@ -5,10 +5,6 @@ signal game_over(message: String)
 
 const TURNS_PER_ROUND = 12
 
-var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
-var WordScene = preload("res://components/scorer/word.tscn")
-var WordScoreScene = preload("res://components/scorer/word_score.tscn")
-
 signal completed()
 
 const DEBUG = false

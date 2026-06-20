@@ -1,7 +1,11 @@
 extends MarginContainer
 class_name Word
 
-var ScoreToastScene = preload("res://components/score_toast/score_toast.tscn")
+const SOUND_TOKEN = 'token'
+const SOUND_ENHANCED_TOKEN = 'shimmer_bonus'
+const SOUND_ENHANCED_LETTER_SPACE = 'water_drop'
+const SOUND_ENHANCED_WORD_SPACE = 'water_drop'
+const SOUND_RELIC = 'bonus'
 
 const DUPE_TOKEN_SCALE = Vector2(0.6, 0.6)
 
@@ -38,34 +42,36 @@ func play(word_report: WordReport, relic_report: RelicReport):
 	for letter_report in word_report.letter_reports:
 		var token = await add_token(letter_report.space.token)
 		for item in letter_report.items:
-			var delay = Settings.SCORE_DELAY_LONG if item.has_enhancement else Settings.SCORE_DELAY_NORMAL
-			if delay == Settings.SCORE_DELAY_LONG:
-				print_debug('long delay!')
+			var delay = Settings.SCORE_DELAY_LONG if item.is_enhanced_space or item.is_enhanced_token else Settings.SCORE_DELAY_NORMAL
+			var sound = _get_letter_sound(item)
+			Sound.play(sound)
 			set_score(item.new_score, delay)
 			token.pulse(delay)
 			ScorePopup.show(item.text, token, delay, -30.0)
 			await get_tree().create_timer(delay).timeout
 	
 	if word_report.word_mult_report:
+		Sound.play(SOUND_ENHANCED_WORD_SPACE)
 		var report = word_report.word_mult_report
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
 		ScorePopup.show(report.text, plunger.label, Settings.SCORE_DELAY_LONG)
 		await get_tree().create_timer(Settings.SCORE_DELAY_LONG).timeout
 	
 	for report in relic_report.items:
-		#sound.play()
-		report.relic.pulse()
-		#var toast = ScoreToastScene.instantiate()
-		#toast.text = report.text
-		#var x =  report.relic.global_position.x + report.relic.size.x / 2
-		#var y = report.relic.global_position.y + report.relic.size.y + 10
-		#toast.position = Vector2(x, y)
-		#add_child(toast)
-		#toast.animate()
-		set_score(report.new_score, Settings.SCORE_DELAY_NORMAL)
+		Sound.play(SOUND_RELIC)
+		report.relic.pulse(Settings.SCORE_DELAY_LONG)
+		ScorePopup.show(report.text, report.relic, Settings.SCORE_DELAY_LONG)
+		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
 		await get_tree().create_timer(0.3).timeout
 	
 	await _plunge()
+
+func _get_letter_sound(item: LetterReportItem) -> String:
+	if item.is_enhanced_space:
+		return SOUND_ENHANCED_LETTER_SPACE
+	if item.is_enhanced_token:
+		return SOUND_ENHANCED_TOKEN
+	return SOUND_TOKEN
 
 func add_token(token: Token) -> Token:
 	var dupe_token = token.duplicate()

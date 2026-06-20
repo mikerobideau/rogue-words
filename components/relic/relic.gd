@@ -35,11 +35,12 @@ func _update_labels():
 			else:
 				count_label.visible = false	
 
-func pulse():
+func pulse(delay := Settings.SCORE_DELAY_NORMAL):
 	var tween = create_tween()
 	var original = rotation
-	tween.tween_property(self, 'rotation', deg_to_rad(5), 0.05)
-	tween.tween_property(self, 'rotation', deg_to_rad(-5), 0.05)
-	tween.tween_property(self, 'rotation', deg_to_rad(3), 0.05)
-	tween.tween_property(self, 'rotation', deg_to_rad(-3), 0.05)
-	tween.tween_property(self, 'rotation', original, 0.05)
+	var d = delay / 5
+	tween.tween_property(self, 'rotation', deg_to_rad(5), d)
+	tween.tween_property(self, 'rotation', deg_to_rad(-5), d)
+	tween.tween_property(self, 'rotation', deg_to_rad(3), d)
+	tween.tween_property(self, 'rotation', deg_to_rad(-3), d)
+	tween.tween_property(self, 'rotation', original, d)
