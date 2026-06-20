@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="NoDiscardsBoss" load_steps=2 format=3 uid="uid://2wpva0hwhfnj"]
+
+[ext_resource type="Script" path="res://components/boss/data/no_discards_boss.gd" id="1_s4y6u"]
+
+[resource]
+script = ExtResource("1_s4y6u")
+boss_name = "Heat Wave"
+description = "No Discards"

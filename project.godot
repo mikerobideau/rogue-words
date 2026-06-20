@@ -25,6 +25,7 @@ SpaceFactory="*res://global/space_factory_global.gd"
 ScorePopup="*res://global/score_popup_global.gd"
 Settings="*res://global/settings_global.gd"
 Sound="*res://global/sound_global.gd"
+BossFactory="*res://global/boss_factory_global.gd"
 
 [display]
 
