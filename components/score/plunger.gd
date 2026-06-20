@@ -48,11 +48,11 @@ func plunge_out():
 	tween.tween_property(self, 'plunger_width', PLUNGER_DEFAULT_WIDTH, 0.2)
 	await tween.finished
 	
-func shake_score():
+func shake_score(delay: float):
 	var tween = create_tween()
-	label.rotation = 0
-	tween.tween_property(label, 'scale', Vector2(1.2, 1.2), 0.03)
-	tween.tween_property(label, 'rotation', deg_to_rad(3), 0.05)
-	tween.tween_property(label, 'rotation', deg_to_rad(3), 0.05)
-	tween.tween_property(label, 'rotation', 0.0, 0.03)
-	tween.tween_property(label, 'scale', Vector2(1.0, 1.0), 0.06)
+	#label.rotation = 0
+	tween.tween_property(label, 'scale', Vector2(1.2, 1.2), delay / 2)
+	#tween.tween_property(label, 'rotation', deg_to_rad(3), 0.05)
+	#tween.tween_property(label, 'rotation', deg_to_rad(3), 0.05)
+	#tween.tween_property(label, 'rotation', 0.0, 0.03)
+	tween.tween_property(label, 'scale', Vector2(1.0, 1.0), delay / 2)

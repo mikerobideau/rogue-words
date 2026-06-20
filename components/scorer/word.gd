@@ -11,13 +11,7 @@ const DUPE_TOKEN_SCALE = Vector2(0.6, 0.6)
 @onready var word_label = $WordLabelContainer/WordLabel
 
 var word: String
-
-@export var score := 0:
-	set(v):
-		score = v
-		if plunger:
-			plunger.score = score
-			plunger.shake_score()
+var score: int
 		
 func _ready():
 	pivot_offset = size / 2
@@ -33,21 +27,30 @@ func _collapse():
 	word_label.text = word
 	word_label.visible = true
 
+func set_score(v: int, delay: float):
+	score = v
+	if plunger:
+		plunger.score = score
+		plunger.shake_score(delay)
+
 func play(word_report: WordReport, relic_report: RelicReport):
 	word = word_report.word
 	for letter_report in word_report.letter_reports:
 		var token = await add_token(letter_report.space.token)
 		for item in letter_report.items:
-			score = item.new_score
-			token.pulse(0.3)
-			ScorePopup.show(item.text, token, 1.0, -30.0)
-			await get_tree().create_timer(0.3).timeout
+			var delay = Settings.SCORE_DELAY_LONG if item.has_enhancement else Settings.SCORE_DELAY_NORMAL
+			if delay == Settings.SCORE_DELAY_LONG:
+				print_debug('long delay!')
+			set_score(item.new_score, delay)
+			token.pulse(delay)
+			ScorePopup.show(item.text, token, delay, -30.0)
+			await get_tree().create_timer(delay).timeout
 	
 	if word_report.word_mult_report:
 		var report = word_report.word_mult_report
-		score = report.new_score
-		ScorePopup.show(report.text, plunger.label, 1.0)
-		await get_tree().create_timer(0.3).timeout
+		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
+		ScorePopup.show(report.text, plunger.label, Settings.SCORE_DELAY_LONG)
+		await get_tree().create_timer(Settings.SCORE_DELAY_LONG).timeout
 	
 	for report in relic_report.items:
 		#sound.play()
@@ -59,7 +62,7 @@ func play(word_report: WordReport, relic_report: RelicReport):
 		#toast.position = Vector2(x, y)
 		#add_child(toast)
 		#toast.animate()
-		score = report.new_score
+		set_score(report.new_score, Settings.SCORE_DELAY_NORMAL)
 		await get_tree().create_timer(0.3).timeout
 	
 	await _plunge()
@@ -81,9 +84,6 @@ func clear():
 	for letter in tokens.get_children():
 		letter.queue_free()
 	score = 0
-
-func add_score(value: int):
-	score += value
 	
 func _get_token_size(token: Token) -> Vector2:
 	var frames = token.sprite_frames
