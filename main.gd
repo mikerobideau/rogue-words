@@ -41,6 +41,7 @@ func _next_round():
 	_show_screen(round, {})
 	
 func _on_round_completed():
+	Sound.play('win')
 	GameState.discarded_tokens = [] as Array[TokenData]
 	_next_round()
 	
