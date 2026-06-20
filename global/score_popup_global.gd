@@ -22,7 +22,7 @@ func show(message: String, target: Node, lifetime := 0.5, offset_y := 0):
 	#animate
 	var tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(label, 'position:y', label.position.y - 10, 0.5).set_ease(Tween.EASE_OUT)
-	tween.tween_property(label, 'modulate:a', 0.0, 0.5).set_delay(0.3)
+	tween.tween_property(label, 'position:y', label.position.y - 10, lifetime).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, 'modulate:a', 0.0, lifetime).set_delay(0.2)
 	await tween.finished
 	canvas.queue_free()
