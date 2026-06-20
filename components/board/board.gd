@@ -6,7 +6,8 @@ signal space_clicked(space: Space)
 var SpaceScene = preload("res://components/space/space.tscn")
 
 const BOARD_SIZE = Vector2(450, 450)
-const NUM_EXPANSIONS = 2
+const NUM_STARTING_SPACES = 5
+const NUM_EXPANSIONS = 1
 const MAX_RADIUS := 3
 const SPACING := 70
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
@@ -34,6 +35,7 @@ func _ready():
 	start_space_pos = BOARD_SIZE / 2
 	_add_background()
 	_create_space(start_space_coord)
+	grow(NUM_STARTING_SPACES - 1)
 	
 func get_spaces():
 	return spaces
