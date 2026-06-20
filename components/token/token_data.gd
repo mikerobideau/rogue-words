@@ -16,7 +16,6 @@ const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 
 @export var value: int
 
 func enhance(t: TokenData.Type):
-	print_debug('enhance')
 	type = t
 	
 func next_letter():
@@ -28,3 +27,10 @@ func swap_random_consonant_vowel():
 		letter = CONSONANTS[randi() % CONSONANTS.size()]
 	else:
 		letter = VOWELS[randi() % VOWELS.size()]
+
+func has_score_enhancement():
+	match Type:
+		Type.YELLOW_GRAPE:
+			return true
+		_:
+			return false

@@ -32,7 +32,8 @@ func _get_letter_report(space: Space, running_score: int):
 	var letter_value = space.modify_letter_score(token.value)
 	var score = running_score + letter_value
 	var token_text = space.data.type_label() if space.data.has_letter_effect() else ''
-	report.items.append(_make_letter_item(running_score, score, token_text))
+	var has_enhancement = space.data.has_letter_effect()
+	report.items.append(_make_letter_item(running_score, score, token_text, has_enhancement))
 
 	#Enhanced token score - modifies running total
 	#Note that letter can only have mult OR plus, but not both
@@ -40,14 +41,14 @@ func _get_letter_report(space: Space, running_score: int):
 	if mult > 1:
 		var new_score = score * mult
 		var text = 'x' + str(mult)
-		report.items.append(_make_letter_item(score, new_score, text))
+		report.items.append(_make_letter_item(score, new_score, text, true))
 		score = new_score
 	else:
 		var plus := _plus_enhancement(space)
 		if plus > 0:
 			var new_score = score + plus
 			var text = '+' + str(plus)
-			report.items.append(_make_letter_item(score, new_score, text))
+			report.items.append(_make_letter_item(score, new_score, text, true))
 			score = new_score
 	report.score = score
 	return report
@@ -59,11 +60,12 @@ func _get_word_mult(spaces: Array) -> int:
 		mult *= space.data.get_word_mult()
 	return mult
 	
-func _make_letter_item(prev: int, new: int, text: String) -> LetterReportItem:
+func _make_letter_item(prev: int, new: int, text: String, has_enhancement: bool) -> LetterReportItem:
 	var item = LetterReportItem.new()
 	item.prev_score = prev
 	item.new_score = new
 	item.text = text
+	item.has_enhancement = has_enhancement
 	return item
 	
 func _make_word_mult_report(prev: int, new: int, text: String) -> WordMultReport:
