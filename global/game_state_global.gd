@@ -19,7 +19,6 @@ var round_number := 0:
 		discarded_tokens = [] as Array[TokenData]
 		is_boss_round = round_number % 3 == 0
 		current_boss = BossFactory.random_boss_data() if is_boss_round else BossData.new()
-		print_debug(current_boss.boss_name)
 
 var money: int = 0:
 	set(v):
