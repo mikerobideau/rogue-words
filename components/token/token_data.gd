@@ -12,6 +12,7 @@ const VOWELS = ['A', 'E', 'I', 'O', 'U']
 const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z']
 
 @export var type: Type
+@export var cost := 2
 @export var letter: String
 @export var value: int
 

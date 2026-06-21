@@ -4,6 +4,7 @@ class_name ItemData
 signal data_changed()
 
 @export var item_name: String
+@export var cost := 3
 @export var description: String
 @export var can_enhance_token := false
 
