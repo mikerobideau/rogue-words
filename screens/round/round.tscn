@@ -1,8 +1,7 @@
-[gd_scene load_steps=10 format=4 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=9 format=4 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
-[ext_resource type="PackedScene" uid="uid://ckaty23vp3elb" path="res://components/score/score_panel.tscn" id="2_bpvex"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
@@ -31,22 +30,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-
-[node name="ScorePanelMargin" type="MarginContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-offset_right = 750.0
-grow_vertical = 2
-theme_override_constants/margin_left = 35
-theme_override_constants/margin_top = 25
-theme_override_constants/margin_right = 25
-theme_override_constants/margin_bottom = 150
-
-[node name="ScorePanel" parent="ScorePanelMargin" instance=ExtResource("2_bpvex")]
-custom_minimum_size = Vector2(700, 0)
-layout_mode = 2
 
 [node name="TopRight" type="HBoxContainer" parent="."]
 visible = false

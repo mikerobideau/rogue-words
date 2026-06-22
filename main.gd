@@ -54,12 +54,14 @@ func _next_round():
 		await _show_boss_intro()
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
+	hud.refresh_relics()
+	hud.refresh_items()
+	hud.score_panel.round_number = GameState.round_number
+	hud.score_panel.target_score = GameState.target_score
 	round.hud = hud
 	round.relic_manager = relic_manager
 	round.completed.connect(_on_round_completed)
 	round.game_over.connect(_on_game_over)
-	hud.refresh_relics()
-	hud.refresh_items()
 	_show_screen(round, {})
 	
 func _on_round_completed():
