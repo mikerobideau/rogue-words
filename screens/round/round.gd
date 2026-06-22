@@ -11,7 +11,6 @@ signal completed()
 const DEBUG = false
 
 @onready var sound = $Sound
-@onready var score_panel = $ScorePanelMargin/ScorePanel
 @onready var hand = $HandContainer/Hand
 @onready var board = $Board
 @onready var word_finder = $WordFinder
@@ -57,10 +56,8 @@ func _ready():
 	hud.item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	score_panel.round_number = GameState.round_number
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
-	score_panel.target_score = GameState.target_score
 	discard_ui.discard_clicked.connect(_on_discard_clicked)
 	discard_ui.cancel_discard_clicked.connect(_on_cancel_discard_clicked)
 	discard_ui.confirm_discard_clicked.connect(_on_confirm_discard_clicked)
@@ -108,12 +105,12 @@ func _on_space_clicked(space: Space):
 		context.word = word_report.word
 		context.word_score = word_report.score
 		var relic_report = relic_manager.get_score_report(context)
-		await score_panel.play_word(word_report, relic_report)
+		await hud.score_panel.play_word(word_report, relic_report)
 		
 	await get_tree().create_timer(0.5).timeout
-	score_panel.clear_words()
+	hud.score_panel.clear_words()
 	
-	if score_panel.target_met():
+	if hud.score_panel.target_met():
 		completed.emit()
 		return
 	turns_remaining -= 1
