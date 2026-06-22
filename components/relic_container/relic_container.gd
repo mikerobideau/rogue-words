@@ -3,10 +3,11 @@ class_name RelicContainer
 
 @onready var relics = $Relics
 
-func setup(active_relics: Array[RelicData]):
-	for data in active_relics:
-		var scene = RelicFactory.create_scene(data)
-		relics.add_child(scene)
+func refresh_relics():
+	for child in relics.get_children():
+		child.queue_free()
+	for relic in GameState.relics:
+		relics.add_child(RelicFactory.create_scene(relic))
 
 func get_relics() -> Array[Relic]:
 	var scenes = [] as Array[Relic]
