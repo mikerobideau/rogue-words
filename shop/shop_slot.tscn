@@ -3,12 +3,12 @@
 [ext_resource type="Script" path="res://shop/shop_slot.gd" id="1_lx5h6"]
 
 [node name="ShopSlot" type="Control"]
-custom_minimum_size = Vector2(500, 500)
+custom_minimum_size = Vector2(400, 400)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_lx5h6")
 
-[node name="Offer" type="Control" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,26 +16,62 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Footer" type="HBoxContainer" parent="."]
+[node name="OfferContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -125.0
+offset_right = 125.0
+offset_bottom = 250.0
+grow_horizontal = 2
+theme_override_constants/margin_top = 50
+
+[node name="Offer" type="Control" parent="OfferContainer"]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 2
+
+[node name="Background" type="ColorRect" parent="OfferContainer/Offer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.821318, 0.777404, 0.968367, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -46.0
+offset_top = -50.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="CostLabel" type="Label" parent="Footer"]
-custom_minimum_size = Vector2(100, 50)
+[node name="Footer" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="BuyButton" type="Button" parent="Footer"]
+[node name="CostLabel" type="Label" parent="MarginContainer/Footer"]
+custom_minimum_size = Vector2(100, 50)
+layout_mode = 2
+theme_type_variation = &"HeaderMedium"
+text = "$"
+
+[node name="Spacer1" type="Control" parent="MarginContainer/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BuyButton" type="Button" parent="MarginContainer/Footer"]
 layout_mode = 2
 text = "Buy"
 
-[node name="SoldLabel" type="Label" parent="Footer"]
+[node name="SoldLabel" type="Label" parent="MarginContainer/Footer"]
+visible = false
 custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
+theme_type_variation = &"HeaderMedium"
+text = "Sold"
 
-[connection signal="pressed" from="Footer/BuyButton" to="." method="_on_buy_button_pressed"]
+[connection signal="pressed" from="MarginContainer/Footer/BuyButton" to="." method="_on_buy_button_pressed"]

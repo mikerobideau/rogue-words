@@ -5,10 +5,10 @@ signal purchased(slot: ShopSlot)
 
 enum Type { RELIC, TOKEN, ITEM }
 
-@onready var offer = $Offer
-@onready var cost_label = $Footer/CostLabel
-@onready var buy_button = $Footer/BuyButton
-@onready var sold_label = $Footer/SoldLabel
+@onready var offer = $OfferContainer/Offer
+@onready var cost_label = $MarginContainer/Footer/CostLabel
+@onready var buy_button = $MarginContainer/Footer/BuyButton
+@onready var sold_label = $MarginContainer/Footer/SoldLabel
 
 var slot_type: Type
 var relic_data: RelicData
@@ -38,7 +38,8 @@ func setup_relic(data: RelicData):
 	relic_data = data
 	cost = data.cost
 	var scene = RelicFactory.create_scene(data)
-	offer.add_child(scene)
+	scene.position = offer.size / 2
+	_add_offer(scene)
 	
 func setup_item(data: ItemData):
 	slot_type = Type.ITEM
@@ -46,13 +47,23 @@ func setup_item(data: ItemData):
 	cost = data.cost
 	var scene = ItemFactory.create_scene(data)
 	offer.add_child(scene)
+	_add_offer(scene)
 	
 func setup_token(data: TokenData):
 	slot_type = Type.TOKEN
 	token_data = data
 	cost = data.cost
 	var scene = TokenFactory.create_scene(data)
+	scene.position = offer.size / 2
 	offer.add_child(scene)
+	_add_offer(scene)
+
+func _add_offer(scene: Node):
+	offer.add_child(scene)
+	if scene is Node2D:
+		scene.position = offer.size / 2
+	elif scene is Control:
+		scene.position = (offer.size - scene.size) / 2
 
 func _on_buy_button_pressed():
 	if GameState.money >= cost:

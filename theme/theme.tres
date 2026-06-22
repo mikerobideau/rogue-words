@@ -27,17 +27,8 @@ content_margin_right = 10.0
 content_margin_bottom = 5.0
 bg_color = Color(0.460037, 0.126639, 0.879087, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w5fpi"]
-bg_color = Color(1, 1, 1, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.77131, 0.702276, 0.996757, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_julk1"]
+bg_color = Color(0.89037, 0.883181, 0.982633, 1)
 
 [resource]
 default_font_size = 18
@@ -54,12 +45,17 @@ Button/styles/disabled = SubResource("StyleBoxFlat_n5gim")
 Button/styles/hover = SubResource("StyleBoxFlat_ndcf7")
 Button/styles/normal = SubResource("StyleBoxFlat_wknj8")
 Button/styles/pressed = SubResource("StyleBoxFlat_gync2")
-HBoxContainer/constants/separation = 10
 HeaderLarge/colors/font_color = Color(0.34902, 0.0705882, 0.682353, 1)
+HeaderLarge/font_sizes/font_size = 100
 HeaderLarge/fonts/font = ExtResource("2_b4jpx")
 HeaderMedium/colors/font_color = Color(0, 0, 0, 1)
+HeaderMedium/font_sizes/font_size = 40
 HeaderMedium/fonts/font = ExtResource("1_klwp0")
 Label/colors/font_color = Color(1, 1, 1, 1)
 Label/font_sizes/font_size = 24
 Label/fonts/font = ExtResource("2_5hvym")
-Panel/styles/panel = SubResource("StyleBoxFlat_w5fpi")
+MarginContainer/constants/margin_bottom = 50
+MarginContainer/constants/margin_left = 50
+MarginContainer/constants/margin_right = 50
+MarginContainer/constants/margin_top = 50
+Panel/styles/panel = SubResource("StyleBoxFlat_julk1")

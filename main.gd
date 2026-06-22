@@ -3,6 +3,7 @@ extends Control
 var SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
 	'round': preload("res://screens/round/round.tscn"),
+	'shop': preload("res://shop/shop.tscn"),
 	'boss_intro': preload("res://screens/boss/boss_intro.tscn"),
 	'game_over': preload("res://screens/game_over/game_over.tscn")
 }
@@ -34,7 +35,7 @@ func _on_game_over(message: String):
 	
 func _on_new_game():
 	GameState.round_number = 0
-	GameState.money = 0
+	GameState.money = 10
 	GameState.tokens = TokenFactory.create_starting_tokens()
 	GameState.relics = RelicFactory.load_all_relics()
 	GameState.items = ItemFactory.load_all_items()
@@ -56,7 +57,12 @@ func _next_round():
 func _on_round_completed():
 	Sound.play('win')
 	GameState.discarded_tokens = [] as Array[TokenData]
-	_next_round()
+	_enter_shop()
+	
+func _enter_shop():
+	var shop = SCREENS.shop.instantiate()
+	shop.completed.connect(_next_round)
+	_show_screen(shop, {})
 	
 func _show_screen(screen: Control, config: Dictionary):
 	if current_screen:

@@ -20,7 +20,7 @@ var round_number := 0:
 		is_boss_round = round_number % 3 == 0
 		current_boss = BossFactory.random_boss_data() if is_boss_round else BossData.new()
 
-var money: int = 0:
+var money: int:
 	set(v):
 		money = v
 		money_changed.emit(v)
