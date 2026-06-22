@@ -5,9 +5,9 @@ var SlotScene = preload("res://shop/shop_slot.tscn")
 
 signal completed()
 
-@onready var money_label = $Header/MoneyLabel
+@onready var money_label = $Header/HeaderInner/MoneyLabel
 @onready var slots = $Slots
-@onready var continue_button = $Footer/Continue
+@onready var continue_button = $Footer/FooterInner/Continue
 
 const SLOT_COUNT = 3
 const TYPE_WEIGHTS = {
@@ -48,7 +48,6 @@ func _populate_slots():
 			break
 			
 	for entry in picked:
-		print_debug('picked!')
 		var slot = SlotScene.instantiate()
 		slots.add_child(slot)
 		match entry['type']:
