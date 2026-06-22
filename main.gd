@@ -1,4 +1,10 @@
 extends Control
+class_name Main
+
+@onready var hud = $Hud
+@onready var screen_container = $ScreenContainer
+@onready var relic_manager = $RelicManager
+@onready var item_manager = $ItemManager
 
 var SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
@@ -44,12 +50,12 @@ func _on_new_game():
 	
 func _next_round():
 	GameState.round_number += 1
-	print_debug(str(GameState.round_number))
 	if GameState.is_boss_round:
-		print_debug('showing boss intro')
 		await _show_boss_intro()
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
+	round.relic_container = hud.relic_container
+	round.relic_manager = relic_manager
 	round.completed.connect(_on_round_completed)
 	round.game_over.connect(_on_game_over)
 	_show_screen(round, {})
@@ -69,4 +75,4 @@ func _show_screen(screen: Control, config: Dictionary):
 		current_screen.queue_free()
 		current_screen = null
 	current_screen = screen
-	add_child(current_screen)
+	screen_container.add_child(current_screen)

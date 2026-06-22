@@ -13,12 +13,10 @@ const DEBUG = false
 @onready var sound = $Sound
 @onready var score_panel = $ScorePanelMargin/ScorePanel
 @onready var hand = $HandContainer/Hand
-@onready var board = $MarginContainer/Board
+@onready var board = $Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var relic_manager = $"../RelicManager"
 @onready var item_manager = $"../ItemManager"
-@onready var relic_container = $RelicMarginContainer/RelicContainer
 @onready var item_container = $Inventory/ItemContainer
 @onready var animator = $ScoringAnimator
 @onready var word = $WordContainer/Word
@@ -26,6 +24,8 @@ const DEBUG = false
 @onready var discard_ui = $BottomRight/HBoxContainer/DiscardUi
 @onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
 
+var relic_container: Control
+var relic_manager: Node
 var selected_tokens: Array[Token]
 var selected_token: Token
 var discard_mode := false:
@@ -55,7 +55,6 @@ func _ready():
 	hand.on_round_start()
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	GameState.discarded_tokens = [] as Array[TokenData]
-	relic_container.setup(GameState.relics)
 	item_container.setup(GameState.items)
 	item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
