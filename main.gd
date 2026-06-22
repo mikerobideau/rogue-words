@@ -66,6 +66,7 @@ func _next_round():
 	
 func _on_round_completed():
 	Sound.play('win')
+	hud.on_round_complete()
 	GameState.discarded_tokens = [] as Array[TokenData]
 	_enter_shop()
 	

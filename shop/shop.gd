@@ -5,7 +5,6 @@ var SlotScene = preload("res://shop/shop_slot.tscn")
 
 signal completed()
 
-@onready var money_label = $Header/HeaderInner/MoneyLabel
 @onready var slots = $Slots
 @onready var continue_button = $Footer/FooterInner/Continue
 
@@ -17,8 +16,6 @@ const TYPE_WEIGHTS = {
 }
 	
 func _ready():
-	GameState.money_changed.connect(_update_money_label)
-	_update_money_label(GameState.money)
 	_populate_slots()
 	
 func _populate_slots():
@@ -72,7 +69,3 @@ func _on_slot_purchased(slot: ShopSlot):
 		
 func _on_continue_pressed():
 	completed.emit()	
-	
-func _update_money_label(v: int):
-	if money_label:
-		money_label.text = '$' + str(v)

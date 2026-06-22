@@ -10,15 +10,10 @@ signal completed()
 
 const DEBUG = false
 
-@onready var sound = $Sound
 @onready var hand = $HandContainer/Hand
 @onready var board = $Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var item_manager = $"../ItemManager"
-@onready var animator = $ScoringAnimator
-@onready var word = $WordContainer/Word
-@onready var word_score = $WordContainer/WordScore
 @onready var discard_ui = $BottomRight/HBoxContainer/DiscardUi
 @onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
 
