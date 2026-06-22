@@ -15,7 +15,8 @@ extends Control
 func _ready():
 	pivot_offset = size / 2
 	border.color = Color.REBECCA_PURPLE
-	data.data_changed.connect(_update_labels)
+	if data:
+		data.data_changed.connect(_update_labels)
 	_update_labels()
 
 func _update_labels():

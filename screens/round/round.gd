@@ -17,14 +17,13 @@ const DEBUG = false
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var item_manager = $"../ItemManager"
-@onready var item_container = $Inventory/ItemContainer
 @onready var animator = $ScoringAnimator
 @onready var word = $WordContainer/Word
 @onready var word_score = $WordContainer/WordScore
 @onready var discard_ui = $BottomRight/HBoxContainer/DiscardUi
 @onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
 
-var relic_container: Control
+var hud: Control
 var relic_manager: Node
 var selected_tokens: Array[Token]
 var selected_token: Token
@@ -55,8 +54,7 @@ func _ready():
 	hand.on_round_start()
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	GameState.discarded_tokens = [] as Array[TokenData]
-	item_container.setup(GameState.items)
-	item_container.item_selected.connect(_on_item_selected)
+	hud.item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	score_panel.round_number = GameState.round_number
@@ -172,7 +170,7 @@ func _on_token_clicked(token: Token):
 
 func _get_relic_context():
 	var context = RelicContext.new()
-	context.relics = relic_container.get_relics()
+	context.relics = hud.get_relics()
 	context.state = GameState
 	context.placed_token = selected_token
 	return context

@@ -1,13 +1,72 @@
-[gd_scene load_steps=3 format=3 uid="uid://c675q66wub3hr"]
+[gd_scene load_steps=4 format=3 uid="uid://c675q66wub3hr"]
 
 [ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="1_khlkn"]
 [ext_resource type="Script" path="res://components/hud/hud.gd" id="1_t0ehk"]
+[ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="3_7hd0d"]
 
 [node name="Hud" type="Control"]
+custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_t0ehk")
 
-[node name="RelicContainer" parent="." instance=ExtResource("1_khlkn")]
+[node name="Left" type="Control" parent="."]
+custom_minimum_size = Vector2(500, 1440)
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -720.0
+offset_right = 300.0
+offset_bottom = 720.0
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="Left"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.94902, 0.945098, 1, 1)
+
+[node name="Inventory" type="VBoxContainer" parent="Left"]
 layout_mode = 0
+offset_right = 224.0
+offset_bottom = 124.0
+
+[node name="RelicContainer" parent="Left/Inventory" instance=ExtResource("1_khlkn")]
+layout_mode = 2
+
+[node name="ItemContainer" parent="Left/Inventory" instance=ExtResource("3_7hd0d")]
+layout_mode = 2
+
+[node name="Right" type="Control" parent="."]
+custom_minimum_size = Vector2(500, 1440)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -720.0
+offset_bottom = 720.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="Right"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.94902, 0.945098, 1, 1)
