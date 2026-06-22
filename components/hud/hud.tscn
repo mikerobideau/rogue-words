@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://c675q66wub3hr"]
+
+[ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="1_khlkn"]
+[ext_resource type="Script" path="res://components/hud/hud.gd" id="1_t0ehk"]
+
+[node name="Hud" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_t0ehk")
+
+[node name="RelicContainer" parent="." instance=ExtResource("1_khlkn")]
+layout_mode = 0

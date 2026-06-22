@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=4 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=11 format=4 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_12kyf"]
@@ -7,7 +7,6 @@
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
 [ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
-[ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="7_b21c7"]
 [ext_resource type="PackedScene" uid="uid://7vyeh5egh0p8" path="res://components/hand/discard_ui.tscn" id="8_qwjml"]
 [ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="9_qy1ux"]
 
@@ -22,6 +21,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_51id5")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -34,6 +34,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="ScorePanelMargin" type="MarginContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
@@ -49,6 +50,7 @@ custom_minimum_size = Vector2(700, 0)
 layout_mode = 2
 
 [node name="TopRight" type="HBoxContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -61,23 +63,8 @@ theme_override_constants/separation = 100
 [node name="Money" parent="TopRight" instance=ExtResource("2_12kyf")]
 layout_mode = 2
 
-[node name="RelicMarginContainer" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -120.0
-offset_right = 220.0
-grow_vertical = 0
-theme_override_constants/margin_left = 25
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 25
-theme_override_constants/margin_bottom = 0
-
-[node name="RelicContainer" parent="RelicMarginContainer" instance=ExtResource("7_b21c7")]
-layout_mode = 2
-
 [node name="WordMargin" type="MarginContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -86,9 +73,9 @@ offset_left = -20.0
 offset_right = 20.0
 offset_bottom = 363.0
 grow_horizontal = 2
-theme_override_constants/margin_top = 50
 
 [node name="Center" type="CenterContainer" parent="WordMargin"]
+visible = false
 layout_mode = 2
 
 [node name="HandContainer" type="MarginContainer" parent="."]
@@ -110,6 +97,7 @@ theme_override_constants/margin_bottom = 100
 layout_mode = 2
 
 [node name="BottomRight" type="MarginContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -120,7 +108,7 @@ offset_left = -40.0
 offset_top = -40.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_constants/margin_right = 50
+theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 30
 
 [node name="HBoxContainer" type="HBoxContainer" parent="BottomRight"]
@@ -135,26 +123,20 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "Turns Remaining"
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="Board" parent="." instance=ExtResource("3_jxqlj")]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -20.0
-offset_right = -20.0
-offset_bottom = 300.0
-grow_horizontal = 2
-theme_override_constants/margin_left = 300
-theme_override_constants/margin_top = 500
-
-[node name="Board" parent="MarginContainer" instance=ExtResource("3_jxqlj")]
-layout_mode = 2
+offset_left = 0.0
+offset_top = -150.0
+offset_right = 0.0
+offset_bottom = 150.0
+mouse_filter = 2
 
 [node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
 
 [node name="Scorer" parent="." instance=ExtResource("5_va824")]
 
 [node name="Inventory" type="HBoxContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
