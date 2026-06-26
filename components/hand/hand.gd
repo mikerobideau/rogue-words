@@ -1,4 +1,4 @@
-extends Container
+extends TextureRect
 class_name Hand
 
 var TokenScene = preload("res://components/token/token.tscn")
@@ -8,7 +8,7 @@ signal token_clicked()
 @onready var token_container = $Tokens
 
 const HAND_SIZE = 5
-const H_PAD = 10
+const H_PAD = 50
 const V_PAD = 0
 	
 var bag: Array[TokenData]
@@ -48,14 +48,13 @@ func is_empty() -> bool:
 func _layout_tokens():
 	var diameter = Token.RADIUS * 2
 	var tokens = token_container.get_children()
-	var total_width = H_PAD + tokens.size() * (diameter + H_PAD)
-	var total_height = V_PAD * 2 * diameter
-	custom_minimum_size = Vector2(total_width, total_height)
+	var total_width = tokens.size() * (diameter + H_PAD) + H_PAD
+	custom_minimum_size = Vector2(total_width, diameter)
 	
+	var start_x = (size.x - total_width) / 2 + H_PAD + Token.RADIUS
 	for i in range(tokens.size()):
-		var token = tokens[i]
-		var x = H_PAD + token.RADIUS + i * (diameter + H_PAD)
-		var y = V_PAD + token.RADIUS
+		var x = start_x + i * (diameter + H_PAD)
+		var y = size.y / 2
 		tokens[i].position = Vector2(x, y)
 	
 func _on_token_clicked(token: Token):

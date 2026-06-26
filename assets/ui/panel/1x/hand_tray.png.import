@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bestgidpqxtbx"
-path="res://.godot/imported/grape.png-e0caf9c8c937b4c62cccfc60628fc922.ctex"
+uid="uid://c318a0bvqrur7"
+path="res://.godot/imported/hand_tray.png-5067e50aa095d7b69a6459c90136d412.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/grape.png"
-dest_files=["res://.godot/imported/grape.png-e0caf9c8c937b4c62cccfc60628fc922.ctex"]
+source_file="res://assets/ui/panel/1x/hand_tray.png"
+dest_files=["res://.godot/imported/hand_tray.png-5067e50aa095d7b69a6459c90136d412.ctex"]
 
 [params]
 

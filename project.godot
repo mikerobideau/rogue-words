@@ -26,6 +26,7 @@ ScorePopup="*res://global/score_popup_global.gd"
 Settings="*res://global/settings_global.gd"
 Sound="*res://global/sound_global.gd"
 BossFactory="*res://global/boss_factory_global.gd"
+Styles="*res://global/style_global.gd"
 
 [display]
 

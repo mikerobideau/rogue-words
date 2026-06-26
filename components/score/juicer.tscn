@@ -1,21 +1,34 @@
-[gd_scene load_steps=3 format=3 uid="uid://ckaty23vp3elb"]
+[gd_scene load_steps=4 format=3 uid="uid://c6igyavmdklna"]
 
-[ext_resource type="Script" path="res://components/score/score_panel.gd" id="1_xuam4"]
-[ext_resource type="PackedScene" uid="uid://bnq0xl6mwar5" path="res://components/score/juice_tube.tscn" id="2_7klvd"]
+[ext_resource type="Script" path="res://components/score/juicer.gd" id="1_l8l72"]
+[ext_resource type="PackedScene" uid="uid://bnq0xl6mwar5" path="res://components/score/juice_tube.tscn" id="2_a58ls"]
+[ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/score/word.tscn" id="3_n1mno"]
 
-[node name="ScorePanel" type="Panel"]
-custom_minimum_size = Vector2(500, 0)
+[node name="Juicer" type="Control"]
+custom_minimum_size = Vector2(1300, 200)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1500.0
+offset_bottom = 200.0
+script = ExtResource("1_l8l72")
+
+[node name="Background" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_xuam4")
+color = Color(0, 0, 0, 1)
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/margin_left = 25
 theme_override_constants/margin_top = 25
 theme_override_constants/margin_right = 25
@@ -45,16 +58,8 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "99/100"
 vertical_alignment = 1
 
-[node name="JuiceTube" parent="MarginContainer/VBoxContainer" instance=ExtResource("2_7klvd")]
+[node name="JuiceTube" parent="MarginContainer/VBoxContainer" instance=ExtResource("2_a58ls")]
 layout_mode = 2
 
-[node name="Body" type="MarginContainer" parent="MarginContainer/VBoxContainer"]
+[node name="Word" parent="MarginContainer/VBoxContainer" instance=ExtResource("3_n1mno")]
 layout_mode = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 50
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
-
-[node name="WordRows" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Body"]
-layout_mode = 2
-theme_override_constants/separation = 30

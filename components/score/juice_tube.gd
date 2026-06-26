@@ -30,6 +30,6 @@ func _draw():
 	#tube
 	draw_rect(Rect2(0, 0, w, h), Color(0.2, 0.1, 0.1, 0.05))
 	#juice
-	draw_rect(Rect2(0, 0, fill_w, h), Color.REBECCA_PURPLE)
+	draw_rect(Rect2(0, 0, fill_w, h), Styles.VIOLET)
 	#border
 	draw_rect(Rect2(0, 0, w, h), Color(1, 1, 1, 0.3), false, 2.0)

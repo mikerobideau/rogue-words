@@ -1,8 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=8 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
-[ext_resource type="Texture2D" uid="uid://dbwpnaj6p0vu7" path="res://assets/ui/background/1x/background_blue_spotlight.png" id="2_24j6d"]
-[ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/juicer.tscn" id="2_bpvex"]
+[ext_resource type="PackedScene" uid="uid://ckaty23vp3elb" path="res://components/score/score_panel.tscn" id="2_bpvex"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
@@ -19,7 +18,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_51id5")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -27,7 +26,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_24j6d")
 
 [node name="HandContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -48,7 +46,6 @@ theme_override_constants/margin_bottom = 100
 layout_mode = 2
 
 [node name="BottomRight" type="MarginContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -75,7 +72,6 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "Turns Remaining"
 
 [node name="Board" parent="." instance=ExtResource("3_jxqlj")]
-visible = false
 layout_mode = 1
 offset_left = 0.0
 offset_top = -150.0
@@ -87,8 +83,7 @@ mouse_filter = 2
 
 [node name="Scorer" parent="." instance=ExtResource("5_va824")]
 
-[node name="Juicer" parent="." instance=ExtResource("2_bpvex")]
-visible = false
+[node name="ScorePanel" parent="." instance=ExtResource("2_bpvex")]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5

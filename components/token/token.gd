@@ -3,7 +3,7 @@ class_name Token
 
 signal clicked()
 
-const RADIUS = 40
+const RADIUS = 48
 
 @onready var letter_label = $Letter
 @onready var value_label = $Value
@@ -28,10 +28,13 @@ const RADIUS = 40
 	set(v): value = v; _update_label()
 		
 var selected: bool = false:
-	set(v): selected = v; _on_selected_changed()
+	set(v): selected = v; _on_selected()
+	
+var scale_tween: Tween
 
 func _ready():
 	animation = 'default'
+	_setup_label()
 	_update_label()
 	_update_sprite()
 	_init_click_detection()
@@ -56,12 +59,19 @@ func pulse(letter_delay: float):
 	tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
 	
 func scale_up():
-	var tween = create_tween()
-	tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.3)
+	if scale_tween:
+		scale_tween.kill()
+	scale_tween = create_tween()
+	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.3)
 	
 func scale_down():
-	var tween = create_tween()
-	tween.tween_property(self, 'scale', Vector2(1, 1), 0.3)
+	if scale_tween:
+		scale_tween.kill()
+	scale_tween = create_tween()
+	scale_tween.tween_property(self, 'scale', Vector2(1, 1), 0.3)
+	
+func _on_selected():
+	scale_up() if selected else scale_down()
 	
 func on_token_placed():
 	if type == TokenData.Type.CLOVER:
@@ -70,6 +80,10 @@ func on_token_placed():
 	if type == TokenData.Type.GREEN_GRAPE:
 		GameState.money += 1
 
+func _setup_label():
+	var label = letter_label
+	label.position = Vector2(-label.size.x / 2, -label.size.y / 2)
+	
 func _update_label():
 	if letter_label:
 		letter_label.text = letter
@@ -85,16 +99,17 @@ func _init_click_detection():
 	area.add_child(shape)
 	add_child(area)
 	area.input_event.connect(_on_input_event)
+	area.mouse_entered.connect(_on_mouse_entered)
+	area.mouse_exited.connect(func(): if not selected: scale_down())
+
+func _on_mouse_entered():
+	if not selected: 
+		Sound.play('token')
+		scale_up()
 
 func _on_input_event(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		clicked.emit(self)
-		
-func _on_selected_changed():
-	queue_redraw()
-	var tween = create_tween()
-	var target = Vector2(1.2, 1.2) if selected else Vector2(1, 1)
-	tween.tween_property(self, "scale", target, 0.15)
 	
 func _update_sprite():
 	if not is_node_ready():

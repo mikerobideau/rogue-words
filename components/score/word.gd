@@ -12,7 +12,6 @@ const DUPE_TOKEN_SCALE = Vector2(0.6, 0.6)
 @onready var tokens = $TokenContainer/TokenMarginContainer/Tokens
 @onready var plunger_container = $PlungerContainer
 @onready var plunger = $Plunger
-@onready var word_label = $WordLabelContainer/WordLabel
 
 var word: String
 var score: int
@@ -22,14 +21,13 @@ func _ready():
 	
 func _plunge():
 	await plunger.plunge_in()
-	_collapse()
+	_squish()
+	plunger.score = 0
 	await plunger.plunge_out()
 
-func _collapse():
+func _squish():
 	for wrapper in tokens.get_children():
 		wrapper.queue_free()
-	word_label.text = word
-	word_label.visible = true
 
 func set_score(v: int, delay: float):
 	score = v

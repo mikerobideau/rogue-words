@@ -56,8 +56,6 @@ func _next_round():
 	var round = SCREENS.round.instantiate()
 	hud.refresh_relics()
 	hud.refresh_items()
-	hud.score_panel.round_number = GameState.round_number
-	hud.score_panel.target_score = GameState.target_score
 	round.hud = hud
 	round.relic_manager = relic_manager
 	round.completed.connect(_on_round_completed)

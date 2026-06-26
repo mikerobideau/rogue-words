@@ -3,14 +3,21 @@
 [ext_resource type="Script" path="res://components/money.gd" id="1_25w62"]
 
 [node name="Money" type="MarginContainer"]
+offset_right = 39.0
+offset_bottom = 44.0
 theme_override_constants/margin_left = 5
 theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 script = ExtResource("1_25w62")
 
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(146, 61)
+
 [node name="Label" type="Label" parent="."]
+visible = false
 layout_mode = 2
+size_flags_horizontal = 8
 theme_type_variation = &"HeaderMedium"
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 24

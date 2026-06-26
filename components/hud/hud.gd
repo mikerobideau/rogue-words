@@ -3,7 +3,6 @@ class_name Hud
 
 @onready var relic_container = $Left/Inventory/RelicContainer
 @onready var item_container = $Left/Inventory/ItemContainer
-@onready var score_panel = $Right/ScorePanel
 @onready var left = $Left
 @onready var right = $Right
 

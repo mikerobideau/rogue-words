@@ -16,6 +16,7 @@ const DEBUG = false
 @onready var scorer = $Scorer
 @onready var discard_ui = $BottomRight/HBoxContainer/DiscardUi
 @onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
+@onready var juicer = $Juicer
 
 var hud: Control
 var relic_manager: Node
@@ -56,6 +57,8 @@ func _ready():
 	discard_ui.discard_clicked.connect(_on_discard_clicked)
 	discard_ui.cancel_discard_clicked.connect(_on_cancel_discard_clicked)
 	discard_ui.confirm_discard_clicked.connect(_on_confirm_discard_clicked)
+	juicer.round_number = GameState.round_number
+	juicer.target_score = GameState.target_score
 	
 func _clear_selected_token():
 	if selected_token:
@@ -100,12 +103,11 @@ func _on_space_clicked(space: Space):
 		context.word = word_report.word
 		context.word_score = word_report.score
 		var relic_report = relic_manager.get_score_report(context)
-		await hud.score_panel.play_word(word_report, relic_report)
+		await juicer.play_word(word_report, relic_report)
 		
 	await get_tree().create_timer(0.5).timeout
-	hud.score_panel.clear_words()
 	
-	if hud.score_panel.target_met():
+	if juicer.target_met():
 		completed.emit()
 		return
 	turns_remaining -= 1
@@ -134,31 +136,20 @@ func _on_item_selected(item: Item):
 	item.selected = item == selected_item
 			
 func _on_token_clicked(token: Token):
-	if discard_mode:
-		if token in selected_tokens:
-			selected_tokens.erase(token)
-			token.selected = false
-		else:
-			selected_tokens.append(token)
-			token.selected = true
-		discard_ui.confirm_text = 'DISCARD ' + str(selected_tokens.size()) if selected_tokens.size() > 0 else 'DISCARD'
-		discard_ui.confirm_disabled = selected_tokens.size() < 1
+	if selected_item and selected_item.data.can_enhance_token:
+		selected_item.data.enhance_token(token)
+		selected_item.played.emit(selected_item)
+		_clear_selected_token()
+		_clear_selected_item()
 		return
-		
-	if selected_item:
-		if selected_item.data.can_enhance_token:
-			selected_item.data.enhance_token(token)
-			selected_item.selected = false
-			selected_item.played.emit(selected_item)
-			_clear_selected_token()
-			_clear_selected_item()
-			return
-	
-	var prev_selected = selected_token
-	selected_token = null if selected_token == token else token
-	if prev_selected != null and prev_selected != selected_token:
-		prev_selected.selected = false
-	token.selected = token == selected_token
+	token.selected = not token.selected
+	if token.selected: 
+		selected_tokens.append(token) 
+	else: 
+		selected_tokens.erase(token)
+	if discard_mode:
+		discard_ui.confirm_disabled = selected_tokens.is_empty()
+		discard_ui.confirm_text = 'DISCARD' if selected_tokens.is_empty() else 'DISCARD ' + str(selected_tokens.size())
 
 func _get_relic_context():
 	var context = RelicContext.new()

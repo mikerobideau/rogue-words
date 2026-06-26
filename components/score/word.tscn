@@ -1,25 +1,27 @@
 [gd_scene load_steps=3 format=3 uid="uid://ejiashxsho2h"]
 
-[ext_resource type="Script" path="res://components/scorer/word.gd" id="1_k6b5l"]
+[ext_resource type="Script" path="res://components/score/word.gd" id="1_k6b5l"]
 [ext_resource type="PackedScene" uid="uid://cicbc6xuuygho" path="res://components/score/plunger.tscn" id="2_i2jem"]
 
 [node name="Word" type="MarginContainer"]
-custom_minimum_size = Vector2(600, 50)
+custom_minimum_size = Vector2(1300, 50)
+offset_right = 500.0
+offset_bottom = 50.0
 script = ExtResource("1_k6b5l")
 
 [node name="TokenContainer" type="Panel" parent="."]
-custom_minimum_size = Vector2(500, 0)
+custom_minimum_size = Vector2(1300, 0)
 layout_mode = 2
 
 [node name="TokenMarginContainer" type="MarginContainer" parent="TokenContainer"]
-custom_minimum_size = Vector2(0, 43)
+custom_minimum_size = Vector2(1300, 43)
 layout_mode = 1
 anchors_preset = 14
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_top = -21.5
-offset_bottom = 21.5
+offset_top = -31.5
+offset_bottom = 31.5
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 10
@@ -30,19 +32,6 @@ theme_override_constants/margin_bottom = 10
 [node name="Tokens" type="HFlowContainer" parent="TokenContainer/TokenMarginContainer"]
 custom_minimum_size = Vector2(0, 43)
 layout_mode = 2
-
-[node name="WordLabelContainer" type="MarginContainer" parent="."]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
-
-[node name="WordLabel" type="Label" parent="WordLabelContainer"]
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-text = "Test"
 
 [node name="Plunger" parent="." instance=ExtResource("2_i2jem")]
 layout_mode = 2
