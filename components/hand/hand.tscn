@@ -1,12 +1,12 @@
 [gd_scene load_steps=3 format=3 uid="uid://b784162vwvujp"]
 
-[ext_resource type="Texture2D" uid="uid://c318a0bvqrur7" path="res://assets/ui/panel/1x/hand_tray.png" id="1_mvkqi"]
+[ext_resource type="Texture2D" uid="uid://u2q0fuglrp1q" path="res://assets/ui/panel/1x/token_tray_wood.png" id="1_sn77b"]
 [ext_resource type="Script" path="res://components/hand/hand.gd" id="1_v6a6q"]
 
 [node name="Hand" type="TextureRect"]
 offset_right = 360.0
 offset_bottom = 60.0
-texture = ExtResource("1_mvkqi")
+texture = ExtResource("1_sn77b")
 script = ExtResource("1_v6a6q")
 
 [node name="Tokens" type="Container" parent="."]

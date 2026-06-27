@@ -20,8 +20,22 @@ const DEBUG = false
 
 var hud: Control
 var relic_manager: Node
-var selected_tokens: Array[Token]
+
+var selected_tokens: Array:
+	set(v):
+		print_debug('setter called')
+		selected_tokens = v
+		
+		#selected_token = selected_tokens[0] if selected_tokens.size() == 1 else null
+		if selected_tokens.size() == 1:
+			print_debug('setting selected token')
+			selected_token = selected_tokens[0]
+		else:
+			print_debug('clearing selected token')
+			selected_token = null
+
 var selected_token: Token
+
 var discard_mode := false:
 	set(v):
 		discard_mode = v
@@ -95,8 +109,7 @@ func _on_space_clicked(space: Space):
 	board.place(selected_token, space)
 	var context = _get_relic_context()
 	relic_manager.on_token_placed(context)
-	selected_token.selected = false
-	selected_token = null
+	selected_tokens.erase(selected_token)
 	var found_words = word_finder.find_words(space)
 	for found_word in found_words:
 		var word_report = scorer.get_word_report(found_word)
@@ -137,16 +150,26 @@ func _on_item_selected(item: Item):
 			
 func _on_token_clicked(token: Token):
 	if selected_item and selected_item.data.can_enhance_token:
-		selected_item.data.enhance_token(token)
-		selected_item.played.emit(selected_item)
-		_clear_selected_token()
-		_clear_selected_item()
-		return
-	token.selected = not token.selected
-	if token.selected: 
-		selected_tokens.append(token) 
-	else: 
-		selected_tokens.erase(token)
+		_apply_item(token)
+	else:
+		print_debug('toggle token selection')
+		_toggle_token_selection(token)
+
+func _apply_item(token: Token):
+	selected_item.data.enhance_token(token)
+	selected_item.played.emit(selected_item)
+	_clear_selected_token()
+	_clear_selected_item()
+	return
+
+func _toggle_token_selection(token):
+	token.selected = not token.selected 
+	if token.selected:
+		print_debug('token selected.  Appending')
+		selected_tokens = selected_tokens + [token] #create new reference so setter is fired
+	else:
+		print_debug('token deselected.  Erasing')
+		selected_tokens = selected_tokens.filter(func(t): return t != token) #create new reference so setter is fired
 	if discard_mode:
 		discard_ui.confirm_disabled = selected_tokens.is_empty()
 		discard_ui.confirm_text = 'DISCARD' if selected_tokens.is_empty() else 'DISCARD ' + str(selected_tokens.size())

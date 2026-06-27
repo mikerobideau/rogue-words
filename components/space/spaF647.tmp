@@ -72,4 +72,3 @@ double_letter_frames = SubResource("SpriteFrames_4t2g1")
 double_word_frames = SubResource("SpriteFrames_y4igl")
 
 [node name="Badge" type="Sprite2D" parent="."]
-visible = false

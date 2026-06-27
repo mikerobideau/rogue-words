@@ -27,8 +27,13 @@ const RADIUS = 48
 	get(): return data.value
 	set(v): value = v; _update_label()
 		
+var is_selectable := true
+		
 var selected: bool = false:
-	set(v): selected = v; _on_selected()
+	set(v): 
+		if is_selectable:
+			selected = v
+			_on_selected()
 	
 var scale_tween: Tween
 
@@ -49,31 +54,16 @@ func next_letter():
 func swap_random_consonant_vowel():
 	data.swap_random_consonant_vowel()
 	
-func pulse(letter_delay: float):
-	var tween = create_tween()
-	var base_scale = scale
-	tween.tween_property(self, 'scale', base_scale * 1.2, letter_delay / 5)
-	tween.tween_property(self, 'scale', base_scale * 0.8, letter_delay / 5)
-	tween.tween_property(self, 'scale', base_scale * 1.1, letter_delay / 5)
-	tween.tween_property(self, 'scale', base_scale * 0.9, letter_delay / 5)
-	tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
-	
-func scale_up():
-	if scale_tween:
-		scale_tween.kill()
-	scale_tween = create_tween()
-	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.3)
-	
-func scale_down():
-	if scale_tween:
-		scale_tween.kill()
-	scale_tween = create_tween()
-	scale_tween.tween_property(self, 'scale', Vector2(1, 1), 0.3)
-	
 func _on_selected():
-	scale_up() if selected else scale_down()
+	if selected:
+		_animate_selected()
+	else:
+		_animate_deselected()
 	
-func on_token_placed():
+func on_placed():
+	selected = false
+	is_selectable = false
+	_animate_placed()
 	if type == TokenData.Type.CLOVER:
 		if randf() <= 0.25:
 			GameState.money += 5
@@ -100,12 +90,16 @@ func _init_click_detection():
 	add_child(area)
 	area.input_event.connect(_on_input_event)
 	area.mouse_entered.connect(_on_mouse_entered)
-	area.mouse_exited.connect(func(): if not selected: scale_down())
+	area.mouse_exited.connect(_on_mouse_exited)
 
 func _on_mouse_entered():
-	if not selected: 
+	if is_selectable and not selected: 
 		Sound.play('token')
 		scale_up()
+
+func _on_mouse_exited():
+	if is_selectable and not selected: 
+		scale_down()
 
 func _on_input_event(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -124,3 +118,55 @@ func _update_sprite():
 		TokenData.Type.CLOVER:
 			sprite_frames = clover_frames	
 	animation = 'default'
+
+#
+#Animation
+#
+
+func scale_up():
+	if scale_tween:
+		scale_tween.kill()
+	scale_tween = create_tween()
+	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.2)
+	
+func scale_down():
+	if scale_tween:
+		scale_tween.kill()
+	scale_tween = create_tween()
+	scale_tween.tween_property(self, 'scale', Vector2(1, 1), 0.2)
+	
+func _animate_placed():
+	if scale_tween:
+		scale_tween.kill()
+	var scale_tween = create_tween()
+	scale = Vector2(0, 0)
+	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.2)
+	scale_tween.tween_property(self, 'scale', Vector2(0.8, 0.8), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.1)
+	
+func _animate_selected():
+	if scale_tween:
+		scale_tween.kill()
+	var scale_tween = create_tween()
+	scale_tween.tween_property(self, 'scale', Vector2(1.4, 1.4), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.1)
+	
+func _animate_deselected():
+	scale_down()
+
+func pulse(letter_delay: float):
+	if scale_tween:
+		scale_tween.kill()
+	var scale_tween = create_tween()
+	var base_scale = scale
+	scale_tween.tween_property(self, 'scale', base_scale * 1.2, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale * 0.8, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale * 1.1, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale * 0.9, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
+	
