@@ -170,8 +170,8 @@ func pulse(letter_delay: float):
 	scale_tween.tween_property(self, 'scale', base_scale * 0.9, letter_delay / 5)
 	scale_tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
 	
-func pop_open():
+func pop_open(custom_scale := Vector2.ONE):
 	scale = Vector2.ZERO
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "scale", Vector2.ONE, 0.4)
+	tween.tween_property(self, "scale", custom_scale, 0.4)

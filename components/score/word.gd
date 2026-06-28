@@ -1,4 +1,4 @@
-extends MarginContainer
+extends Control
 class_name Word
 
 const SOUND_TOKEN = 'token'
@@ -7,23 +7,17 @@ const SOUND_ENHANCED_LETTER_SPACE = 'water_drop'
 const SOUND_ENHANCED_WORD_SPACE = 'water_drop'
 const SOUND_RELIC = 'bonus'
 
-const DUPE_TOKEN_SCALE = Vector2(0.6, 0.6)
+const DUPE_TOKEN_SCALE = Vector2(0.8, 0.8)
 
-@onready var tokens = $TokenContainer/TokenMarginContainer/Tokens
-@onready var plunger_container = $PlungerContainer
-@onready var plunger = $Plunger
+@onready var tokens = $Tokens
 
 var word: String
 var score: int
 		
 func _ready():
-	pivot_offset = size / 2
-	
-func _plunge():
-	await plunger.plunge_in()
-	_squish()
-	plunger.score = 0
-	await plunger.plunge_out()
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tokens.alignment = BoxContainer.ALIGNMENT_CENTER
+	tokens.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 func _squish():
 	for wrapper in tokens.get_children():
@@ -31,9 +25,6 @@ func _squish():
 
 func set_score(v: int, delay: float):
 	score = v
-	if plunger:
-		plunger.score = score
-		plunger.shake_score(delay)
 
 func play(word_report: WordReport, relic_report: RelicReport):
 	word = word_report.word
@@ -44,15 +35,16 @@ func play(word_report: WordReport, relic_report: RelicReport):
 			var sound = _get_letter_sound(item)
 			Sound.play(sound)
 			set_score(item.new_score, delay)
-			token.pulse(delay)
-			ScorePopup.show(item.text, token, delay, -30.0)
+			token.pop_open(DUPE_TOKEN_SCALE)
+			ScorePopup.show(item.text, token, delay, 0, -40)
 			await get_tree().create_timer(delay).timeout
 	
 	if word_report.word_mult_report:
 		Sound.play(SOUND_ENHANCED_WORD_SPACE)
 		var report = word_report.word_mult_report
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
-		ScorePopup.show(report.text, plunger.label, Settings.SCORE_DELAY_LONG)
+		ScorePopup.show(report.text, tokens, Settings.SCORE_DELAY_LONG, 
+			10, 0, ScorePopup.Anchor.RIGHT)
 		await get_tree().create_timer(Settings.SCORE_DELAY_LONG).timeout
 	
 	for report in relic_report.items:
@@ -61,9 +53,10 @@ func play(word_report: WordReport, relic_report: RelicReport):
 		ScorePopup.show(report.text, report.relic, Settings.SCORE_DELAY_LONG)
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
 		await get_tree().create_timer(0.3).timeout
+		
+	_squish()
+	await get_tree().create_timer(0.3).timeout
 	
-	await _plunge()
-
 func _get_letter_sound(item: LetterReportItem) -> String:
 	if item.is_enhanced_space:
 		return SOUND_ENHANCED_LETTER_SPACE
@@ -92,4 +85,3 @@ func clear():
 func _get_token_size(token: Token) -> Vector2:
 	var frames = token.sprite_frames
 	return frames.get_frame_texture(token.animation, token.frame).get_size()
-	

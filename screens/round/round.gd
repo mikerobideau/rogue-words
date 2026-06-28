@@ -15,7 +15,7 @@ const DEBUG = false
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
-@onready var juicer = $Juicer
+@onready var word = $WordContainer/Word
 
 var hud: Control
 var relic_manager: Node
@@ -54,8 +54,8 @@ func _ready():
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
 	hand.discard_clicked.connect(_on_discard_clicked)
-	juicer.round_number = GameState.round_number
-	juicer.target_score = GameState.target_score
+	#juicer.round_number = GameState.round_number
+	#juicer.target_score = GameState.target_score
 	
 func _update_discard_disabled():
 	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
@@ -96,13 +96,13 @@ func _on_space_clicked(space: Space):
 		context.word = word_report.word
 		context.word_score = word_report.score
 		var relic_report = relic_manager.get_score_report(context)
-		await juicer.play_word(word_report, relic_report)
+		await word.play(word_report, relic_report)
 		
 	await get_tree().create_timer(0.5).timeout
 	
-	if juicer.target_met():
-		completed.emit()
-		return
+	#if juicer.target_met():
+	#	completed.emit()
+	#	return
 	turns_remaining -= 1
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')

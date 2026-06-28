@@ -1,12 +1,12 @@
 [gd_scene load_steps=8 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
-[ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/juicer.tscn" id="2_bpvex"]
 [ext_resource type="Texture2D" uid="uid://4ub8qhwt0gv2" path="res://assets/ui/background/1x/background_sky_gradient_1.png" id="2_h0lhv"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
 [ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
+[ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/score/word.tscn" id="7_uqrp3"]
 
 [node name="Round" type="Control"]
 layout_mode = 3
@@ -82,12 +82,16 @@ mouse_filter = 2
 
 [node name="Scorer" parent="." instance=ExtResource("5_va824")]
 
-[node name="Juicer" parent="." instance=ExtResource("2_bpvex")]
-visible = false
+[node name="WordContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -350.0
-offset_right = 350.0
+offset_left = -650.0
+offset_right = 650.0
+offset_bottom = 50.0
 grow_horizontal = 2
+theme_override_constants/margin_top = 150
+
+[node name="Word" parent="WordContainer" instance=ExtResource("7_uqrp3")]
+layout_mode = 2
