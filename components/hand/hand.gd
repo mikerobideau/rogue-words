@@ -4,8 +4,10 @@ class_name Hand
 var TokenScene = preload("res://components/token/token.tscn")
 
 signal token_clicked()
+signal discard_clicked()
 
 @onready var token_container = $Tokens
+@onready var discard_button = $DiscardContainer/DiscardButton
 
 const HAND_SIZE = 5
 const H_PAD = 50
@@ -33,7 +35,9 @@ func draw_tokens(n: int):
 		var token_scene = TokenFactory.create_scene(token_data)
 		token_container.add_child(token_scene)
 		token_scene.clicked.connect(_on_token_clicked)
-		_layout_tokens()
+		token_scene.pop_open()
+	Sound.play('token')
+	_layout_tokens()
 		
 func discard(tokens: Array[Token]):
 	for token in tokens:
@@ -58,3 +62,6 @@ func _layout_tokens():
 	
 func _on_token_clicked(token: Token):
 	token_clicked.emit(token)
+
+func _on_discard_button_pressed() -> void:
+	discard_clicked.emit()

@@ -14,42 +14,26 @@ const DEBUG = false
 @onready var board = $Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var discard_ui = $BottomRight/HBoxContainer/DiscardUi
 @onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
 @onready var juicer = $Juicer
 
 var hud: Control
 var relic_manager: Node
 
-var selected_tokens: Array:
+var selected_tokens: Array[Token]:
 	set(v):
-		print_debug('setter called')
 		selected_tokens = v
-		
-		#selected_token = selected_tokens[0] if selected_tokens.size() == 1 else null
-		if selected_tokens.size() == 1:
-			print_debug('setting selected token')
-			selected_token = selected_tokens[0]
-		else:
-			print_debug('clearing selected token')
-			selected_token = null
+		selected_token = selected_tokens[0] if selected_tokens.size() == 1 else null
+		_update_discard_disabled()
 
 var selected_token: Token
-
-var discard_mode := false:
-	set(v):
-		discard_mode = v
-		_clear_selected_token()
-		_clear_selected_tokens()
-		_clear_selected_item()
 		
 var selected_item: Item
 var discards_remaining: int:
 	set(v):
 		discards_remaining = v if v >= 0 else 0
-		discard_ui.discard_text = 'DISCARD (' + str(v) + ')'
-		if discards_remaining < 1:
-			discard_ui.discard_disabled = true
+		hand.discard_button.label_text = str(discards_remaining)
+		_update_discard_disabled()
 			
 var turns_remaining := TURNS_PER_ROUND:
 	set(v):
@@ -61,6 +45,7 @@ func _ready():
 		_debug()
 	turns_remaining = TURNS_PER_ROUND
 	hand.on_round_start()
+	
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	GameState.discarded_tokens = [] as Array[TokenData]
 	hud.item_container.item_selected.connect(_on_item_selected)
@@ -68,11 +53,12 @@ func _ready():
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
-	discard_ui.discard_clicked.connect(_on_discard_clicked)
-	discard_ui.cancel_discard_clicked.connect(_on_cancel_discard_clicked)
-	discard_ui.confirm_discard_clicked.connect(_on_confirm_discard_clicked)
+	hand.discard_clicked.connect(_on_discard_clicked)
 	juicer.round_number = GameState.round_number
 	juicer.target_score = GameState.target_score
+	
+func _update_discard_disabled():
+	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
 	
 func _clear_selected_token():
 	if selected_token:
@@ -90,17 +76,11 @@ func _clear_selected_tokens():
 	selected_tokens = []
 	
 func _on_discard_clicked():
-	discard_mode = true
-	discard_ui.confirm_disabled = true
-	discard_ui.confirm_text = 'DISCARD'
-	
-func _on_cancel_discard_clicked():
-	discard_mode = false
-	
-func _on_confirm_discard_clicked():
-	hand.discard(selected_tokens)
+	if selected_tokens.size() < 1:
+		return
+	hand.discard(selected_tokens as Array[Token])
 	discards_remaining -= 1
-	discard_mode = false
+	_clear_selected_tokens()
 
 func _on_space_clicked(space: Space):
 	if space.token != null or !selected_token:
@@ -152,7 +132,6 @@ func _on_token_clicked(token: Token):
 	if selected_item and selected_item.data.can_enhance_token:
 		_apply_item(token)
 	else:
-		print_debug('toggle token selection')
 		_toggle_token_selection(token)
 
 func _apply_item(token: Token):
@@ -162,17 +141,15 @@ func _apply_item(token: Token):
 	_clear_selected_item()
 	return
 
-func _toggle_token_selection(token):
-	token.selected = not token.selected 
+func _toggle_token_selection(token: Token):
+	token.selected = not token.selected
 	if token.selected:
-		print_debug('token selected.  Appending')
-		selected_tokens = selected_tokens + [token] #create new reference so setter is fired
+		var addition: Array[Token] = [token]
+		selected_tokens = selected_tokens + addition
 	else:
-		print_debug('token deselected.  Erasing')
-		selected_tokens = selected_tokens.filter(func(t): return t != token) #create new reference so setter is fired
-	if discard_mode:
-		discard_ui.confirm_disabled = selected_tokens.is_empty()
-		discard_ui.confirm_text = 'DISCARD' if selected_tokens.is_empty() else 'DISCARD ' + str(selected_tokens.size())
+		var filtered: Array[Token] = []
+		filtered.assign(selected_tokens.filter(func(t): return t != token))
+		selected_tokens = filtered
 
 func _get_relic_context():
 	var context = RelicContext.new()

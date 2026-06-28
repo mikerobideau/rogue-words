@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=8 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/juicer.tscn" id="2_bpvex"]
@@ -7,7 +7,6 @@
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
 [ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
-[ext_resource type="PackedScene" uid="uid://7vyeh5egh0p8" path="res://components/hand/discard_ui.tscn" id="8_qwjml"]
 
 [node name="Round" type="Control"]
 layout_mode = 3
@@ -65,9 +64,6 @@ theme_override_constants/margin_bottom = 30
 [node name="HBoxContainer" type="HBoxContainer" parent="BottomRight"]
 layout_mode = 2
 theme_override_constants/separation = 100
-
-[node name="DiscardUi" parent="BottomRight/HBoxContainer" instance=ExtResource("8_qwjml")]
-layout_mode = 2
 
 [node name="TurnsRemaining" type="Label" parent="BottomRight/HBoxContainer"]
 layout_mode = 2
