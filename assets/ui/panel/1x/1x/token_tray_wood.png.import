@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c318a0bvqrur7"
-path="res://.godot/imported/hand_tray.png-5067e50aa095d7b69a6459c90136d412.ctex"
+uid="uid://b0c63q6wperor"
+path="res://.godot/imported/token_tray_wood.png-735dc7d624d073d3a12b49392958ccc4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/panel/1x/hand_tray.png"
-dest_files=["res://.godot/imported/hand_tray.png-5067e50aa095d7b69a6459c90136d412.ctex"]
+source_file="res://assets/ui/panel/1x/1x/token_tray_wood.png"
+dest_files=["res://.godot/imported/token_tray_wood.png-735dc7d624d073d3a12b49392958ccc4.ctex"]
 
 [params]
 

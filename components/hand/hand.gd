@@ -51,9 +51,8 @@ func _layout_tokens():
 	var total_width = tokens.size() * (diameter + H_PAD) + H_PAD
 	custom_minimum_size = Vector2(total_width, diameter)
 	
-	var start_x = (size.x - total_width) / 2 + H_PAD + Token.RADIUS
 	for i in range(tokens.size()):
-		var x = start_x + i * (diameter + H_PAD)
+		var x = H_PAD + Token.RADIUS + i * (diameter + H_PAD)
 		var y = size.y / 2
 		tokens[i].position = Vector2(x, y)
 	

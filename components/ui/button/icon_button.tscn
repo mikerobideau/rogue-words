@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://b67tiw3jr7lj4"]
+
+[ext_resource type="Script" path="res://components/ui/button/icon_button.gd" id="1_4pdm6"]
+[ext_resource type="Texture2D" uid="uid://n8ubnnx3th42" path="res://assets/ui/button/1x/icon_button_white.png" id="1_kj3i3"]
+[ext_resource type="Texture2D" uid="uid://c22vmmsyjhogj" path="res://assets/ui/button/1x/icon_button_white_hover.png" id="2_nr3mo"]
+
+[node name="IconButton" type="TextureButton"]
+offset_right = 99.0
+offset_bottom = 99.0
+texture_normal = ExtResource("1_kj3i3")
+texture_hover = ExtResource("2_nr3mo")
+script = ExtResource("1_4pdm6")
+
+[node name="Icon" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2

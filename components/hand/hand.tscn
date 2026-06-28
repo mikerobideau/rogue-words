@@ -1,13 +1,33 @@
-[gd_scene load_steps=3 format=3 uid="uid://b784162vwvujp"]
+[gd_scene load_steps=5 format=3 uid="uid://b784162vwvujp"]
 
-[ext_resource type="Texture2D" uid="uid://u2q0fuglrp1q" path="res://assets/ui/panel/1x/token_tray_wood.png" id="1_sn77b"]
 [ext_resource type="Script" path="res://components/hand/hand.gd" id="1_v6a6q"]
+[ext_resource type="Texture2D" uid="uid://b0c63q6wperor" path="res://assets/ui/panel/1x/1x/token_tray_wood.png" id="1_x856k"]
+[ext_resource type="PackedScene" uid="uid://b67tiw3jr7lj4" path="res://components/ui/button/icon_button.tscn" id="3_fwm4h"]
+[ext_resource type="Texture2D" uid="uid://bl02w530xwhxf" path="res://assets/icons/1x/discard.png" id="4_bncvi"]
 
 [node name="Hand" type="TextureRect"]
 offset_right = 360.0
 offset_bottom = 60.0
-texture = ExtResource("1_sn77b")
+texture = ExtResource("1_x856k")
 script = ExtResource("1_v6a6q")
 
 [node name="Tokens" type="Container" parent="."]
 layout_mode = 2
+
+[node name="DiscardContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -99.0
+offset_top = -49.5
+offset_bottom = 49.5
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/margin_right = 25
+
+[node name="DiscardButton" parent="DiscardContainer" instance=ExtResource("3_fwm4h")]
+layout_mode = 2
+icon_texture = ExtResource("4_bncvi")

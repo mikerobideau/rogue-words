@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://u2q0fuglrp1q"
-path="res://.godot/imported/token_tray_wood.png-23a607cb5b6a7c3da77548a0959f6c2f.ctex"
+uid="uid://bl02w530xwhxf"
+path="res://.godot/imported/discard.png-347d3f633078c8a534d8809f66dfa651.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/panel/1x/token_tray_wood.png"
-dest_files=["res://.godot/imported/token_tray_wood.png-23a607cb5b6a7c3da77548a0959f6c2f.ctex"]
+source_file="res://assets/icons/1x/discard.png"
+dest_files=["res://.godot/imported/discard.png-347d3f633078c8a534d8809f66dfa651.ctex"]
 
 [params]
 
