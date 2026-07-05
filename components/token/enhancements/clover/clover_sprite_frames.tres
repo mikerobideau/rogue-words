@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://bj2k7t36wvc15"]
+
+[ext_resource type="Texture2D" uid="uid://snvlmb4x6auy" path="res://assets/sprites/token/1x/clover.png" id="1_033kp"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_033kp")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

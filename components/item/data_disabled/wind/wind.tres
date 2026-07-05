@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="Wind" load_steps=2 format=3 uid="uid://bhi7pdolvjmy1"]
+
+[ext_resource type="Script" path="res://components/item/data_disabled/wind/wind.gd" id="1_nt8m5"]
+
+[resource]
+script = ExtResource("1_nt8m5")
+item_name = "Wind"
+description = "Swap vowel to random consonant, or vice versa"
+can_enhance_token = true

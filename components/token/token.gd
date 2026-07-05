@@ -8,16 +8,11 @@ const RADIUS = 48
 @onready var letter_label = $Letter
 @onready var value_label = $Value
 
-@export var grape_frames: SpriteFrames
-@export var green_grape_frames: SpriteFrames
-@export var yellow_grape_frames: SpriteFrames
-@export var clover_frames: SpriteFrames
-
 @export var data: TokenData
 		
-@export var type: TokenData.Type:
-	get(): return data.type
-	set(v): type = v; _update_sprite()
+@export var enhancement: TokenEnhancement:
+	get(): return data.enhancement
+	set(v): enhancement = v; _update_sprite()
 
 @export var letter: String:
 	get(): return data.letter
@@ -36,6 +31,7 @@ var selected: bool = false:
 			_on_selected()
 	
 var scale_tween: Tween
+var transform_tween: Tween
 
 func _ready():
 	animation = 'default'
@@ -44,9 +40,9 @@ func _ready():
 	_update_sprite()
 	_init_click_detection()
 	
-func enhance(t: TokenData.Type):
-	data.enhance(t)
-	_update_sprite()
+func enhance(e: TokenEnhancement):
+	data.enhance(e)
+	_transform()
 	
 func next_letter():
 	data.next_letter()
@@ -61,14 +57,13 @@ func _on_selected():
 		_animate_deselected()
 	
 func on_placed():
-	selected = false
-	is_selectable = false
-	_animate_placed()
-	if type == TokenData.Type.CLOVER:
-		if randf() <= 0.25:
-			GameState.money += 5
-	if type == TokenData.Type.GREEN_GRAPE:
-		GameState.money += 1
+	if data.enhancement:
+		data.enhancement.on_placed()
+
+func _update_sprite():
+	if data.enhancement:
+		sprite_frames = data.enhancement.sprite_frames
+	play('default')
 
 func _setup_label():
 	var label = letter_label
@@ -104,20 +99,6 @@ func _on_mouse_exited():
 func _on_input_event(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		clicked.emit(self)
-	
-func _update_sprite():
-	if not is_node_ready():
-		return
-	match type:
-		TokenData.Type.GRAPE:
-			sprite_frames = grape_frames
-		TokenData.Type.GREEN_GRAPE:
-			sprite_frames = green_grape_frames
-		TokenData.Type.YELLOW_GRAPE:
-			sprite_frames = yellow_grape_frames
-		TokenData.Type.CLOVER:
-			sprite_frames = clover_frames	
-	animation = 'default'
 
 #
 #Animation
@@ -175,3 +156,25 @@ func pop_open(custom_scale := Vector2.ONE):
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", custom_scale, 0.4)
+	
+func _transform():
+	if scale_tween:
+		scale_tween.kill()
+	
+	scale_tween = create_tween()
+	# impact reaction — quick squash, like it got hit
+	scale_tween.tween_property(self, 'scale', Vector2(1.2, 0.8), 0.08) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		
+	# flip closed on X axis
+	scale_tween.tween_property(self, 'scale:x', 0.0, 0.12) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	
+	# swap sprite_frames at the moment it's edge-on, invisible
+	scale_tween.tween_callback(_update_sprite)
+	
+	# flip open with overshoot, settling like _animate_placed
+	scale_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.15) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	scale_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.08)
+	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.08)

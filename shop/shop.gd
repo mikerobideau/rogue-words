@@ -11,11 +11,12 @@ signal completed()
 const SLOT_COUNT = 3
 const TYPE_WEIGHTS = {
 	'relic': 1,
-	'token': 1,
+	'token': 0,
 	'item': 1
 }
 	
 func _ready():
+	GameState.money = 99 #TODO: Test - remove
 	_populate_slots()
 	
 func _populate_slots():
@@ -60,12 +61,12 @@ func _on_slot_purchased(slot: ShopSlot):
 	GameState.money -= slot.cost
 	match slot.slot_type:
 		ShopSlot.Type.RELIC:
-			GameState.relics.append(slot.relic_data)
+			GameState.add_relic(slot.relic_data)
 		ShopSlot.Type.ITEM:
-			GameState.items.append(slot.item_data)
+			GameState.add_item(slot.item_data)
 		ShopSlot.Type.TOKEN:
-			GameState.tokens.append(slot.token_data)
+			GameState.add_token(slot.token_data)
 	slot.sold = true
 		
-func _on_continue_pressed():
+func _on_exit_pressed() -> void:
 	completed.emit()	

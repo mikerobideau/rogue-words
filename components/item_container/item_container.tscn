@@ -1,14 +1,26 @@
-[gd_scene load_steps=2 format=3 uid="uid://m6v4h0pfyoj4"]
+[gd_scene load_steps=3 format=3 uid="uid://m6v4h0pfyoj4"]
 
 [ext_resource type="Script" path="res://components/item_container/item_container.gd" id="1_ggere"]
+[ext_resource type="PackedScene" uid="uid://cgh7prf2qr1ay" path="res://components/item_container/item_slot.tscn" id="2_18koa"]
 
-[node name="ItemContainer" type="MarginContainer"]
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+[node name="ItemContainer" type="VBoxContainer"]
+offset_right = 371.0
+offset_bottom = 139.0
+mouse_filter = 2
 script = ExtResource("1_ggere")
 
-[node name="Items" type="VBoxContainer" parent="."]
+[node name="Label" type="Label" parent="."]
 layout_mode = 2
-theme_override_constants/separation = 25
+text = "No item selected"
+
+[node name="Items" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Slot1" parent="Items" instance=ExtResource("2_18koa")]
+layout_mode = 2
+
+[node name="Slot2" parent="Items" instance=ExtResource("2_18koa")]
+layout_mode = 2
+
+[node name="Slot3" parent="Items" instance=ExtResource("2_18koa")]
+layout_mode = 2

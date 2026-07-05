@@ -1,0 +1,2 @@
+extends TokenEnhancement
+class_name ChargedGrape

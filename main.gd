@@ -18,7 +18,8 @@ var current_screen: Control = null
 
 func _ready():
 	size = get_viewport().get_visible_rect().size
-	_show_title()
+	#_show_title()
+	_enter_shop()
 	
 func _show_title():
 	var title = SCREENS.title.instantiate()
@@ -54,8 +55,6 @@ func _next_round():
 		await _show_boss_intro()
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
-	hud.refresh_relics()
-	hud.refresh_items()
 	round.hud = hud
 	round.relic_manager = relic_manager
 	round.completed.connect(_on_round_completed)
@@ -63,7 +62,6 @@ func _next_round():
 	_show_screen(round, {})
 	
 func _on_round_completed():
-	Sound.play('win')
 	hud.on_round_complete()
 	GameState.discarded_tokens = [] as Array[TokenData]
 	_enter_shop()

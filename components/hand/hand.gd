@@ -1,4 +1,4 @@
-extends TextureRect
+extends Control
 class_name Hand
 
 var TokenScene = preload("res://components/token/token.tscn")

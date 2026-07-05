@@ -1,16 +1,16 @@
-[gd_scene load_steps=5 format=3 uid="uid://b784162vwvujp"]
+[gd_scene load_steps=4 format=3 uid="uid://b784162vwvujp"]
 
 [ext_resource type="Script" path="res://components/hand/hand.gd" id="1_v6a6q"]
-[ext_resource type="Texture2D" uid="uid://b0c63q6wperor" path="res://assets/ui/panel/1x/1x/token_tray_wood.png" id="1_x856k"]
 [ext_resource type="PackedScene" uid="uid://b67tiw3jr7lj4" path="res://components/ui/button/icon_button.tscn" id="3_fwm4h"]
 [ext_resource type="Texture2D" uid="uid://bl02w530xwhxf" path="res://assets/icons/1x/discard.png" id="4_bncvi"]
 
-[node name="Hand" type="TextureRect"]
+[node name="Hand" type="Control"]
+layout_mode = 3
+anchors_preset = 0
 offset_right = 968.0
 offset_bottom = 146.0
 size_flags_horizontal = 3
 mouse_filter = 2
-texture = ExtResource("1_x856k")
 script = ExtResource("1_v6a6q")
 
 [node name="Tokens" type="Control" parent="."]

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="Clover" load_steps=3 format=3 uid="uid://b7g7737edujum"]
+
+[ext_resource type="Script" path="res://components/token/enhancements/clover/clover.gd" id="1_b627x"]
+[ext_resource type="SpriteFrames" uid="uid://bj2k7t36wvc15" path="res://components/token/enhancements/clover/clover_sprite_frames.tres" id="2_r7kwy"]
+
+[resource]
+script = ExtResource("1_b627x")
+enhancement_name = ""
+sprite_frames = ExtResource("2_r7kwy")

@@ -5,44 +5,55 @@ signal purchased(slot: ShopSlot)
 
 enum Type { RELIC, TOKEN, ITEM }
 
-@onready var offer = $OfferContainer/Offer
-@onready var cost_label = $MarginContainer/Footer/CostLabel
-@onready var buy_button = $MarginContainer/Footer/BuyButton
-@onready var sold_label = $MarginContainer/Footer/SoldLabel
+@onready var offer = $SlotInner/Offer
+@onready var cost_label = $Coin/CostLabel
+@onready var buy_button = $SlotInner/BuyButton
+@onready var sold_label = $SlotInner/SoldLabel
+@onready var title = $SlotInner/TitleMargin/Title
+@onready var coin = $Coin
+@onready var title_container = $SlotInner/TitleMargin
+@onready var sold_sticker = $Sold
 
 var slot_type: Type
 var relic_data: RelicData
 var item_data: ItemData
 var token_data: TokenData
+var default_pos: Vector2
 
 var cost: int:
 	set(v):
 		cost = v
-		if cost_label: cost_label.text = '$' + str(v)
+		if cost_label: cost_label.text = str(v)
 		
 var sold := false:
 	set(v):
 		sold = v
-		if buy_button:
-			buy_button.visible = !sold
-		if sold_label:
-			sold_label.visible = v
+		if sold_sticker:
+			sold_sticker.visible = v
 			
+var selected := false:
+	set(v):
+		selected = v
+		_animate_selection()
+		
+var position_tween: Tween
+	
 func _ready():
-	sold_label.visible = false
-	_update_buy_button()
-	GameState.money_changed.connect(_on_money_changed)
+	default_pos = position
 			
 func setup_relic(data: RelicData):
 	slot_type = Type.RELIC
+	title.text = 'Relic'
 	relic_data = data
 	cost = data.cost
 	var scene = RelicFactory.create_scene(data)
 	scene.position = offer.size / 2
+	scene.scale = Vector2(0.67, 0.67)
 	_add_offer(scene)
 	
 func setup_item(data: ItemData):
 	slot_type = Type.ITEM
+	title.text = 'Item'
 	item_data = data
 	cost = data.cost
 	var scene = ItemFactory.create_scene(data)
@@ -51,6 +62,7 @@ func setup_item(data: ItemData):
 	
 func setup_token(data: TokenData):
 	slot_type = Type.TOKEN
+	title.text = 'Grape'
 	token_data = data
 	cost = data.cost
 	var scene = TokenFactory.create_scene(data)
@@ -65,13 +77,27 @@ func _add_offer(scene: Node):
 	elif scene is Control:
 		scene.position = (offer.size - scene.size) / 2
 
-func _on_buy_button_pressed():
+func _on_pressed() -> void:
+	_toggle_selection()
+	
+func _toggle_selection():
+	selected = !selected
+	
+func _animate_selection():
+	if position_tween:
+		position_tween.kill()
+	position_tween = create_tween()
+	var target_pos = Vector2(default_pos.x, default_pos.y + 50) if selected else default_pos
+	position_tween.tween_property(offer, 'position', target_pos, 0.5)
+	
+func _buy():
 	if GameState.money >= cost:
+		Sound.play('purchase')
 		purchased.emit(self)
-	
-func _on_money_changed(v: int):
-	_update_buy_button()
-	
-func _update_buy_button():
-	if buy_button and not sold:
-		buy_button.disabled = GameState.money < cost
+		coin.visible = false
+		offer.visible = false
+		title_container.visible = false
+		sold = true
+
+func _on_frame_mouse_entered() -> void:
+	Sound.play('token')

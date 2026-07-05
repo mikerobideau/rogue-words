@@ -1,0 +1,53 @@
+[gd_scene load_steps=4 format=3 uid="uid://bnq0xl6mwar5"]
+
+[ext_resource type="Script" path="res://components/score/juice_tube.gd" id="1_c2dtg"]
+[ext_resource type="Shader" path="res://shader/liquid_progress.gdshader" id="2_0dllr"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mwcw4"]
+shader = ExtResource("2_0dllr")
+shader_parameter/progress = 0.0
+shader_parameter/bg_color = Color(1, 1, 1, 1)
+shader_parameter/wave_1_color = Color(0.360784, 0, 0.470588, 1)
+shader_parameter/wave_2_color = Color(0.435294, 0, 0.717647, 1)
+shader_parameter/wave_1_speed = -0.5
+shader_parameter/wave_1_amp = 0.01
+shader_parameter/wave_2_speed = 0.5
+shader_parameter/wave_2_amp = 0.01
+
+[node name="JuiceTube" type="Control"]
+custom_minimum_size = Vector2(50, 1000)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 50.0
+offset_bottom = 1000.0
+script = ExtResource("1_c2dtg")
+max_value = null
+value = null
+
+[node name="Fill" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_mwcw4")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 22.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Bubbles" type="CPUParticles2D" parent="."]
+position = Vector2(37, 933)
+emission_shape = 1
+emission_sphere_radius = 25.0
+gravity = Vector2(0, -980)
+scale_amount_min = 0.0
+scale_amount_max = 3.0
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 312.0
+offset_top = 485.0
+offset_right = 436.0
+offset_bottom = 531.0
+text = "Fill"
+
+[connection signal="pressed" from="Button" to="." method="_on_button_pressed"]

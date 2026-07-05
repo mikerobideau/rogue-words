@@ -1,39 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://bh21dx1qyvaa3"]
+[gd_scene load_steps=2 format=3 uid="uid://bh21dx1qyvaa3"]
 
 [ext_resource type="Script" path="res://components/item/item.gd" id="1_6d437"]
-[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="2_l6yrh"]
 
-[node name="Item" type="Control"]
-custom_minimum_size = Vector2(100, 50)
-layout_mode = 3
-anchors_preset = 0
-offset_right = 100.0
-offset_bottom = 50.0
+[node name="Item" type="Sprite2D"]
 script = ExtResource("1_6d437")
-
-[node name="Background" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.168627, 0.713726, 0.45098, 1)
-
-[node name="NameContainer" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -23.0
-offset_right = 23.0
-offset_bottom = 40.0
-grow_horizontal = 2
-
-[node name="Name" type="Label" parent="NameContainer"]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_l6yrh")
-text = "NAME"
-horizontal_alignment = 1
-
-[connection signal="gui_input" from="." to="." method="_on_gui_input"]

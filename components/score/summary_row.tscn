@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://uom73bc7ta52"]
+
+[ext_resource type="Script" path="res://components/score/summary_row.gd" id="1_gct0b"]
+
+[node name="SummaryRow" type="MarginContainer"]
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+script = ExtResource("1_gct0b")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "HEADER"
+
+[node name="Value" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Value"

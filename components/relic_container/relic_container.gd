@@ -1,17 +1,18 @@
-extends MarginContainer
+extends VBoxContainer
 class_name RelicContainer
 
-@onready var relics = $Relics
+@onready var slots = [$RelicSlot1, $RelicSlot2, $RelicSlot3, $RelicSlot4, $RelicSlot5]
 
-func refresh_relics():
-	for child in relics.get_children():
-		child.queue_free()
-	for relic in GameState.relics:
-		relics.add_child(RelicFactory.create_scene(relic))
+func _ready():
+	GameState.relics_changed.connect(_refresh_relics)
+
+func _refresh_relics():
+	for slot in slots:
+		slot.clear()
+	for i in slots.size():
+		if i < GameState.relics.size():
+			var relic = GameState.relics[i]
+			slots[i].set_relic(relic)
 
 func get_relics() -> Array[Relic]:
-	var scenes = [] as Array[Relic]
-	for child in relics.get_children():
-		var relic = child as Relic
-		scenes.append(relic)
-	return scenes
+	return slots.map(func(s): s.relic)

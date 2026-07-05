@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://m6v4h0pfyoj4"]
+
+[ext_resource type="Script" path="res://components/item_container/item_container.gd" id="1_ggere"]
+[ext_resource type="PackedScene" uid="uid://cgh7prf2qr1ay" path="res://components/item_container/item_slot.tscn" id="2_18koa"]
+
+[node name="ItemContainer" type="HBoxContainer"]
+offset_right = 371.0
+offset_bottom = 104.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+script = ExtResource("1_ggere")
+
+[node name="Slot1" parent="." instance=ExtResource("2_18koa")]
+layout_mode = 2
+
+[node name="Slot2" parent="." instance=ExtResource("2_18koa")]
+layout_mode = 2
+
+[node name="Slot3" parent="." instance=ExtResource("2_18koa")]
+layout_mode = 2

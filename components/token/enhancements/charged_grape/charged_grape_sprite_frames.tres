@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://b3jb4dtnkdquf"]
+
+[ext_resource type="Texture2D" uid="uid://7tmwj6w1ppqu" path="res://assets/sprites/token/1x/charged_grape.png" id="1_i8nml"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_i8nml")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://bfxpa7p7w13ce"]
+
+[ext_resource type="Texture2D" uid="uid://b05kysu2pipvu" path="res://assets/sprites/token/1x/spicy_grape.png" id="1_i3yrf"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_i3yrf")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

@@ -1,7 +1,7 @@
 extends Node2D
 class_name WordFinder
 
-const MIN_WORD_LENGTH := 1
+const MIN_WORD_LENGTH := 4
 
 const DICTIONARY_PATH = "res://data/dictionary.txt"
 var dictionary: Dictionary = {}

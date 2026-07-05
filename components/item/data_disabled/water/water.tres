@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="Water" load_steps=2 format=3 uid="uid://bc8t5sy83g4lq"]
+
+[ext_resource type="Script" path="res://components/item/data_disabled/water/water.gd" id="1_6budk"]
+
+[resource]
+script = ExtResource("1_6budk")
+item_name = "Water"
+description = "Changes letter to next letter in the alphabet"
+can_enhance_token = true

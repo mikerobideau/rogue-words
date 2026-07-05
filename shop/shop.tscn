@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://beksc6x4wjafd"]
+[gd_scene load_steps=5 format=3 uid="uid://beksc6x4wjafd"]
 
 [ext_resource type="Script" path="res://shop/shop.gd" id="1_6vhgx"]
+[ext_resource type="Texture2D" uid="uid://csvanqmkkndx8" path="res://assets/ui/background/1x/purple_background.png" id="2_0ve3t"]
+[ext_resource type="Texture2D" uid="uid://bbpgmw6q7ravn" path="res://assets/ui/panel/1x/white_center_panel.png" id="3_kkkqy"]
+[ext_resource type="Texture2D" uid="uid://b8g302ead4a3s" path="res://assets/ui/panel/1x/sidebar.png" id="5_go7qq"]
 
 [node name="Shop" type="Control"]
 layout_mode = 3
@@ -9,31 +12,55 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_6vhgx")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="LeftSidebarBackground" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 431.0
+offset_bottom = 1440.0
+size_flags_horizontal = 0
+texture = ExtResource("5_go7qq")
+
+[node name="RightSidebarBackground" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -431.0
+offset_top = -720.0
+offset_bottom = 720.0
+grow_horizontal = 0
+grow_vertical = 2
+size_flags_horizontal = 0
+texture = ExtResource("5_go7qq")
+
+[node name="Background" type="TextureRect" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+texture = ExtResource("2_0ve3t")
 
-[node name="Header" type="MarginContainer" parent="."]
+[node name="CenterPanel" type="TextureRect" parent="."]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 305.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -850.0
+offset_top = -720.5
+offset_right = 850.0
+offset_bottom = 720.5
 grow_horizontal = 2
-
-[node name="HeaderInner" type="VBoxContainer" parent="Header"]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="Header/HeaderInner"]
-layout_mode = 2
-theme_type_variation = &"HeaderLarge"
-text = "SHOP"
-horizontal_alignment = 1
+grow_vertical = 2
+texture = ExtResource("3_kkkqy")
 
 [node name="Slots" type="HBoxContainer" parent="."]
 layout_mode = 1
@@ -47,6 +74,7 @@ grow_vertical = 2
 theme_override_constants/separation = 100
 
 [node name="Footer" type="MarginContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -67,4 +95,17 @@ size_flags_horizontal = 3
 layout_mode = 2
 text = "NEXT ROUND"
 
+[node name="ButtonContainer" type="CenterContainer" parent="."]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 400.0
+grow_vertical = 2
+
+[node name="Exit" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "Exit"
+
 [connection signal="pressed" from="Footer/FooterInner/Continue" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="ButtonContainer/Exit" to="." method="_on_exit_pressed"]

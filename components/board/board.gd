@@ -7,7 +7,7 @@ var SpaceScene = preload("res://components/space/space.tscn")
 
 const SOUND_ENHANCED_SPACE = 'small_bonus' 
 const BOARD_SIZE = Vector2(800, 800)
-const NUM_STARTING_SPACES = 5
+const NUM_STARTING_SPACES = 4
 const NUM_EXPANSIONS = 1
 const MAX_RADIUS := 3
 const SPACING := 75

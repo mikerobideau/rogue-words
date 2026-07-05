@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://miishmyyubag"]
+
+[ext_resource type="Script" path="res://components/relic_container/relic_slot.gd" id="1_0wlxs"]
+[ext_resource type="Texture2D" uid="uid://cexxahx8dtlpc" path="res://assets/ui/panel/1x/relic_slot.png" id="1_bava7"]
+
+[node name="RelicSlot" type="TextureButton"]
+texture_normal = ExtResource("1_bava7")
+texture_pressed = ExtResource("1_bava7")
+texture_hover = ExtResource("1_bava7")
+script = ExtResource("1_0wlxs")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]

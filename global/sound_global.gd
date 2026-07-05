@@ -18,7 +18,8 @@ const sounds = {
 	'item_unlocked': preload("res://assets/sound/mixkit-unlock-new-item-game-notification-254.wav"),
 	'complete': preload("res://assets/sound/mixkit-game-flute-bonus-2313.wav"),
 	'hazard': preload("res://assets/sound/tunetank.com_video-game-boing-retro.wav"),
-	'boss_intro': preload("res://screens/title/mixkit-movie-whoosh-impact-presentation-2903.wav")	
+	'boss_intro': preload("res://screens/title/mixkit-movie-whoosh-impact-presentation-2903.wav"),
+	'purchase': preload("res://assets/sound/vadim_makes_sound-vintage-cash-drawer-open-1-547824.mp3")	
 }
 
 var player: AudioStreamPlayer

@@ -1,15 +1,38 @@
-extends MarginContainer
+extends Control
 class_name ItemContainer
 
-signal item_selected(item: Item)
+var selected_slot: ItemSlot = null
 
-@onready var items = $Items
+@onready var slots: Array[ItemSlot] = [$Items/Slot1, $Items/Slot2, $Items/Slot3]
+@onready var label = $Label
 
-func refresh_items():
-	for child in items.get_children():
-		child.queue_free()
-	for item in GameState.items:
-		items.add_child(ItemFactory.create_scene(item))
+func _ready():
+	GameState.items_changed.connect(_refresh_items)
+	for slot in slots:
+		slot.item_selected.connect(_on_slot_selected)
+		slot.item_deselected.connect(_on_slot_deselected)
 
-func _on_item_selected(item: Item):
-	item_selected.emit(item)
+func _on_slot_selected(slot: ItemSlot):
+	if selected_slot and selected_slot != slot: #single selection logic
+		selected_slot.deselect()
+	selected_slot = slot
+	_update_label()
+	
+func _on_slot_deselected(slot: ItemSlot):
+	if selected_slot == slot:
+		selected_slot = null
+	_update_label()
+		
+func _update_label():
+	label.text = 'No item selected' if selected_slot == null else selected_slot.item_data.item_name + ' selected'
+		
+func deselect():
+	selected_slot.deselect()
+
+func _refresh_items():
+	for i in slots.size():
+		slots[i].deselect()
+		if i < GameState.items.size():
+			var item = GameState.items[i]
+			#var scene = ItemFactory.create_scene(item)
+			slots[i].set_item(item)

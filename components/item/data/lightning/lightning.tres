@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="Lightning" load_steps=2 format=3 uid="uid://4kmjxk0k14yu"]
-
-[ext_resource type="Script" path="res://components/item/data/lightning/lightning.gd" id="1_ulxdc"]
-
-[resource]
-script = ExtResource("1_ulxdc")
-item_name = "Lightning"
-description = "Enhances selected token to a yellow grape"
-can_enhance_token = true

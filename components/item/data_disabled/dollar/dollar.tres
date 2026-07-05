@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="Dollar" load_steps=2 format=3 uid="uid://clmohc8m4lwqm"]
+
+[ext_resource type="Script" path="res://components/item/data_disabled/dollar/dollar.gd" id="1_0xlwo"]
+
+[resource]
+script = ExtResource("1_0xlwo")
+item_name = "Dollar"
+description = "Enhances selected token to a green grape"
+can_enhance_token = true

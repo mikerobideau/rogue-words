@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="Sun" load_steps=2 format=3 uid="uid://euu0xad5lgmc"]
-
-[ext_resource type="Script" path="res://components/item/data/sun/sun.gd" id="1_tk0r8"]
-
-[resource]
-script = ExtResource("1_tk0r8")
-item_name = "Sun"
-description = "Increases selected token value by 1"
-can_enhance_token = true

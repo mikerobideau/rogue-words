@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ChargedGrape" load_steps=3 format=3 uid="uid://tufmwg7254d4"]
+
+[ext_resource type="Script" path="res://components/token/enhancements/charged_grape/charged_grape.gd" id="1_fb5mw"]
+[ext_resource type="SpriteFrames" uid="uid://b3jb4dtnkdquf" path="res://components/token/enhancements/charged_grape/charged_grape_sprite_frames.tres" id="2_1ljn1"]
+
+[resource]
+script = ExtResource("1_fb5mw")
+enhancement_name = "Charged Grape"
+sprite_frames = ExtResource("2_1ljn1")

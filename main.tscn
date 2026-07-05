@@ -14,11 +14,6 @@ offset_bottom = 1440.0
 mouse_filter = 2
 script = ExtResource("1_dnsmp")
 
-[node name="Hud" parent="." instance=ExtResource("2_23aqr")]
-visible = false
-custom_minimum_size = Vector2(2560, 1440)
-layout_mode = 1
-
 [node name="ScreenContainer" type="Control" parent="."]
 custom_minimum_size = Vector2(2560, 1440)
 layout_mode = 1
@@ -33,3 +28,7 @@ mouse_filter = 2
 
 [node name="ItemManager" type="Node" parent="."]
 script = ExtResource("3_l4tx6")
+
+[node name="Hud" parent="." instance=ExtResource("2_23aqr")]
+custom_minimum_size = Vector2(2560, 1440)
+layout_mode = 1

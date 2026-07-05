@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="SpicyGrape" load_steps=3 format=3 uid="uid://du266m5x6igbf"]
+
+[ext_resource type="Script" path="res://components/token/enhancements/spicy_grape/spicy_grape.gd" id="1_euyqo"]
+[ext_resource type="SpriteFrames" uid="uid://bfxpa7p7w13ce" path="res://components/token/enhancements/spicy_grape/spicy_grape_sprite_frames.tres" id="2_s75ma"]
+
+[resource]
+script = ExtResource("1_euyqo")
+enhancement_name = "SpicyGrape"
+sprite_frames = ExtResource("2_s75ma")

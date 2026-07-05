@@ -3,7 +3,7 @@ class_name Round
 
 signal game_over(message: String)
 
-const TURNS_PER_ROUND = 12
+const TURNS_PER_ROUND = 10
 const DISCARDS_PER_ROUND = 2
 
 signal completed()
@@ -14,11 +14,12 @@ const DEBUG = false
 @onready var board = $Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var turns_remaining_label = $BottomRight/HBoxContainer/TurnsRemaining
 @onready var word = $WordContainer/Word
+@onready var score_panel = $Left/ScorePanel
 
 var hud: Control
 var relic_manager: Node
+var scoring := false
 
 var selected_tokens: Array[Token]:
 	set(v):
@@ -28,7 +29,6 @@ var selected_tokens: Array[Token]:
 
 var selected_token: Token
 		
-var selected_item: Item
 var discards_remaining: int:
 	set(v):
 		discards_remaining = v if v >= 0 else 0
@@ -38,7 +38,7 @@ var discards_remaining: int:
 var turns_remaining := TURNS_PER_ROUND:
 	set(v):
 		turns_remaining = clamp(v, 0, INF)
-		turns_remaining_label.text = str(turns_remaining) + ' turns remaining'
+		score_panel.turns_remaining = str(turns_remaining)
 
 func _ready():
 	if DEBUG:
@@ -48,14 +48,15 @@ func _ready():
 	
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	GameState.discarded_tokens = [] as Array[TokenData]
-	hud.item_container.item_selected.connect(_on_item_selected)
 	word_finder.relic_manager = relic_manager
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
 	hand.discard_clicked.connect(_on_discard_clicked)
 	#juicer.round_number = GameState.round_number
-	#juicer.target_score = GameState.target_score
+	score_panel.score = 0
+	score_panel.target_score = GameState.target_score
+	#score_panel.turns_remaining = turns_remaining
 	
 func _update_discard_disabled():
 	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
@@ -66,9 +67,7 @@ func _clear_selected_token():
 		selected_token = null
 
 func _clear_selected_item():
-	if selected_item:
-		selected_item.selected = false
-		selected_item = null
+	hud.item_container.deselect()
 		
 func _clear_selected_tokens():
 	for token in selected_tokens:
@@ -83,8 +82,9 @@ func _on_discard_clicked():
 	_clear_selected_tokens()
 
 func _on_space_clicked(space: Space):
-	if space.token != null or !selected_token:
+	if scoring or space.token != null or !selected_token:
 		return
+	scoring = true
 	hand.remove_token(selected_token)
 	board.place(selected_token, space)
 	var context = _get_relic_context()
@@ -97,12 +97,15 @@ func _on_space_clicked(space: Space):
 		context.word_score = word_report.score
 		var relic_report = relic_manager.get_score_report(context)
 		await word.play(word_report, relic_report)
+		score_panel.score += relic_report.new_score
 		
 	await get_tree().create_timer(0.5).timeout
 	
-	#if juicer.target_met():
-	#	completed.emit()
-	#	return
+	if score_panel.target_met():
+		Sound.play('win')
+		await get_tree().create_timer(1.0).timeout
+		completed.emit()
+		return
 	turns_remaining -= 1
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
@@ -113,32 +116,36 @@ func _on_space_clicked(space: Space):
 		return
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
+	print_debug('scoring false')
+	scoring = false
 	
 func _path_to_word(path: Array):
 	var word := ""
 	for p in path:
 		word += p.token.letter
 	return word
-	
-func _on_item_selected(item: Item):
-	selected_token = null
-	var prev_selected = selected_item
-	selected_item = null if selected_item == item else item
-	if prev_selected != null and prev_selected != selected_item:
-		prev_selected.selected = false
-	item.selected = item == selected_item
 			
 func _on_token_clicked(token: Token):
-	if selected_item and selected_item.data.can_enhance_token:
-		_apply_item(token)
+	if scoring: 
+		return
+	var selected_slot = hud.item_container.selected_slot
+	if selected_slot:
+		var item_data = selected_slot.item_data
+		if item_data and item_data.can_enhance_token:
+			await selected_slot.animate_and_consume(token)
+			_apply_item(item_data, token)
+		else:
+			#item is selected but can't be applied to token
+			#auto-deselect item and select token
+			_toggle_token_selection(token)
+			hud.item_container.deselect()
 	else:
 		_toggle_token_selection(token)
 
-func _apply_item(token: Token):
-	selected_item.data.enhance_token(token)
-	selected_item.played.emit(selected_item)
+func _apply_item(item_data: ItemData, token: Token):
+	item_data.enhance_token(token)
+	#selected_item.played.emit(selected_item)
 	_clear_selected_token()
-	_clear_selected_item()
 	return
 
 func _toggle_token_selection(token: Token):
