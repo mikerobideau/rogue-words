@@ -5,6 +5,7 @@ class_name RelicContainer
 
 func _ready():
 	GameState.relics_changed.connect(_refresh_relics)
+	_refresh_relics()
 
 func _refresh_relics():
 	for slot in slots:
@@ -13,6 +14,7 @@ func _refresh_relics():
 		if i < GameState.relics.size():
 			var relic = GameState.relics[i]
 			slots[i].set_relic(relic)
+		slots[i].register_tooltip()
 
 func get_relics() -> Array[Relic]:
 	return slots.map(func(s): s.relic)

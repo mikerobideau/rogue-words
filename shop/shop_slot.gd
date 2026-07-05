@@ -5,13 +5,13 @@ signal purchased(slot: ShopSlot)
 
 enum Type { RELIC, TOKEN, ITEM }
 
-@onready var offer = $SlotInner/Offer
+@onready var frame = $Frame
+@onready var offer = $Frame/Offer
 @onready var cost_label = $Coin/CostLabel
-@onready var buy_button = $SlotInner/BuyButton
-@onready var sold_label = $SlotInner/SoldLabel
-@onready var title = $SlotInner/TitleMargin/Title
+@onready var title_container = $Frame/TitleMargin
+@onready var title = $Frame/TitleMargin/Title
 @onready var coin = $Coin
-@onready var title_container = $SlotInner/TitleMargin
+@onready var buy_button = $BuyButton
 @onready var sold_sticker = $Sold
 
 var slot_type: Type
@@ -19,6 +19,7 @@ var relic_data: RelicData
 var item_data: ItemData
 var token_data: TokenData
 var default_pos: Vector2
+var description: String
 
 var cost: int:
 	set(v):
@@ -35,16 +36,18 @@ var selected := false:
 	set(v):
 		selected = v
 		_animate_selection()
+		buy_button.visible = true if selected else false
 		
 var position_tween: Tween
 	
 func _ready():
-	default_pos = position
+	default_pos = frame.position
 			
 func setup_relic(data: RelicData):
 	slot_type = Type.RELIC
 	title.text = 'Relic'
 	relic_data = data
+	Tooltip.register(frame, data.description)
 	cost = data.cost
 	var scene = RelicFactory.create_scene(data)
 	scene.position = offer.size / 2
@@ -55,6 +58,7 @@ func setup_item(data: ItemData):
 	slot_type = Type.ITEM
 	title.text = 'Item'
 	item_data = data
+	Tooltip.register(frame, data.description)
 	cost = data.cost
 	var scene = ItemFactory.create_scene(data)
 	offer.add_child(scene)
@@ -64,6 +68,7 @@ func setup_token(data: TokenData):
 	slot_type = Type.TOKEN
 	title.text = 'Grape'
 	token_data = data
+	Tooltip.register(frame, data.description)
 	cost = data.cost
 	var scene = TokenFactory.create_scene(data)
 	scene.position = offer.size / 2
@@ -87,10 +92,14 @@ func _animate_selection():
 	if position_tween:
 		position_tween.kill()
 	position_tween = create_tween()
-	var target_pos = Vector2(default_pos.x, default_pos.y + 50) if selected else default_pos
-	position_tween.tween_property(offer, 'position', target_pos, 0.5)
-	
-func _buy():
+	var target_pos = default_pos + Vector2(0, -50) if selected else default_pos
+	var duration = 0.1 if selected else 0
+	position_tween.tween_property(frame, 'position', target_pos, duration)
+
+func _on_frame_mouse_entered() -> void:
+	Sound.play('token')
+
+func _on_buy_pressed() -> void:
 	if GameState.money >= cost:
 		Sound.play('purchase')
 		purchased.emit(self)
@@ -98,6 +107,4 @@ func _buy():
 		offer.visible = false
 		title_container.visible = false
 		sold = true
-
-func _on_frame_mouse_entered() -> void:
-	Sound.play('token')
+		selected = false

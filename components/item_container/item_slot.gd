@@ -48,3 +48,9 @@ func animate_and_consume(target: Node2D):
 	deselect()
 	item_data = null
 	item = null
+	
+func register_tooltip():
+	var default_text = 'Empty item slot'
+	var text = item_data.description if item_data else default_text
+	Tooltip.register(self, text)
+	

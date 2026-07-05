@@ -11,6 +11,7 @@ func _ready():
 	for slot in slots:
 		slot.item_selected.connect(_on_slot_selected)
 		slot.item_deselected.connect(_on_slot_deselected)
+	_refresh_items()
 
 func _on_slot_selected(slot: ItemSlot):
 	if selected_slot and selected_slot != slot: #single selection logic
@@ -36,3 +37,4 @@ func _refresh_items():
 			var item = GameState.items[i]
 			#var scene = ItemFactory.create_scene(item)
 			slots[i].set_item(item)
+		slots[i].register_tooltip()

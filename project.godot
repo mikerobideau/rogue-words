@@ -27,13 +27,15 @@ Settings="*res://global/settings_global.gd"
 Sound="*res://global/sound_global.gd"
 BossFactory="*res://global/boss_factory_global.gd"
 Styles="*res://global/style_global.gd"
+Tooltip="*res://global/tooltip_global.gd"
 
 [display]
 
 window/size/viewport_width=2560
 window/size/viewport_height=1440
 window/size/mode=3
-window/stretch/mode="viewport"
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [gui]
 
