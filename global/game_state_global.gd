@@ -75,6 +75,10 @@ var items: Array[ItemData]
 func add_item(item: ItemData):
 	items.append(item)
 	items_changed.emit()
+	
+func remove_item(item: ItemData):
+	items.erase(item)
+	items_changed.emit()
 
 #---------------------------------------------------------------------------------------------------
 #BOSS

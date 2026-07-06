@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://dkgqrc5yks2ol"]
+
+[ext_resource type="Script" path="res://components/slot_menu/slot_menu_node.gd" id="1_sbntl"]
+
+[node name="SlotMenuNode" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_sbntl")
+
+[node name="Actions" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+grow_horizontal = 2

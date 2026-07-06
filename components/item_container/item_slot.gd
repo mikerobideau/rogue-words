@@ -29,6 +29,10 @@ func select():
 	if item:
 		item.animate_selected(true)
 	item_selected.emit(self)
+	SlotMenu.open(self, [
+		#{ "text": "Keep", "callback": _keep },
+		{ "text": "Sell ($" + str(item_data.cost / 2) + ")", "callback": _sell }
+	])
 	
 func deselect():
 	is_selected = false
@@ -36,6 +40,13 @@ func deselect():
 	if item:
 		item.animate_selected(false)
 	item_deselected.emit(self)	
+
+func _keep():
+	pass
+	
+func _sell():
+	GameState.money += item_data.cost / 2
+	GameState.remove_item(item_data)
 
 func set_item(data: ItemData):
 	item_data = data

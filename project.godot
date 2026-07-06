@@ -28,6 +28,7 @@ Sound="*res://global/sound_global.gd"
 BossFactory="*res://global/boss_factory_global.gd"
 Styles="*res://global/style_global.gd"
 Tooltip="*res://global/tooltip_global.gd"
+SlotMenu="*res://global/slot_menu_global.gd"
 
 [display]
 
