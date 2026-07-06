@@ -3,10 +3,60 @@
 [ext_resource type="Script" path="res://components/relic_container/relic_slot.gd" id="1_0wlxs"]
 [ext_resource type="Texture2D" uid="uid://cexxahx8dtlpc" path="res://assets/ui/panel/1x/relic_slot.png" id="1_bava7"]
 
-[node name="RelicSlot" type="TextureButton"]
+[node name="RelicSlot" type="Control"]
+custom_minimum_size = Vector2(351, 126)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 351.0
+offset_bottom = 126.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_0wlxs")
+
+[node name="Slot" type="TextureButton" parent="."]
+layout_mode = 0
+offset_right = 351.0
+offset_bottom = 126.0
 texture_normal = ExtResource("1_bava7")
 texture_pressed = ExtResource("1_bava7")
 texture_hover = ExtResource("1_bava7")
-script = ExtResource("1_0wlxs")
 
-[connection signal="pressed" from="." to="." method="_on_pressed"]
+[node name="RelicContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Buttons" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -161.5
+offset_top = -41.5
+offset_right = 161.5
+offset_bottom = 41.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Keep" type="Button" parent="Buttons"]
+layout_mode = 2
+mouse_filter = 2
+text = "KEEP"
+
+[node name="Sell" type="Button" parent="Buttons"]
+layout_mode = 2
+mouse_filter = 2
+text = "SELL"
+
+[connection signal="mouse_entered" from="Slot" to="." method="_on_slot_mouse_entered"]
+[connection signal="pressed" from="Slot" to="." method="_on_slot_pressed"]
+[connection signal="pressed" from="Buttons/Keep" to="." method="_on_keep_pressed"]
+[connection signal="pressed" from="Buttons/Sell" to="." method="_on_sell_pressed"]

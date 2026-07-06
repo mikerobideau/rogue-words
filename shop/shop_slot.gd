@@ -92,7 +92,7 @@ func _animate_selection():
 	if position_tween:
 		position_tween.kill()
 	position_tween = create_tween()
-	var target_pos = default_pos + Vector2(0, -50) if selected else default_pos
+	var target_pos = default_pos + Vector2(0, -10) if selected else default_pos
 	var duration = 0.1 if selected else 0
 	position_tween.tween_property(frame, 'position', target_pos, duration)
 
