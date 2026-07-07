@@ -1,5 +1,5 @@
 extends RelicData
-class_name Racecar
+class_name Noon
 
 func get_score(context: RelicContext):
 	if _is_palindrome(context.word):
@@ -7,7 +7,7 @@ func get_score(context: RelicContext):
 	return -1
 	
 func get_text(context: RelicContext):
-	return 'Vroom! +100'
+	return 'Noon +100'
 
 func _is_palindrome(word: String) -> bool:
 	if word.length() <= 1:

@@ -17,7 +17,11 @@ var bag: Array[TokenData]
 	
 func on_round_start():
 	bag = GameState.tokens.duplicate()
+	GameState.token_added.connect(_on_token_added)
 	draw_tokens(HAND_SIZE)
+	
+func _on_token_added(token: TokenData):
+	bag.append(token)
 	
 func remove_token(token: Token):
 	token_container.remove_child(token)

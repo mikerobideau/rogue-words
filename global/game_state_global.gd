@@ -5,6 +5,7 @@ signal money_changed(value: int)
 signal relics_changed()
 signal items_changed()
 signal tokens_changed()
+signal token_added()
 
 #---------------------------------------------------------------------------------------------------
 #PROGRESSION
@@ -49,6 +50,7 @@ var tokens: Array[TokenData]
 func add_token(token: TokenData):
 	tokens.append(token)
 	tokens_changed.emit()
+	token_added.emit(token)
 
 var discarded_tokens: Array[TokenData]
 

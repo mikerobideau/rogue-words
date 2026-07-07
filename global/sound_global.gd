@@ -30,11 +30,15 @@ const SOUND_RELIC = 'bonus'
 
 var player: AudioStreamPlayer
 
+var sound_disabled := true
+
 func _ready():
 	player = AudioStreamPlayer.new()
 	add_child(player)
 
 func play(sound: String):
+	if sound_disabled:
+		return
 	player.stream = sounds[sound]
 	player.play()
 	await player.finished

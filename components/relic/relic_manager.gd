@@ -26,6 +26,11 @@ func get_score_report(context: RelicContext) -> RelicReport:
 		report.new_score = context.word_score
 	report.items = items
 	return report
+	
+func on_round_complete(context: RelicContext):
+	for relic in context.relics:
+		if relic.data.on_round_complete(context):
+			_activate_relic(relic)
 			
 func add_grow_amount(context: RelicContext):
 	var expansions = 0

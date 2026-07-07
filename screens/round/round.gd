@@ -115,10 +115,7 @@ func _on_space_clicked(space: Space):
 		await get_tree().create_timer(0.5).timeout
 		
 		if score_panel.target_met():
-			Sound.play('win')
-			await get_tree().create_timer(1.0).timeout
-			completed.emit()
-			return
+			_on_round_complete(context)
 			
 	#After turn
 	turn_number += 1
@@ -132,6 +129,13 @@ func _on_space_clicked(space: Space):
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
 	scoring = false
+	
+func _on_round_complete(context: RelicContext):
+	Sound.play('win')
+	relic_manager.on_round_complete(context)
+	await get_tree().create_timer(1.0).timeout
+	completed.emit()
+	return
 	
 func _path_to_word(path: Array):
 	var word := ""

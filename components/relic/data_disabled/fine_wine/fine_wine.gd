@@ -1,13 +1,7 @@
 extends RelicData
 class_name FineWine
 
-func _ready():
-	count = 0
-
-func on_score_event(context: RelicContext):
-	_add_count(1)
-	if count >= threshold:
-		_reset_count()
-		context.state.money += money_reward
-		return true
-	return false
+func on_round_complete(context: RelicContext):
+	GameState.money += money_reward
+	money_reward += 1
+	return true

@@ -40,6 +40,7 @@ func _ready():
 	_update_label()
 	_update_sprite()
 	_init_click_detection()
+	data.letter_changed.connect(_on_letter_changed)
 	
 func enhance(e: TokenEnhancement):
 	data.enhance(e)
@@ -65,6 +66,10 @@ func _on_selected():
 func on_placed():
 	if data.enhancement:
 		data.enhancement.on_placed()
+		
+func _on_letter_changed():
+	_transform()
+	_update_label(true)
 
 func _update_sprite():
 	if data.enhancement:
@@ -75,11 +80,18 @@ func _setup_label():
 	var label = letter_label
 	label.position = Vector2(-label.size.x / 2, -label.size.y / 2)
 	
-func _update_label():
+func _update_label(transition := false):
+	if transition:
+		var tween = create_tween()
+		tween.tween_property(letter_label, 'modulate:a', 0, 0.2)
+		await get_tree().create_timer(0.3).timeout
 	if letter_label:
 		letter_label.text = letter
 	if value_label:
 		value_label.text = str(value)
+	if transition:
+		var tween = create_tween()
+		tween.tween_property(letter_label, 'modulate:a', 1, 0.2)
 	
 func _init_click_detection():
 	var area = Area2D.new()
