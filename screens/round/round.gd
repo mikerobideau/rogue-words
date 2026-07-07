@@ -35,6 +35,11 @@ var discards_remaining: int:
 		discards_remaining = v if v >= 0 else 0
 		hand.discard_button.label_text = str(discards_remaining)
 		_update_discard_disabled()
+	
+var turn_number: int:
+	set(v):
+		turn_number = v
+		turns_remaining = TURNS_PER_ROUND - (turn_number - 1)
 			
 var turns_remaining := TURNS_PER_ROUND:
 	set(v):
@@ -44,9 +49,8 @@ var turns_remaining := TURNS_PER_ROUND:
 func _ready():
 	if DEBUG:
 		_debug()
-	turns_remaining = TURNS_PER_ROUND
 	hand.on_round_start()
-	
+	turn_number = 1
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	GameState.discarded_tokens = [] as Array[TokenData]
 	word_finder.relic_manager = relic_manager
@@ -87,31 +91,37 @@ func _on_discard_clicked():
 	_clear_selected_tokens()
 
 func _on_space_clicked(space: Space):
+	#Process placement
 	if scoring or space.token != null or !selected_token:
 		return
 	scoring = true
 	hand.remove_token(selected_token)
 	board.place(selected_token, space)
 	var context = _get_relic_context()
-	relic_manager.on_token_placed(context)
+	await relic_manager.on_token_placed(context)
 	selected_tokens.erase(selected_token)
-	var found_words = word_finder.find_words(space)
-	for found_word in found_words:
-		var word_report = scorer.get_word_report(found_word)
-		context.word = word_report.word
-		context.word_score = word_report.score
-		var relic_report = relic_manager.get_score_report(context)
-		await word.play(word_report, relic_report)
-		score_panel.score += relic_report.new_score
-		
-	await get_tree().create_timer(0.5).timeout
 	
-	if score_panel.target_met():
-		Sound.play('win')
-		await get_tree().create_timer(1.0).timeout
-		completed.emit()
-		return
-	turns_remaining -= 1
+	#Scoring
+	if !selected_token.is_queued_for_deletion(): #on_token_placed can destroy the token, in which case scoring must be skipped
+		var found_words = word_finder.find_words(space)
+		for found_word in found_words:
+			var word_report = scorer.get_word_report(found_word)
+			context.word = word_report.word
+			context.word_score = word_report.score
+			var relic_report = relic_manager.get_score_report(context)
+			await word.play(word_report, relic_report)
+			score_panel.score += relic_report.new_score
+			
+		await get_tree().create_timer(0.5).timeout
+		
+		if score_panel.target_met():
+			Sound.play('win')
+			await get_tree().create_timer(1.0).timeout
+			completed.emit()
+			return
+			
+	#After turn
+	turn_number += 1
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
 		return
@@ -168,12 +178,8 @@ func _get_relic_context():
 	context.relics = hud.get_relics()
 	context.placed_token = selected_token
 	context.hand = hand.get_hand()
-	for token in context.hand:
-		print_debug(token.data.letter)
+	context.turn_number = turn_number
 	return context
-
-func _on_no_tokens_remaining():
-	game_over.emit('You ran out of tokens')
 
 #---debug---
 

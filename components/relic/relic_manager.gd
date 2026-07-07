@@ -5,7 +5,8 @@ var RelicScene = preload("res://components/relic/relic.tscn")
 
 func on_token_placed(context: RelicContext):
 	for relic in context.relics:
-		relic.data.on_token_placed(context)
+		if await relic.data.on_token_placed(context):
+			_activate_relic(relic)
 		
 func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()

@@ -8,3 +8,4 @@ class_name RelicContext
 @export var word_score: int
 @export var relics: Array[Relic]
 @export var relic: Relic
+@export var turn_number: int

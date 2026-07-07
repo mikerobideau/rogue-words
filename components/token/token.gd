@@ -2,6 +2,7 @@ extends AnimatedSprite2D
 class_name Token
 
 signal clicked()
+signal destroyed()
 
 const RADIUS = 48
 
@@ -43,6 +44,11 @@ func _ready():
 func enhance(e: TokenEnhancement):
 	data.enhance(e)
 	_transform()
+	
+func destroy():
+	destroyed.emit()
+	await _animate_destroyed()
+	queue_free()
 	
 func next_letter():
 	data.next_letter()
@@ -156,6 +162,12 @@ func pop_open(custom_scale := Vector2.ONE):
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", custom_scale, 0.4)
+	
+func _animate_destroyed(custom_scale := Vector2.ONE):
+	var tween = create_tween()
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "scale", Vector2.ZERO, 0.8)
+	return tween.finished
 	
 func _transform():
 	if scale_tween:

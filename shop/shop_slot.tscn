@@ -140,5 +140,5 @@ text = "BUY"
 
 [connection signal="mouse_entered" from="Frame" to="." method="_on_frame_mouse_entered"]
 [connection signal="pressed" from="Frame" to="." method="_on_pressed"]
-[connection signal="pressed" from="BuyButton" to="." method="_on_button_pressed"]
 [connection signal="pressed" from="BuyButton" to="." method="_on_buy_pressed"]
+[connection signal="pressed" from="BuyButton" to="." method="_on_button_pressed"]

@@ -46,9 +46,19 @@ func place_token(t: Token):
 	self_modulate.a = 0 #hide sprite
 	token = t
 	add_child(t)
+	t.destroyed.connect(_on_token_destroyed)
 	t.position = Vector2.ZERO
 	t.on_placed()
+	print_debug('token placed.  Showing badge')
 	_show_badge()
+	
+func _on_token_destroyed():
+	print_debug('token destroyed')
+	self_modulate.a = 1 #show sprite
+	token = null
+	play('default')
+	print_debug('hiding badge')
+	badge.visible = false
 	
 func modify_letter_score(v: int) -> int:
 	return data.modify_letter_score(v)
@@ -63,6 +73,8 @@ func _pop_open():
 
 func _animate_badge():
 	await get_tree().create_timer(0.4).timeout
+	if token == null: #return if token has been destroyed
+		return
 	badge.scale = Vector2.ZERO
 	badge.visible = true
 	var tween = create_tween()

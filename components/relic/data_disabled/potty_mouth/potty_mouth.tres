@@ -1,14 +1,16 @@
 [gd_resource type="Resource" script_class="PottyMouth" load_steps=2 format=3 uid="uid://icym3ak2xno0"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/potty_mouth/potty_mouth.gd" id="1_v22pl"]
+[ext_resource type="Script" path="res://components/relic/data_disabled/potty_mouth/potty_mouth.gd" id="1_jimwa"]
 
 [resource]
-script = ExtResource("1_v22pl")
-relic_name = "Potty Mouth"
+script = ExtResource("1_jimwa")
+relic_name = "$#*!"
 description = "Scales by +1 each time a four letter word is played"
 cost = 5
 is_scaling = true
 scale_by = 1
+is_x_scaling = false
+x_scale_by = 0.0
 money_reward = 0
 has_count = false
 threshold = 0

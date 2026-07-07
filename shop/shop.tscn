@@ -96,7 +96,7 @@ grow_vertical = 2
 
 [node name="Exit" type="Button" parent="ButtonContainer"]
 layout_mode = 2
-text = "Exit"
+text = "Next Round"
 
 [connection signal="pressed" from="Footer/FooterInner/Continue" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="ButtonContainer/Exit" to="." method="_on_exit_pressed"]

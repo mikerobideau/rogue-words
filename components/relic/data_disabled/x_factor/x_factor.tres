@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="XFactor" load_steps=2 format=3 uid="uid://ci8ofhwsmuk22"]
+
+[ext_resource type="Script" path="res://components/relic/data_disabled/x_factor/x_factor.gd" id="1_tgndy"]
+
+[resource]
+script = ExtResource("1_tgndy")
+relic_name = "X Factor"
+description = "x2 if your word contains an X"
+cost = 5
+is_scaling = false
+scale_by = 0
+is_x_scaling = false
+x_scale_by = 0.0
+money_reward = 0
+has_count = false
+threshold = 0
