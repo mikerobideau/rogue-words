@@ -3,25 +3,40 @@
 [ext_resource type="Script" path="res://components/item_container/item_container.gd" id="1_ggere"]
 [ext_resource type="PackedScene" uid="uid://cgh7prf2qr1ay" path="res://components/item_container/item_slot.tscn" id="2_18koa"]
 
-[node name="ItemContainer" type="VBoxContainer"]
+[node name="ItemContainer" type="Panel"]
+custom_minimum_size = Vector2(432, 139)
 offset_right = 371.0
 offset_bottom = 139.0
 mouse_filter = 2
 script = ExtResource("1_ggere")
 
-[node name="Label" type="Label" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -158.5
+offset_top = -51.5
+offset_right = 158.5
+offset_bottom = 51.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBoxContainer"]
 visible = false
 layout_mode = 2
 text = "No item selected"
 
-[node name="Items" type="HBoxContainer" parent="."]
+[node name="Items" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="Slot1" parent="Items" instance=ExtResource("2_18koa")]
+[node name="Slot1" parent="VBoxContainer/Items" instance=ExtResource("2_18koa")]
 layout_mode = 2
 
-[node name="Slot2" parent="Items" instance=ExtResource("2_18koa")]
+[node name="Slot2" parent="VBoxContainer/Items" instance=ExtResource("2_18koa")]
 layout_mode = 2
 
-[node name="Slot3" parent="Items" instance=ExtResource("2_18koa")]
+[node name="Slot3" parent="VBoxContainer/Items" instance=ExtResource("2_18koa")]
 layout_mode = 2

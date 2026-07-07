@@ -29,14 +29,17 @@ func _show_title():
 	title.new_game.connect(_on_new_game)
 	
 func _show_boss_intro():
+	hud.visible = false
 	var boss_intro = SCREENS.boss_intro.instantiate()
 	Sound.play('boss_intro')
 	boss_intro.title = GameState.current_boss.boss_name
 	boss_intro.description = GameState.current_boss.description
 	_show_screen(boss_intro, {})
 	await get_tree().create_timer(2.5).timeout
+	hud.visible = true
 	
 func _on_game_over(message: String):
+	hud.visible = false
 	var game_over = SCREENS.game_over.instantiate()
 	_show_screen(game_over, {'message': message})
 	game_over.new_game.connect(_on_new_game)
@@ -54,6 +57,7 @@ func _on_new_game():
 	
 func _next_round():
 	GameState.round_number += 1
+	hud.title = 'Round ' + str(GameState.round_number)
 	if GameState.is_boss_round:
 		await _show_boss_intro()
 	GameState.tokens.shuffle()
@@ -70,6 +74,7 @@ func _on_round_completed():
 	_enter_shop()
 	
 func _enter_shop():
+	hud.title = 'Shop'
 	var shop = SCREENS.shop.instantiate()
 	shop.completed.connect(_next_round)
 	_show_screen(shop, {})

@@ -5,8 +5,8 @@ signal item_use_requested(slot: ItemSlot)
 
 var selected_slot: ItemSlot = null
 
-@onready var slots: Array[ItemSlot] = [$Items/Slot1, $Items/Slot2, $Items/Slot3]
-@onready var label = $Label
+@onready var slots: Array[ItemSlot] = [$VBoxContainer/Items/Slot1, $VBoxContainer/Items/Slot2, $VBoxContainer/Items/Slot3]
+@onready var label = $VBoxContainer/Label
 
 func _ready():
 	GameState.items_changed.connect(refresh_items)

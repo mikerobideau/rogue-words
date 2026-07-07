@@ -1,4 +1,4 @@
-extends Control
+extends Panel
 class_name ScorePanel
 
 @onready var total_score_row = $HBox/VBox/TotalScoreRow

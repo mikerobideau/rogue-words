@@ -16,7 +16,6 @@ const TYPE_WEIGHTS = {
 }
 	
 func _ready():
-	GameState.money = 99 #TODO: Test - remove
 	_populate_slots()
 	
 func _populate_slots():

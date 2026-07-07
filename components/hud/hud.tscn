@@ -39,30 +39,31 @@ offset_bottom = 1440.0
 grow_horizontal = 0
 mouse_filter = 2
 
-[node name="MarginContainer" type="CenterContainer" parent="Right"]
+[node name="CenterContainer" type="CenterContainer" parent="Right"]
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -445.0
+offset_left = -222.5
 offset_top = -720.0
+offset_right = 222.5
 offset_bottom = 720.0
-grow_horizontal = 0
+grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Inventory" type="VBoxContainer" parent="Right/MarginContainer"]
+[node name="Inventory" type="VBoxContainer" parent="Right/CenterContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
 theme_override_constants/separation = 75
 
-[node name="RelicContainer" parent="Right/MarginContainer/Inventory" instance=ExtResource("1_khlkn")]
+[node name="RelicContainer" parent="Right/CenterContainer/Inventory" instance=ExtResource("1_khlkn")]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 
-[node name="ItemContainer" parent="Right/MarginContainer/Inventory" instance=ExtResource("3_7hd0d")]
+[node name="ItemContainer" parent="Right/CenterContainer/Inventory" instance=ExtResource("3_7hd0d")]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4

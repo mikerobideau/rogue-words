@@ -3,31 +3,37 @@
 [ext_resource type="Script" path="res://components/relic_container/relic_container.gd" id="1_tx6to"]
 [ext_resource type="PackedScene" uid="uid://miishmyyubag" path="res://components/relic_container/relic_slot.tscn" id="2_myi04"]
 
-[node name="RelicContainer" type="VBoxContainer"]
-custom_minimum_size = Vector2(200, 100)
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 18.0
-offset_top = 5.0
-offset_right = 18.0
-offset_bottom = 5.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 10
+[node name="RelicContainer" type="Panel"]
+custom_minimum_size = Vector2(432, 700)
+offset_right = 350.0
+offset_bottom = 640.0
 script = ExtResource("1_tx6to")
 
-[node name="RelicSlot1" parent="." instance=ExtResource("2_myi04")]
+[node name="Slots" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -175.5
+offset_top = -323.0
+offset_right = 175.5
+offset_bottom = 323.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RelicSlot1" parent="Slots" instance=ExtResource("2_myi04")]
 layout_mode = 2
 
-[node name="RelicSlot2" parent="." instance=ExtResource("2_myi04")]
+[node name="RelicSlot2" parent="Slots" instance=ExtResource("2_myi04")]
 layout_mode = 2
 
-[node name="RelicSlot3" parent="." instance=ExtResource("2_myi04")]
+[node name="RelicSlot3" parent="Slots" instance=ExtResource("2_myi04")]
 layout_mode = 2
 
-[node name="RelicSlot4" parent="." instance=ExtResource("2_myi04")]
+[node name="RelicSlot4" parent="Slots" instance=ExtResource("2_myi04")]
 layout_mode = 2
 
-[node name="RelicSlot5" parent="." instance=ExtResource("2_myi04")]
+[node name="RelicSlot5" parent="Slots" instance=ExtResource("2_myi04")]
 layout_mode = 2

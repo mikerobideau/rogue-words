@@ -27,7 +27,11 @@ corner_radius_bottom_right = 25
 corner_radius_bottom_left = 25
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_julk1"]
-bg_color = Color(0.89037, 0.883181, 0.982633, 1)
+bg_color = Color(1, 1, 1, 0.129412)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [resource]
 default_font_size = 18

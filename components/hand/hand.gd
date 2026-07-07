@@ -1,4 +1,4 @@
-extends Control
+extends Panel
 class_name Hand
 
 var TokenScene = preload("res://components/token/token.tscn")

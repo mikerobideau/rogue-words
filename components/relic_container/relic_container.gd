@@ -1,7 +1,7 @@
-extends VBoxContainer
+extends Panel
 class_name RelicContainer
 
-@onready var slots = [$RelicSlot1, $RelicSlot2, $RelicSlot3, $RelicSlot4, $RelicSlot5]
+@onready var slots = [$Slots/RelicSlot1, $Slots/RelicSlot2, $Slots/RelicSlot3, $Slots/RelicSlot4, $Slots/RelicSlot5]
 
 func _ready():
 	GameState.relics_changed.connect(refresh_relics)

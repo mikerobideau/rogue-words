@@ -4,10 +4,10 @@
 [ext_resource type="PackedScene" uid="uid://b67tiw3jr7lj4" path="res://components/ui/button/icon_button.tscn" id="3_fwm4h"]
 [ext_resource type="Texture2D" uid="uid://bl02w530xwhxf" path="res://assets/icons/1x/discard.png" id="4_bncvi"]
 
-[node name="Hand" type="Control"]
+[node name="Hand" type="Panel"]
 custom_minimum_size = Vector2(1000, 128)
-layout_mode = 3
-anchors_preset = 0
+offset_right = 1000.0
+offset_bottom = 128.0
 size_flags_horizontal = 3
 mouse_filter = 2
 script = ExtResource("1_v6a6q")
