@@ -15,14 +15,25 @@ signal data_changed()
 var bonus := 0
 var count := 0
 
+func get_score_report(context: RelicContext) -> RelicReportItem:
+	var report = RelicReportItem.new()
+	report.relic = context.relic
+	report.prev_score = context.word_score
+	report.new_score = get_score(context)
+	report.text = get_text(context)
+	return report
+
+func get_score(context: RelicContext) -> int:
+	return context.word_score
+	
+func get_text(context: RelicContext):
+	return ''
+
 func on_token_placed(context: RelicContext) -> bool:
 	return false
 
 func on_score_event(context: RelicContext) -> bool:
 	return false
-	
-func get_score_report(context: RelicContext) -> RelicReportItem:
-	return null
 	
 func add_grow_amount(context: RelicContext) -> int:
 	return 0

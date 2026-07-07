@@ -121,7 +121,6 @@ func _on_space_clicked(space: Space):
 		return
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
-	print_debug('scoring false')
 	scoring = false
 	
 func _path_to_word(path: Array):
