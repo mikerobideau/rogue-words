@@ -21,8 +21,8 @@ func _update_labels():
 		if name_label:
 			name_label.text = data.relic_name
 		if bonus_label:
-			if data.has_bonus:
-				bonus_label.text = 'Bonus: ' + str(data.bonus)
+			if data.is_scaling:
+				bonus_label.text = 'Scaling value: ' + str(data.scaling_value)
 			else:
 				bonus_label.visible = false
 		if count_label:

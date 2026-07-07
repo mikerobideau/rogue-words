@@ -6,20 +6,23 @@ signal data_changed()
 @export var relic_name: String
 @export var description: String
 @export var cost := 5
+@export var is_scaling := false
 @export var scale_by: int
-@export var threshold: int
 @export var money_reward: int
-@export var has_bonus := false
 @export var has_count := false
+@export var threshold: int
 
-var bonus := 0
+var scaling_value := 0
 var count := 0
 
 func get_score_report(context: RelicContext) -> RelicReportItem:
+	var score = get_score(context)
+	if score == -1: #Relic condition not met
+		return null
 	var report = RelicReportItem.new()
 	report.relic = context.relic
 	report.prev_score = context.word_score
-	report.new_score = get_score(context)
+	report.new_score = score
 	report.text = get_text(context)
 	return report
 
@@ -41,8 +44,8 @@ func add_grow_amount(context: RelicContext) -> int:
 func modify_letter_matches(letter: String, matches: Array) -> Array:
 	return matches
 	
-func _add_bonus(v: int):
-	bonus += v
+func _add_scaling_value(v: int):
+	scaling_value += v
 	data_changed.emit()
 	
 func _add_count(v: int):

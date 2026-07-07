@@ -6,8 +6,9 @@
 script = ExtResource("1_v22pl")
 relic_name = "Potty Mouth"
 description = "Earn 1 bonus each time a four letter word is played"
+cost = 5
 scale_by = 1
 threshold = 0
 money_reward = 0
-has_bonus = true
+is_scaling = true
 has_count = false
