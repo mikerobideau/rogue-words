@@ -108,6 +108,7 @@ func _on_space_clicked(space: Space):
 			var word_report = scorer.get_word_report(found_word)
 			context.word = word_report.word
 			context.word_score = word_report.score
+			context.word_report = word_report
 			var relic_report = relic_manager.get_score_report(context)
 			await word.play(word_report, relic_report)
 			score_panel.score += relic_report.new_score
@@ -116,6 +117,7 @@ func _on_space_clicked(space: Space):
 		
 		if score_panel.target_met():
 			_on_round_complete(context)
+			return
 			
 	#After turn
 	turn_number += 1

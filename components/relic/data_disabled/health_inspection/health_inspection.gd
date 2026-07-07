@@ -1,5 +1,5 @@
 extends RelicData
-class_name ReportCard
+class_name HealthInspection
 
 func on_token_placed(context: RelicContext) -> bool:
 	if context.placed_token.letter == 'A':

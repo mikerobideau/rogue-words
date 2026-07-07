@@ -1,10 +1,10 @@
 [gd_resource type="Resource" script_class="ReportCard" load_steps=2 format=3 uid="uid://rw8t8ecltyby"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/report_card/report_card.gd" id="1_f6nt6"]
+[ext_resource type="Script" path="res://components/relic/data_disabled/health_inspection/health_inspection.gd" id="1_f6nt6"]
 
 [resource]
 script = ExtResource("1_f6nt6")
-relic_name = "Report Card"
+relic_name = "Health Inspection"
 description = "Scales by +5 for each A placed.  Resets if a B, C, D, or F is placed."
 cost = 5
 is_scaling = true

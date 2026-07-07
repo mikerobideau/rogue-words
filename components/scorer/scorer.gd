@@ -3,12 +3,15 @@ class_name Scorer
 
 func get_word_report(found_word: Dictionary):
 	var report = WordReport.new()
-	report.word = found_word.word
+	var word = found_word['word']
+	var letters = found_word['letters']
+	report.word = word
 	report.spaces = found_word.path
 	report.letter_reports = [] as Array[LetterReport]
 	var running_score = 0
-	for space in report.spaces:
-		var letter_report = _get_letter_report(space, running_score)
+	for i in report.spaces.size():
+		var space = report.spaces[i]
+		var letter_report = _get_letter_report(space, running_score, letters[i])
 		report.letter_reports.append(letter_report)
 		running_score = letter_report.score
 	
@@ -21,10 +24,11 @@ func get_word_report(found_word: Dictionary):
 	report.score = running_score
 	return report
 
-func _get_letter_report(space: Space, running_score: int):
+func _get_letter_report(space: Space, running_score: int, display_letter: String):
 	var report = LetterReport.new()
 	var token = space.token
 	report.letter = token.letter
+	report.display_letter = display_letter
 	report.space = space
 	report.items = [] as  Array[LetterReportItem]
 	

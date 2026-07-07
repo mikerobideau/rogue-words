@@ -34,7 +34,7 @@ func find_words(placed_space: Space):
 		if relic_manager:
 			matches = relic_manager.get_letter_matches(start.token.letter)
 		for letter in matches:
-			_dfs([start], letter, placed_space, found, seen_words)
+			_dfs([start], [letter], letter, placed_space, found, seen_words)
 		
 	return found
 	
@@ -49,10 +49,10 @@ func _get_connected_occupied(start: Space) -> Array:
 				queue.append(neighbor)
 	return visited.keys()
 
-func _dfs(path: Array, word: String, must_include: Space, found: Array, seen: Dictionary):
+func _dfs(path: Array, letters: Array, word: String, must_include: Space, found: Array, seen: Dictionary):
 	if word.length() >= MIN_WORD_LENGTH and is_word(word) and path.has(must_include):
 		if not seen.has(word):
-			found.append({'path': path.duplicate(), 'word': word})
+			found.append({'path': path.duplicate(), 'letters': letters.duplicate(), 'word': word})
 	for neighbor in path[-1].links:
 		if neighbor != null and neighbor.token != null and not (neighbor in path):
 			var matches = [neighbor.token.letter]
@@ -60,5 +60,7 @@ func _dfs(path: Array, word: String, must_include: Space, found: Array, seen: Di
 				matches = relic_manager.get_letter_matches(neighbor.token.letter)
 			for letter in matches:
 				path.append(neighbor)
-				_dfs(path, word + letter, must_include, found, seen)
+				letters.append(letter)
+				_dfs(path, letters, word + letter, must_include, found, seen)
+				letters.pop_back()
 				path.pop_back()
