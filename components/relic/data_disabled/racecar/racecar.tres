@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Racecar" load_steps=2 format=3 uid="uid://dgsdrf2t0drh8"]
+
+[ext_resource type="Script" path="res://components/relic/data_disabled/racecar/racecar.gd" id="1_e01x0"]
+
+[resource]
+script = ExtResource("1_e01x0")
+relic_name = "Racecar"
+description = "+100 bonus if word is a palindrome"
+cost = 5
+is_scaling = false
+scale_by = 0
+is_x_scaling = false
+x_scale_by = 0.0
+money_reward = 0
+has_count = false
+threshold = 0

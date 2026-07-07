@@ -13,8 +13,7 @@ func get_score_report(context: RelicContext) -> RelicReport:
 	for relic in context.relics:
 		var has_event = relic.data.on_score_event(context) #triggers score events, e.g., money reward
 		if has_event:
-			Sound.play(Sound.SOUND_RELIC)
-			relic.pulse()
+			_activate_relic(relic)
 		context.relic = relic
 		var report_item = relic.data.get_score_report(context) #modifies current score (e.g., +50 or x2)
 		if report_item:
@@ -32,7 +31,7 @@ func add_grow_amount(context: RelicContext):
 	for relic in context.relics:
 		var bonus = relic.data.add_grow_amount(context)
 		if bonus > 0:
-			relic.pulse()
+			_activate_relic(relic)
 		expansions += bonus
 	return expansions
 	
@@ -41,3 +40,7 @@ func get_letter_matches(letter: String) -> Array:
 	for relic_data in GameState.relics:
 		matches = relic_data.modify_letter_matches(letter, matches)
 	return matches
+
+func _activate_relic(relic: Relic):
+	Sound.play(Sound.SOUND_RELIC)
+	relic.pulse()

@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="FineWine" load_steps=2 format=3 uid="uid://cxp5h1ur1pr77"]
 
-[ext_resource type="Script" path="res://components/relic/data/fine_wine/fine_wine.gd" id="1_onal4"]
+[ext_resource type="Script" path="res://components/relic/data_disabled/fine_wine/fine_wine.gd" id="1_onal4"]
 
 [resource]
 script = ExtResource("1_onal4")

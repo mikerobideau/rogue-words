@@ -5,4 +5,3 @@ class_name Growth
 
 func add_grow_amount(context: RelicContext) -> int:
 	return amount
-	
