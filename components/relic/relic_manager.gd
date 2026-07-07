@@ -11,8 +11,12 @@ func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()
 	var items: Array[RelicReportItem] = []
 	for relic in context.relics:
+		var has_event = relic.data.on_score_event(context) #triggers score events, e.g., money reward
+		if has_event:
+			Sound.play(Sound.SOUND_RELIC)
+			relic.pulse()
 		context.relic = relic
-		var report_item = relic.data.get_score_report(context)
+		var report_item = relic.data.get_score_report(context) #modifies current score (e.g., +50 or x2)
 		if report_item:
 			context.word_score = report_item.new_score
 			items.append(report_item)

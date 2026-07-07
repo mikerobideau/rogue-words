@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Juice" load_steps=2 format=3 uid="uid://v25wfe13kyqu"]
 
-[ext_resource type="Script" path="res://components/relic/data/juice/juice.gd" id="1_b87st"]
+[ext_resource type="Script" path="res://components/relic/data_disabled/juice/juice.gd" id="1_b87st"]
 
 [resource]
 script = ExtResource("1_b87st")

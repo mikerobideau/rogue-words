@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Honeycomb" load_steps=2 format=3 uid="uid://74ryqe2kwq5u"]
+
+[ext_resource type="Script" path="res://components/relic/data_disabled/honeycomb/honeycomb.gd" id="1_acoqc"]
+
+[resource]
+script = ExtResource("1_acoqc")
+relic_name = "Honeycomb"
+description = "Scales by +2 each time a six letter word is played"
+cost = 5
+is_scaling = true
+scale_by = 2
+money_reward = 0
+has_count = false
+threshold = 0

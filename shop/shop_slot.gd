@@ -47,7 +47,7 @@ func _ready():
 			
 func setup_relic(data: RelicData):
 	slot_type = Type.RELIC
-	title.text = 'Relic'
+	title.text = 'Coupon'
 	relic_data = data
 	Tooltip.register(frame, data.description)
 	cost = data.cost
@@ -68,7 +68,7 @@ func setup_item(data: ItemData):
 	
 func setup_token(data: TokenData):
 	slot_type = Type.TOKEN
-	title.text = 'Grape'
+	title.text = 'Token'
 	token_data = data
 	Tooltip.register(frame, data.description)
 	cost = data.cost

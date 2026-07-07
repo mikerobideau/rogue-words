@@ -8,12 +8,15 @@ signal data_changed()
 @export var cost := 5
 @export var is_scaling := false
 @export var scale_by: int
+@export var is_x_scaling := false
+@export var x_scale_by: float
 @export var money_reward: int
 @export var has_count := false
 @export var threshold: int
 
-var scaling_value := 0
-var count := 0
+var scaling_value: int = 0
+var x_scaling_value: float = 1.0
+var count: int = 0
 
 func get_score_report(context: RelicContext) -> RelicReportItem:
 	var score = get_score(context)
@@ -27,7 +30,7 @@ func get_score_report(context: RelicContext) -> RelicReportItem:
 	return report
 
 func get_score(context: RelicContext) -> int:
-	return context.word_score
+	return -1
 	
 func get_text(context: RelicContext):
 	return ''
@@ -46,6 +49,10 @@ func modify_letter_matches(letter: String, matches: Array) -> Array:
 	
 func _add_scaling_value(v: int):
 	scaling_value += v
+	data_changed.emit()
+	
+func _add_x_scaling_value(v: float):
+	x_scaling_value += v
 	data_changed.emit()
 	
 func _add_count(v: int):

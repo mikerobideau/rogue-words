@@ -65,3 +65,10 @@ func _on_token_clicked(token: Token):
 
 func _on_discard_button_pressed() -> void:
 	discard_clicked.emit()
+
+func get_hand() -> Array[Token]:
+	var tokens := [] as Array[Token]
+	for child in token_container.get_children():
+		if child is Token:
+			tokens.append(child)
+	return tokens

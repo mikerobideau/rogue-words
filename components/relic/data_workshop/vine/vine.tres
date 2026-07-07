@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Vine" load_steps=2 format=3 uid="uid://k16nhqeowcm6"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/vine/vine.gd" id="1_qxor4"]
+[ext_resource type="Script" path="res://components/relic/data_workshop/vine/vine.gd" id="1_qxor4"]
 
 [resource]
 script = ExtResource("1_qxor4")

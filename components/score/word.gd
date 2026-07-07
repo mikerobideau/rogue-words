@@ -1,12 +1,6 @@
 extends Control
 class_name Word
 
-const SOUND_TOKEN = 'token'
-const SOUND_ENHANCED_TOKEN = 'shimmer_bonus'
-const SOUND_ENHANCED_LETTER_SPACE = 'water_drop'
-const SOUND_ENHANCED_WORD_SPACE = 'water_drop'
-const SOUND_RELIC = 'bonus'
-
 const DUPE_TOKEN_SCALE = Vector2(0.8, 0.8)
 
 @onready var tokens = $Tokens
@@ -47,7 +41,7 @@ func play(word_report: WordReport, relic_report: RelicReport):
 			await get_tree().create_timer(delay).timeout
 	
 	if word_report.word_mult_report:
-		Sound.play(SOUND_ENHANCED_WORD_SPACE)
+		Sound.play(Sound.SOUND_ENHANCED_WORD_SPACE)
 		var report = word_report.word_mult_report
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
 		ScorePopup.show(report.text, score_label, Settings.SCORE_DELAY_LONG, 
@@ -55,7 +49,7 @@ func play(word_report: WordReport, relic_report: RelicReport):
 		await get_tree().create_timer(Settings.SCORE_DELAY_LONG).timeout
 	
 	for report in relic_report.items:
-		Sound.play(SOUND_RELIC)
+		Sound.play(Sound.SOUND_RELIC)
 		report.relic.pulse(Settings.SCORE_DELAY_LONG)
 		ScorePopup.show(report.text, score_label, Settings.SCORE_DELAY_LONG, 10, 0, ScorePopup.Anchor.RIGHT)
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
@@ -67,10 +61,10 @@ func play(word_report: WordReport, relic_report: RelicReport):
 	
 func _get_letter_sound(item: LetterReportItem) -> String:
 	if item.is_enhanced_space:
-		return SOUND_ENHANCED_LETTER_SPACE
+		return Sound.SOUND_ENHANCED_LETTER_SPACE
 	if item.is_enhanced_token:
-		return SOUND_ENHANCED_TOKEN
-	return SOUND_TOKEN
+		return Sound.SOUND_ENHANCED_TOKEN
+	return Sound.SOUND_TOKEN
 
 func add_token(token: Token) -> Token:
 	var dupe_token = token.duplicate()

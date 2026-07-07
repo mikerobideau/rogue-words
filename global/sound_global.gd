@@ -22,6 +22,12 @@ const sounds = {
 	'purchase': preload("res://assets/sound/vadim_makes_sound-vintage-cash-drawer-open-1-547824.mp3")	
 }
 
+const SOUND_TOKEN = 'token'
+const SOUND_ENHANCED_TOKEN = 'shimmer_bonus'
+const SOUND_ENHANCED_LETTER_SPACE = 'water_drop'
+const SOUND_ENHANCED_WORD_SPACE = 'water_drop'
+const SOUND_RELIC = 'bonus'
+
 var player: AudioStreamPlayer
 
 func _ready():

@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Chameleon" load_steps=2 format=3 uid="uid://crmvomnfrvqmb"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/chameleon/chameleon.gd" id="1_2jrp8"]
+[ext_resource type="Script" path="res://components/relic/data_workshop/chameleon/chameleon.gd" id="1_2jrp8"]
 
 [resource]
 script = ExtResource("1_2jrp8")

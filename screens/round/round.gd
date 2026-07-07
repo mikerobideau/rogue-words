@@ -164,9 +164,12 @@ func _toggle_token_selection(token: Token):
 
 func _get_relic_context():
 	var context = RelicContext.new()
-	context.relics = hud.get_relics()
 	context.state = GameState
+	context.relics = hud.get_relics()
 	context.placed_token = selected_token
+	context.hand = hand.get_hand()
+	for token in context.hand:
+		print_debug(token.data.letter)
 	return context
 
 func _on_no_tokens_remaining():
