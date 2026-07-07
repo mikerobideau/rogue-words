@@ -5,14 +5,15 @@
 [ext_resource type="PackedScene" uid="uid://uom73bc7ta52" path="res://components/score/summary_row.tscn" id="3_hed3x"]
 
 [node name="ScorePanel" type="Control"]
+custom_minimum_size = Vector2(496, 1098)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_koiw2")
 
 [node name="HBox" type="HBoxContainer" parent="."]
 layout_mode = 1
-offset_right = 248.0
-offset_bottom = 1453.0
+offset_right = 438.0
+offset_bottom = 1074.0
 theme_override_constants/separation = 100
 
 [node name="JuiceTube" parent="HBox" instance=ExtResource("2_0i3ee")]

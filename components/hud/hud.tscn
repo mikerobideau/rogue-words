@@ -1,12 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://c675q66wub3hr"]
+[gd_scene load_steps=5 format=3 uid="uid://c675q66wub3hr"]
 
 [ext_resource type="PackedScene" uid="uid://ba21revbuqtid" path="res://components/relic_container/relic_container.tscn" id="1_khlkn"]
 [ext_resource type="Script" path="res://components/hud/hud.gd" id="1_t0ehk"]
 [ext_resource type="PackedScene" uid="uid://dccksw1o5c780" path="res://components/money.tscn" id="2_w5018"]
 [ext_resource type="PackedScene" uid="uid://m6v4h0pfyoj4" path="res://components/item_container/item_container.tscn" id="3_7hd0d"]
-[ext_resource type="Texture2D" uid="uid://6pmtq54gpkss" path="res://assets/ui/panel/1x/wood_border.png" id="4_x8uil"]
-[ext_resource type="Texture2D" uid="uid://bqeeh7md6j1hn" path="res://assets/ui/panel/1x/dark_purple_header.png" id="5_khg6d"]
-[ext_resource type="Texture2D" uid="uid://dcfwe3l56vbxg" path="res://assets/ui/panel/1x/dark_purple_footer.png" id="7_glh45"]
 
 [node name="Hud" type="Control"]
 custom_minimum_size = Vector2(1920, 1080)
@@ -20,7 +17,7 @@ mouse_filter = 2
 script = ExtResource("1_t0ehk")
 
 [node name="Left" type="Control" parent="."]
-custom_minimum_size = Vector2(500, 1440)
+custom_minimum_size = Vector2(560, 1440)
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -32,22 +29,28 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Right" type="Control" parent="."]
-custom_minimum_size = Vector2(500, 1440)
+custom_minimum_size = Vector2(560, 1440)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -500.0
-offset_bottom = 1604.0
+offset_left = -560.0
+offset_bottom = 1440.0
 grow_horizontal = 0
 mouse_filter = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Right"]
-layout_mode = 2
-offset_left = 5.0
-offset_top = 325.0
-offset_right = 450.0
-offset_bottom = 1765.0
+[node name="MarginContainer" type="CenterContainer" parent="Right"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -445.0
+offset_top = -720.0
+offset_bottom = 720.0
+grow_horizontal = 0
+grow_vertical = 2
 
 [node name="Inventory" type="VBoxContainer" parent="Right/MarginContainer"]
 layout_mode = 2
@@ -64,25 +67,19 @@ layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 
-[node name="WoodBorderTop" type="TextureRect" parent="."]
-layout_mode = 0
-offset_right = 2560.0
-offset_bottom = 50.0
-texture = ExtResource("4_x8uil")
-
-[node name="HeaderMargin" type="MarginContainer" parent="."]
+[node name="Header" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(2560, 96)
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 305.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -1280.0
+offset_right = 1280.0
+offset_bottom = 96.0
 grow_horizontal = 2
-theme_override_constants/margin_top = 50
+color = Color(0.129412, 0.0352941, 0.305882, 1)
 
-[node name="HeaderBackground" type="TextureRect" parent="HeaderMargin"]
-layout_mode = 2
-texture = ExtResource("5_khg6d")
-
-[node name="InnerMargin" type="MarginContainer" parent="HeaderMargin/HeaderBackground"]
+[node name="InnerMargin" type="MarginContainer" parent="Header"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -94,56 +91,14 @@ theme_override_constants/margin_top = 50
 theme_override_constants/margin_right = 50
 theme_override_constants/margin_bottom = 50
 
-[node name="Title" type="Label" parent="HeaderMargin/HeaderBackground/InnerMargin"]
+[node name="Title" type="Label" parent="Header/InnerMargin"]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_type_variation = &"HeaderLarge"
+theme_type_variation = &"HeaderMedium"
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "Title"
 
-[node name="Money" parent="HeaderMargin/HeaderBackground/InnerMargin" instance=ExtResource("2_w5018")]
+[node name="Money" parent="Header/InnerMargin" instance=ExtResource("2_w5018")]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
-
-[node name="Bottom" type="MarginContainer" parent="."]
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -100.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/margin_left = 25
-theme_override_constants/margin_top = 25
-theme_override_constants/margin_right = 300
-theme_override_constants/margin_bottom = 100
-
-[node name="FooterMargin" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -151.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/margin_bottom = 50
-
-[node name="FooterBackground" type="TextureRect" parent="FooterMargin"]
-layout_mode = 2
-texture = ExtResource("7_glh45")
-
-[node name="WoodBorderBottom" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -50.0
-grow_horizontal = 2
-grow_vertical = 0
-texture = ExtResource("4_x8uil")

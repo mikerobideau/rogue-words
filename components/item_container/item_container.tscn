@@ -10,6 +10,7 @@ mouse_filter = 2
 script = ExtResource("1_ggere")
 
 [node name="Label" type="Label" parent="."]
+visible = false
 layout_mode = 2
 text = "No item selected"
 

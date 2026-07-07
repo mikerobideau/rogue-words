@@ -1,8 +1,12 @@
-extends TextureButton
+extends Control
 class_name ItemSlot
 
 signal item_selected(slot: ItemSlot)
 signal item_deselected(slot: ItemSlot)
+signal use_requested(slot: ItemSlot)
+
+@onready var slot = $Slot
+@onready var item_container = $ItemContainer
 
 const SLOT_SIZE = Vector2(106, 106)
 
@@ -10,33 +14,42 @@ var item_data: ItemData
 var item: Item
 var is_selected := false
 
+func set_item(data: ItemData) -> void:
+	clear()
+	item_data = data
+	if data:
+		item = ItemFactory.create_scene(data)
+		item.position = slot.size / 2
+		item_container.add_child(item)
+	register_tooltip()
+
+func clear() -> void:
+	item_data = null
+	if item and is_instance_valid(item):
+		item.queue_free()
+	item = null
+
 func _ready():
 	size = SLOT_SIZE
-	toggle_mode = true
+	slot.toggle_mode = true
 
-func _on_pressed():
-	if item_data == null:
-		button_pressed = false
-		return
-	if button_pressed:
-		select()
-	else:
-		deselect()
-	
 func select():
 	is_selected = true
-	button_pressed = true
+	slot.button_pressed = true
 	if item:
 		item.animate_selected(true)
 	item_selected.emit(self)
-	SlotMenu.open(self, [
-		#{ "text": "Keep", "callback": _keep },
-		{ "text": "Sell ($" + str(item_data.cost / 2) + ")", "callback": _sell }
+	SlotMenu.open(slot, [
+		{ "text": "Use",  "callback": _use },
+		{ "text": "Sell ($" + str(item_data.cost / 2) + ")", "callback": _sell },
 	])
+
+func _use() -> void:
+	use_requested.emit(self)
 	
 func deselect():
 	is_selected = false
-	button_pressed = false
+	slot.button_pressed = false
 	if item:
 		item.animate_selected(false)
 	item_deselected.emit(self)	
@@ -47,12 +60,7 @@ func _keep():
 func _sell():
 	GameState.money += item_data.cost / 2
 	GameState.remove_item(item_data)
-
-func set_item(data: ItemData):
-	item_data = data
-	item = ItemFactory.create_scene(data)
-	add_child(item)
-	item.position = size / 2
+	Tooltip.unregister(slot)
 
 func animate_and_consume(target: Node2D):
 	await item.float_to_target(target.global_position)
@@ -63,5 +71,13 @@ func animate_and_consume(target: Node2D):
 func register_tooltip():
 	var default_text = 'Empty item slot'
 	var text = item_data.description if item_data else default_text
-	Tooltip.register(self, text)
-	
+	Tooltip.register(slot, text)
+
+func _on_slot_pressed() -> void:
+	if item_data == null:
+		slot.button_pressed = false
+		return
+	if slot.button_pressed:
+		select()
+	else:
+		deselect()

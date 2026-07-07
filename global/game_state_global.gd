@@ -57,6 +57,7 @@ var discarded_tokens: Array[TokenData]
 #---------------------------------------------------------------------------------------------------
 
 var relics: Array[RelicData]
+var max_relics = 5
 
 func add_relic(relic: RelicData):
 	relics.append(relic)
@@ -66,11 +67,15 @@ func remove_relic(relic: RelicData):
 	relics.erase(relic)
 	relics_changed.emit()
 	
+func relic_slots_available():
+	return max_relics - relics.size()
+	
 #---------------------------------------------------------------------------------------------------
 #ITEMS
 #---------------------------------------------------------------------------------------------------
 
 var items: Array[ItemData]
+var max_items = 3
 
 func add_item(item: ItemData):
 	items.append(item)
@@ -79,6 +84,9 @@ func add_item(item: ItemData):
 func remove_item(item: ItemData):
 	items.erase(item)
 	items_changed.emit()
+
+func item_slots_available() -> int:
+	return max_items - items.size()
 
 #---------------------------------------------------------------------------------------------------
 #BOSS

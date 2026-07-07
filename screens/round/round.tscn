@@ -1,8 +1,6 @@
-[gd_scene load_steps=10 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=8 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
-[ext_resource type="Texture2D" uid="uid://bbpgmw6q7ravn" path="res://assets/ui/panel/1x/white_center_panel.png" id="2_2rto2"]
-[ext_resource type="Texture2D" uid="uid://b8g302ead4a3s" path="res://assets/ui/panel/1x/sidebar.png" id="2_4trdy"]
 [ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/score_panel.tscn" id="2_7t8ks"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
@@ -20,61 +18,9 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_51id5")
 
-[node name="LeftSidebarBackground" type="TextureRect" parent="."]
-layout_mode = 0
-offset_right = 431.0
-offset_bottom = 1440.0
-size_flags_horizontal = 0
-texture = ExtResource("2_4trdy")
+[node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
 
-[node name="RightSidebarBackground" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -431.0
-offset_top = -720.0
-offset_bottom = 720.0
-grow_horizontal = 0
-grow_vertical = 2
-size_flags_horizontal = 0
-texture = ExtResource("2_4trdy")
-
-[node name="CenterPanel" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -850.0
-offset_top = -720.5
-offset_right = 850.0
-offset_bottom = 720.5
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("2_2rto2")
-
-[node name="ColorRect" type="ColorRect" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Background" type="TextureRect" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
+[node name="Scorer" parent="." instance=ExtResource("5_va824")]
 
 [node name="HandContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -83,13 +29,11 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -20.0
-offset_top = -50.0
-offset_right = 20.0
+offset_left = -500.0
+offset_top = -128.0
+offset_right = 500.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_bottom = 100
 
 [node name="Hand" parent="HandContainer" instance=ExtResource("3_thhj8")]
 layout_mode = 2
@@ -102,19 +46,19 @@ offset_right = 0.0
 offset_bottom = 150.0
 mouse_filter = 2
 
-[node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
-
-[node name="Scorer" parent="." instance=ExtResource("5_va824")]
-
 [node name="Left" type="MarginContainer" parent="."]
+custom_minimum_size = Vector2(560, 1440)
 layout_mode = 1
 offset_right = 50.0
-offset_bottom = 40.0
-theme_override_constants/margin_left = 50
-theme_override_constants/margin_top = 50
+offset_bottom = 50.0
 
-[node name="ScorePanel" parent="Left" instance=ExtResource("2_7t8ks")]
+[node name="CenterContainer" type="CenterContainer" parent="Left"]
 layout_mode = 2
+
+[node name="ScorePanel" parent="Left/CenterContainer" instance=ExtResource("2_7t8ks")]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
 
 [node name="WordContainer" type="MarginContainer" parent="."]
 layout_mode = 1

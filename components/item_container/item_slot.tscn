@@ -4,14 +4,29 @@
 [ext_resource type="Texture2D" uid="uid://bndl6hc4um0js" path="res://assets/sprites/item/1x/item_container_hover.png" id="2_5k5vm"]
 [ext_resource type="Script" path="res://components/item_container/item_slot.gd" id="2_s3aho"]
 
-[node name="ItemSlot" type="TextureButton"]
+[node name="ItemSlot" type="Control"]
+custom_minimum_size = Vector2(103, 103)
+layout_mode = 3
+anchors_preset = 0
 offset_right = 107.0
 offset_bottom = 104.0
 size_flags_horizontal = 4
 size_flags_vertical = 4
+script = ExtResource("2_s3aho")
+
+[node name="Slot" type="TextureButton" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
 texture_normal = ExtResource("1_fddfi")
 texture_pressed = ExtResource("2_5k5vm")
 texture_hover = ExtResource("2_5k5vm")
-script = ExtResource("2_s3aho")
 
-[connection signal="pressed" from="." to="." method="_on_pressed"]
+[node name="ItemContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[connection signal="pressed" from="Slot" to="." method="_on_slot_pressed"]

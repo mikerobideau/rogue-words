@@ -5,18 +5,20 @@
 [ext_resource type="Texture2D" uid="uid://bl02w530xwhxf" path="res://assets/icons/1x/discard.png" id="4_bncvi"]
 
 [node name="Hand" type="Control"]
+custom_minimum_size = Vector2(1000, 128)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 968.0
-offset_bottom = 146.0
 size_flags_horizontal = 3
 mouse_filter = 2
 script = ExtResource("1_v6a6q")
 
 [node name="Tokens" type="Control" parent="."]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 1
 
 [node name="DiscardContainer" type="MarginContainer" parent="."]

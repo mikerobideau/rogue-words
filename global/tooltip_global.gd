@@ -20,6 +20,21 @@ func register(target: Control, text: String) -> void:
 		target.mouse_exited.connect(_on_target_exited.bind(target))
 		target.tree_exiting.connect(_on_target_freed.bind(target))
 
+func unregister(target: Control) -> void:
+	tooltip_texts.erase(target)
+	var entered := _on_target_entered.bind(target)
+	var exited := _on_target_exited.bind(target)
+	var freed := _on_target_freed.bind(target)
+	if target.mouse_entered.is_connected(entered):
+		target.mouse_entered.disconnect(entered)
+	if target.mouse_exited.is_connected(exited):
+		target.mouse_exited.disconnect(exited)
+	if target.tree_exiting.is_connected(freed):
+		target.tree_exiting.disconnect(freed)
+	if current_target == target:
+		tooltip.visible = false
+		current_target = null
+
 func _on_target_entered(target: Control) -> void:
 	current_target = target
 	tooltip.set_text(tooltip_texts.get(target, ""))

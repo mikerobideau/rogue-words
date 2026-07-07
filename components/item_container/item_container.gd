@@ -1,17 +1,23 @@
 extends Control
 class_name ItemContainer
 
+signal item_use_requested(slot: ItemSlot)
+
 var selected_slot: ItemSlot = null
 
 @onready var slots: Array[ItemSlot] = [$Items/Slot1, $Items/Slot2, $Items/Slot3]
 @onready var label = $Label
 
 func _ready():
-	GameState.items_changed.connect(_refresh_items)
+	GameState.items_changed.connect(refresh_items)
 	for slot in slots:
 		slot.item_selected.connect(_on_slot_selected)
 		slot.item_deselected.connect(_on_slot_deselected)
-	_refresh_items()
+		slot.use_requested.connect(_on_slot_use_requested)
+	refresh_items()
+
+func _on_slot_use_requested(slot: ItemSlot) -> void:
+	item_use_requested.emit(slot)
 
 func _on_slot_selected(slot: ItemSlot):
 	if selected_slot and selected_slot != slot: #single selection logic
@@ -30,11 +36,11 @@ func _update_label():
 func deselect():
 	selected_slot.deselect()
 
-func _refresh_items():
+func refresh_items():
+	for slot in slots:
+		slot.clear()
 	for i in slots.size():
 		slots[i].deselect()
 		if i < GameState.items.size():
 			var item = GameState.items[i]
-			#var scene = ItemFactory.create_scene(item)
 			slots[i].set_item(item)
-		slots[i].register_tooltip()

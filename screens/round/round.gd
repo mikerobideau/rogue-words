@@ -15,11 +15,12 @@ const DEBUG = false
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var word = $WordContainer/Word
-@onready var score_panel = $Left/ScorePanel
+@onready var score_panel = $Left/CenterContainer/ScorePanel
 
 var hud: Control
 var relic_manager: Node
 var scoring := false
+var active_item_slot: ItemSlot
 
 var selected_tokens: Array[Token]:
 	set(v):
@@ -53,10 +54,14 @@ func _ready():
 	hand.token_clicked.connect(_on_token_clicked)
 	board.space_clicked.connect(_on_space_clicked)	
 	hand.discard_clicked.connect(_on_discard_clicked)
-	#juicer.round_number = GameState.round_number
 	score_panel.score = 0
 	score_panel.target_score = GameState.target_score
-	#score_panel.turns_remaining = turns_remaining
+	hud.relic_container.refresh_relics()
+	hud.item_container.refresh_items()
+	hud.item_container.item_use_requested.connect(_on_item_use_requested)
+	
+func _on_item_use_requested(slot: ItemSlot):
+	active_item_slot = slot 
 	
 func _update_discard_disabled():
 	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
@@ -128,12 +133,12 @@ func _path_to_word(path: Array):
 func _on_token_clicked(token: Token):
 	if scoring: 
 		return
-	var selected_slot = hud.item_container.selected_slot
-	if selected_slot:
-		var item_data = selected_slot.item_data
+	if active_item_slot:
+		var item_data = active_item_slot.item_data
 		if item_data and item_data.can_enhance_token:
-			await selected_slot.animate_and_consume(token)
+			await active_item_slot.animate_and_consume(token)
 			_apply_item(item_data, token)
+			active_item_slot = null
 		else:
 			#item is selected but can't be applied to token
 			#auto-deselect item and select token

@@ -31,6 +31,8 @@ var sold := false:
 		sold = v
 		if sold_sticker:
 			sold_sticker.visible = v
+		if frame:
+			frame.disabled = v
 			
 var selected := false:
 	set(v):
@@ -100,6 +102,9 @@ func _on_frame_mouse_entered() -> void:
 	Sound.play('token')
 
 func _on_buy_pressed() -> void:
+	if _inventory_full():
+		ScorePopup.show('Inventory full!', self)
+		return
 	if GameState.money >= cost:
 		Sound.play('purchase')
 		purchased.emit(self)
@@ -108,3 +113,11 @@ func _on_buy_pressed() -> void:
 		title_container.visible = false
 		sold = true
 		selected = false
+		Tooltip.unregister(frame)
+		
+func _inventory_full():
+	if relic_data != null:
+		return GameState.relic_slots_available() < 1
+	if item_data != null:
+		return GameState.item_slots_available() < 1
+	return false

@@ -29,6 +29,7 @@ func register_tooltip():
 func _sell():
 	GameState.money += relic_data.cost / 2
 	GameState.remove_relic(relic_data)
+	Tooltip.unregister(slot)
 
 func _on_slot_pressed() -> void:
 	if relic_data == null:
