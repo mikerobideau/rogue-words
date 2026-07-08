@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=9 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/score_panel.tscn" id="2_7t8ks"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
+[ext_resource type="PackedScene" uid="uid://hs3l7uvt8ar5" path="res://components/token_bag/token_bag.tscn" id="4_4uwb7"]
 [ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
 [ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/score/word.tscn" id="7_uqrp3"]
 
@@ -21,6 +22,8 @@ script = ExtResource("1_51id5")
 [node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
 
 [node name="Scorer" parent="." instance=ExtResource("5_va824")]
+
+[node name="TokenBag" parent="." instance=ExtResource("4_4uwb7")]
 
 [node name="HandContainer" type="MarginContainer" parent="."]
 layout_mode = 1

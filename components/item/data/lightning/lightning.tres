@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="Lightning" load_steps=3 format=3 uid="uid://4kmjxk0k14yu"]
 
 [ext_resource type="Texture2D" uid="uid://bkad01fwir1a3" path="res://assets/sprites/item/1x/lightning.png" id="1_lfw12"]
-[ext_resource type="Script" path="res://components/item/data_disabled/lightning/lightning.gd" id="2_31180"]
+[ext_resource type="Script" path="res://components/item/data/lightning/lightning.gd" id="2_31180"]
 
 [resource]
 script = ExtResource("2_31180")

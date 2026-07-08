@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Pepper" load_steps=3 format=3 uid="uid://cydyb2tj1l2bu"]
 
-[ext_resource type="Script" path="res://components/item/data_disabled/pepper/pepper.gd" id="1_5yh80"]
+[ext_resource type="Script" path="res://components/item/data/pepper/pepper.gd" id="1_5yh80"]
 [ext_resource type="Texture2D" uid="uid://b6hxer11eh7km" path="res://assets/sprites/item/1x/pepper.png" id="1_hulsu"]
 
 [resource]

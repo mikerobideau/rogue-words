@@ -85,6 +85,7 @@ func _on_selected():
 		_animate_deselected()
 	
 func on_placed():
+	data.spent = true
 	if data.enhancement:
 		data.enhancement.on_placed()
 		

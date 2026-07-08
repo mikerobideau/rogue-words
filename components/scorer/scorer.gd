@@ -39,8 +39,6 @@ func _get_letter_report(space: Space, running_score: int, display_letter: String
 	report.items.append(_make_letter_item(running_score, score, token_text, space.data.has_letter_effect(), false))
 
 	#Enhanced token score - modifies running total
-	#Note that letter can only have mult OR plus, but not both
-	
 	var mult := space.token.get_mult()
 	print_debug('space has mult ' + str(mult))
 	if mult > 1:

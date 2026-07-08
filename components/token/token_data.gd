@@ -12,6 +12,8 @@ const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 
 @export var value: int
 @export var enhancement: TokenEnhancement
 
+var spent := false
+
 func enhance(e: TokenEnhancement):
 	Tooltip.hide_for_node()
 	if e:

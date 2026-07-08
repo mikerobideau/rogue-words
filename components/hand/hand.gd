@@ -35,6 +35,8 @@ func draw_tokens(n: int):
 				return
 			bag = GameState.discarded_tokens.duplicate()
 			GameState.discarded_tokens = [] as Array[TokenData]
+			for token in bag:
+				token.data.spent = false
 		var token_data = bag.pop_back()
 		var token_scene = TokenFactory.create_scene(token_data)
 		token_container.add_child(token_scene)
@@ -45,6 +47,7 @@ func draw_tokens(n: int):
 		
 func discard(tokens: Array[Token]):
 	for token in tokens:
+		token.data.spent = true
 		GameState.discarded_tokens.append(token.data)
 		token_container.remove_child(token)
 	draw_tokens(tokens.size())
