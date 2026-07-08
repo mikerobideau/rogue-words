@@ -49,6 +49,7 @@ var turns_remaining := TURNS_PER_ROUND:
 func _ready():
 	if DEBUG:
 		_debug()
+	hand.hand_size = GameState.current_boss.get_hand_size(hand.DEFAULT_HAND_SIZE)
 	hand.on_round_start()
 	turn_number = 1
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)

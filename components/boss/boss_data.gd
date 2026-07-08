@@ -6,3 +6,6 @@ class_name BossData
 	
 func get_discards(base: int) -> int:
 	return base
+
+func get_hand_size(base: int) -> int:
+	return base

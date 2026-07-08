@@ -9,16 +9,17 @@ signal discard_clicked()
 @onready var token_container = $Tokens
 @onready var discard_button = $DiscardContainer/DiscardButton
 
-const HAND_SIZE = 5
+const DEFAULT_HAND_SIZE = 5
 const H_PAD = 50
 const V_PAD = 0
 	
 var bag: Array[TokenData]
+var hand_size := DEFAULT_HAND_SIZE
 	
 func on_round_start():
 	bag = GameState.tokens.duplicate()
 	GameState.token_added.connect(_on_token_added)
-	draw_tokens(HAND_SIZE)
+	draw_tokens(hand_size)
 	
 func _on_token_added(token: TokenData):
 	bag.append(token)

@@ -57,9 +57,11 @@ func _on_new_game():
 	
 func _next_round():
 	GameState.round_number += 1
-	hud.title = 'Round ' + str(GameState.round_number)
 	if GameState.is_boss_round:
 		await _show_boss_intro()
+		hud.title = 'Boss: ' + GameState.current_boss.boss_name
+	else:
+		hud.title = 'Round ' + str(GameState.round_number)
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
 	round.hud = hud
