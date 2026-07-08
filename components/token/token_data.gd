@@ -13,7 +13,9 @@ const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 
 @export var enhancement: TokenEnhancement
 
 func enhance(e: TokenEnhancement):
-	enhancement = e
+	Tooltip.hide_for_node()
+	if e:
+		enhancement = e
 	
 func next_letter():
 	var code = letter.to_upper().unicode_at(0)

@@ -13,15 +13,21 @@ const RADIUS = 48
 		
 @export var enhancement: TokenEnhancement:
 	get(): return data.enhancement
-	set(v): enhancement = v; _update_sprite()
+	set(v): 
+		enhancement = v
+		_update_sprite()
 
 @export var letter: String:
 	get(): return data.letter
-	set(v): data.letter = v; _update_label()
+	set(v): 
+		data.letter = v; 
+		_update_label()
 		
 @export var value: int:
 	get(): return data.value
-	set(v): value = v; _update_label()
+	set(v): 
+		data.value = v
+		_update_label()
 		
 var is_selectable := true
 		
@@ -43,6 +49,7 @@ func _ready():
 	data.letter_changed.connect(_on_letter_changed)
 	
 func enhance(e: TokenEnhancement):
+	Tooltip.hide_for_node()
 	data.enhance(e)
 	_transform()
 	
@@ -93,6 +100,11 @@ func _update_label(transition := false):
 		var tween = create_tween()
 		tween.tween_property(letter_label, 'modulate:a', 1, 0.2)
 	
+func _show_tooltip():
+	var type = 'Grape' if enhancement == null else 'Enhanced'
+	var text = type + ' ' + data.letter + ' (' + str(data.value) + ' mL)'
+	Tooltip.show_for_node(self, text)
+	
 func _init_click_detection():
 	var area = Area2D.new()
 	var shape = CollisionShape2D.new()
@@ -106,11 +118,13 @@ func _init_click_detection():
 	area.mouse_exited.connect(_on_mouse_exited)
 
 func _on_mouse_entered():
+	_show_tooltip()
 	if is_selectable and not selected: 
 		Sound.play('token')
 		scale_up()
 
 func _on_mouse_exited():
+	Tooltip.hide_for_node()
 	if is_selectable and not selected: 
 		scale_down()
 

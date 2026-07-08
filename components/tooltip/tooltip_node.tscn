@@ -10,6 +10,8 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [node name="TooltipNode" type="PanelContainer"]
+offset_right = 266.0
+offset_bottom = 173.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_vye2a")
 script = ExtResource("1_iyn4a")
 

@@ -66,3 +66,15 @@ func _position_tooltip(target: Control) -> void:
 	pos.y = clamp(pos.y, 4.0, viewport_size.y - tooltip_size.y - 4.0)
 
 	tooltip.global_position = pos
+
+func show_for_node(target: Node2D, text: String) -> void:
+	tooltip.set_text(text)
+	await get_tree().process_frame
+	var screen_pos := target.get_global_transform_with_canvas().origin
+	tooltip.global_position = Vector2(
+		screen_pos.x - tooltip.size.x / 2.0,                    # centered over the node
+		screen_pos.y - tooltip.size.y - GAP - Token.RADIUS)     # above the node's top
+	tooltip.visible = true
+
+func hide_for_node() -> void:
+	tooltip.visible = false
