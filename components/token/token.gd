@@ -211,6 +211,7 @@ func _animate_destroyed(custom_scale := Vector2.ONE):
 	return tween.finished
 	
 func _transform():
+	is_selectable = false #disable selection during transformation to prevent transform and mouseover animations from competing
 	if scale_tween:
 		scale_tween.kill()
 	
@@ -231,3 +232,4 @@ func _transform():
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	scale_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.08)
 	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.08)
+	is_selectable = true
