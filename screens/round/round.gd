@@ -135,7 +135,7 @@ func _on_space_clicked(space: Space):
 func _on_round_complete(context: RelicContext):
 	Sound.play('win')
 	for token in GameState.tokens:
-		token.data.spent = false
+		token.spent = false
 	relic_manager.on_round_complete(context)
 	await get_tree().create_timer(1.0).timeout
 	completed.emit()

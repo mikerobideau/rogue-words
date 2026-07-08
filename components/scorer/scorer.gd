@@ -40,7 +40,6 @@ func _get_letter_report(space: Space, running_score: int, display_letter: String
 
 	#Enhanced token score - modifies running total
 	var mult := space.token.get_mult()
-	print_debug('space has mult ' + str(mult))
 	if mult > 1:
 		var new_score = score * mult
 		var text = 'Enhanced space! x' + str(mult)

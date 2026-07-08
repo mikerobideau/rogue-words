@@ -9,3 +9,6 @@ func on_placed():
 	
 func get_mult() -> int:
 	return 1
+
+func get_plus_score() -> int:
+	return 0

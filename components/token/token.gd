@@ -86,6 +86,8 @@ func _on_selected():
 	
 func on_placed():
 	data.spent = true
+	_animate_deselected()
+	is_selectable = false
 	if data.enhancement:
 		data.enhancement.on_placed()
 		
@@ -211,25 +213,26 @@ func _animate_destroyed(custom_scale := Vector2.ONE):
 	return tween.finished
 	
 func _transform():
+	var was_selectable := is_selectable
 	is_selectable = false #disable selection during transformation to prevent transform and mouseover animations from competing
 	if scale_tween:
 		scale_tween.kill()
 	
-	scale_tween = create_tween()
+	transform_tween = create_tween()
 	# impact reaction — quick squash, like it got hit
-	scale_tween.tween_property(self, 'scale', Vector2(1.2, 0.8), 0.08) \
+	transform_tween.tween_property(self, 'scale', Vector2(1.2, 0.8), 0.08) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		
 	# flip closed on X axis
-	scale_tween.tween_property(self, 'scale:x', 0.0, 0.12) \
+	transform_tween.tween_property(self, 'scale:x', 0.0, 0.12) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# swap sprite_frames at the moment it's edge-on, invisible
-	scale_tween.tween_callback(_update_sprite)
+	transform_tween.tween_callback(_update_sprite)
 	
 	# flip open with overshoot, settling like _animate_placed
-	scale_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.15) \
+	transform_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.15) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	scale_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.08)
-	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.08)
-	is_selectable = true
+	transform_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.08)
+	transform_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.08)
+	transform_tween.tween_callback(func(): is_selectable = was_selectable)
