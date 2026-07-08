@@ -1,9 +1,12 @@
-[gd_resource type="Resource" script_class="Lightning" load_steps=2 format=3 uid="uid://4kmjxk0k14yu"]
+[gd_resource type="Resource" script_class="Lightning" load_steps=3 format=3 uid="uid://4kmjxk0k14yu"]
 
-[ext_resource type="Script" path="res://components/item/data_disabled/lightning/lightning.gd" id="1_ulxdc"]
+[ext_resource type="Texture2D" uid="uid://bkad01fwir1a3" path="res://assets/sprites/item/1x/lightning.png" id="1_lfw12"]
+[ext_resource type="Script" path="res://components/item/data_disabled/lightning/lightning.gd" id="2_31180"]
 
 [resource]
-script = ExtResource("1_ulxdc")
+script = ExtResource("2_31180")
 item_name = "Lightning"
-description = "Enhances selected token to a yellow grape"
+icon = ExtResource("1_lfw12")
+cost = 3
+description = "Enhances selected token to a charged grape (scales by +1 on placement)"
 can_enhance_token = true

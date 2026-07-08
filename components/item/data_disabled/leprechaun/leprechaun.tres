@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Leprechaun" load_steps=3 format=3 uid="uid://busoh2fecte3c"]
 
-[ext_resource type="Script" path="res://components/item/data/leprechaun/leprechaun.gd" id="1_4gpt1"]
+[ext_resource type="Script" path="res://components/item/data_disabled/leprechaun/leprechaun.gd" id="1_4gpt1"]
 [ext_resource type="Texture2D" uid="uid://sxc75c6f6t5k" path="res://assets/sprites/item/1x/leprechaun.png" id="1_agvf3"]
 
 [resource]

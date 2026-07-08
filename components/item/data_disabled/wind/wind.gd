@@ -3,4 +3,5 @@ class_name Wind
 
 func enhance_token(token: Token):
 	token.swap_random_consonant_vowel()
+	token.enhance(null)
 	return true

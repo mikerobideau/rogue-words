@@ -41,19 +41,20 @@ func _get_letter_report(space: Space, running_score: int, display_letter: String
 	#Enhanced token score - modifies running total
 	#Note that letter can only have mult OR plus, but not both
 	
-	#var mult := _mult_enhancement(space)
-	#if mult > 1:
-	#	var new_score = score * mult
-	#	var text = 'x' + str(mult)
-	#	report.items.append(_make_letter_item(score, new_score, text, false, true))
-	#	score = new_score
-	#else:
-	#	var plus := _plus_enhancement(space)
-	#	if plus > 0:
-	#		var new_score = score + plus
-	#		var text = '+' + str(plus)
-	#		report.items.append(_make_letter_item(score, new_score, text, false, true))
-	#		score = new_score
+	var mult := space.token.get_mult()
+	print_debug('space has mult ' + str(mult))
+	if mult > 1:
+		var new_score = score * mult
+		var text = 'Enhanced space! x' + str(mult)
+		report.items.append(_make_letter_item(score, new_score, text, false, true))
+		score = new_score
+	
+	var plus_score := space.token.get_plus_score()
+	if plus_score > 0:
+		var new_score = score + plus_score
+		var text = 'Enhanced space! +' + str(plus_score)
+		report.items.append(_make_letter_item(score, new_score, text, false, true))
+		score = new_score
 	
 	report.score = score
 	return report
@@ -81,14 +82,6 @@ func _make_word_mult_report(prev: int, new: int, text: String) -> WordMultReport
 	item.text = text
 	return item
 	
-#func _mult_enhancement(space: Space) -> int:
-#	if space.token.type == TokenData.Type.SPICY_GRAPE:
-#		return 2
-#	return 1
-
-#func _plus_enhancement(space: Space) -> int:
-#	return 0
-
 func _path_to_base_score(path: Array) -> int:
 	var values = path.map(func(p): return p.token.value)
 	return values.reduce(func(acc, n): return acc + n, 0)

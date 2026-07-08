@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="Sun" load_steps=3 format=3 uid="uid://euu0xad5lgmc"]
 
 [ext_resource type="Texture2D" uid="uid://bejtwmnpgo46k" path="res://assets/sprites/item/1x/sun.png" id="1_8k1ae"]
-[ext_resource type="Script" path="res://components/item/data/sun/sun.gd" id="1_tk0r8"]
+[ext_resource type="Script" path="res://components/item/data_disabled/sun/sun.gd" id="1_tk0r8"]
 
 [resource]
 script = ExtResource("1_tk0r8")

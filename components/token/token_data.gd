@@ -20,6 +20,7 @@ func enhance(e: TokenEnhancement):
 func next_letter():
 	var code = letter.to_upper().unicode_at(0)
 	letter = char((code - 65 + 1) % 26 + 65)
+	letter_changed.emit()
 
 func change_letter_to(l: String):
 	letter = l
@@ -31,3 +32,4 @@ func swap_random_consonant_vowel():
 		letter = CONSONANTS[randi() % CONSONANTS.size()]
 	else:
 		letter = VOWELS[randi() % VOWELS.size()]
+	letter_changed.emit()

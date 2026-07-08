@@ -9,7 +9,11 @@ const RADIUS = 48
 @onready var letter_label = $Letter
 @onready var value_label = $Value
 
-@export var data: TokenData
+@export var data: TokenData:
+	set(v):
+		data = v
+		_update_label()
+		_update_sprite()
 		
 @export var enhancement: TokenEnhancement:
 	get(): return data.enhancement
@@ -63,6 +67,16 @@ func next_letter():
 	
 func swap_random_consonant_vowel():
 	data.swap_random_consonant_vowel()
+	
+func get_mult() -> int:
+	if enhancement:
+		return enhancement.get_mult()
+	return 1
+	
+func get_plus_score() -> int:
+	if enhancement:
+		return enhancement.get_plus_score()
+	return 0
 	
 func _on_selected():
 	if selected:
