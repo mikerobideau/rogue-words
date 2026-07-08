@@ -12,7 +12,6 @@ var score: int:
 		score = v
 		score_label.text = str(v)
 		
-		
 func _ready():
 	score_label.pivot_offset = score_label.size / 2
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -32,7 +31,7 @@ func play(word_report: WordReport, relic_report: RelicReport):
 	for letter_report in word_report.letter_reports:
 		var token = await add_token(letter_report.space.token)
 		if letter_report.display_letter != letter_report.letter:
-			token.letter = letter_report.display_letter
+			token.letter_label.text = letter_report.display_letter
 		for item in letter_report.items:
 			var delay = Settings.SCORE_DELAY_LONG if item.is_enhanced_space or item.is_enhanced_token else Settings.SCORE_DELAY_NORMAL
 			var sound = _get_letter_sound(item)
