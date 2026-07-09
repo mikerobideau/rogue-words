@@ -5,8 +5,11 @@ class_name Main
 @onready var screen_container = $ScreenContainer
 @onready var relic_manager = $RelicManager
 @onready var item_manager = $ItemManager
+@onready var center_panel = $ScreenContainer/CenterPanel
 
-var SCREENS = {
+const DEFAULT_CENTER_PANEL_COLOR = '#f5f5f5'
+
+const SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
 	'round': preload("res://screens/round/round.tscn"),
 	'shop': preload("res://shop/shop.tscn"),
@@ -32,10 +35,10 @@ func _show_boss_intro():
 	hud.visible = false
 	var boss_intro = SCREENS.boss_intro.instantiate()
 	Sound.play('boss_intro')
-	boss_intro.title = GameState.current_boss.boss_name
+	boss_intro.title = 'Incoming Storm'
 	boss_intro.description = GameState.current_boss.description
 	_show_screen(boss_intro, {})
-	await get_tree().create_timer(2.5).timeout
+	await get_tree().create_timer(3).timeout
 	hud.visible = true
 	
 func _on_game_over(message: String):
@@ -59,9 +62,12 @@ func _next_round():
 	GameState.round_number += 1
 	if GameState.is_boss_round:
 		await _show_boss_intro()
-		hud.title = 'Boss: ' + GameState.current_boss.boss_name
+		hud.title = 'Boss: ' + GameState.current_boss.description
+		print_debug('setting center panel to black')
+		center_panel.color = Color.BLACK
 	else:
 		hud.title = 'Round ' + str(GameState.round_number)
+		center_panel.color = DEFAULT_CENTER_PANEL_COLOR
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
 	round.hud = hud
@@ -76,6 +82,7 @@ func _on_round_completed():
 	_enter_shop()
 	
 func _enter_shop():
+	center_panel.color = DEFAULT_CENTER_PANEL_COLOR
 	hud.title = 'Shop'
 	var shop = SCREENS.shop.instantiate()
 	shop.completed.connect(_next_round)

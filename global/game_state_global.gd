@@ -29,7 +29,7 @@ var round_number := 0:
 		round_number = v
 		target_score = target_scores[v - 1]
 		discarded_tokens = [] as Array[TokenData]
-		is_boss_round = round_number % 1 == 0
+		is_boss_round = round_number % 3 == 0
 		current_boss = BossFactory.random_boss_data() if is_boss_round else BossData.new()
 		
 #---------------------------------------------------------------------------------------------------

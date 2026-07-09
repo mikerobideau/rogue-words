@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="SmallerBoardBoss" load_steps=2 format=3 uid="uid://beaoikhgdgycm"]
+
+[ext_resource type="Script" path="res://components/boss/data/smaller_board_boss/smaller_board_boss.gd" id="1_deqgm"]
+
+[resource]
+script = ExtResource("1_deqgm")
+boss_name = "Smaller Board"
+description = "Starting board size reduced by 1"

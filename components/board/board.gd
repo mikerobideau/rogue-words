@@ -7,7 +7,7 @@ var SpaceScene = preload("res://components/space/space.tscn")
 
 const SOUND_ENHANCED_SPACE = 'small_bonus' 
 const BOARD_SIZE = Vector2(800, 800)
-const NUM_STARTING_SPACES = 4
+const DEFAULT_NUM_STARTING_SPACES = 3
 const NUM_EXPANSIONS = 1
 const MAX_RADIUS := 3
 const SPACING := 75
@@ -15,6 +15,7 @@ const SQRT_3_OVER_2 = sqrt(3) / 2.0
 const LINK_COLOR = Color(0.75, 0.75, 0.75)
 const LINK_WIDTH = 4.0
 
+var num_starting_spaces := DEFAULT_NUM_STARTING_SPACES
 var start_space_coord = Vector2(0, 0)
 var start_space_pos: Vector2
 var expanding := false
@@ -35,8 +36,10 @@ func _ready():
 	custom_minimum_size = BOARD_SIZE
 	start_space_pos = BOARD_SIZE / 2
 	#_add_background()
+	
+func start():
 	_create_space(start_space_coord, true)
-	grow(NUM_STARTING_SPACES - 1, true)
+	grow(num_starting_spaces - 1, true)
 	
 func get_spaces():
 	return spaces

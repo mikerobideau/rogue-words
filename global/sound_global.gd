@@ -30,7 +30,7 @@ const SOUND_RELIC = 'bonus'
 
 var player: AudioStreamPlayer
 
-var sound_disabled := true
+var sound_disabled := false
 
 func _ready():
 	player = AudioStreamPlayer.new()

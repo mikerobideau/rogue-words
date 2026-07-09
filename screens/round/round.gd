@@ -49,18 +49,29 @@ var turns_remaining := TURNS_PER_ROUND:
 func _ready():
 	if DEBUG:
 		_debug()
-	hand.hand_size = GameState.current_boss.get_hand_size(hand.DEFAULT_HAND_SIZE)
-	hand.on_round_start()
+		
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
 	turn_number = 1
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
-	GameState.discarded_tokens = [] as Array[TokenData]
-	word_finder.relic_manager = relic_manager
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	hand.hand_size = GameState.current_boss.get_hand_size(hand.DEFAULT_HAND_SIZE)
 	hand.token_clicked.connect(_on_token_clicked)
-	board.space_clicked.connect(_on_space_clicked)	
 	hand.discard_clicked.connect(_on_discard_clicked)
+	hand.on_round_start()
+	
+	GameState.discarded_tokens = [] as Array[TokenData]
+	
+	word_finder.relic_manager = relic_manager
+	word_finder.min_word_length = GameState.current_boss.get_min_word_length(word_finder.DEFAULT_MIN_WORD_LENGTH)
+	
+	board.space_clicked.connect(_on_space_clicked)
+	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
+	board.start()
+	
 	score_panel.score = 0
 	score_panel.target_score = GameState.target_score
+	
 	hud.relic_container.refresh_relics()
 	hud.item_container.refresh_items()
 	hud.item_container.item_use_requested.connect(_on_item_use_requested)

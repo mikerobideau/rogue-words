@@ -1,11 +1,13 @@
 extends Node2D
 class_name WordFinder
 
-const MIN_WORD_LENGTH := 4
-
 const DICTIONARY_PATH = "res://data/dictionary.txt"
+
+const DEFAULT_MIN_WORD_LENGTH = 4
+
 var dictionary: Dictionary = {}
 var relic_manager: RelicManager
+var min_word_length := DEFAULT_MIN_WORD_LENGTH
 
 func _ready():
 	_load_dictionary()
@@ -50,7 +52,7 @@ func _get_connected_occupied(start: Space) -> Array:
 	return visited.keys()
 
 func _dfs(path: Array, letters: Array, word: String, must_include: Space, found: Array, seen: Dictionary):
-	if word.length() >= MIN_WORD_LENGTH and is_word(word) and path.has(must_include):
+	if word.length() >= min_word_length and is_word(word) and path.has(must_include):
 		if not seen.has(word):
 			found.append({'path': path.duplicate(), 'letters': letters.duplicate(), 'word': word})
 	for neighbor in path[-1].links:
