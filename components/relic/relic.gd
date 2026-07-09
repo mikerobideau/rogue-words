@@ -14,6 +14,7 @@ func _ready():
 	pivot_offset = size / 2
 	if data:
 		data.data_changed.connect(_update_labels)
+		data.scaled.connect(_on_data_scaled)
 	_update_labels()
 
 func _update_labels():
@@ -30,6 +31,9 @@ func _update_labels():
 				count_label.text = 'Count: ' + str(data.count)	
 			else:
 				count_label.visible = false	
+				
+func _on_data_scaled(v: int):
+	ScorePopup.show('+' + str(v), self)
 
 func pulse(delay := Settings.SCORE_DELAY_NORMAL):
 	var tween = create_tween()

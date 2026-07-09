@@ -45,7 +45,7 @@ func _on_new_game():
 	GameState.round_number = 0
 	GameState.money = 5
 	GameState.tokens = TokenFactory.create_starting_tokens()
-	var test_relic = preload("res://components/relic/compost.tres")
+	var test_relic = preload("res://components/relic/data/compost_consonants/compost_consonants.tres")
 	GameState.relics = [test_relic.duplicate()]
 	#GameState.relics = [] as Array[RelicData]
 	#GameState.items = [] as Array[ItemData]

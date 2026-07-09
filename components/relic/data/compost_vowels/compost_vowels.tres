@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CompostVowels" load_steps=2 format=3 uid="uid://cim65djsbjr38"]
+
+[ext_resource type="Script" path="res://components/relic/data/compost_vowels/compost_vowels.gd" id="1_5xj66"]
+
+[resource]
+script = ExtResource("1_5xj66")
+relic_name = "Compost Vowels"
+description = "Scales by +5 for each discarded vowel"
+cost = 5
+is_scaling = true
+scale_by = 5
+is_x_scaling = false
+x_scale_by = 0.0
+money_reward = 0
+has_count = false
+threshold = 0

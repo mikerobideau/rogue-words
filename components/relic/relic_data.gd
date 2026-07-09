@@ -2,6 +2,7 @@ extends Resource
 class_name RelicData
 
 signal data_changed()
+signal scaled(v: int)
 
 @export var relic_name: String
 @export var description: String
@@ -56,6 +57,7 @@ func _on_discard(context: RelicContext) -> bool:
 func _add_scaling_value(v: int):
 	scaling_value += v
 	data_changed.emit()
+	scaled.emit(v)
 	
 func _add_x_scaling_value(v: float):
 	x_scaling_value += v
