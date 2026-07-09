@@ -1,5 +1,5 @@
 extends Control
-class_name GameWon
+class_name GameOver
 
 signal new_game()
 

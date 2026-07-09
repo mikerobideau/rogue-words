@@ -2,6 +2,7 @@ extends Control
 class_name Round
 
 signal game_over(message: String)
+signal game_won()
 
 const TURNS_PER_ROUND = 10
 const DISCARDS_PER_ROUND = 2
@@ -145,6 +146,9 @@ func _on_space_clicked(space: Space):
 	scoring = false
 	
 func _on_round_complete(context: RelicContext):
+	if GameState.round_number == GameState.num_rounds:
+		game_won.emit()
+		return
 	Sound.play('win')
 	for token in GameState.tokens:
 		token.spent = false

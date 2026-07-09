@@ -8,10 +8,10 @@ signal completed()
 @onready var slots = $Slots
 @onready var continue_button = $Footer/FooterInner/Continue
 
-const SLOT_COUNT = 3
+const SLOT_COUNT = 6
 const TYPE_WEIGHTS = {
 	'relic': 1,
-	'token': 0,
+	'token': 1,
 	'item': 1
 }
 	

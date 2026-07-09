@@ -118,9 +118,11 @@ func _update_label(transition := false):
 		tween.tween_property(letter_label, 'modulate:a', 1, 0.2)
 	
 func _show_tooltip():
+	Tooltip.show_for_node(self, get_tooltip_text())
+	
+func get_tooltip_text():
 	var type = 'Grape' if enhancement == null else 'Enhanced'
-	var text = type + ' ' + data.letter + ' (' + str(data.value) + ' mL)'
-	Tooltip.show_for_node(self, text)
+	return type + ' ' + data.letter + ' (' + str(data.value) + ' mL)'
 	
 func _init_click_detection():
 	var area = Area2D.new()

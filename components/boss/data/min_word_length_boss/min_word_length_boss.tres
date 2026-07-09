@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="MinWordLengthBoss" load_steps=2 format=3 uid="uid://bsw8o38e8o65y"]
+
+[ext_resource type="Script" path="res://components/boss/data/min_word_length_boss/min_word_length_boss.gd" id="1_nk8o5"]
+
+[resource]
+script = ExtResource("1_nk8o5")
+boss_name = "Min Word Length Boss"
+description = "Minimum word length is 5"

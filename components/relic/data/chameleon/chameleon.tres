@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Chameleon" load_steps=2 format=3 uid="uid://crmvomnfrvqmb"]
+
+[ext_resource type="Script" path="res://components/relic/data/chameleon/chameleon.gd" id="1_2jrp8"]
+
+[resource]
+script = ExtResource("1_2jrp8")
+relic_name = "Chameleon"
+description = "C optionally counts as CH"
+scale_by = 0
+threshold = 0
+money_reward = 0
+has_bonus = false
+has_count = false

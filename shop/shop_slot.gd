@@ -70,9 +70,9 @@ func setup_token(data: TokenData):
 	slot_type = Type.TOKEN
 	title.text = 'Token'
 	token_data = data
-	Tooltip.register(frame, data.description)
 	cost = data.cost
 	var scene = TokenFactory.create_scene(data)
+	Tooltip.register(frame, scene.get_tooltip_text())
 	scene.position = offer.size / 2
 	offer.add_child(scene)
 	_add_offer(scene)
@@ -105,15 +105,17 @@ func _on_buy_pressed() -> void:
 	if _inventory_full():
 		ScorePopup.show('Inventory full!', self)
 		return
-	if GameState.money >= cost:
-		Sound.play('purchase')
-		purchased.emit(self)
-		coin.visible = false
-		offer.visible = false
-		title_container.visible = false
-		sold = true
-		selected = false
-		Tooltip.unregister(frame)
+	if GameState.money < cost:
+		ScorePopup.show('Insufficient funds!', self)
+		return
+	Sound.play('purchase')
+	purchased.emit(self)
+	coin.visible = false
+	offer.visible = false
+	title_container.visible = false
+	sold = true
+	selected = false
+	Tooltip.unregister(frame)
 		
 func _inventory_full():
 	if relic_data != null:

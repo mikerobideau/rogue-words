@@ -14,6 +14,7 @@ const SCREENS = {
 	'round': preload("res://screens/round/round.tscn"),
 	'shop': preload("res://shop/shop.tscn"),
 	'boss_intro': preload("res://screens/boss/boss_intro.tscn"),
+	'game_won': preload("res://screens/game_won/game_won.tscn"),
 	'game_over': preload("res://screens/game_over/game_over.tscn")
 }
 
@@ -41,19 +42,12 @@ func _show_boss_intro():
 	await get_tree().create_timer(3).timeout
 	hud.visible = true
 	
-func _on_game_over(message: String):
-	hud.visible = false
-	var game_over = SCREENS.game_over.instantiate()
-	_show_screen(game_over, {'message': message})
-	game_over.new_game.connect(_on_new_game)
-	game_over.subtitle = message
-	
 func _on_new_game():
 	GameState.round_number = 0
 	GameState.money = 10
 	GameState.tokens = TokenFactory.create_starting_tokens()
-	GameState.relics = RelicFactory.load_all_relics()
-	GameState.items = ItemFactory.load_all_items()
+	GameState.relics = [] as Array[RelicData]
+	GameState.items = [] as Array[ItemData]
 	hud.visible = true
 	var round = SCREENS.round.instantiate()
 	_next_round()
@@ -74,6 +68,7 @@ func _next_round():
 	round.relic_manager = relic_manager
 	round.completed.connect(_on_round_completed)
 	round.game_over.connect(_on_game_over)
+	round.game_won.connect(_on_game_won)
 	_show_screen(round, {})
 	
 func _on_round_completed():
@@ -94,3 +89,17 @@ func _show_screen(screen: Control, config: Dictionary):
 		current_screen = null
 	current_screen = screen
 	screen_container.add_child(current_screen)
+
+func _on_game_won():
+	Sound.play('win4')
+	hud.visible = false
+	var game_won = SCREENS.game_won.instantiate()
+	_show_screen(game_won, {})
+	game_won.new_game.connect(_on_new_game)
+
+func _on_game_over(message: String):
+	hud.visible = false
+	var game_over = SCREENS.game_over.instantiate()
+	_show_screen(game_over, {'message': message})
+	game_over.new_game.connect(_on_new_game)
+	game_over.subtitle = message

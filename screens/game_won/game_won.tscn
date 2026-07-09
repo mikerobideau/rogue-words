@@ -1,0 +1,66 @@
+[gd_scene load_steps=5 format=3 uid="uid://cjxq6o3kde4yy"]
+
+[ext_resource type="Script" path="res://screens/game_won/game_won.gd" id="1_wby1r"]
+[ext_resource type="Theme" uid="uid://vn3yglhuvq41" path="res://theme/theme.tres" id="2_n3s53"]
+[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="3_mpoyc"]
+
+[sub_resource type="Theme" id="Theme_cj03g"]
+
+[node name="GameWon" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_wby1r")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_n3s53")
+
+[node name="Body" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -117.0
+offset_right = 200.0
+offset_bottom = 117.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 75
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Body"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Body/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.286275, 0, 0.545098, 1)
+theme_override_fonts/font = ExtResource("3_mpoyc")
+theme_override_font_sizes/font_size = 150
+text = "You Win"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Body/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 28
+text = "Or so I heard through the grapevine."
+horizontal_alignment = 1
+
+[node name="PlayButton" type="Button" parent="Body"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme = SubResource("Theme_cj03g")
+text = "NEW RUN"
+
+[connection signal="pressed" from="Body/PlayButton" to="." method="_on_play_button_pressed"]

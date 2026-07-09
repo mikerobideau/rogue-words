@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FineWine" load_steps=2 format=3 uid="uid://cwui0pe4x4se1"]
+
+[ext_resource type="Script" path="res://components/relic/data/fine_wine/fine_wine.gd" id="1_onal4"]
+
+[resource]
+script = ExtResource("1_onal4")
+relic_name = "Fine Wine"
+description = "Earn $1 at the end of the round.  Increases by $1 each round."
+cost = 6
+is_scaling = false
+scale_by = 0
+is_x_scaling = false
+x_scale_by = 0.0
+money_reward = 1
+has_count = false
+threshold = 0

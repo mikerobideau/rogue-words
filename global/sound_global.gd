@@ -13,6 +13,7 @@ const sounds = {
 	'win': preload("res://assets/sound/mixkit-completion-of-a-level-2063.wav"),
 	'win2': preload("res://assets/sound/mixkit-final-level-bonus-2061.wav"),
 	'win3': preload("res://assets/sound/mixkit-small-win-2020.wav"),
+	'win4': preload("res://assets/sound/mixkit-winning-chimes-2015.wav"),
 	'small_win': preload("res://assets/sound/mixkit-small-win-2020.wav"),
 	'level_up': preload("res://assets/sound/mixkit-game-experience-level-increased-2062.wav"),
 	'item_unlocked': preload("res://assets/sound/mixkit-unlock-new-item-game-notification-254.wav"),
