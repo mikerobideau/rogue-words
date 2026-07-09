@@ -19,43 +19,49 @@ func _ready():
 	_populate_slots()
 	
 func _populate_slots():
-	var pool: Array = []
-	var all_relics = RelicFactory.load_all_relics()
-	var all_tokens = TokenFactory.create_starting_tokens()
-	var all_items = ItemFactory.load_all_items()
-	
-	for relic in all_relics:
-		for i in TYPE_WEIGHTS['relic']:
-			pool.append({'type': 'relic', 'data': relic})
-	for item in all_items:
-		for i in TYPE_WEIGHTS['item']:
-			pool.append({'type': 'item', 'data': item})
-	for token in all_tokens:
-		for i in TYPE_WEIGHTS['token']:
-			pool.append({'type': 'token', 'data': token})
-			
-	pool.shuffle()
-	var seen = []
-	var picked = []
-	for entry in pool:
-		if entry['data'] not in seen:
-			seen.append(entry['data'])
-			picked.append(entry)
-		if picked.size() >= SLOT_COUNT:
+	var owned_names := GameState.relics.map(func(r): return r.relic_name)
+	var pools := {
+		'relic': RelicFactory.load_all_relics().filter(func(r): return r.relic_name not in owned_names),
+		'item':  ItemFactory.load_all_items(),
+		'token': TokenFactory.create_starting_tokens(),
+	}
+	var picked := []
+	var seen := []
+
+	while picked.size() < SLOT_COUNT:
+		# only consider types that still have an unseen option
+		var available := TYPE_WEIGHTS.keys().filter(func(t):
+			return pools[t].any(func(d): return d not in seen))
+		if available.is_empty():
 			break
-			
+
+		var type: String = _weighted_pick_type(available)
+		var options = pools[type].filter(func(d): return d not in seen)
+		var data = options[randi() % options.size()]
+
+		seen.append(data)
+		picked.append({ 'type': type, 'data': data })
+
 	for entry in picked:
 		var slot = SlotScene.instantiate()
 		slots.add_child(slot)
 		match entry['type']:
-			'relic':
-				slot.setup_relic(entry['data'])
-			'item':
-				slot.setup_item(entry['data'])
-			'token':
-				slot.setup_token(entry['data'])
+			'relic': slot.setup_relic(entry['data'])
+			'item':  slot.setup_item(entry['data'])
+			'token': slot.setup_token(entry['data'])
 		slot.purchased.connect(_on_slot_purchased)
-		
+
+func _weighted_pick_type(types: Array) -> String:
+	var total := 0
+	for t in types:
+		total += TYPE_WEIGHTS[t]
+	var r := randi() % total
+	for t in types:
+		r -= TYPE_WEIGHTS[t]
+		if r < 0:
+			return t
+	return types[0]
+
 func _on_slot_purchased(slot: ShopSlot):
 	GameState.money -= slot.cost
 	match slot.slot_type:
