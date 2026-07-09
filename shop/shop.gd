@@ -14,6 +14,12 @@ const TYPE_WEIGHTS = {
 	'token': 1,
 	'item': 1
 }
+
+const ENHANCEMENTS := [
+	preload("res://components/token/enhancements/spicy_grape/spicy_grape.tres"),
+	preload("res://components/token/enhancements/charged_grape/charged_grape.tres"),
+	preload("res://components/token/enhancements/clover/clover.tres"),
+]
 	
 func _ready():
 	_populate_slots()
@@ -46,9 +52,13 @@ func _populate_slots():
 		var slot = SlotScene.instantiate()
 		slots.add_child(slot)
 		match entry['type']:
-			'relic': slot.setup_relic(entry['data'])
-			'item':  slot.setup_item(entry['data'])
-			'token': slot.setup_token(entry['data'])
+			'relic': 
+				slot.setup_relic(entry['data'])
+			'item':
+				slot.setup_item(entry['data'])
+			'token':
+				_roll_to_enhance(entry['data'])
+				slot.setup_token(entry['data'])
 		slot.purchased.connect(_on_slot_purchased)
 
 func _weighted_pick_type(types: Array) -> String:
@@ -61,6 +71,11 @@ func _weighted_pick_type(types: Array) -> String:
 		if r < 0:
 			return t
 	return types[0]
+	
+func _roll_to_enhance(token_data: TokenData) -> void:
+	if randf() < 0.5:
+		var enhancement = ENHANCEMENTS[randi() % ENHANCEMENTS.size()].duplicate()
+		token_data.enhance(enhancement)
 
 func _on_slot_purchased(slot: ShopSlot):
 	GameState.money -= slot.cost
