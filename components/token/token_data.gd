@@ -3,7 +3,8 @@ class_name TokenData
 
 signal letter_changed()
 
-const VOWELS = ['A', 'E', 'I', 'O', 'U']
+#note that Y counts as both a vowel and a consonant
+const VOWELS = ['A', 'E', 'I', 'O', 'U', 'Y']
 const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z']
 
 @export var cost := 2
@@ -35,3 +36,9 @@ func swap_random_consonant_vowel():
 	else:
 		letter = VOWELS[randi() % VOWELS.size()]
 	letter_changed.emit()
+	
+func is_vowel():
+	return letter in VOWELS
+	
+func is_consonant():
+	return letter in CONSONANTS

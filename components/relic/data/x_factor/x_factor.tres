@@ -6,7 +6,7 @@
 script = ExtResource("1_tgndy")
 relic_name = "X Factor"
 description = "x2 if your word contains an X"
-cost = 5
+cost = 7
 is_scaling = false
 scale_by = 0
 is_x_scaling = false

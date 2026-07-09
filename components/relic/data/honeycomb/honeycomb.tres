@@ -5,10 +5,12 @@
 [resource]
 script = ExtResource("1_acoqc")
 relic_name = "Honeycomb"
-description = "Scales by +2 each time a six letter word is played"
+description = "Scales by +2 each time a 6 letter word is played"
 cost = 5
 is_scaling = true
 scale_by = 2
+is_x_scaling = false
+x_scale_by = 0.0
 money_reward = 0
 has_count = false
 threshold = 0

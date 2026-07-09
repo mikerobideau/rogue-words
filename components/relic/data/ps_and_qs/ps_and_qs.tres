@@ -6,7 +6,7 @@
 script = ExtResource("1_4ndxk")
 relic_name = "P's and Q's"
 description = "When a P is placed, it is permanently converted to a Q"
-cost = 5
+cost = 3
 is_scaling = false
 scale_by = 0
 is_x_scaling = false

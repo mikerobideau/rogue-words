@@ -27,6 +27,11 @@ func get_score_report(context: RelicContext) -> RelicReport:
 	report.items = items
 	return report
 	
+func on_discard(context: RelicContext):
+	for relic in context.relics:
+		if relic.data.on_discard(context):
+			_activate_relic(relic)
+			
 func on_round_complete(context: RelicContext):
 	for relic in context.relics:
 		if relic.data.on_round_complete(context):
@@ -37,7 +42,7 @@ func add_grow_amount(context: RelicContext):
 	for relic in context.relics:
 		var bonus = relic.data.add_grow_amount(context)
 		if bonus > 0:
-			_activate_relic(relic)
+			_activate_relic(relic, false)
 		expansions += bonus
 	return expansions
 	
@@ -47,6 +52,7 @@ func get_letter_matches(letter: String) -> Array:
 		matches = relic_data.modify_letter_matches(letter, matches)
 	return matches
 
-func _activate_relic(relic: Relic):
-	Sound.play(Sound.SOUND_RELIC)
+func _activate_relic(relic: Relic, play_sound = true):
 	relic.pulse()
+	if play_sound:
+		Sound.play(Sound.SOUND_RELIC)

@@ -31,7 +31,7 @@ func _on_slot_deselected(slot: ItemSlot):
 	_update_label()
 		
 func _update_label():
-	label.text = 'No item selected' if selected_slot == null else selected_slot.item_data.item_name + ' selected'
+	pass
 		
 func deselect():
 	selected_slot.deselect()

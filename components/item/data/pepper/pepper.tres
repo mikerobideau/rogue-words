@@ -7,6 +7,6 @@
 script = ExtResource("1_5yh80")
 item_name = "Pepper"
 icon = ExtResource("1_hulsu")
-cost = 3
+cost = 1
 description = "Enhances token to a spicy grape (x2)"
 can_enhance_token = true

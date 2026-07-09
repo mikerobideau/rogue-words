@@ -7,6 +7,6 @@
 script = ExtResource("1_tk0r8")
 item_name = "Sun"
 icon = ExtResource("1_8k1ae")
-cost = 3
+cost = 1
 description = "Increases selected token value by 1"
 can_enhance_token = true

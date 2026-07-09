@@ -12,7 +12,7 @@ signal token_added()
 #---------------------------------------------------------------------------------------------------
 
 var target_scores: Array[int] = [
-	1, 75, 100, 150, 225, 325, 500, 700, 1000, 1500, 2000, 3000, 4500, 6500, 10000
+	50, 75, 100, 150, 225, 325, 500, 700, 1000, 1500, 2000, 3000, 4500, 6500, 10000
 ]
 
 var num_rounds = target_scores.size()
@@ -83,6 +83,7 @@ func add_item(item: ItemData):
 	items_changed.emit()
 	
 func remove_item(item: ItemData):
+	print_debug('removing item')
 	items.erase(item)
 	items_changed.emit()
 

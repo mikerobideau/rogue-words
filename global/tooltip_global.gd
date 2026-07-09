@@ -13,12 +13,23 @@ func _ready() -> void:
 	tooltip.visible = false
 	add_child(tooltip)
 
+#func register(target: Control, text: String) -> void:
+#	tooltip_texts[target] = text
+#	if not target.mouse_entered.is_connected(_on_target_entered):
+#		target.mouse_entered.connect(_on_target_entered.bind(target))
+#		target.mouse_exited.connect(_on_target_exited.bind(target))
+#		target.tree_exiting.connect(_on_target_freed.bind(target))
+
 func register(target: Control, text: String) -> void:
 	tooltip_texts[target] = text
-	if not target.mouse_entered.is_connected(_on_target_entered):
-		target.mouse_entered.connect(_on_target_entered.bind(target))
+	var entered := _on_target_entered.bind(target)
+	if not target.mouse_entered.is_connected(entered):
+		target.mouse_entered.connect(entered)
 		target.mouse_exited.connect(_on_target_exited.bind(target))
 		target.tree_exiting.connect(_on_target_freed.bind(target))
+	if current_target == target and tooltip.visible:   # live refresh while hovered
+		tooltip.set_text(text)
+		_position_tooltip(target)
 
 func unregister(target: Control) -> void:
 	tooltip_texts.erase(target)

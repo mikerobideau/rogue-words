@@ -7,6 +7,6 @@
 script = ExtResource("1_nt8m5")
 item_name = "Wind"
 icon = ExtResource("1_fsvpq")
-cost = 3
+cost = 1
 description = "Swap vowel to random consonant, or vice versa"
 can_enhance_token = true

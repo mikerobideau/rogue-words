@@ -4,8 +4,8 @@ class_name Round
 signal game_over(message: String)
 signal game_won()
 
-const TURNS_PER_ROUND = 10
-const DISCARDS_PER_ROUND = 2
+const TURNS_PER_ROUND = 12
+const DISCARDS_PER_ROUND = 3
 
 signal completed()
 
@@ -17,6 +17,7 @@ const DEBUG = false
 @onready var scorer = $Scorer
 @onready var word = $WordContainer/Word
 @onready var score_panel = $Left/CenterContainer/ScorePanel
+@onready var round_summary = $RoundSummary
 
 var hud: Control
 var relic_manager: Node
@@ -77,6 +78,8 @@ func _ready():
 	hud.item_container.refresh_items()
 	hud.item_container.item_use_requested.connect(_on_item_use_requested)
 	
+	round_summary.closed.connect(func(): completed.emit())
+	
 func _on_item_use_requested(slot: ItemSlot):
 	active_item_slot = slot 
 	
@@ -99,8 +102,11 @@ func _clear_selected_tokens():
 func _on_discard_clicked():
 	if selected_tokens.size() < 1:
 		return
+	var context = _get_relic_context()
 	hand.discard(selected_tokens as Array[Token])
 	discards_remaining -= 1
+	context.discarded_tokens = selected_tokens
+	relic_manager.on_discard(context)
 	_clear_selected_tokens()
 
 func _on_space_clicked(space: Space):
@@ -150,12 +156,16 @@ func _on_round_complete(context: RelicContext):
 		game_won.emit()
 		return
 	Sound.play('win')
+	relic_manager.on_round_complete(context)
 	for token in GameState.tokens:
 		token.spent = false
-	relic_manager.on_round_complete(context)
-	await get_tree().create_timer(1.0).timeout
-	completed.emit()
-	return
+	var reward_money = _get_money_reward()
+	GameState.money += reward_money
+	round_summary.visible = true
+	round_summary.money_reward_label.text = '$' + str(reward_money) + ' earned ($1 per remaining turn)'
+	
+func _get_money_reward():
+	return turns_remaining
 	
 func _path_to_word(path: Array):
 	var word := ""
@@ -182,8 +192,8 @@ func _on_token_clicked(token: Token):
 
 func _apply_item(item_data: ItemData, token: Token):
 	item_data.enhance_token(token)
-	#selected_item.played.emit(selected_item)
 	_clear_selected_token()
+	GameState.remove_item(item_data)
 	return
 
 func _toggle_token_selection(token: Token):

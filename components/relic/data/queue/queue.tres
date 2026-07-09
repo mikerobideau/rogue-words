@@ -6,7 +6,7 @@
 script = ExtResource("1_2nrbi")
 relic_name = "Queue"
 description = "x1.5 for each Q in hand"
-cost = 7
+cost = 5
 is_scaling = false
 scale_by = 0
 is_x_scaling = false

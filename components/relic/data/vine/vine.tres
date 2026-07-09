@@ -6,7 +6,7 @@
 script = ExtResource("1_dia2i")
 relic_name = "Vine"
 description = "Scales by +2 each time a V is scored"
-cost = 3
+cost = 5
 is_scaling = true
 scale_by = 2
 is_x_scaling = false

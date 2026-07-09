@@ -6,7 +6,7 @@
 script = ExtResource("1_spl5t")
 relic_name = "Died on the Vine"
 description = "First played token of the round is destroyed"
-cost = 7
+cost = 5
 is_scaling = false
 scale_by = 0
 is_x_scaling = false

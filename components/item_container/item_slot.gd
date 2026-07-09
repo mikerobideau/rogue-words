@@ -24,9 +24,11 @@ func set_item(data: ItemData) -> void:
 	register_tooltip()
 
 func clear() -> void:
-	item_data = null
+	is_selected = false
+	Tooltip.unregister(slot)
 	if item and is_instance_valid(item):
 		item.queue_free()
+	item_data = null
 	item = null
 
 func _ready():

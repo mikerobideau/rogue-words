@@ -6,7 +6,7 @@
 script = ExtResource("1_onal4")
 relic_name = "Fine Wine"
 description = "Earn $1 at the end of the round.  Increases by $1 each round."
-cost = 6
+cost = 7
 is_scaling = false
 scale_by = 0
 is_x_scaling = false

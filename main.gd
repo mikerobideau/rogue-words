@@ -4,7 +4,6 @@ class_name Main
 @onready var hud = $Hud
 @onready var screen_container = $ScreenContainer
 @onready var relic_manager = $RelicManager
-@onready var item_manager = $ItemManager
 @onready var center_panel = $ScreenContainer/CenterPanel
 
 const DEFAULT_CENTER_PANEL_COLOR = '#f5f5f5'
@@ -22,8 +21,8 @@ var current_screen: Control = null
 
 func _ready():
 	size = get_viewport().get_visible_rect().size
-	#_show_title()
-	_enter_shop()
+	_show_title()
+	#_enter_shop()
 	#_on_new_game()
 	
 func _show_title():
@@ -44,10 +43,13 @@ func _show_boss_intro():
 	
 func _on_new_game():
 	GameState.round_number = 0
-	GameState.money = 10
+	GameState.money = 5
 	GameState.tokens = TokenFactory.create_starting_tokens()
-	GameState.relics = [] as Array[RelicData]
-	GameState.items = [] as Array[ItemData]
+	var test_relic = preload("res://components/relic/compost.tres")
+	GameState.relics = [test_relic.duplicate()]
+	#GameState.relics = [] as Array[RelicData]
+	#GameState.items = [] as Array[ItemData]
+	GameState.items = _random_items(3)
 	hud.visible = true
 	var round = SCREENS.round.instantiate()
 	_next_round()
@@ -57,8 +59,7 @@ func _next_round():
 	if GameState.is_boss_round:
 		await _show_boss_intro()
 		hud.title = 'Boss: ' + GameState.current_boss.description
-		print_debug('setting center panel to black')
-		center_panel.color = Color.BLACK
+		#center_panel.color = Color.BLACK
 	else:
 		hud.title = 'Round ' + str(GameState.round_number)
 		center_panel.color = DEFAULT_CENTER_PANEL_COLOR
@@ -103,3 +104,12 @@ func _on_game_over(message: String):
 	_show_screen(game_over, {'message': message})
 	game_over.new_game.connect(_on_new_game)
 	game_over.subtitle = message
+	
+#Helpers
+func _random_items(n: int) -> Array[ItemData]:
+	var all := ItemFactory.load_all_items()
+	all.shuffle()
+	var result: Array[ItemData] = []
+	result.assign(all.slice(0, n))
+	return result
+	

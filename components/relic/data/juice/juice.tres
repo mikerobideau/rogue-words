@@ -6,8 +6,11 @@
 script = ExtResource("1_b87st")
 relic_name = "Juice"
 description = "+10 score"
+cost = 3
+is_scaling = false
 scale_by = 0
-threshold = 0
+is_x_scaling = false
+x_scale_by = 0.0
 money_reward = 0
-has_bonus = false
 has_count = false
+threshold = 0

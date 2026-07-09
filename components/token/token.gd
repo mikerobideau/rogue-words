@@ -220,7 +220,6 @@ func _transform():
 	if scale_tween:
 		scale_tween.kill()
 	
-	
 	transform_tween = create_tween()
 	# impact reaction — quick squash, like it got hit
 	transform_tween.tween_property(self, 'scale', Vector2(1.2, 0.8), 0.08) \

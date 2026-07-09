@@ -6,7 +6,7 @@
 script = ExtResource("1_ty33t")
 relic_name = "Lucky"
 description = "1/4 chance to win $1 each time an L, U, C, K, or Y is placed"
-cost = 5
+cost = 3
 is_scaling = false
 scale_by = 0
 is_x_scaling = false
