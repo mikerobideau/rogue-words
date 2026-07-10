@@ -33,6 +33,7 @@ func _update_labels():
 				count_label.visible = false	
 				
 func _on_data_scaled(v: int):
+	print_debug(str(v))
 	ScorePopup.show('+' + str(v), self)
 
 func pulse(delay := Settings.SCORE_DELAY_NORMAL):

@@ -5,7 +5,6 @@ signal space_clicked(space: Space)
 
 var SpaceScene = preload("res://components/space/space.tscn")
 
-const SOUND_ENHANCED_SPACE = 'small_bonus' 
 const BOARD_SIZE = Vector2(800, 800)
 const DEFAULT_NUM_STARTING_SPACES = 3
 const NUM_EXPANSIONS = 1
@@ -95,7 +94,7 @@ func _create_space(coord: Vector2i, is_starting_space := false) -> Space:
 	spaces[coord] = space
 	_link_neighbors(space)
 	if !is_starting_space and space.has_enhancement():
-		Sound.play(SOUND_ENHANCED_SPACE)
+		Sound.play(Sound.SOUND_ENHANCED_SPACE)
 	return space
 	
 func _link_neighbors(space: Space):

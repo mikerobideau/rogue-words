@@ -139,7 +139,7 @@ func _init_click_detection():
 func _on_mouse_entered():
 	_show_tooltip()
 	if is_selectable and not selected: 
-		Sound.play('token')
+		Sound.play(Sound.SOUND_MOUSEOVER)
 		scale_up()
 
 func _on_mouse_exited():

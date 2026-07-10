@@ -38,7 +38,8 @@ func play(word_report: WordReport, relic_report: RelicReport):
 			Sound.play(sound)
 			set_score(item.new_score, delay)
 			token.pop_open(DUPE_TOKEN_SCALE)
-			ScorePopup.show(item.text, token, delay, 0, -40)
+			if item.text != null and item.text != '':
+				ScorePopup.show(item.text, token, delay, 0, -40)
 			await get_tree().create_timer(delay).timeout
 	
 	if word_report.word_mult_report:

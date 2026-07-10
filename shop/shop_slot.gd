@@ -99,16 +99,19 @@ func _animate_selection():
 	position_tween.tween_property(frame, 'position', target_pos, duration)
 
 func _on_frame_mouse_entered() -> void:
-	Sound.play('token')
+	Sound.play(Sound.SOUND_MOUSEOVER)
 
 func _on_buy_pressed() -> void:
 	if _inventory_full():
+		Sound.play(Sound.SOUND_DISABLED)
 		ScorePopup.show('Inventory full!', self)
 		return
 	if GameState.money < cost:
+		Sound.play(Sound.SOUND_DISABLED)
 		ScorePopup.show('Insufficient funds!', self)
 		return
-	Sound.play('purchase')
+		
+	Sound.play(Sound.SOUND_PURCHASE)
 	purchased.emit(self)
 	coin.visible = false
 	offer.visible = false

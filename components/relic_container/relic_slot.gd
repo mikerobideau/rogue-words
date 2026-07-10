@@ -7,6 +7,9 @@ class_name RelicSlot
 @export var relic_data: RelicData
 var relic: Relic
 
+func _ready():
+	slot.mouse_entered.connect(_on_frame_mouse_entered)
+
 func set_relic(data: RelicData) -> void:
 	clear()
 	relic_data = data
@@ -25,6 +28,9 @@ func clear() -> void:
 		relic.queue_free()
 	relic = null
 	
+func _on_frame_mouse_entered() -> void:
+	Sound.play(Sound.SOUND_MOUSEOVER)
+	
 func _refresh_tooltip():
 	var default_text = 'Empty coupon slot'
 	var text: String
@@ -36,6 +42,7 @@ func _refresh_tooltip():
 	Tooltip.register(slot, text)
 	
 func _sell():
+	Sound.play(Sound.SOUND_MONEY)
 	GameState.money += relic_data.cost / 2
 	GameState.remove_relic(relic_data)
 	Tooltip.unregister(slot)

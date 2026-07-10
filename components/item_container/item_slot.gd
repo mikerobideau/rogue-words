@@ -14,6 +14,14 @@ var item_data: ItemData
 var item: Item
 var is_selected := false
 
+func _ready():
+	size = SLOT_SIZE
+	slot.toggle_mode = true
+	slot.mouse_entered.connect(_on_frame_mouse_entered)
+
+func _on_frame_mouse_entered() -> void:
+	Sound.play(Sound.SOUND_MOUSEOVER)
+
 func set_item(data: ItemData) -> void:
 	clear()
 	item_data = data
@@ -30,10 +38,6 @@ func clear() -> void:
 		item.queue_free()
 	item_data = null
 	item = null
-
-func _ready():
-	size = SLOT_SIZE
-	slot.toggle_mode = true
 
 func select():
 	is_selected = true
@@ -60,6 +64,7 @@ func _keep():
 	pass
 	
 func _sell():
+	Sound.play(Sound.SOUND_MONEY)
 	GameState.money += item_data.cost / 2
 	GameState.remove_item(item_data)
 	Tooltip.unregister(slot)

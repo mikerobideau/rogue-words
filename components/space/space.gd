@@ -39,6 +39,7 @@ func _ready():
 	_pop_open()
 	
 func _on_mouse_entered():
+	Sound.play(Sound.SOUND_MOUSEOVER)
 	if token == null:
 		play('hover')
 	

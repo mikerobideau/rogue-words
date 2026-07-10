@@ -15,6 +15,12 @@ const V_PAD = 0
 	
 var bag: Array[TokenData]
 var hand_size := DEFAULT_HAND_SIZE
+
+func _ready():
+	discard_button.mouse_entered.connect(_on_discard_button_mouse_entered)
+
+func _on_discard_button_mouse_entered():
+	Sound.play(Sound.SOUND_MOUSEOVER)
 	
 func on_round_start():
 	bag = GameState.tokens.duplicate()
@@ -43,7 +49,7 @@ func draw_tokens(n: int):
 		token_container.add_child(token_scene)
 		token_scene.clicked.connect(_on_token_clicked)
 		token_scene.pop_open()
-	Sound.play('token')
+	Sound.play(Sound.SOUND_DRAW_TOKEN)
 	_layout_tokens()
 		
 func discard(tokens: Array[Token]):

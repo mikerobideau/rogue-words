@@ -1,36 +1,40 @@
 extends Node
 class_name ScorePopupGlobal
 
+var PopupScene = preload("res://components/ui/popup_box/popup_box.tscn")
+
 enum Anchor { CENTER, RIGHT }
 
 func show(message: String, target: Node, lifetime := 0.5, offset_x := 0, offset_y := 0, anchor := Anchor.CENTER):
-	#create
-	var label := Label.new()
-	label.text = message
-	label.add_theme_color_override("font_color", Color.BLACK)
+	var popup = PopupScene.instantiate()
+
 	var canvas = CanvasLayer.new()
 	canvas.layer = 200
-	canvas.add_child(label)
-	get_tree().root.add_child(canvas)
-	await get_tree().process_frame
+	canvas.add_child(popup)
 	
+	get_tree().root.add_child(canvas)
+	popup.label.text = message
+	
+	#size panel
+	await get_tree().process_frame 
+	popup.reset_size() 
+
 	var rect = target.get_global_rect() if target is Control else Rect2(target.global_position, Vector2.ZERO)
 
 	if anchor == Anchor.RIGHT:
-		label.position = Vector2(
+		popup.position = Vector2(
 			rect.position.x + rect.size.x + offset_x,
-			rect.position.y + rect.size.y * 0.5 - label.size.y * 0.5 + offset_y
+			rect.position.y + rect.size.y * 0.5 - popup.size.y * 0.5 + offset_y
 		)
 	else:
-		label.position = Vector2(
-			rect.position.x + rect.size.x * 0.5 - label.size.x * 0.5 + offset_x,
-			rect.position.y - label.size.y + offset_y
+		popup.position = Vector2(
+			rect.position.x + rect.size.x * 0.5 - popup.size.x * 0.5 + offset_x,
+			rect.position.y - popup.size.y + offset_y
 		)
-	
-	#animate
+
 	var tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(label, 'position:y', label.position.y - 10, lifetime).set_ease(Tween.EASE_OUT)
-	tween.tween_property(label, 'modulate:a', 0.0, lifetime).set_delay(0.2)
+	tween.tween_property(popup, 'position:y', popup.position.y - 10, lifetime).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, 'modulate:a', 0.0, lifetime).set_delay(0.2)
 	await tween.finished
 	canvas.queue_free()
