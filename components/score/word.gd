@@ -41,6 +41,8 @@ func play(word_report: WordReport, relic_report: RelicReport):
 			if item.text != null and item.text != '':
 				ScorePopup.show(item.text, token, delay, 0, -40)
 			await get_tree().create_timer(delay).timeout
+		if token.data.enhancement:
+			token.data.enhancement.on_scored()
 	
 	if word_report.word_mult_report:
 		Sound.play(Sound.SOUND_ENHANCED_WORD_SPACE)

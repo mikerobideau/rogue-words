@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3 uid="uid://bkvex2j1hqnh2"]
+
+[ext_resource type="Script" path="res://components/token/token_label.gd" id="1_6bids"]
+
+[node name="TokenLabel" type="VBoxContainer"]
+offset_right = 30.0
+offset_bottom = 70.0
+theme_override_constants/separation = -3
+script = ExtResource("1_6bids")
+
+[node name="Letter" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 36
+text = "A"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Value" type="Label" parent="."]
+layout_mode = 2
+size_flags_vertical = 0
+theme_type_variation = &"HeaderSmall"
+theme_override_font_sizes/font_size = 16
+text = "999"
+horizontal_alignment = 1

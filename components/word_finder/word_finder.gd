@@ -37,6 +37,11 @@ func find_words(placed_space: Space):
 			matches = relic_manager.get_letter_matches(start.token.letter)
 		for letter in matches:
 			_dfs([start], [letter], letter, placed_space, found, seen_words)
+	
+	found.sort_custom(func(a, b):
+		if a['word'] == b['word']:
+			return _path_signature(a['path']) < _path_signature(b['path'])   # tiebreaker
+		return a['word'] < b['word'])
 		
 	return found
 	
@@ -53,7 +58,9 @@ func _get_connected_occupied(start: Space) -> Array:
 
 func _dfs(path: Array, letters: Array, word: String, must_include: Space, found: Array, seen: Dictionary):
 	if word.length() >= min_word_length and is_word(word) and path.has(must_include):
-		if not seen.has(word):
+		var sig := word + "|" + _path_signature(path)
+		if not seen.has(sig):
+			seen[sig] = true
 			found.append({'path': path.duplicate(), 'letters': letters.duplicate(), 'word': word})
 	for neighbor in path[-1].links:
 		if neighbor != null and neighbor.token != null and not (neighbor in path):
@@ -66,3 +73,11 @@ func _dfs(path: Array, letters: Array, word: String, must_include: Space, found:
 				_dfs(path, letters, word + letter, must_include, found, seen)
 				letters.pop_back()
 				path.pop_back()
+				
+#The same word can score multiple times in a turn, but it must have a unique combination of tokens
+func _path_signature(path: Array) -> String:
+	var ids := []
+	for s in path:
+		ids.append(s.get_instance_id())
+	ids.sort()
+	return str(ids)

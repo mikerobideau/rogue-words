@@ -2,44 +2,21 @@
 
 [ext_resource type="SpriteFrames" uid="uid://cqp4trvr1k15" path="res://components/token/grape_sprite_frames.tres" id="1_bpbd7"]
 [ext_resource type="Script" path="res://components/token/token.gd" id="1_lmu4i"]
-[ext_resource type="FontFile" uid="uid://dfyg6b01x1atm" path="res://assets/fonts/Nunito-VariableFont_wght.ttf" id="6_57chv"]
+[ext_resource type="PackedScene" uid="uid://bkvex2j1hqnh2" path="res://components/token/token_label.tscn" id="3_xqilb"]
 
 [node name="Token" type="AnimatedSprite2D"]
 sprite_frames = ExtResource("1_bpbd7")
 script = ExtResource("1_lmu4i")
 
-[node name="Letter" type="Label" parent="."]
+[node name="TokenLabel" parent="." instance=ExtResource("3_xqilb")]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -55.5
-offset_top = -60.5
-offset_right = -20.5
-offset_bottom = -10.5
+offset_left = -64.5
+offset_top = -84.5
+offset_right = -34.5
+offset_bottom = -14.5
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 4
-theme_override_fonts/font = ExtResource("6_57chv")
-theme_override_font_sizes/font_size = 36
-text = "A"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Value" type="Label" parent="."]
-visible = false
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -23.5
-offset_top = -35.5
-offset_right = -4.5
-offset_bottom = -15.5
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 14
-text = "99"
-vertical_alignment = 1

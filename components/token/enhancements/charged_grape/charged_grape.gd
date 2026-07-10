@@ -1,10 +1,7 @@
 extends TokenEnhancement
 class_name ChargedGrape
 
-var charge = 0
+signal charged()
 
-func on_placed():
-	charge += 1
-	
-func get_plus_score():
-	return charge
+func on_scored():
+	charged.emit()

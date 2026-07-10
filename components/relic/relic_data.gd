@@ -51,7 +51,7 @@ func modify_letter_matches(letter: String, matches: Array) -> Array:
 func on_round_complete(context: RelicContext) -> bool:
 	return false
 	
-func _on_discard(context: RelicContext) -> bool:
+func on_discard(context: RelicContext) -> bool:
 	return false
 	
 func _add_scaling_value(v: int):

@@ -6,8 +6,7 @@ signal destroyed()
 
 const RADIUS = 48
 
-@onready var letter_label = $Letter
-@onready var value_label = $Value
+@onready var label = $TokenLabel
 
 @export var data: TokenData:
 	set(v):
@@ -46,11 +45,12 @@ var transform_tween: Tween
 
 func _ready():
 	animation = 'default'
-	_setup_label()
+	#_setup_label()
 	_update_label()
 	_update_sprite()
 	_init_click_detection()
 	data.letter_changed.connect(_on_letter_changed)
+	data.value_changed.connect(_on_value_changed)
 	
 func enhance(e: TokenEnhancement):
 	Tooltip.hide_for_node()
@@ -94,6 +94,10 @@ func on_placed():
 func _on_letter_changed():
 	_transform()
 	_update_label(true)
+	
+func _on_value_changed():
+	_transform()
+	_update_label(true)
 
 func _update_sprite():
 	if data.enhancement:
@@ -101,21 +105,21 @@ func _update_sprite():
 	play('default')
 
 func _setup_label():
-	var label = letter_label
-	label.position = Vector2(-label.size.x / 2, -label.size.y / 2)
+	pass
+	#var label = letter_label
+	#label.position = Vector2(-label.size.x / 2, -label.size.y / 2)
 	
 func _update_label(transition := false):
 	if transition:
 		var tween = create_tween()
-		tween.tween_property(letter_label, 'modulate:a', 0, 0.2)
+		tween.tween_property(label, 'modulate:a', 0, 0.2)
 		await get_tree().create_timer(0.3).timeout
-	if letter_label:
-		letter_label.text = letter
-	if value_label:
-		value_label.text = str(value)
+	if label:
+		label.letter.text = letter
+		label.value.text = NumberUtil.short_format(value)
 	if transition:
 		var tween = create_tween()
-		tween.tween_property(letter_label, 'modulate:a', 1, 0.2)
+		tween.tween_property(label, 'modulate:a', 1, 0.2)
 	
 func _show_tooltip():
 	Tooltip.show_for_node(self, get_tooltip_text())

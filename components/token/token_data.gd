@@ -2,6 +2,7 @@ extends Resource
 class_name TokenData
 
 signal letter_changed()
+signal value_changed()
 
 #note that Y counts as both a vowel and a consonant
 const VOWELS = ['A', 'E', 'I', 'O', 'U', 'Y']
@@ -19,6 +20,11 @@ func enhance(e: TokenEnhancement):
 	Tooltip.hide_for_node()
 	if e:
 		enhancement = e
+		e.charged.connect(_on_charged)
+		
+func _on_charged():
+	value += 1
+	value_changed.emit()
 	
 func next_letter():
 	var code = letter.to_upper().unicode_at(0)

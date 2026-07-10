@@ -29,6 +29,7 @@ BossFactory="*res://global/boss_factory_global.gd"
 Styles="*res://global/style_global.gd"
 Tooltip="*res://global/tooltip_global.gd"
 SlotMenu="*res://global/slot_menu_global.gd"
+NumberUtil="*res://global/number_util_global.gd"
 
 [display]
 
@@ -41,7 +42,7 @@ window/stretch/aspect="expand"
 [gui]
 
 theme/custom="res://theme/theme.tres"
-theme/custom_font="res://assets/fonts/Nunito-VariableFont_wght.ttf"
+theme/custom_font="res://assets/fonts/commissioner/Commissioner-Regular.ttf"
 theme/default_font_antialiasing=0
 
 [input]

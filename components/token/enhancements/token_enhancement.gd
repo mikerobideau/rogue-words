@@ -7,6 +7,9 @@ class_name TokenEnhancement
 func on_placed():
 	pass
 	
+func on_scored():
+	pass
+	
 func get_mult() -> int:
 	return 1
 
