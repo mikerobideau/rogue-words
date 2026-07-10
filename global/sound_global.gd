@@ -54,18 +54,17 @@ const SOUND_TOKEN = 'click2' #click2 or token
 const SOUND_DRAW_TOKEN = 'click2'
 const SOUND_TOKEN_DESTROYED = 'random'
 
-const SOUND_ENHANCED_SPACE = 'small_bonus'
-const SOUND_ENHANCED_TOKEN = 'water_drop' #power_up8, shimmer_bonus, water_drop
-const SOUND_ENHANCED_LETTER_SPACE = 'water_drop'  #bonus, power_up, blip_select, water_drop
+const SOUND_ENHANCED_SPACE = 'small_bonus' #small_bonus, water_drop
+const SOUND_ENHANCED_TOKEN = 'water_drop' #small_bonus, power_up8, shimmer_bonus, water_drop
+const SOUND_ENHANCED_LETTER_SPACE = 'water_drop' #small_bonus, #bonus, power_up, blip_select, water_drop
 const SOUND_ENHANCED_WORD_SPACE = 'water_drop'  #bonus, power_up, blip_select, water_drop
 const SOUND_MULT = 'bonus' #power_up
 
-const SOUND_RELIC = 'bonus' #bonus, power_up, blip_select
+const SOUND_RELIC = 'water_drop' #small_bonus, bonus, power_up, blip_select
 
 const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_SPLAT = 'power_up7'
 const SOUND_DISABLED = 'laser_shoot' #laser_shoot or synth
-
 
 const SOUND_MONEY = 'pickup_coin4'
 const SOUND_PURCHASE = 'purchase'
