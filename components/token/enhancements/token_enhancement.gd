@@ -1,6 +1,8 @@
 extends Resource
 class_name TokenEnhancement
 
+signal charged()
+
 @export var enhancement_name: String
 @export var sprite_frames: SpriteFrames
 
