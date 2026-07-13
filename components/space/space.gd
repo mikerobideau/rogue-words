@@ -1,29 +1,29 @@
 extends AnimatedSprite2D
 class_name Space
 
-var double_letter_badge = preload("res://assets/sprites/space/1x/badge_2l.png")
-var double_word_badge = preload("res://assets/sprites/space/1x/badge_2w.png")
+@onready var label = $Label
 
 signal clicked(space: Space)
+signal hovered(space: Space)
 
 @onready var badge = $Badge 
 
 const RADIUS = 40
+const DOUBLE_WORD_COLOR = Styles.PINK
+const DOUBLE_LETTER_COLOR = Styles.TEAL
 
 var coord: Vector2i
 var links: Array = [null, null, null, null, null, null]
 
 @export var data: SpaceData
 @export var token: Token
-@export var standard_frames: SpriteFrames
-@export var double_letter_frames: SpriteFrames
-@export var double_word_frames: SpriteFrames
 
 @export var type: SpaceData.Type:
 	get(): return data.type
-	set(v): type = v; _update_sprite()
+	set(v): type = v; _update_label()
 
 func _ready():
+	play('default')
 	var area = Area2D.new()
 	var shape = CollisionShape2D.new()
 	var circle = CircleShape2D.new()
@@ -35,13 +35,14 @@ func _ready():
 	area.mouse_entered.connect(_on_mouse_entered)
 	area.mouse_exited.connect(func(): if token == null:play('default'))
 	scale = Vector2.ZERO
-	_update_sprite()
+	_update_label()
 	_pop_open()
 	
 func _on_mouse_entered():
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	if token == null:
 		play('hover')
+	hovered.emit(self)
 	
 func place_token(t: Token):
 	self_modulate.a = 0 #hide sprite
@@ -81,13 +82,15 @@ func _animate_badge():
 
 func _show_badge():
 	badge.z_index = 1
-	badge.position = Vector2(0, Token.RADIUS)
+	badge.position = Vector2(-Token.RADIUS, 0)
 	match data.type:
 		SpaceData.Type.DOUBLE_LETTER:
-			badge.texture = double_letter_badge
+			badge.color = DOUBLE_LETTER_COLOR
+			badge.text = '2L'
 			_animate_badge()
 		SpaceData.Type.DOUBLE_WORD:
-			badge.texture = double_word_badge
+			badge.color = DOUBLE_WORD_COLOR
+			badge.text = '2W'
 			_animate_badge()
 		_:
 			badge.visible = false
@@ -96,14 +99,19 @@ func _on_input_event(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		clicked.emit(self)
 		
-func _update_sprite():
-	if not is_node_ready():
-		return
+func _update_label():
 	match type:
-		SpaceData.Type.STANDARD:
-			sprite_frames = standard_frames
 		SpaceData.Type.DOUBLE_LETTER:
-			sprite_frames = double_letter_frames
+			label.text = '2L'
+			_color_label(DOUBLE_LETTER_COLOR)
 		SpaceData.Type.DOUBLE_WORD:
-			sprite_frames = double_word_frames
-	animation = 'default'
+			label.text = '2W'
+			_color_label(DOUBLE_WORD_COLOR)
+		_:
+			label.text = ''
+			
+func _color_label(color: String):
+	label.add_theme_color_override("font_color", color)
+
+func activate():
+	await play('active')

@@ -2,6 +2,7 @@ extends Control
 class_name Board
 
 signal space_clicked(space: Space)
+signal space_hovered(space: Space)
 
 var SpaceScene = preload("res://components/space/space.tscn")
 
@@ -91,6 +92,7 @@ func _create_space(coord: Vector2i, is_starting_space := false) -> Space:
 	space.position = _coord_to_pixel(coord)
 	add_child(space)
 	space.clicked.connect(_on_space_clicked)
+	space.hovered.connect(_on_space_hovered)
 	spaces[coord] = space
 	_link_neighbors(space)
 	if !is_starting_space and space.has_enhancement():
@@ -113,6 +115,9 @@ func _connect_spaces(a: Space, dir: int, b: Space):
 	
 func _on_space_clicked(space: Space):
 	space_clicked.emit(space)
+	
+func _on_space_hovered(space: Space):
+	space_hovered.emit(space)
 	
 func expand_around(space: Space):
 	expanding = true

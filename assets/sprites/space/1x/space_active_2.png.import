@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bro4qtifwtqwu"
-path="res://.godot/imported/double_letter.png-d1ba78743e5c2096be69d6c37140be78.ctex"
+uid="uid://34b3pimhcnpj"
+path="res://.godot/imported/space_active_2.png-94ec38e4a0254d745715a548d589d39e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/space/1x/1x/double_letter.png"
-dest_files=["res://.godot/imported/double_letter.png-d1ba78743e5c2096be69d6c37140be78.ctex"]
+source_file="res://assets/sprites/space/1x/space_active_2.png"
+dest_files=["res://.godot/imported/space_active_2.png-94ec38e4a0254d745715a548d589d39e.ctex"]
 
 [params]
 

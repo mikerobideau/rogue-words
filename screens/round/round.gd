@@ -68,6 +68,7 @@ func _ready():
 	word_finder.min_word_length = GameState.current_boss.get_min_word_length(word_finder.DEFAULT_MIN_WORD_LENGTH)
 	
 	board.space_clicked.connect(_on_space_clicked)
+	board.space_hovered.connect(_on_space_hovered)
 	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
 	board.start()
 	
@@ -143,6 +144,7 @@ func _on_space_clicked(space: Space):
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
 		return
+	_clear_selected_token()
 	hand.draw_tokens(1)
 	if hand.is_empty():
 		game_over.emit('You ran out of tokens')
@@ -150,6 +152,11 @@ func _on_space_clicked(space: Space):
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
 	scoring = false
+	
+func _on_space_hovered(space: Space):
+	if selected_token:
+		if word_finder.forms_word(space, selected_token):
+			space.activate()
 	
 func _on_round_complete(context: RelicContext):
 	if GameState.round_number == GameState.num_rounds:

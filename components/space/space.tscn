@@ -1,18 +1,31 @@
-[gd_scene load_steps=11 format=3 uid="uid://v6aub4m84xgt"]
+[gd_scene load_steps=8 format=3 uid="uid://v6aub4m84xgt"]
 
+[ext_resource type="Texture2D" uid="uid://nfu1dp8gaosq" path="res://assets/sprites/space/1x/space.png" id="1_3j5bs"]
 [ext_resource type="Script" path="res://components/space/space.gd" id="1_7pr7h"]
-[ext_resource type="Texture2D" uid="uid://cfclxrlh3cj1v" path="res://assets/sprites/space/1x/1x/standard.png" id="2_hahxp"]
-[ext_resource type="Texture2D" uid="uid://b64pur3ofeswe" path="res://assets/sprites/space/1x/space_hover.png" id="3_1w5qx"]
-[ext_resource type="Texture2D" uid="uid://yufm7brryaw0" path="res://assets/sprites/space/1x/space_2l.png" id="3_d0anl"]
-[ext_resource type="Texture2D" uid="uid://cxm8kdp73q270" path="res://assets/sprites/space/1x/space_2w.png" id="4_7agnl"]
-[ext_resource type="Texture2D" uid="uid://bmesmatpl7k7x" path="res://assets/sprites/space/1x/space_2l_hover_1.png" id="4_26gvh"]
-[ext_resource type="Texture2D" uid="uid://cb86un6w017l7" path="res://assets/sprites/space/1x/space_2w_hover.png" id="7_xo6w1"]
+[ext_resource type="Texture2D" uid="uid://lea07ahd5os8" path="res://assets/sprites/space/1x/space_active_1.png" id="1_emren"]
+[ext_resource type="Texture2D" uid="uid://34b3pimhcnpj" path="res://assets/sprites/space/1x/space_active_2.png" id="2_81ub6"]
+[ext_resource type="Texture2D" uid="uid://po378h5s6wxk" path="res://assets/sprites/space/1x/space_active_3.png" id="3_dpnex"]
+[ext_resource type="PackedScene" uid="uid://d30nyy2c7jo0v" path="res://components/space/badge.tscn" id="4_xerhu"]
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_42uhu"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_ghnjp"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("2_hahxp")
+"texture": ExtResource("1_emren")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_81ub6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_dpnex")
+}],
+"loop": true,
+"name": &"active",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_3j5bs")
 }],
 "loop": true,
 "name": &"default",
@@ -20,45 +33,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("3_1w5qx")
-}],
-"loop": true,
-"name": &"hover",
-"speed": 5.0
-}]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_4t2g1"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("3_d0anl")
-}],
-"loop": false,
-"name": &"default",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("4_26gvh")
-}],
-"loop": false,
-"name": &"hover",
-"speed": 5.0
-}]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_y4igl"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("4_7agnl")
-}],
-"loop": true,
-"name": &"default",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("7_xo6w1")
+"texture": ExtResource("1_emren")
 }],
 "loop": true,
 "name": &"hover",
@@ -66,10 +41,27 @@ animations = [{
 }]
 
 [node name="Space" type="AnimatedSprite2D"]
+sprite_frames = SubResource("SpriteFrames_ghnjp")
+animation = &"hover"
+frame_progress = 0.32912
 script = ExtResource("1_7pr7h")
-standard_frames = SubResource("SpriteFrames_42uhu")
-double_letter_frames = SubResource("SpriteFrames_4t2g1")
-double_word_frames = SubResource("SpriteFrames_y4igl")
 
-[node name="Badge" type="Sprite2D" parent="."]
+[node name="Badge" parent="." instance=ExtResource("4_xerhu")]
 visible = false
+
+[node name="Label" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = -66.0
+offset_right = -30.0
+offset_bottom = -34.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HeaderSmall"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+horizontal_alignment = 1
+vertical_alignment = 1

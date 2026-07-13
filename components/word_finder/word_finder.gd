@@ -6,6 +6,7 @@ const DICTIONARY_PATH = "res://data/dictionary.txt"
 const DEFAULT_MIN_WORD_LENGTH = 4
 
 var dictionary: Dictionary = {}
+var prefixes: Dictionary = {}
 var relic_manager: RelicManager
 var min_word_length := DEFAULT_MIN_WORD_LENGTH
 
@@ -21,6 +22,16 @@ func _load_dictionary():
 		var word = file.get_line().strip_edges().to_upper()
 		if word.length() > 0:
 			dictionary[word] = true
+			for i in range(1, word.length() + 1):
+				prefixes[word.substr(0, i)] = true
+
+func forms_word(space: Space, token: Token) -> bool:
+	if space.token != null:
+		return false
+	space.token = token              # logical simulate only — do NOT call place_token()
+	var result := _has_word_from(space)
+	space.token = null               # always restore before returning
+	return result
 			
 func is_word(word: String) -> bool:
 	return dictionary.has(word.to_upper())
@@ -81,3 +92,34 @@ func _path_signature(path: Array) -> String:
 		ids.append(s.get_instance_id())
 	ids.sort()
 	return str(ids)
+
+func _is_prefix(s: String) -> bool:
+	return prefixes.has(s)
+
+func _has_word_from(must_include: Space) -> bool:
+	for start in _get_connected_occupied(must_include):
+		var matches = [start.token.letter]
+		if relic_manager:
+			matches = relic_manager.get_letter_matches(start.token.letter)
+		for letter in matches:
+			if _has_word_dfs([start], letter, must_include):
+				return true
+	return false
+
+func _has_word_dfs(path: Array, word: String, must_include: Space) -> bool:
+	if not _is_prefix(word):
+		return false                 # prune: no dictionary word starts with this
+	if word.length() >= min_word_length and is_word(word) and path.has(must_include):
+		return true                  # early exit
+	for neighbor in path[-1].links:
+		if neighbor != null and neighbor.token != null and not (neighbor in path):
+			var matches = [neighbor.token.letter]
+			if relic_manager:
+				matches = relic_manager.get_letter_matches(neighbor.token.letter)
+			for letter in matches:
+				path.append(neighbor)
+				if _has_word_dfs(path, word + letter, must_include):
+					path.pop_back()
+					return true
+				path.pop_back()
+	return false
