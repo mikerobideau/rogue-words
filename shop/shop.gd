@@ -60,6 +60,7 @@ func _populate_slots():
 				_roll_to_enhance(entry['data'])
 				slot.setup_token(entry['data'])
 		slot.purchased.connect(_on_slot_purchased)
+		slot.slot_selected.connect(_on_slot_selected)
 
 func _weighted_pick_type(types: Array) -> String:
 	var total := 0
@@ -87,6 +88,12 @@ func _on_slot_purchased(slot: ShopSlot):
 		ShopSlot.Type.TOKEN:
 			GameState.add_token(slot.token_data)
 	slot.sold = true
+
+func _on_slot_selected(s: ShopSlot):
+	print_debug('slot selected')
+	for slot in slots.get_children():
+		if slot != s:
+			slot.selected = false 
 		
 func _on_exit_pressed() -> void:
 	completed.emit()	

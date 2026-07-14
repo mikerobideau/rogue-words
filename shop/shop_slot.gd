@@ -2,6 +2,7 @@ extends Control
 class_name ShopSlot
 
 signal purchased(slot: ShopSlot)
+signal slot_selected(slot: ShopSlot)
 
 enum Type { RELIC, TOKEN, ITEM }
 
@@ -39,6 +40,8 @@ var selected := false:
 		selected = v
 		_animate_selection()
 		buy_button.visible = true if selected else false
+		if v:
+			slot_selected.emit(self)
 		
 var position_tween: Tween
 	
