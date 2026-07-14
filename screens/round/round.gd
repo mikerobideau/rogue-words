@@ -15,13 +15,18 @@ const DEBUG = false
 @onready var board = $Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var word = $WordContainer/Word
+@onready var word = $TopContainer/Word
+@onready var instruction = $TopContainer/Instruction
 @onready var score_panel = $Left/CenterContainer/ScorePanel
 @onready var round_summary = $RoundSummary
 
 var hud: Control
 var relic_manager: Node
-var scoring := false
+var scoring := false:
+	set(v):
+		scoring = v
+		_update_instruction()
+		
 var active_item_slot: ItemSlot
 
 var selected_tokens: Array[Token]:
@@ -29,6 +34,7 @@ var selected_tokens: Array[Token]:
 		selected_tokens = v
 		selected_token = selected_tokens[0] if selected_tokens.size() == 1 else null
 		_update_discard_disabled()
+		_update_instruction()
 
 var selected_token: Token
 		
@@ -87,18 +93,31 @@ func _on_item_use_requested(slot: ItemSlot):
 func _update_discard_disabled():
 	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
 	
+func _update_instruction():
+	if selected_tokens.size() < 1 or scoring:
+		instruction.visible = false
+		instruction.text = ''
+	elif selected_tokens.size() == 1:
+		instruction.visible = true
+		instruction.text = 'Play or discard token'
+	elif selected_tokens.size() > 1:
+		instruction.visible = true
+		instruction.text = 'Discard tokens'
+	else:
+		instruction.visible = false
+		instruction.text = ''
+		
+	
 func _clear_selected_token():
 	if selected_token:
 		selected_token.selected = false
 		selected_token = null
-
-func _clear_selected_item():
-	hud.item_container.deselect()
 		
 func _clear_selected_tokens():
 	for token in selected_tokens:
 		token.selected = false
 	selected_tokens = []
+	_clear_selected_token()
 	
 func _on_discard_clicked():
 	if selected_tokens.size() < 1:
@@ -144,7 +163,7 @@ func _on_space_clicked(space: Space):
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
 		return
-	_clear_selected_token()
+	_clear_selected_tokens()
 	hand.draw_tokens(1)
 	if hand.is_empty():
 		game_over.emit('You ran out of tokens')
@@ -189,6 +208,7 @@ func _on_token_clicked(token: Token):
 			await active_item_slot.animate_and_consume(token)
 			_apply_item(item_data, token)
 			active_item_slot = null
+			_clear_selected_tokens()
 		else:
 			#item is selected but can't be applied to token
 			#auto-deselect item and select token
