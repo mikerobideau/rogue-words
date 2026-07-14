@@ -47,7 +47,7 @@ func select():
 	item_selected.emit(self)
 	SlotMenu.open(slot, [
 		{ "text": "Use",  "callback": _use },
-		{ "text": "Sell ($" + str(item_data.cost / 2) + ")", "callback": _sell },
+		{ "text": "Sell", "callback": _sell },
 	])
 
 func _use() -> void:

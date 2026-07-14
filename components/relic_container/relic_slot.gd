@@ -57,7 +57,7 @@ func _on_slot_pressed() -> void:
 	if drag_active or relic_data == null:
 		return
 	SlotMenu.open(slot, [
-		{ "text": "Sell ($" + str(relic_data.cost / 2) + ")", "callback": _sell }
+		{ "text": "Sell", "callback": _sell }
 	])
 	
 func _get_drag_data(at_position):
