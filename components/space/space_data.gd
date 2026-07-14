@@ -3,21 +3,21 @@ class_name SpaceData
 
 enum Type {
 	STANDARD,
-	DOUBLE_LETTER,
+	TRIPLE_LETTER,
 	DOUBLE_WORD
 }
 
 @export var type: Type
 
 func modify_letter_score(v: int) -> int:
-	if type == Type.DOUBLE_LETTER:
-		return v * 2
+	if type == Type.TRIPLE_LETTER:
+		return v * 3
 	return v
 
 func type_label():
 	match type:
 		Type.STANDARD: return ''
-		Type.DOUBLE_LETTER: return 'Letter x2'
+		Type.TRIPLE_LETTER: return 'Letter x3'
 		Type.DOUBLE_WORD: return 'Word x2'
 
 func get_word_mult():
@@ -29,7 +29,7 @@ func get_word_mult():
 
 func has_letter_effect():
 	match type:
-		Type.DOUBLE_LETTER:
+		Type.TRIPLE_LETTER:
 			return true
 		_:
 			return false

@@ -10,7 +10,7 @@ signal hovered(space: Space)
 
 const RADIUS = 40
 const DOUBLE_WORD_COLOR = Styles.PINK
-const DOUBLE_LETTER_COLOR = Styles.TEAL
+const TRIPLE_LETTER_COLOR = Styles.TEAL
 
 var coord: Vector2i
 var links: Array = [null, null, null, null, null, null]
@@ -84,9 +84,9 @@ func _show_badge():
 	badge.z_index = 1
 	badge.position = Vector2(-Token.RADIUS, 0)
 	match data.type:
-		SpaceData.Type.DOUBLE_LETTER:
-			badge.color = DOUBLE_LETTER_COLOR
-			badge.text = '2L'
+		SpaceData.Type.TRIPLE_LETTER:
+			badge.color = TRIPLE_LETTER_COLOR
+			badge.text = '3L'
 			_animate_badge()
 		SpaceData.Type.DOUBLE_WORD:
 			badge.color = DOUBLE_WORD_COLOR
@@ -101,9 +101,9 @@ func _on_input_event(_viewport, event, _shape_idx):
 		
 func _update_label():
 	match type:
-		SpaceData.Type.DOUBLE_LETTER:
-			label.text = '2L'
-			_color_label(DOUBLE_LETTER_COLOR)
+		SpaceData.Type.TRIPLE_LETTER:
+			label.text = '3L'
+			_color_label(TRIPLE_LETTER_COLOR)
 		SpaceData.Type.DOUBLE_WORD:
 			label.text = '2W'
 			_color_label(DOUBLE_WORD_COLOR)
