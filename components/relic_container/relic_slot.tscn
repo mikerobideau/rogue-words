@@ -11,12 +11,14 @@ offset_right = 351.0
 offset_bottom = 126.0
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 script = ExtResource("1_0wlxs")
 
 [node name="Slot" type="TextureButton" parent="."]
 layout_mode = 0
 offset_right = 351.0
 offset_bottom = 126.0
+mouse_filter = 1
 texture_normal = ExtResource("1_bava7")
 texture_pressed = ExtResource("1_bava7")
 texture_hover = ExtResource("1_bava7")

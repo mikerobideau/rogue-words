@@ -6,9 +6,15 @@ class_name RelicSlot
 
 @export var relic_data: RelicData
 var relic: Relic
+var container: RelicContainer
+var drag_active := false
 
 func _ready():
 	slot.mouse_entered.connect(_on_frame_mouse_entered)
+	
+func _notification(what: int):
+	if what == NOTIFICATION_DRAG_END:
+		drag_active = false
 
 func set_relic(data: RelicData) -> void:
 	clear()
@@ -48,8 +54,27 @@ func _sell():
 	Tooltip.unregister(slot)
 
 func _on_slot_pressed() -> void:
-	if relic_data == null:
+	if drag_active or relic_data == null:
 		return
 	SlotMenu.open(slot, [
 		{ "text": "Sell ($" + str(relic_data.cost / 2) + ")", "callback": _sell }
 	])
+	
+func _get_drag_data(at_position):
+	print("get_drag_data on ", name, " relic_data=", relic_data)
+	if relic_data == null:
+		return null
+	drag_active = true
+	var preview_relic = RelicFactory.create_scene(relic_data)
+	preview_relic.position = -relic.size / 2.0
+	preview_relic.modulate.a = 0.7
+	var wrapper = Control.new()
+	wrapper.add_child(preview_relic)
+	set_drag_preview(wrapper)
+	return {"type": "relic", "relic_data": relic_data}
+	
+func _can_drop_data(at_position, data) -> bool:
+	return data is Dictionary and data.get("type") == "relic"
+	
+func _drop_data(at_position, data):
+	container.move_relic(data["relic_data"], relic_data)

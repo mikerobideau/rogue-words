@@ -43,7 +43,7 @@ animations = [{
 [node name="Space" type="AnimatedSprite2D"]
 sprite_frames = SubResource("SpriteFrames_ghnjp")
 animation = &"hover"
-frame_progress = 0.32912
+frame_progress = 0.951758
 script = ExtResource("1_7pr7h")
 
 [node name="Badge" parent="." instance=ExtResource("4_xerhu")]

@@ -45,11 +45,12 @@ func _on_new_game():
 	GameState.round_number = 0
 	GameState.money = 0
 	GameState.tokens = TokenFactory.create_starting_tokens()
-	#var test_relic = preload("res://components/relic/data/compost_consonants/compost_consonants.tres")
+	var test_relic1 = preload("res://components/relic/data/compost_consonants/compost_consonants.tres")
+	var test_relic2 = preload("res://components/relic/data/banana/banana.tres")
 	var test_item = preload("res://components/item/data/lightning/lightning.tres")
-	#GameState.relics = [test_relic.duplicate()]
+	GameState.relics = [test_relic1.duplicate(), test_relic2.duplicate()]
 	GameState.items = [test_item.duplicate()]
-	GameState.relics = [] as Array[RelicData]
+	#GameState.relics = [] as Array[RelicData]
 	#GameState.items = [] as Array[ItemData]
 	hud.visible = true
 	var round = SCREENS.round.instantiate()
