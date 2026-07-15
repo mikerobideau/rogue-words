@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Snooze" load_steps=2 format=3 uid="uid://xxa24471b6qv"]
+
+[ext_resource type="Script" path="res://components/relic/data_disabled/rare_letter/snooze/snooze.gd" id="1_yue00"]
+
+[resource]
+script = ExtResource("1_yue00")
+relic_name = "Snooze"
+description = "Scales by +8 for each z placed"
+cost = 3
+is_scaling = true
+scale_by = 8
+is_x_scaling = false
+x_scale_by = 0.0
+money_reward = 0
+has_count = false
+threshold = 0

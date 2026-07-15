@@ -41,8 +41,7 @@ func _refresh_tooltip():
 	var default_text = 'Empty coupon slot'
 	var text: String
 	if relic_data:
-		var scaling_text = ' (currently '  + str(relic.data.scaling_value) + ')' if relic.data.is_scaling else ''
-		text = relic_data.description + scaling_text
+		text = relic.data.get_tooltip_text()
 	else:
 		text = default_text
 	Tooltip.register(slot, text)

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Queue" load_steps=2 format=3 uid="uid://bqi14toymms5y"]
+
+[ext_resource type="Script" path="res://components/relic/data_disabled/rare_letter/queue/queue.gd" id="1_2nrbi"]
+
+[resource]
+script = ExtResource("1_2nrbi")
+relic_name = "Queue"
+description = "x1.5 for each Q in hand"
+cost = 5
+is_scaling = false
+scale_by = 0
+is_x_scaling = false
+x_scale_by = 0.0
+money_reward = 0
+has_count = false
+threshold = 0

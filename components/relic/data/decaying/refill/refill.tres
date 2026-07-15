@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RefillRelic" load_steps=2 format=3 uid="uid://bc44lgcemmxnn"]
+
+[ext_resource type="Script" path="res://components/relic/data/decaying/refill/refill.gd" id="1_2n0gn"]
+
+[resource]
+script = ExtResource("1_2n0gn")
+base_mult = 2.0
+mult_decay = 0.1
+decay_word_length = 3
+reset_word_length = 4
+relic_name = "Free Refill"
+description = "x2.0.  Decays by 0.1 if 4 letter word is played.  Resets to x2 on 6 letter word."
+cost = 5

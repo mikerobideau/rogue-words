@@ -3,7 +3,7 @@ class_name WordFinder
 
 const DICTIONARY_PATH = "res://data/dictionary.txt"
 
-const DEFAULT_MIN_WORD_LENGTH = 4
+const DEFAULT_MIN_WORD_LENGTH = 3
 
 var dictionary: Dictionary = {}
 var prefixes: Dictionary = {}

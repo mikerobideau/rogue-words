@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Juice" load_steps=2 format=3 uid="uid://v25wfe13kyqu"]
+
+[ext_resource type="Script" path="res://components/relic/data/basic/juice/juice.gd" id="1_b87st"]
+
+[resource]
+script = ExtResource("1_b87st")
+value = 10
+relic_name = "Juice"
+description = "+10 score"
+cost = 3
