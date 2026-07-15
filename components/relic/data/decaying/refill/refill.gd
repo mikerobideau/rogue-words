@@ -16,9 +16,9 @@ func before_score(context: RelicContext) -> RelicResponse:
 	if context.word.length() == decay_word_length:
 		_decay()
 		return RelicResponse.DECAY
-	elif context.word.length() == reset_word_length:
+	elif context.word.length() == reset_word_length and current_mult < base_mult:
 		_reset()
-		return RelicResponse.RESET
+		return RelicResponse.RESET_POSITIVE
 	else:
 		return RelicResponse.NONE
 
@@ -35,7 +35,7 @@ func get_before_score_text(response: RelicResponse) -> String:
 	match response: 
 		RelicResponse.DECAY:
 			return 'Gulp! -' + str(mult_decay)
-		RelicResponse.RESET:
+		RelicResponse.RESET_POSITIVE:
 			return 'Refill!'
 		_:
 			return ''

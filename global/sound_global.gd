@@ -8,12 +8,20 @@ const sounds = {
 	'bonus': preload("res://assets/sound/mixkit-arcade-bonus-alert-767.wav"),
 	'big_bonus': preload("res://assets/sound/universfield-video-game-bonus-323603.mp3"),
 	'blip_select': preload("res://assets/sound/jsfxr/blipSelect.wav"),
+	'coin1': preload("res://assets/sound/jsfxr/coin1.wav"),
 	'click': preload("res://assets/sound/jsfxr/click.wav"),
 	'click1': preload("res://assets/sound/jsfxr/click (1).wav"),
 	'click2': preload("res://assets/sound/jsfxr/click (2).wav"),
 	'click3': preload("res://assets/sound/jsfxr/click (3).wav"),
 	'click4': preload("res://assets/sound/jsfxr/click (4).wav"),
 	'click5': preload("res://assets/sound/jsfxr/click (5).wav"),
+	'decay1': preload("res://assets/sound/jsfxr/decay1.wav"),
+	'decay2': preload("res://assets/sound/jsfxr/decay2.wav"),
+	'decay3': preload("res://assets/sound/jsfxr/decay3.wav"),
+	'decay4': preload("res://assets/sound/jsfxr/decay4.wav"),
+	'decay5': preload("res://assets/sound/jsfxr/decay5.wav"),
+	'decay6': preload("res://assets/sound/jsfxr/decay6.wav"),
+	'decay7': preload("res://assets/sound/jsfxr/decay7.wav"),
 	'laser_shoot': preload("res://assets/sound/jsfxr/laserShoot.wav"),
 	'pickup_coin': preload("res://assets/sound/jsfxr/pickupCoin.wav"),
 	'pickup_coin1': preload("res://assets/sound/jsfxr/pickupCoin (1).wav"),
@@ -35,6 +43,10 @@ const sounds = {
 	'shuffle': preload("res://assets/sound/mixkit-thin-metal-card-deck-shuffle-3175.wav"),
 	'success': preload("res://assets/sound/mixkit-fantasy-game-success-notification-270.wav"),
 	'synth': preload("res://assets/sound/jsfxr/synth.wav"),
+	'upgrade1': preload("res://assets/sound/jsfxr/upgrade1.wav"),
+	'upgrade2': preload("res://assets/sound/jsfxr/upgrade2.wav"),
+	'upgrade3': preload("res://assets/sound/jsfxr/upgrade3.wav"),
+	'upgrade4': preload("res://assets/sound/jsfxr/upgrade4.wav"),
 	'win': preload("res://assets/sound/mixkit-completion-of-a-level-2063.wav"),
 	'win2': preload("res://assets/sound/mixkit-final-level-bonus-2061.wav"),
 	'win3': preload("res://assets/sound/mixkit-small-win-2020.wav"),
@@ -53,14 +65,18 @@ const SOUND_MOUSEOVER = 'click5' #click2 or click5
 const SOUND_TOKEN = 'click2' #click2 or token
 const SOUND_DRAW_TOKEN = 'click2'
 const SOUND_TOKEN_DESTROYED = 'random'
-
 const SOUND_ENHANCED_SPACE = 'small_bonus' #small_bonus, water_drop
 const SOUND_ENHANCED_TOKEN = 'water_drop' #small_bonus, power_up8, shimmer_bonus, water_drop
 const SOUND_ENHANCED_LETTER_SPACE = 'water_drop' #small_bonus, #bonus, power_up, blip_select, water_drop
 const SOUND_ENHANCED_WORD_SPACE = 'water_drop'  #bonus, power_up, blip_select, water_drop
 const SOUND_MULT = 'bonus' #power_up
 
-const SOUND_RELIC = 'water_drop' #small_bonus, bonus, power_up, blip_select
+const SOUND_RELIC_SCORE = 'upgrade4' #small_bonus, bonus, #upgrade4, power_up, blip_select
+const SOUND_RELIC_UPGRADE = 'upgrade1'
+const SOUND_RELIC_DECAY = 'decay7'
+const SOUND_RELIC_RESET_POSITIVE = 'upgrade2'
+const SOUND_RELIC_RESET_NEGATIVE = 'decay4'
+const SOUND_RELIC_MONEY = 'coin1'
 
 const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_SPLAT = 'power_up7'

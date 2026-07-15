@@ -9,7 +9,8 @@ enum RelicResponse {
 	UPGRADE,
 	SCORE,
 	DECAY,
-	RESET
+	RESET_NEGATIVE,
+	RESET_POSITIVE
 }
 
 @export var relic_name: String

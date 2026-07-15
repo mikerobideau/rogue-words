@@ -148,7 +148,7 @@ func _on_space_clicked(space: Space):
 			context.word = word_report.word
 			context.word_score = word_report.score
 			context.word_report = word_report
-			var relic_report = relic_manager.get_score_report(context)
+			var relic_report = await relic_manager.get_score_report(context)
 			await word.play(word_report, relic_report)
 			score_panel.score += relic_report.new_score
 			

@@ -53,7 +53,7 @@ func play(word_report: WordReport, relic_report: RelicReport):
 		await get_tree().create_timer(Settings.SCORE_DELAY_LONG).timeout
 	
 	for report in relic_report.items:
-		Sound.play(Sound.SOUND_RELIC)
+		Sound.play(Sound.SOUND_RELIC_SCORE)
 		report.relic.pulse(Settings.SCORE_DELAY_LONG)
 		ScorePopup.show(report.text, score_label, Settings.SCORE_DELAY_LONG, 10, 0, ScorePopup.Anchor.RIGHT)
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG)
