@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Growth" load_steps=2 format=3 uid="uid://b6qnna8pglfdy"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/board/growth/growth.gd" id="1_e7456"]
+[ext_resource type="Script" path="res://components/relic/data/board/growth/growth.gd" id="1_e7456"]
 
 [resource]
 script = ExtResource("1_e7456")

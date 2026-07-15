@@ -63,8 +63,11 @@ func get_score(context: RelicContext) -> int:
 # Round Events
 #---------------------------------------------------------------------------------------------------
 	
-func on_discard(context: RelicContext) -> bool:
-	return false
+func on_discard(context: RelicContext) -> RelicResponse:
+	return RelicResponse.NONE
+	
+func get_discard_text(response: RelicResponse) -> String:
+	return ''
 	
 func on_round_complete(context: RelicContext) -> bool:
 	return false

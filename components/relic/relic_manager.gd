@@ -30,8 +30,10 @@ func get_score_report(context: RelicContext) -> RelicReport:
 	
 func on_discard(context: RelicContext):
 	for relic in context.relics:
-		if relic.data.on_discard(context):
-			_activate_relic(relic)
+		var response = relic.data.on_discard(context)
+		if response:
+			relic.data.data_changed.emit()
+			_activate_relic(relic, false, response, relic.data.get_discard_text(response))
 			
 func on_round_complete(context: RelicContext):
 	for relic in context.relics:
