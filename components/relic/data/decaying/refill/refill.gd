@@ -16,7 +16,7 @@ func before_score(context: RelicContext) -> RelicResponse:
 	if context.word.length() == decay_word_length:
 		_decay()
 		return RelicResponse.DECAY
-	elif context.word.length() == reset_word_length and current_mult < base_mult:
+	elif context.word.length() == reset_word_length:
 		_reset()
 		return RelicResponse.RESET_POSITIVE
 	else:

@@ -87,7 +87,7 @@ const SOUND_RELIC_UPGRADE = 'upgrade1'
 const SOUND_RELIC_DECAY = 'decay7'
 const SOUND_RELIC_RESET_POSITIVE = 'upgrade2'
 const SOUND_RELIC_RESET_NEGATIVE = 'decay4'
-const SOUND_RELIC_MONEY = 'coin1'
+const SOUND_RELIC_MONEY = 'pickup_coin4'
 
 const SOUND_JUICE = 'liquid4'
 

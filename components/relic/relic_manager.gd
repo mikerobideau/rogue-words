@@ -7,7 +7,8 @@ func on_token_placed(context: RelicContext):
 	for relic in context.relics:
 		var response = await relic.data.on_token_placed(context)
 		if response:
-			await _activate_relic(relic, response, relic.data.get_on_placed_text(response))
+			_activate_relic(relic, response, relic.data.get_on_placed_text(response))
+			relic.data.data_changed.emit()
 		
 func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()

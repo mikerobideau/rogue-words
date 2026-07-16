@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ReportCard" load_steps=2 format=3 uid="uid://rw8t8ecltyby"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/idosyncratic/health_inspection/health_inspection.gd" id="1_f6nt6"]
+[ext_resource type="Script" path="res://components/relic/data/idosyncratic/health_inspection/health_inspection.gd" id="1_f6nt6"]
 
 [resource]
 script = ExtResource("1_f6nt6")

@@ -45,7 +45,7 @@ func _on_new_game():
 	GameState.round_number = 0
 	GameState.money = 0
 	GameState.tokens = TokenFactory.create_starting_tokens()
-	var test_relic1 = preload("res://components/relic/data/deck_fixing/died_on_the_vine/died_on_the_vine.tres")
+	var test_relic1 = preload("res://components/relic/data/idosyncratic/lucky/lucky.tres")
 	#var test_relic2 = preload("res://components/relic/data/banana/banana.tres")
 	#var test_item = preload("res://components/item/data/lightning/lightning.tres")
 	GameState.relics = [test_relic1.duplicate()]

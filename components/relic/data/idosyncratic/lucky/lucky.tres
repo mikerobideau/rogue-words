@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Lucky" load_steps=2 format=3 uid="uid://b3p1lv6ygkqd0"]
+
+[ext_resource type="Script" path="res://components/relic/data/idosyncratic/lucky/lucky.gd" id="1_ty33t"]
+
+[resource]
+script = ExtResource("1_ty33t")
+money_reward = 1
+relic_name = "Lucky"
+description = "1/3 chance to win $1 each time an L, U, C, K, or Y is placed"
+cost = 3
