@@ -4,13 +4,7 @@
 
 [resource]
 script = ExtResource("1_ejt7v")
+scale_by = 5
 relic_name = "Compost Consonants"
 description = "Scales by +5 for each discarded consonant"
-cost = 5
-is_scaling = true
-scale_by = 5
-is_x_scaling = false
-x_scale_by = 0.0
-money_reward = 0
-has_count = false
-threshold = 0
+rarity = 1

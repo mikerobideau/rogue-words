@@ -9,4 +9,3 @@ func on_token_placed(context: RelicContext) -> RelicResponse:
 
 func get_on_placed_text(response: RelicResponse) -> String:
 	return 'Farewell!'
-	

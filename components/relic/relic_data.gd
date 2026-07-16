@@ -17,7 +17,7 @@ enum RelicResponse {
 
 @export var relic_name: String
 @export var description: String
-@export var cost := 5
+@export var rarity: Rarity.Type
 
 #---------------------------------------------------------------------------------------------------
 # Board Events

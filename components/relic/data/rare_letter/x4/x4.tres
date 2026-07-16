@@ -6,4 +6,4 @@
 script = ExtResource("1_tgndy")
 relic_name = "X4"
 description = "x4 if your word contains an X"
-cost = 7
+rarity = 2
