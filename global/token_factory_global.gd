@@ -6,7 +6,7 @@ var TokenScene = preload("res://components/token/token.tscn")
 const LETTERS: Dictionary = {
 	"A": {'letter': 'A', 'value': 1, 'freq': 5}, 
 	"B": {'letter': 'B', 'value': 3, 'freq': 1}, 
-	"C": {'letter': 'C', 'value': 3, 'freq': 1}, 
+	"C": {'letter': 'C', 'value': 3, 'freq': 25}, 
 	"D": {'letter': 'D', 'value': 2, 'freq': 1}, 
 	"E": {'letter': 'E', 'value': 1, 'freq': 5}, 
 	"F": {'letter': 'F', 'value': 4, 'freq': 1}, 

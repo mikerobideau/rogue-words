@@ -6,8 +6,8 @@ func get_score(context: RelicContext):
 		return context.word_score + 100
 	return -1
 	
-func get_text(context: RelicContext):
-	return 'Noon +100'
+func get_score_text(context: RelicContext):
+	return 'Noon! +100'
 
 func _is_palindrome(word: String) -> bool:
 	if word.length() <= 1:

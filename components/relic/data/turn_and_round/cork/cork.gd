@@ -6,5 +6,5 @@ func get_score(context: RelicContext) -> int:
 		return context.word_score * 2
 	return -1
 	
-func get_text(context: RelicContext) -> String:
+func get_score_text(context: RelicContext) -> String:
 	return 'POP! x2'

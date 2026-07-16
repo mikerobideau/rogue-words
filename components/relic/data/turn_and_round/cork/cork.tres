@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Cork" load_steps=2 format=3 uid="uid://csakahiemmt2p"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/turn_and_round/cork/cork.gd" id="1_xh0he"]
+[ext_resource type="Script" path="res://components/relic/data/turn_and_round/cork/cork.gd" id="1_xh0he"]
 
 [resource]
 script = ExtResource("1_xh0he")

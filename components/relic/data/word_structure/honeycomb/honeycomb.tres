@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Honeycomb" load_steps=2 format=3 uid="uid://74ryqe2kwq5u"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/honeycomb/honeycomb.gd" id="1_acoqc"]
+
+[resource]
+script = ExtResource("1_acoqc")
+bonus = 0
+relic_name = "Honeycomb"
+description = "+50 for each 6 letter word"
+cost = 5

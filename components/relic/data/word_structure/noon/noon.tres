@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Noon" load_steps=2 format=3 uid="uid://dgsdrf2t0drh8"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/word_structure/noon/noon.gd" id="1_rstu5"]
+[ext_resource type="Script" path="res://components/relic/data/word_structure/noon/noon.gd" id="1_rstu5"]
 
 [resource]
 script = ExtResource("1_rstu5")
