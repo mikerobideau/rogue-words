@@ -115,7 +115,8 @@ func _clear_selected_token():
 		
 func _clear_selected_tokens():
 	for token in selected_tokens:
-		token.selected = false
+		if is_instance_valid(token):
+			token.selected = false
 	selected_tokens = []
 	_clear_selected_token()
 	
@@ -139,9 +140,8 @@ func _on_space_clicked(space: Space):
 	var context = _get_relic_context()
 	await relic_manager.on_token_placed(context)
 	selected_tokens.erase(selected_token)
-	
-	#Scoring
-	if !selected_token.is_queued_for_deletion(): #on_token_placed can destroy the token, in which case scoring must be skipped
+
+	if space.token != null: #relic_manager.on_token_placed may destroy the token before it is scored
 		var found_words = word_finder.find_words(space)
 		for found_word in found_words:
 			var word_report = scorer.get_word_report(found_word)
@@ -181,7 +181,7 @@ func _on_round_complete(context: RelicContext):
 	if GameState.round_number == GameState.num_rounds:
 		game_won.emit()
 		return
-	Sound.play('win')
+	Sound.play(Sound.SOUND_WIN)
 	relic_manager.on_round_complete(context)
 	for token in GameState.tokens:
 		token.spent = false

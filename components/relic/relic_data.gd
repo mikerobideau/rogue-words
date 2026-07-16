@@ -10,7 +10,9 @@ enum RelicResponse {
 	SCORE,
 	DECAY,
 	RESET_NEGATIVE,
-	RESET_POSITIVE
+	RESET_POSITIVE,
+	EVENT,
+	MONEY_REWARD
 }
 
 @export var relic_name: String
@@ -21,8 +23,11 @@ enum RelicResponse {
 # Board Events
 #---------------------------------------------------------------------------------------------------
 
-func on_token_placed(context: RelicContext) -> bool:
-	return false
+func on_token_placed(context: RelicContext) -> RelicResponse:
+	return RelicResponse.NONE
+	
+func get_on_placed_text(response: RelicResponse) -> String:
+	return ''
 	
 func add_grow_amount(context: RelicContext) -> int:
 	return 0

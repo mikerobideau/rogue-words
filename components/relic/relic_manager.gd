@@ -5,8 +5,9 @@ var RelicScene = preload("res://components/relic/relic.tscn")
 
 func on_token_placed(context: RelicContext):
 	for relic in context.relics:
-		if await relic.data.on_token_placed(context):
-			await _activate_relic(relic)
+		var response = await relic.data.on_token_placed(context)
+		if response:
+			await _activate_relic(relic, response, relic.data.get_on_placed_text(response))
 		
 func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()
@@ -69,6 +70,11 @@ func _activate_relic(relic: Relic, response := RelicData.RelicResponse.NONE, tex
 			Sound.play(Sound.SOUND_RELIC_RESET_NEGATIVE)
 		RelicData.RelicResponse.RESET_POSITIVE:
 			Sound.play(Sound.SOUND_RELIC_RESET_POSITIVE)
+		RelicData.RelicResponse.MONEY_REWARD:
+			Sound.play(Sound.SOUND_RELIC_MONEY)
+		RelicData.RelicResponse.EVENT:
+			pass
+	print_debug('pulsing')
 	relic.pulse()
 	if text != null and text != '':
 		ScorePopup.show(text, relic)

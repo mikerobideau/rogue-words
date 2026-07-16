@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="DiedOnTheVine" load_steps=2 format=3 uid="uid://5j71qb01pxqt"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/deck_fixing/died_on_the_vine/died_on_the_vine.gd" id="1_spl5t"]
+[ext_resource type="Script" path="res://components/relic/data/deck_fixing/died_on_the_vine/died_on_the_vine.gd" id="1_spl5t"]
 
 [resource]
 script = ExtResource("1_spl5t")

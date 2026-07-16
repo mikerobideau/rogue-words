@@ -17,6 +17,7 @@ var progress := 0.0
 var progress_for_animation := 0.0
 var fill_tween: Tween
 var color_tween: Tween
+var is_full := false
 
 func _ready():
 	fill.material = fill.material.duplicate()
@@ -27,6 +28,10 @@ func _update_progress():
 		return
 	progress = clampf(value / max_value, 0, 1)
 	progress_for_animation = clampf(progress, 0, 0.99) #ensures top of wave is visible at complete fill
+	if progress > 0 and !is_full:
+		Sound.play(Sound.SOUND_JUICE)
+	if value >= max_value:
+		is_full = true
 	_animate_progress()
 	if progress >= 1:
 		_style_complete()

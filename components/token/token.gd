@@ -58,9 +58,9 @@ func enhance(e: TokenEnhancement):
 	_transform()
 	
 func destroy():
+	Sound.play(Sound.SOUND_TOKEN_DESTROYED)
 	destroyed.emit()
-	await _animate_destroyed()
-	queue_free()
+	_animate_destroyed()
 	
 func next_letter():
 	data.next_letter()
@@ -216,7 +216,8 @@ func _animate_destroyed(custom_scale := Vector2.ONE):
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.8)
-	return tween.finished
+	await tween.finished
+	queue_free()
 	
 func _transform():
 	var was_selectable := is_selectable
