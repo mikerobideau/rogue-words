@@ -10,6 +10,16 @@ const WEIGHTS := {
 	Type.LEGENDARY: 3,
 }
 
+const NAMES := {
+	Type.COMMON: "Common",
+	Type.UNCOMMON: "Uncommon",
+	Type.RARE: "Rare",
+	Type.LEGENDARY: "Legendary",
+}
+
+static func to_text(r: Type) -> String:
+	return NAMES.get(r, "Unknown")
+
 const COLORS := {
 	Type.COMMON: Color(0.7, 0.7, 0.7),
 	Type.UNCOMMON: Color(0.3, 0.8, 0.4),

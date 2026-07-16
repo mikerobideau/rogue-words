@@ -7,10 +7,11 @@ signal slot_selected(slot: ShopSlot)
 enum Type { RELIC, TOKEN, ITEM }
 
 @onready var frame = $Frame
-@onready var offer = $Frame/Offer
+@onready var offer = $Frame/OfferMargin/Offer
 @onready var cost_label = $Coin/CostLabel
 @onready var title_container = $Frame/TitleMargin
-@onready var title = $Frame/TitleMargin/Title
+@onready var title = $Frame/TitleMargin/VBoxContainer/Title
+@onready var rarity_label = $Frame/TitleMargin/VBoxContainer/Rarity
 @onready var coin = $Coin
 @onready var buy_button = $BuyButton
 @onready var sold_sticker = $Sold
@@ -51,6 +52,7 @@ func _ready():
 func setup_relic(data: RelicData):
 	slot_type = Type.RELIC
 	title.text = 'Coupon'
+	rarity_label.text = Rarity.to_text(data.rarity)
 	relic_data = data
 	Tooltip.register(frame, data.description)
 	cost = data.cost

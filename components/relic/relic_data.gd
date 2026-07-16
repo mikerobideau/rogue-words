@@ -15,9 +15,26 @@ enum RelicResponse {
 	MONEY_REWARD
 }
 
+const COST_BY_RARITY = {
+	Rarity.Type.COMMON: 5,
+	Rarity.Type.UNCOMMON: 7,
+	Rarity.Type.RARE: 10,
+	Rarity.Type.LEGENDARY: 15
+}
+
 @export var relic_name: String
 @export var description: String
 @export var rarity: Rarity.Type
+	
+var cost: int:
+	get: return COST_BY_RARITY[rarity]
+
+#---------------------------------------------------------------------------------------------------
+# Labels
+#---------------------------------------------------------------------------------------------------
+	
+func get_tooltip_text():
+	return description
 
 #---------------------------------------------------------------------------------------------------
 # Board Events
@@ -77,10 +94,3 @@ func get_discard_text(response: RelicResponse) -> String:
 	
 func on_round_complete(context: RelicContext) -> bool:
 	return false
-	
-#---------------------------------------------------------------------------------------------------
-# Information
-#---------------------------------------------------------------------------------------------------
-	
-func get_tooltip_text():
-	return description

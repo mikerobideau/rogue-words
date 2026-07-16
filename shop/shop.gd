@@ -35,7 +35,6 @@ func _populate_slots():
 	var seen := []
 
 	while picked.size() < SLOT_COUNT:
-		# only consider types that still have an unseen option
 		var available := TYPE_WEIGHTS.keys().filter(func(t):
 			return pools[t].any(func(d): return d not in seen))
 		if available.is_empty():
@@ -43,7 +42,7 @@ func _populate_slots():
 
 		var type: String = _weighted_pick_type(available)
 		var options = pools[type].filter(func(d): return d not in seen)
-		var data = options[randi() % options.size()]
+		var data = _weighted_pick_by_rarity(options)
 
 		seen.append(data)
 		picked.append({ 'type': type, 'data': data })
@@ -72,6 +71,23 @@ func _weighted_pick_type(types: Array) -> String:
 		if r < 0:
 			return t
 	return types[0]
+
+func _weighted_pick_by_rarity(options: Array):
+	var total := 0
+	for o in options:
+		total += _rarity_weight(o)
+	if total <= 0:
+		return options[randi() % options.size()]
+	var r := randi() % total
+	for o in options:
+		r -= _rarity_weight(o)
+		if r < 0:
+			return o
+	return options[-1]
+
+func _rarity_weight(data) -> int:
+	var rarity = data.get("rarity")          # null if the resource has no rarity (e.g. tokens)
+	return Rarity.weight(rarity) if rarity != null else 1
 	
 func _roll_to_enhance(token_data: TokenData) -> void:
 	if randf() < 0.5:

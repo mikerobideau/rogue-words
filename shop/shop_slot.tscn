@@ -35,26 +35,39 @@ offset_bottom = 106.0
 grow_horizontal = 2
 theme_override_constants/margin_top = 50
 
-[node name="Title" type="Label" parent="Frame/TitleMargin"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Frame/TitleMargin"]
+layout_mode = 2
+
+[node name="Rarity" type="Label" parent="Frame/TitleMargin/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Frame/TitleMargin/VBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"HeaderMedium"
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "Offer"
+horizontal_alignment = 1
 
-[node name="Offer" type="Control" parent="Frame"]
-custom_minimum_size = Vector2(96, 96)
+[node name="OfferMargin" type="MarginContainer" parent="Frame"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -48.5
-offset_top = -48.5
-offset_right = 47.5
-offset_bottom = 47.5
+offset_left = -48.0
+offset_top = -48.0
+offset_right = 48.0
+offset_bottom = 48.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_top = 50
+
+[node name="Offer" type="Control" parent="Frame/OfferMargin"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
 mouse_filter = 2
 
 [node name="SlotInner" type="Control" parent="."]
@@ -80,10 +93,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -104.0
-offset_top = -107.0
-offset_right = 54.0
-offset_bottom = 51.0
+offset_left = -125.0
+offset_top = -125.0
+offset_right = 33.0
+offset_bottom = 33.0
 grow_horizontal = 0
 grow_vertical = 0
 scale = Vector2(0.7, 0.7)
