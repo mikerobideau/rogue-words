@@ -15,7 +15,7 @@ func get_score(context: RelicContext) -> int:
 func get_discard_text(response: RelicResponse) -> String:
 	return 'Compost! +' + str(num_consonants * scale_by)
 
-func get_tooltip_text():
+func get_tooltip_text(context: RelicContext):
 	return description + ' (currently +' + str(current_value) + ')'
 
 func on_discard(context: RelicContext) -> RelicResponse:

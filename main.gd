@@ -22,8 +22,8 @@ var current_screen: Control = null
 func _ready():
 	size = get_viewport().get_visible_rect().size
 	#_show_title()
-	_enter_shop()
-	#_on_new_game()
+	#_enter_shop()
+	_on_new_game()
 	
 func _show_title():
 	hud.visible = false
@@ -45,7 +45,7 @@ func _on_new_game():
 	GameState.round_number = 0
 	GameState.money = 0
 	GameState.tokens = TokenFactory.create_starting_tokens()
-	var test_relic1 = preload("res://components/relic/data/turn_and_round/cork/cork.tres")
+	var test_relic1 = preload("res://components/relic/data/rare_letter/collector/collector.tres")
 	#var test_relic2 = preload("res://components/relic/data/banana/banana.tres")
 	#var test_item = preload("res://components/item/data/lightning/lightning.tres")
 	GameState.relics = [test_relic1.duplicate()]

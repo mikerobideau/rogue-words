@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="PremiumGrapes" load_steps=2 format=3 uid="uid://dr88riamn7pan"]
+
+[ext_resource type="Script" path="res://components/relic/data/rare_letter/premium_grapes/premium_grapes.gd" id="1_1ytv3"]
+
+[resource]
+script = ExtResource("1_1ytv3")
+relic_name = "Premium Grapes"
+description = "+1 mult per rare letter (JQVXZ) in word"
+rarity = null

@@ -41,7 +41,9 @@ func _refresh_tooltip():
 	var default_text = 'Empty coupon slot'
 	var text: String
 	if relic_data:
-		text = relic.data.get_tooltip_text()
+		var context = RelicContext.new()
+		context.tokens = GameState.tokens
+		text = relic.data.get_tooltip_text(context)
 	else:
 		text = default_text
 	Tooltip.register(slot, text)

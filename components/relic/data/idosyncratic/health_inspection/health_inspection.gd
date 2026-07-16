@@ -29,7 +29,7 @@ func get_on_placed_text(response: RelicResponse) -> String:
 		return 'Failed'
 	return ''
 	
-func get_tooltip_text() -> String:
+func get_tooltip_text(context: RelicContext) -> String:
 	return description + ' (currently ' + str(current_value) + ')'
 
 func _scale():

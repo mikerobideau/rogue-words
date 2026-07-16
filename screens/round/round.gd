@@ -235,11 +235,11 @@ func _toggle_token_selection(token: Token):
 
 func _get_relic_context():
 	var context = RelicContext.new()
-	context.state = GameState
 	context.relics = hud.get_relics()
 	context.placed_token = selected_token
 	context.hand = hand.get_hand()
 	context.turn_number = turn_number
+	context.tokens = GameState.tokens
 	return context
 
 #---debug---

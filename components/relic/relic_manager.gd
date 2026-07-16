@@ -11,7 +11,7 @@ func on_token_placed(context: RelicContext):
 			relic.data.data_changed.emit()
 		
 func get_score_report(context: RelicContext) -> RelicReport:
-	var report = RelicReport.new()
+	var report = RelicReport.new()  
 	var items: Array[RelicReportItem] = []
 	for relic in context.relics:
 		var before_score_response = relic.data.before_score(context) #triggers score events, e.g., money reward, decay/reset decay

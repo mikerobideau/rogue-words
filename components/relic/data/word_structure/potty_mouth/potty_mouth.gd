@@ -24,7 +24,7 @@ func get_before_score_text(response: RelicResponse):
 func get_score_text(context: RelicContext) -> String:
 	return  '$#*! +' + str(current_value)
 
-func get_tooltip_text() -> String:
+func get_tooltip_text(context: RelicContext) -> String:
 	return description + ' (currently ' + str(current_value) + ')'
 
 func _scale():

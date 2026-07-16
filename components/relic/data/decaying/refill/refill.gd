@@ -28,7 +28,7 @@ func get_score(context: RelicContext) -> int:
 func get_score_text(context: RelicContext) -> String:
 	return 'Refill x' + str(current_mult)
 	
-func get_tooltip_text() -> String:
+func get_tooltip_text(context: RelicContext) -> String:
 	return description + ' (' + 'currently x' + str(current_mult) + ')'
 	
 func get_before_score_text(response: RelicResponse) -> String:

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Collector" load_steps=2 format=3 uid="uid://bseoyjilm5aa7"]
+
+[ext_resource type="Script" path="res://components/relic/data/rare_letter/collector/collector.gd" id="1_dlhp4"]
+
+[resource]
+script = ExtResource("1_dlhp4")
+bonus = 5
+relic_name = "Collector"
+description = "+5 for each rare letter (JQVXZ) in your bag"
+rarity = 0
