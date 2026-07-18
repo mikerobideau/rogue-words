@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="StompedGrapes" load_steps=2 format=3 uid="uid://clmsukdsrxban"]
+
+[ext_resource type="Script" path="res://components/relic/data/vowel/stomped_grapes/stomped_grapes.gd" id="1_gvmgc"]
+
+[resource]
+script = ExtResource("1_gvmgc")
+scale_by = 0.2
+relic_name = "Stomped Grapes"
+description = "Scales by x0.2 when a vowel is destroyed"
+rarity = 1

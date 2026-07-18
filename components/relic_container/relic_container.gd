@@ -5,6 +5,8 @@ class_name RelicContainer
 
 func _ready():
 	GameState.relics_changed.connect(refresh_relics)
+	GameState.items_changed.connect(_refresh_tooltips)
+	GameState.tokens_changed.connect(_refresh_tooltips)
 	for slot in slots:
 		slot.container = self
 	refresh_relics()
@@ -40,3 +42,7 @@ func move_relic(source: RelicData, target: RelicData) -> void:
 		GameState.relics[i] = target         # swap in place — no remove/insert shift
 		GameState.relics[j] = source
 	GameState.relics_changed.emit()
+
+func _refresh_tooltips():
+	for slot in slots:
+		slot.refresh_tooltip()

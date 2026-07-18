@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TheOwl" load_steps=2 format=3 uid="uid://bph5idqdiwk7n"]
+
+[ext_resource type="Script" path="res://components/relic/data/vowel/the_owl/the_owl.gd" id="1_xt5i4"]
+
+[resource]
+script = ExtResource("1_xt5i4")
+bonus = 10
+relic_name = "The Owl"
+description = "+10 for each vowel in word"
+rarity = 0

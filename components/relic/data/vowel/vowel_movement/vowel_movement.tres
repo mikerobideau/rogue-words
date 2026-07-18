@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VowelMovement" load_steps=2 format=3 uid="uid://cim65djsbjr38"]
+
+[ext_resource type="Script" path="res://components/relic/data/vowel/vowel_movement/vowel_movement.gd" id="1_5xj66"]
+
+[resource]
+script = ExtResource("1_5xj66")
+scale_by = 5
+relic_name = "Vowel Movement"
+description = "Scales by +5 for each discarded vowel"
+rarity = 1

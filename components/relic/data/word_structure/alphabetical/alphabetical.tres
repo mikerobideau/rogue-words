@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Alphabetical" load_steps=2 format=3 uid="uid://daog3k60o182j"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/alphabetical/alphabetical.gd" id="1_eml1h"]
+
+[resource]
+script = ExtResource("1_eml1h")
+mult = 3
+relic_name = "Alphabetical"
+description = "x3 if word's letters are in alphabetical order"
+rarity = 0

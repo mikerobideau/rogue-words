@@ -5,6 +5,7 @@ class_name RelicContext
 @export var hand: Array[Token]
 @export var tokens: Array[TokenData]
 @export var discarded_tokens: Array[Token]
+@export var destroyed_token: TokenData
 @export var word: String
 @export var word_score: int
 @export var relics: Array[Relic]

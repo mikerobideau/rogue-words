@@ -9,6 +9,13 @@ func on_token_placed(context: RelicContext):
 		if response:
 			_activate_relic(relic, response, relic.data.get_on_placed_text(response))
 			relic.data.data_changed.emit()
+
+func on_token_destroyed(context: RelicContext):
+	for relic in context.relics:
+		var response = await relic.data.on_token_destroyed(context)
+		if response:
+			_activate_relic(relic, response, relic.data.get_on_token_destroyed_text(response))
+		relic.data.data_changed.emit()
 		
 func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()  
@@ -57,6 +64,10 @@ func get_letter_matches(letter: String) -> Array:
 		matches = relic_data.modify_letter_matches(letter, matches)
 	return matches
 
+func on_data_changed(context: RelicContext):
+	for relic in context.relics:
+		relic.data.data_changed.emit()
+
 func _activate_relic(relic: Relic, response := RelicData.RelicResponse.NONE, text := ''):
 	match response:
 		RelicData.RelicResponse.NONE:
@@ -74,6 +85,8 @@ func _activate_relic(relic: Relic, response := RelicData.RelicResponse.NONE, tex
 		RelicData.RelicResponse.MONEY_REWARD:
 			Sound.play(Sound.SOUND_RELIC_MONEY)
 		RelicData.RelicResponse.EVENT:
+			pass
+		RelicData.RelicResponse.COUNTDOWN:
 			pass
 	print_debug('pulsing')
 	relic.pulse()

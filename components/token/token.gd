@@ -45,7 +45,6 @@ var transform_tween: Tween
 
 func _ready():
 	animation = 'default'
-	#_setup_label()
 	_update_label()
 	_update_sprite()
 	_init_click_detection()
@@ -103,21 +102,16 @@ func _update_sprite():
 	if data.enhancement:
 		sprite_frames = data.enhancement.sprite_frames
 	play('default')
-
-func _setup_label():
-	pass
-	#var label = letter_label
-	#label.position = Vector2(-label.size.x / 2, -label.size.y / 2)
 	
 func _update_label(transition := false):
-	if transition:
+	if transition and is_inside_tree():
 		var tween = create_tween()
 		tween.tween_property(label, 'modulate:a', 0, 0.2)
 		await get_tree().create_timer(0.3).timeout
 	if label:
 		label.letter.text = letter
 		label.value.text = NumberUtil.short_format(value)
-	if transition:
+	if transition and is_inside_tree():
 		var tween = create_tween()
 		tween.tween_property(label, 'modulate:a', 1, 0.2)
 	

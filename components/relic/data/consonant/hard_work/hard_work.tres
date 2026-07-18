@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="HardWork" load_steps=2 format=3 uid="uid://druu6fk3qw52i"]
+
+[ext_resource type="Script" path="res://components/relic/data/consonant/hard_work/hard_work.gd" id="1_rgvcy"]
+
+[resource]
+script = ExtResource("1_rgvcy")
+bonus = 5
+relic_name = "Hard Work"
+description = "+5 for each consonant in word"
+rarity = 0

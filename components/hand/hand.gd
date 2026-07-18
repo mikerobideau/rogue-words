@@ -5,6 +5,7 @@ var TokenScene = preload("res://components/token/token.tscn")
 
 signal token_clicked()
 signal discard_clicked()
+signal token_destroyed(token: Token)
 
 @onready var token_container = $Tokens
 @onready var discard_button = $DiscardContainer/DiscardButton
@@ -48,6 +49,7 @@ func draw_tokens(n: int):
 		var token_scene = TokenFactory.create_scene(token_data)
 		token_container.add_child(token_scene)
 		token_scene.clicked.connect(_on_token_clicked)
+		token_scene.destroyed.connect(_on_token_destroyed.bind(token_scene))
 		token_scene.pop_open()
 	Sound.play(Sound.SOUND_DRAW_TOKEN)
 	_layout_tokens()
@@ -76,6 +78,9 @@ func _layout_tokens():
 	
 func _on_token_clicked(token: Token):
 	token_clicked.emit(token)
+
+func _on_token_destroyed(token: Token):
+	token_destroyed.emit(token)
 
 func _on_discard_button_pressed() -> void:
 	discard_clicked.emit()

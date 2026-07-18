@@ -12,7 +12,8 @@ enum RelicResponse {
 	RESET_NEGATIVE,
 	RESET_POSITIVE,
 	EVENT,
-	MONEY_REWARD
+	MONEY_REWARD,
+	COUNTDOWN
 }
 
 const COST_BY_RARITY = {
@@ -35,6 +36,16 @@ var cost: int:
 	
 func get_tooltip_text(context: RelicContext):
 	return description
+
+#---------------------------------------------------------------------------------------------------
+# Token Events
+#---------------------------------------------------------------------------------------------------
+
+func on_token_destroyed(context: RelicContext) -> RelicResponse:
+	return RelicResponse.NONE
+	
+func get_on_token_destroyed_text(response: RelicResponse) -> String:
+	return ''
 
 #---------------------------------------------------------------------------------------------------
 # Board Events

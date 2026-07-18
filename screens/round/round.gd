@@ -65,6 +65,7 @@ func _ready():
 	
 	hand.hand_size = GameState.current_boss.get_hand_size(hand.DEFAULT_HAND_SIZE)
 	hand.token_clicked.connect(_on_token_clicked)
+	hand.token_destroyed.connect(_on_token_destroyed)
 	hand.discard_clicked.connect(_on_discard_clicked)
 	hand.on_round_start()
 	
@@ -151,8 +152,7 @@ func _on_space_clicked(space: Space):
 			var relic_report = await relic_manager.get_score_report(context)
 			await word.play(word_report, relic_report)
 			score_panel.score += relic_report.new_score
-			
-		await get_tree().create_timer(0.5).timeout
+			await get_tree().create_timer(0.5).timeout
 		
 		if score_panel.target_met():
 			_on_round_complete(context)
@@ -216,6 +216,11 @@ func _on_token_clicked(token: Token):
 			hud.item_container.deselect()
 	else:
 		_toggle_token_selection(token)
+
+func _on_token_destroyed(token: Token):
+	var context = _get_relic_context()
+	context.destroyed_token = token.data
+	relic_manager.on_token_destroyed(context)
 
 func _apply_item(item_data: ItemData, token: Token):
 	item_data.enhance_token(token)

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Inventory" load_steps=2 format=3 uid="uid://cody60wonaj1o"]
+
+[ext_resource type="Script" path="res://components/relic/data/consonant/inventory/inventory.gd" id="1_8ii1h"]
+
+[resource]
+script = ExtResource("1_8ii1h")
+bonus = 1
+relic_name = "Inventory"
+description = "+1 for each consonant in your bag"
+rarity = 0

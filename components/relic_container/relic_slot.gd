@@ -22,13 +22,13 @@ func set_relic(data: RelicData) -> void:
 	if data:
 		relic = RelicFactory.create_scene(data)
 		relic_container.add_child(relic)
-		if not data.data_changed.is_connected(_refresh_tooltip):
-			data.data_changed.connect(_refresh_tooltip)
-	_refresh_tooltip()
+		if not data.data_changed.is_connected(refresh_tooltip):
+			data.data_changed.connect(refresh_tooltip)
+	refresh_tooltip()
 
 func clear() -> void:
-	if relic_data and relic_data.data_changed.is_connected(_refresh_tooltip):
-		relic_data.data_changed.disconnect(_refresh_tooltip)   # avoid leak / stale 
+	if relic_data and relic_data.data_changed.is_connected(refresh_tooltip):
+		relic_data.data_changed.disconnect(refresh_tooltip)   # avoid leak / stale 
 	relic_data = null
 	if relic and is_instance_valid(relic):
 		relic.queue_free()
@@ -37,7 +37,7 @@ func clear() -> void:
 func _on_frame_mouse_entered() -> void:
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	
-func _refresh_tooltip():
+func refresh_tooltip():
 	var default_text = 'Empty coupon slot'
 	var text: String
 	if relic_data:
