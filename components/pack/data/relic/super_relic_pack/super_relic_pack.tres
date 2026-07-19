@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=2 format=3 uid="uid://8xvfc52pob01"]
+
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="1_gqqf6"]
+
+[resource]
+script = ExtResource("1_gqqf6")
+pack_name = "Super Relic Pack"
+type = 0
+size = 2
+num_picks = 5
+rarity = 1

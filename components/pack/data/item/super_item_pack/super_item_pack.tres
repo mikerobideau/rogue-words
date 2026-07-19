@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=2 format=3 uid="uid://b4pwddyppllue"]
+
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="1_253si"]
+
+[resource]
+script = ExtResource("1_253si")
+pack_name = "Super Item Pack"
+type = 1
+size = 2
+num_picks = 5
+rarity = 1

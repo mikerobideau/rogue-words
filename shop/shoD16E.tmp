@@ -54,6 +54,7 @@ grow_vertical = 2
 color = Color(0.960784, 0.960784, 0.960784, 1)
 
 [node name="Slots" type="HFlowContainer" parent="."]
+custom_minimum_size = Vector2(1400, 1000)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -66,7 +67,6 @@ offset_right = 500.0
 offset_bottom = 500.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/h_separation = 50
 
 [node name="Footer" type="MarginContainer" parent="."]
 visible = false

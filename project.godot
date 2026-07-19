@@ -30,6 +30,7 @@ Styles="*res://global/style_global.gd"
 Tooltip="*res://global/tooltip_global.gd"
 SlotMenu="*res://global/slot_menu_global.gd"
 NumberUtil="*res://global/number_util_global.gd"
+PackFactory="*res://global/pack_factory_global.gd"
 
 [display]
 

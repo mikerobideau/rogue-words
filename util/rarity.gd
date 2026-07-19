@@ -29,3 +29,22 @@ const COLORS := {
 
 static func weight(r: Type) -> int: return WEIGHTS[r]
 static func color(r: Type) -> Color: return COLORS[r]
+
+static func weight_of(candidate) -> int:
+	var r = candidate.get("rarity")   # null on resources with no rarity (tokens)
+	return weight(r) if r != null else 1
+
+static func pick_weighted(candidates: Array):
+	if candidates.is_empty():
+		return null
+	var total := 0
+	for c in candidates:
+		total += weight_of(c)
+	if total <= 0:
+		return candidates[randi() % candidates.size()]
+	var r := randi() % total
+	for c in candidates:
+		r -= weight_of(c)
+		if r < 0:
+			return c
+	return candidates[-1]

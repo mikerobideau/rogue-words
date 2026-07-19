@@ -1,28 +1,21 @@
 extends Control
 class_name ShopSlot
 
-signal purchased(slot: ShopSlot)
-signal slot_selected(slot: ShopSlot)
+signal purchased(slot: PackSlot)
+signal slot_selected(slot: PackSlot)
 
-enum Type { RELIC, TOKEN, ITEM }
+enum Type { PACK }
 
 @onready var frame = $Frame
-@onready var offer = $Frame/OfferMargin/Offer
+@onready var offer = $Frame/Offer
+@onready var coin = $Coin
 @onready var cost_label = $Coin/CostLabel
 @onready var title_container = $Frame/TitleMargin
-@onready var title = $Frame/TitleMargin/VBoxContainer/Title
-@onready var rarity_label = $Frame/TitleMargin/VBoxContainer/Rarity
-@onready var coin = $Coin
-@onready var buy_button = $BuyButton
 @onready var sold_sticker = $Sold
 
 var slot_type: Type
-var relic_data: RelicData
-var item_data: ItemData
-var token_data: TokenData
+var pack_data: PackData
 var default_pos: Vector2
-var description: String
-
 var cost: int:
 	set(v):
 		cost = v
@@ -35,48 +28,17 @@ var sold := false:
 			sold_sticker.visible = v
 		if frame:
 			frame.disabled = v
-			
-var selected := false:
-	set(v):
-		selected = v
-		_animate_selection()
-		buy_button.visible = true if selected else false
-		if v:
-			slot_selected.emit(self)
 		
 var position_tween: Tween
 	
 func _ready():
 	default_pos = frame.position
 			
-func setup_relic(data: RelicData):
-	slot_type = Type.RELIC
-	title.text = 'Coupon'
-	rarity_label.text = Rarity.to_text(data.rarity)
-	relic_data = data
-	Tooltip.register(frame, data.description)
+func setup_pack(data: PackData):
+	slot_type = Type.PACK
+	pack_data = data
 	cost = data.cost
-	var scene = RelicFactory.create_scene(data)
-	scene.position = offer.size / 2
-	scene.scale = Vector2(0.67, 0.67)
-	_add_offer(scene)
-	
-func setup_item(data: ItemData):
-	slot_type = Type.ITEM
-	title.text = 'Item'
-	item_data = data
-	Tooltip.register(frame, data.description)
-	cost = data.cost
-	var scene = ItemFactory.create_scene(data)
-	offer.add_child(scene)
-	_add_offer(scene)
-	
-func setup_token(data: TokenData):
-	slot_type = Type.TOKEN
-	title.text = 'Token'
-	token_data = data
-	cost = data.cost
-	var scene = TokenFactory.create_scene(data)
+	var scene = PackFactory.create_scene(data)
 	Tooltip.register(frame, scene.get_tooltip_text())
 	scene.position = offer.size / 2
 	offer.add_child(scene)
@@ -90,27 +52,12 @@ func _add_offer(scene: Node):
 		scene.position = (offer.size - scene.size) / 2
 
 func _on_pressed() -> void:
-	_toggle_selection()
+	SlotMenu.open(frame, [
+		{ "text": "Buy", "callback": _buy }
+	])
 	
-func _toggle_selection():
-	selected = !selected
-	
-func _animate_selection():
-	if position_tween:
-		position_tween.kill()
-	position_tween = create_tween()
-	var target_pos = default_pos + Vector2(0, -10) if selected else default_pos
-	var duration = 0.1 if selected else 0
-	position_tween.tween_property(frame, 'position', target_pos, duration)
 
-func _on_frame_mouse_entered() -> void:
-	Sound.play(Sound.SOUND_MOUSEOVER)
-
-func _on_buy_pressed() -> void:
-	if _inventory_full():
-		Sound.play(Sound.SOUND_DISABLED)
-		ScorePopup.show('Inventory full!', self)
-		return
+func _buy() -> void:
 	if GameState.money < cost:
 		Sound.play(Sound.SOUND_DISABLED)
 		ScorePopup.show('Insufficient funds!', self)
@@ -122,12 +69,16 @@ func _on_buy_pressed() -> void:
 	offer.visible = false
 	title_container.visible = false
 	sold = true
-	selected = false
 	Tooltip.unregister(frame)
-		
-func _inventory_full():
-	if relic_data != null:
-		return GameState.relic_slots_available() < 1
-	if item_data != null:
-		return GameState.item_slots_available() < 1
-	return false
+	
+func _animate_selection():
+	pass
+	#if position_tween:
+	#	position_tween.kill()
+	#position_tween = create_tween()
+	#var target_pos = default_pos + Vector2(0, -10) if selected else default_pos
+	#var duration = 0.1 if selected else 0
+	#position_tween.tween_property(frame, 'position', target_pos, duration)
+
+func _on_frame_mouse_entered() -> void:
+	Sound.play(Sound.SOUND_MOUSEOVER)

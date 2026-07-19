@@ -1,0 +1,54 @@
+[gd_scene load_steps=3 format=3 uid="uid://dx61ln0o8poi0"]
+
+[ext_resource type="Texture2D" uid="uid://dbyb7wpuesqbl" path="res://assets/sprites/pack/1x/pack.png" id="1_4m541"]
+[ext_resource type="Script" path="res://components/pack/pack.gd" id="2_xlls0"]
+
+[node name="Pack" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 402.0
+offset_bottom = 589.0
+script = ExtResource("2_xlls0")
+
+[node name="Sprite2D" type="TextureRect" parent="."]
+layout_mode = 0
+texture = ExtResource("1_4m541")
+
+[node name="TypeLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -123.5
+offset_top = -33.5
+offset_right = 123.5
+offset_bottom = 33.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HeaderLarge"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 48
+text = "PACK TYPE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Footer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -64.5
+offset_top = -128.0
+offset_right = 64.5
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 100
+
+[node name="SizeAndChoicesLabel" type="Label" parent="Footer"]
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+text = "Choose 1 of 3"
