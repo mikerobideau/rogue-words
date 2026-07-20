@@ -51,6 +51,9 @@ func create_scene(data: TokenData):
 	var scene = TokenScene.instantiate()
 	scene.data = data
 	return scene
+	
+func load_all_tokens() -> Array[TokenData]:
+	return create_starting_tokens()
 
 func create_starting_tokens() -> Array[TokenData]:
 	var tokens = [] as Array[TokenData]

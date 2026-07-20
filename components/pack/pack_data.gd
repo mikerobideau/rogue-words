@@ -18,6 +18,7 @@ const TYPE_NAMES: Dictionary = {
 @export var size: int
 @export var num_picks: int
 @export var rarity: Rarity.Type
+@export var offers: Array[OfferData]
 
 var cost: int:
 	get:

@@ -1,8 +1,8 @@
 extends Control
 class_name ShopSlot
 
-signal purchased(slot: PackSlot)
-signal slot_selected(slot: PackSlot)
+signal purchased(slot: ShopSlot)
+signal slot_selected(slot: ShopSlot)
 
 enum Type { PACK }
 

@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3 uid="uid://bd81rl50pjq2i"]
+
+[sub_resource type="GDScript" id="GDScript_cnq1y"]
+script/source = "extends Control
+class_name EnergyVortex
+
+const LINE_COUNT = 12
+const INITIAL_RADIUS = 200.0
+const LINE_WIDTH = 3.0
+const RAY_COLOR = Color.WHITE
+
+var lines_scale: float = 1.0
+var lines_alpha: float = 0.8
+
+func _ready() -> void:
+	set_anchors_preset(Control.PRESET_CENTER)
+	custom_minimum_size = Vector2(500, 500)
+func _draw() -> void:
+	var center = Vector2.ZERO
+	var radius = INITIAL_RADIUS * lines_scale
+	
+	for i in range(LINE_COUNT):
+		var angle = TAU * i / LINE_COUNT
+		var start = center + Vector2.from_angle(angle) * radius * 0.3
+		var end = center + Vector2.from_angle(angle) * radius
+		
+		var color = RAY_COLOR
+		color.a = RAY_COLOR.a * lines_alpha
+		draw_line(start, end, color, LINE_WIDTH)
+
+func animate_in(duration: float) -> void:
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, \"lines_scale\", 0.2, duration)
+	tween.tween_property(self, \"lines_alpha\", 0.0, duration)
+"
+
+[node name="EnergyVortex" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = SubResource("GDScript_cnq1y")
