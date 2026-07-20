@@ -40,3 +40,13 @@ func _on_slot_selected(s: ShopSlot):
 
 func _on_exit_pressed() -> void:
 	completed.emit()
+	
+func _on_offer_picked(slot: ShopSlot):
+	match slot.slot_type:
+		OfferSlot.Type.RELIC:
+			GameState.add_relic(slot.relic_data)
+		OfferSlot.Type.ITEM:
+			GameState.add_item(slot.item_data)
+		OfferSlot.Type.TOKEN:
+			GameState.add_token(slot.token_data)
+	slot.sold = true

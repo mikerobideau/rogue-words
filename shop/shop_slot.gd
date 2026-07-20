@@ -91,4 +91,3 @@ func _shake_frame():
 	var angles = [4, -3, 2, -1, 0]
 	for angle in angles:
 		shake_tween.tween_property(offer, "rotation", deg_to_rad(angle), 0.07)
-	

@@ -18,7 +18,6 @@ func generate_offers(pack_data: PackData) -> Array[OfferData]:
 		if pool.is_empty():
 			break
 		var offer = _roll_offer(pack_data.type, pool)
-		print_debug(offer.name())
 		offers.append(offer)
 	#_apply_guarantees(offers, pack_data)
 	return offers
