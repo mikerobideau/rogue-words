@@ -6,6 +6,6 @@
 script = ExtResource("1_spatn")
 pack_name = "Token Pack"
 type = 2
-size = 1
-num_picks = 3
+size = 3
+num_picks = 1
 rarity = 0

@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dx61ln0o8poi0"]
 
-[ext_resource type="Texture2D" uid="uid://dbyb7wpuesqbl" path="res://assets/sprites/pack/1x/pack.png" id="1_4m541"]
+[ext_resource type="Texture2D" uid="uid://cr14fxpq2pfn8" path="res://assets/sprites/pack/1x/pack.png" id="1_4m541"]
 [ext_resource type="Script" path="res://components/pack/pack.gd" id="2_xlls0"]
 
 [node name="Pack" type="Control"]
@@ -8,10 +8,12 @@ layout_mode = 3
 anchors_preset = 0
 offset_right = 402.0
 offset_bottom = 589.0
+mouse_filter = 2
 script = ExtResource("2_xlls0")
 
 [node name="Sprite2D" type="TextureRect" parent="."]
 layout_mode = 0
+mouse_filter = 2
 texture = ExtResource("1_4m541")
 
 [node name="TypeLabel" type="Label" parent="."]
@@ -46,6 +48,7 @@ offset_top = -128.0
 offset_right = 64.5
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_constants/margin_bottom = 100
 
 [node name="SizeAndChoicesLabel" type="Label" parent="Footer"]

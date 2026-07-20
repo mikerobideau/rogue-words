@@ -6,7 +6,7 @@ var SlotScene = preload("res://shop/shop_slot.tscn")
 signal completed()
 signal pack_purchased(pack: PackData)
 
-@onready var slots = $Slots
+@onready var slots = $CenterContainer/Slots
 @onready var continue_button = $Footer/FooterInner/Continue
 
 const SLOT_COUNT = 3

@@ -11,6 +11,7 @@ var current_target: Control
 func _ready() -> void:
 	layer = 90
 	backdrop = _create_backdrop()
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backdrop)                 # added first → drawn under the menu
 	menu = SlotMenuScene.instantiate()
 	menu.visible = false

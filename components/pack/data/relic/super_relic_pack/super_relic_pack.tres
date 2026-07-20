@@ -6,6 +6,6 @@
 script = ExtResource("1_gqqf6")
 pack_name = "Super Relic Pack"
 type = 0
-size = 2
-num_picks = 5
+size = 5
+num_picks = 2
 rarity = 1
