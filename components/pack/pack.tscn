@@ -20,6 +20,7 @@ color_ramp = SubResource("Gradient_afyu4")
 noise = SubResource("FastNoiseLite_m2yw7")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u4j6i"]
+resource_local_to_scene = true
 shader = ExtResource("3_ohldu")
 shader_parameter/dissolve_value = 1.0
 shader_parameter/mix_ratio = 0.0
@@ -40,6 +41,7 @@ color_ramp = SubResource("Gradient_vgpq3")
 noise = SubResource("FastNoiseLite_wf6qe")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_jwgrn"]
+resource_local_to_scene = true
 shader = ExtResource("3_ohldu")
 shader_parameter/dissolve_value = 1.0
 shader_parameter/mix_ratio = null
@@ -81,6 +83,7 @@ data = ExtResource("2_s3kpj")
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
 
 [node name="Sprite2D" type="TextureRect" parent="Body"]
 material = SubResource("ShaderMaterial_u4j6i")
@@ -141,6 +144,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="Burst" type="CPUParticles2D" parent="."]
 position = Vector2(200, 304)

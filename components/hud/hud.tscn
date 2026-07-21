@@ -68,7 +68,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 
-[node name="Header" type="ColorRect" parent="."]
+[node name="Header" type="Control" parent="."]
 custom_minimum_size = Vector2(2560, 96)
 layout_mode = 1
 anchors_preset = 5
@@ -78,7 +78,6 @@ offset_left = -1280.0
 offset_right = 1280.0
 offset_bottom = 96.0
 grow_horizontal = 2
-color = Color(0.129412, 0.0352941, 0.305882, 1)
 
 [node name="InnerMargin" type="MarginContainer" parent="Header"]
 layout_mode = 1

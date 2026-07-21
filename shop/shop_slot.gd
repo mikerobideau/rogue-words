@@ -13,6 +13,7 @@ enum Type { PACK }
 @onready var title_container = $Frame/TitleMargin
 @onready var sold_sticker = $Sold
 
+var pack: Pack
 var slot_type: Type
 var pack_data: PackData
 var default_pos: Vector2
@@ -40,11 +41,11 @@ func setup_pack(data: PackData):
 	slot_type = Type.PACK
 	pack_data = data
 	cost = data.cost
-	var scene = PackFactory.create_scene(data)
+	pack = PackFactory.create_scene(data)
 	Tooltip.register(frame, data.pack_name)
-	scene.position = offer.size / 2
-	offer.add_child(scene)
-	_add_offer(scene)
+	pack.position = offer.size / 2
+	offer.add_child(pack)
+	_add_offer(pack)
 
 func _add_offer(scene: Node):
 	offer.add_child(scene)

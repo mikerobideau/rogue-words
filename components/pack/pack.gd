@@ -32,22 +32,23 @@ func animate_open():
 	await get_tree().create_timer(0.4).timeout
 	
 	var angles = [2, -1, 0]
-	
-	# First shake
-	var shake1 := create_tween()
-	for angle in angles:
-		shake1.tween_property(self, "rotation", deg_to_rad(angle), 0.03)
-	await shake1.finished
 
-	await get_tree().create_timer(0.3).timeout
-	
-	# Second shake
-	var shake2 := create_tween()
-	for angle in angles:
-		shake2.tween_property(self, "rotation", deg_to_rad(angle), 0.04)
-	await shake2.finished
-	
-	await get_tree().create_timer(0.3).timeout
+	var t := create_tween()
+	var steps := 12
+	var base_angle := 0.8     # starting wobble in degrees
+	var growth := 1.28        # amplitude multiplier per step (>1 = ramps up)
+	var base_dur := 0.07      # starting step duration
+	var speedup := 0.88       # duration multiplier per step (<1 = speeds up)
+
+	for i in steps:
+		var angle := base_angle * pow(growth, i)     # exponential amplitude
+		var dur := base_dur * pow(speedup, i)        # exponential speed-up
+		var dir := 1.0 if i % 2 == 0 else -1.0       # alternate sides
+		t.tween_property(self, "rotation", deg_to_rad(angle * dir), dur)
+
+	t.tween_property(self, "rotation", 0.0, 0.05)    # settle to center
+
+	await t.finished
 	
 	#Scale
 	#var scale := create_tween().set_parallel(true)

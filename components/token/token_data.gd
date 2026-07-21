@@ -21,11 +21,10 @@ func enhance(e: TokenEnhancement):
 	if e:
 		enhancement = e
 		e.charged.connect(_on_charged)
+
+func get_title():
+	return enhancement.enhancement_name if enhancement else 'Grape'
 		
-func _on_charged():
-	value += 1
-	value_changed.emit()
-	
 func next_letter():
 	var code = letter.to_upper().unicode_at(0)
 	letter = char((code - 65 + 1) % 26 + 65)
@@ -48,3 +47,7 @@ func is_vowel():
 	
 func is_consonant():
 	return letter in CONSONANTS
+
+func _on_charged():
+	value += 1
+	value_changed.emit()

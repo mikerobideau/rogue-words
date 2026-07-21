@@ -57,7 +57,7 @@ func get_title_text() -> String:
 			Type.ITEM:
 				return item_data.item_name
 			Type.TOKEN:
-				return token_data.token_name
+				return token_data.get_title()
 			_:
 				return ''
 				
@@ -68,6 +68,6 @@ func get_description() -> String:
 			Type.ITEM:
 				return item_data.description
 			Type.TOKEN:
-				return token_data.description
+				return token_data.letter
 			_:
 				return ''
