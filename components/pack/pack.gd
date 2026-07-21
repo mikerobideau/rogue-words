@@ -3,7 +3,6 @@ class_name Pack
 
 @onready var body = $Body
 @onready var sprite = $Body/Sprite2D
-@onready var type_label = $Body/TypeLabel
 @onready var footer = $Body/Footer
 @onready var size_and_choices_label = $Body/Footer/SizeAndChoicesLabel
 @onready var vortex = $Vortex
@@ -16,6 +15,7 @@ class_name Pack
 		_update_labels()
 		
 func _ready():
+	sprite.texture = data.texture
 	if vortex:
 		vortex.position = size / 2
 	if burst:
@@ -24,8 +24,7 @@ func _ready():
 	_update_labels()
 	
 func _update_labels():
-	if type_label:
-		type_label.text = data.pack_name
+	if is_node_ready():
 		size_and_choices_label.text = 'Choose ' + str(data.num_picks) + ' of ' + str(data.size)
 
 func animate_open():
@@ -76,7 +75,6 @@ func animate_open():
 	var size_and_choice_label_dissolve_tween = create_tween()
 	
 	dissolve_tween.tween_property(sprite.material, 'shader_parameter/burst_progress', 1, 0.5)
-	type_label_dissolve_tween.tween_property(type_label.material, 'shader_parameter/dissolve_value', 0, 0.5)
 	size_and_choice_label_dissolve_tween.tween_property(footer.material, 'shader_parameter/dissolve_value', 0, 0.5)
 	await dissolve_tween.finished
 	

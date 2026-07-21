@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="PackData" load_steps=4 format=3 uid="uid://d4lxbppvkchx8"]
+[gd_resource type="Resource" script_class="PackData" load_steps=5 format=3 uid="uid://d4lxbppvkchx8"]
 
 [ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_ghbct"]
 [ext_resource type="Resource" uid="uid://tufmwg7254d4" path="res://components/token/enhancements/charged_grape/charged_grape.tres" id="1_qa26m"]
 [ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_mly1p"]
+[ext_resource type="Texture2D" uid="uid://bvnnndp3ylt6h" path="res://assets/sprites/pack/1x/charged_grape_pack.png" id="4_m6ela"]
 
 [resource]
 script = ExtResource("2_mly1p")
@@ -15,3 +16,4 @@ rarity = 0
 offers = Array[ExtResource("1_ghbct")]([])
 enhancement = ExtResource("1_qa26m")
 random_enhancement = false
+texture = ExtResource("4_m6ela")

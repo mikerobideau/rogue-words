@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="PackData" load_steps=4 format=3 uid="uid://cud3ax7dwlwf1"]
+[gd_resource type="Resource" script_class="PackData" load_steps=5 format=3 uid="uid://cud3ax7dwlwf1"]
 
 [ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_45rk7"]
 [ext_resource type="Resource" uid="uid://b7g7737edujum" path="res://components/token/enhancements/clover/clover.tres" id="1_88jwn"]
 [ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_8rywh"]
+[ext_resource type="Texture2D" uid="uid://b4qc4nxhiypy6" path="res://assets/sprites/pack/1x/clover_pack.png" id="4_ijgs7"]
 
 [resource]
 script = ExtResource("2_8rywh")
@@ -15,3 +16,4 @@ rarity = 0
 offers = Array[ExtResource("1_45rk7")]([])
 enhancement = ExtResource("1_88jwn")
 random_enhancement = false
+texture = ExtResource("4_ijgs7")

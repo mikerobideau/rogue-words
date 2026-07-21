@@ -1,10 +1,9 @@
-[gd_scene load_steps=20 format=3 uid="uid://dx61ln0o8poi0"]
+[gd_scene load_steps=7 format=3 uid="uid://dx61ln0o8poi0"]
 
-[ext_resource type="Texture2D" uid="uid://cr14fxpq2pfn8" path="res://assets/sprites/pack/1x/pack.png" id="1_4m541"]
 [ext_resource type="Resource" uid="uid://8xvfc52pob01" path="res://components/pack/data/relic/super_relic_pack/super_relic_pack.tres" id="2_s3kpj"]
 [ext_resource type="Script" path="res://components/pack/pack.gd" id="2_xlls0"]
-[ext_resource type="Shader" path="res://shader/dissolve.gdshader" id="3_ohldu"]
 [ext_resource type="Shader" path="res://shader/vacuum_collapse.gdshader" id="3_pkuxu"]
+[ext_resource type="Texture2D" uid="uid://crrqhy1d8f1b3" path="res://assets/sprites/pack/1x/grape_pack.png" id="4_l2fq0"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u4j6i"]
 resource_local_to_scene = true
@@ -13,47 +12,6 @@ shader_parameter/burst_progress = 0.0
 shader_parameter/spread_strength = 0.256
 shader_parameter/distortion_strength = 0.2
 shader_parameter/fade_start = 0.7
-
-[sub_resource type="Gradient" id="Gradient_muqxo"]
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_8wsgl"]
-gradient = SubResource("Gradient_muqxo")
-
-[sub_resource type="Gradient" id="Gradient_vgpq3"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_wf6qe"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_6a5ka"]
-color_ramp = SubResource("Gradient_vgpq3")
-noise = SubResource("FastNoiseLite_wf6qe")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_jwgrn"]
-resource_local_to_scene = true
-shader = ExtResource("3_ohldu")
-shader_parameter/dissolve_value = 1.0
-shader_parameter/mix_ratio = null
-shader_parameter/dissolve_noise = SubResource("NoiseTexture2D_6a5ka")
-shader_parameter/dissolve_gradient = SubResource("GradientTexture2D_8wsgl")
-
-[sub_resource type="Gradient" id="Gradient_116l5"]
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_w5ay0"]
-gradient = SubResource("Gradient_116l5")
-
-[sub_resource type="Gradient" id="Gradient_v81nu"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_lw31t"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_4vfsr"]
-color_ramp = SubResource("Gradient_v81nu")
-noise = SubResource("FastNoiseLite_lw31t")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_re1sh"]
-shader = ExtResource("3_ohldu")
-shader_parameter/dissolve_value = null
-shader_parameter/mix_ratio = null
-shader_parameter/dissolve_noise = SubResource("NoiseTexture2D_4vfsr")
-shader_parameter/dissolve_gradient = SubResource("GradientTexture2D_w5ay0")
 
 [sub_resource type="Gradient" id="Gradient_pciiu"]
 
@@ -78,28 +36,7 @@ layout_mode = 0
 offset_right = 402.0
 offset_bottom = 596.0
 mouse_filter = 2
-texture = ExtResource("1_4m541")
-
-[node name="TypeLabel" type="Label" parent="Body"]
-material = SubResource("ShaderMaterial_jwgrn")
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = 46.5
-offset_top = 239.5
-offset_right = 315.5
-offset_bottom = 309.5
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"HeaderLarge"
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 48
-text = "PACK TYPE"
-horizontal_alignment = 1
-vertical_alignment = 1
+texture = ExtResource("4_l2fq0")
 
 [node name="Footer" type="MarginContainer" parent="Body"]
 layout_mode = 1
@@ -115,15 +52,17 @@ offset_bottom = 549.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
-theme_override_constants/margin_bottom = 100
+theme_override_constants/margin_bottom = 43
 
 [node name="SizeAndChoicesLabel" type="Label" parent="Body/Footer"]
-material = SubResource("ShaderMaterial_re1sh")
 layout_mode = 2
 theme_type_variation = &"HeaderSmall"
-text = "Choose 1 of 3"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Flash" type="ColorRect" parent="."]
+visible = false
 modulate = Color(1, 1, 1, 0)
 layout_mode = 1
 anchors_preset = 15

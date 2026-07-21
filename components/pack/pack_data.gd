@@ -22,6 +22,7 @@ const TYPE_NAMES: Dictionary = {
 @export var offers: Array[OfferData]
 @export var enhancement: TokenEnhancement
 @export var random_enhancement := false #tokens sometimes get a random enhancement
+@export var texture: Texture2D
 
 func type_name() -> String:
 	return TYPE_NAMES[type]

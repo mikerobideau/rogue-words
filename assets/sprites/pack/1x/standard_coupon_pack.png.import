@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bestgidpqxtbx"
-path="res://.godot/imported/Grape.png-eaef9f2b054a645c0f8347969f7fe5d5.ctex"
+uid="uid://cnpvr4ro8xnoc"
+path="res://.godot/imported/standard_coupon_pack.png-fdfa9238cf2a9e143197c6a3d89208c5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/Grape.png"
-dest_files=["res://.godot/imported/Grape.png-eaef9f2b054a645c0f8347969f7fe5d5.ctex"]
+source_file="res://assets/sprites/pack/1x/standard_coupon_pack.png"
+dest_files=["res://.godot/imported/standard_coupon_pack.png-fdfa9238cf2a9e143197c6a3d89208c5.ctex"]
 
 [params]
 

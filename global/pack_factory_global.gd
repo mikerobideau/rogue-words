@@ -6,7 +6,7 @@ const ENHANCEMENTS := [
 	preload("res://components/token/enhancements/spicy_grape/spicy_grape.tres"),
 	preload("res://components/token/enhancements/clover/clover.tres"),
 ]
-const ENHANCE_CHANCE := 0.3     # normal token packs: enhanced this often
+const ENHANCE_CHANCE := 0.5
 
 var PackScene = preload("res://components/pack/pack.tscn")
 
