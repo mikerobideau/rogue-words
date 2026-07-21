@@ -6,4 +6,6 @@
 [resource]
 script = ExtResource("1_fb5mw")
 enhancement_name = "Charged Grape"
+adjective = "Charged"
+description = "Scales by +1 base value each time it is placed"
 sprite_frames = ExtResource("2_1ljn1")

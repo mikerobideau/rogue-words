@@ -42,7 +42,7 @@ func setup_pack(data: PackData):
 	pack_data = data
 	cost = data.cost
 	pack = PackFactory.create_scene(data)
-	Tooltip.register(frame, data.pack_name)
+	Tooltip.register(frame, data.description)
 	pack.position = offer.size / 2
 	offer.add_child(pack)
 	_add_offer(pack)

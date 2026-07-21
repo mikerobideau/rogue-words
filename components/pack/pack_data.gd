@@ -24,5 +24,8 @@ const TYPE_NAMES: Dictionary = {
 @export var random_enhancement := false #tokens sometimes get a random enhancement
 @export var texture: Texture2D
 
+var description: String:
+	get(): return pack_name + '. Choose ' + str(num_picks) + ' of ' + str(size) + '.'
+
 func type_name() -> String:
 	return TYPE_NAMES[type]

@@ -14,6 +14,12 @@ const CONSONANTS = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 
 @export var value: int
 @export var enhancement: TokenEnhancement
 
+var description: String:
+	get():
+		var adjective = enhancement.adjective if enhancement else 'Grape'
+		var enhancement_text = enhancement.description if enhancement else 'An ordinary grape'
+		return adjective + ' ' + letter + ' - ' + enhancement_text
+
 var spent := false
 
 func enhance(e: TokenEnhancement):

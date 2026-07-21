@@ -6,4 +6,6 @@
 [resource]
 script = ExtResource("1_euyqo")
 enhancement_name = "SpicyGrape"
+adjective = "Spicy"
+description = "x2 word score for every word containing this token"
 sprite_frames = ExtResource("2_s75ma")

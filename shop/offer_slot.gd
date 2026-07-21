@@ -61,7 +61,7 @@ func _refresh() -> void:
 	_clear_offer()
 	title.text = data.get_title_text()
 	rarity_label.text = data.get_rarity_label()
-	Tooltip.register(offer_container, data.get_description())
+	Tooltip.register(frame, data.get_description())
 
 	var scene := data.create_scene()
 	scene.scale = OFFER_SCALE

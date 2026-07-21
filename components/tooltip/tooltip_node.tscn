@@ -3,7 +3,12 @@
 [ext_resource type="Script" path="res://components/tooltip/tooltip_node.gd" id="1_iyn4a"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vye2a"]
-bg_color = Color(0, 0, 0, 1)
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -26,6 +31,7 @@ theme_override_constants/margin_bottom = 8
 custom_minimum_size = Vector2(250, 75)
 layout_mode = 2
 theme_type_variation = &"TooltipLabel"
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 28
 text = "This is a tooltip.  It describes the item that is currently hovered."
 autowrap_mode = 2

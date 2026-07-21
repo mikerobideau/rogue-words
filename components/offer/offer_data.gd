@@ -53,7 +53,7 @@ func get_rarity_label() -> String:
 func get_title_text() -> String:
 		match type:
 			Type.RELIC:
-				return relic_data.relic_name
+				return 'Coupon'
 			Type.ITEM:
 				return item_data.item_name
 			Type.TOKEN:
@@ -68,6 +68,6 @@ func get_description() -> String:
 			Type.ITEM:
 				return item_data.description
 			Type.TOKEN:
-				return token_data.letter
+				return token_data.description
 			_:
 				return ''
