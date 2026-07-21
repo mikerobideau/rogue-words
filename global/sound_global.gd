@@ -27,6 +27,8 @@ const sounds = {
 	'decay7': preload("res://assets/sound/jsfxr/decay7.wav"),
 	'destroyed1': preload("res://assets/sound/jsfxr/destroyed1.wav"),
 	'laser_shoot': preload("res://assets/sound/jsfxr/laserShoot.wav"),
+	'pack_open1': preload("res://assets/sound/lucadialessandro-intro-sound-180639.mp3"),
+	'pack_open2': preload("res://assets/sound/yodguard-item-pickup-1-540174.mp3"),
 	'pickup_coin': preload("res://assets/sound/jsfxr/pickupCoin.wav"),
 	'pickup_coin1': preload("res://assets/sound/jsfxr/pickupCoin (1).wav"),
 	'pickup_coin2': preload("res://assets/sound/jsfxr/pickupCoin (2).wav"),
@@ -49,6 +51,8 @@ const sounds = {
 	'pop3': preload("res://assets/sound/pixabay/universfield-bubble-popping-229138.mp3"),
 	'pop_double': preload("res://assets/sound/pixabay/universfield-bubble-pop-07-487896.mp3"),
 	'pop_multiple': preload("res://assets/sound/pixabay/dragon-studio-bubble-pop-406640.mp3"),
+	'purchase1': preload("res://assets/sound/alexzavesa-clinking-coins-8-468434.mp3"),
+	'purchase2': preload("res://assets/sound/vadim_makes_sound-vintage-cash-drawer-open-1-547824.mp3"),	
 	'shimmer_bonus': preload("res://assets/sound/mixkit-extra-bonus-in-a-video-game-2045.wav"),
 	'shuffle': preload("res://assets/sound/mixkit-thin-metal-card-deck-shuffle-3175.wav"),
 	'success': preload("res://assets/sound/mixkit-fantasy-game-success-notification-270.wav"),
@@ -71,15 +75,14 @@ const sounds = {
 	'item_unlocked': preload("res://assets/sound/mixkit-unlock-new-item-game-notification-254.wav"),
 	'hazard': preload("res://assets/sound/tunetank.com_video-game-boing-retro.wav"),
 	'boss_intro1': preload("res://screens/title/mixkit-movie-whoosh-impact-presentation-2903.wav"),
-	'boss_intro2': preload("res://assets/sound/pixabay/dragon-studio-simple-whoosh-02-433006.mp3"),
-	'purchase': preload("res://assets/sound/vadim_makes_sound-vintage-cash-drawer-open-1-547824.mp3")	
+	'boss_intro2': preload("res://assets/sound/pixabay/dragon-studio-simple-whoosh-02-433006.mp3")
 }
 
 const SOUND_MOUSEOVER = 'click5' #click2 or click5
 
 const SOUND_TOKEN = 'click2' #click2, token,
 const SOUND_DRAW_TOKEN = 'click2'
-const SOUND_TOKEN_DESTROYED = 'splat3' #destroyed1, splat1, splat2, splat3
+const SOUND_TOKEN_DESTROYED = 'splat2' #destroyed1, splat1, splat2, splat3
 const SOUND_ENHANCED_SPACE = 'pop2' #small_bonus, water_drop, pop2
 const SOUND_ENHANCED_TOKEN = 'water_drop' #small_bonus, power_up8, shimmer_bonus, water_drop
 const SOUND_ENHANCED_LETTER_SPACE = 'water_drop' #small_bonus, #bonus, power_up, blip_select, water_drop
@@ -102,9 +105,10 @@ const SOUND_BOSS_INTRO = 'boss_intro2'
 const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_DISABLED = 'laser_shoot' #laser_shoot or synth
 
-const SOUND_PURCHASE = 'coin1'
-const SOUND_PACK_OPEN = 'pop_multiple' #pop_multiple
+const SOUND_PURCHASE = 'purchase1'
+const SOUND_PACK_OPEN = 'pack_open1' #pop_multiple, pack_open2
 const SOUND_OFFER_FLIPPED = 'whoosh2' #pop_double, upgrade1
+const SOUND_PACK_CLOSED = 'whoosh1'
 
 var sound_disabled := false
 

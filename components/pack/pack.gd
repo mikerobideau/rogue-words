@@ -29,7 +29,8 @@ func _update_labels():
 		size_and_choices_label.text = 'Choose ' + str(data.num_picks) + ' of ' + str(data.size)
 
 func animate_open():
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(0.2).timeout
+	Sound.play(Sound.SOUND_PACK_OPEN)
 	
 	var angles = [2, -1, 0]
 
@@ -70,12 +71,11 @@ func animate_open():
 	#_burst()
 	
 	#dissolve
-	Sound.play(Sound.SOUND_PACK_OPEN)
 	var dissolve_tween = create_tween().set_parallel(true)
 	var type_label_dissolve_tween = create_tween()
 	var size_and_choice_label_dissolve_tween = create_tween()
 	
-	dissolve_tween.tween_property(sprite.material, 'shader_parameter/dissolve_value', 0, 0.5)
+	dissolve_tween.tween_property(sprite.material, 'shader_parameter/burst_progress', 1, 0.5)
 	type_label_dissolve_tween.tween_property(type_label.material, 'shader_parameter/dissolve_value', 0, 0.5)
 	size_and_choice_label_dissolve_tween.tween_property(footer.material, 'shader_parameter/dissolve_value', 0, 0.5)
 	await dissolve_tween.finished

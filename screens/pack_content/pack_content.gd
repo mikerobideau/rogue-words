@@ -67,4 +67,5 @@ func _on_skip_button_pressed() -> void:
 	_close()
 	
 func _close():
+	Sound.play(Sound.SOUND_PACK_CLOSED)
 	completed.emit()

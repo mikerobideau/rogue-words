@@ -1,31 +1,18 @@
-[gd_scene load_steps=24 format=3 uid="uid://dx61ln0o8poi0"]
+[gd_scene load_steps=20 format=3 uid="uid://dx61ln0o8poi0"]
 
 [ext_resource type="Texture2D" uid="uid://cr14fxpq2pfn8" path="res://assets/sprites/pack/1x/pack.png" id="1_4m541"]
 [ext_resource type="Resource" uid="uid://8xvfc52pob01" path="res://components/pack/data/relic/super_relic_pack/super_relic_pack.tres" id="2_s3kpj"]
 [ext_resource type="Script" path="res://components/pack/pack.gd" id="2_xlls0"]
 [ext_resource type="Shader" path="res://shader/dissolve.gdshader" id="3_ohldu"]
-
-[sub_resource type="Gradient" id="Gradient_tr1ge"]
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_cxm3c"]
-gradient = SubResource("Gradient_tr1ge")
-
-[sub_resource type="Gradient" id="Gradient_afyu4"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_m2yw7"]
-frequency = 0.0074
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_l66df"]
-color_ramp = SubResource("Gradient_afyu4")
-noise = SubResource("FastNoiseLite_m2yw7")
+[ext_resource type="Shader" path="res://shader/vacuum_collapse.gdshader" id="3_pkuxu"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u4j6i"]
 resource_local_to_scene = true
-shader = ExtResource("3_ohldu")
-shader_parameter/dissolve_value = 1.0
-shader_parameter/mix_ratio = 0.0
-shader_parameter/dissolve_noise = SubResource("NoiseTexture2D_l66df")
-shader_parameter/dissolve_gradient = SubResource("GradientTexture2D_cxm3c")
+shader = ExtResource("3_pkuxu")
+shader_parameter/burst_progress = 0.0
+shader_parameter/spread_strength = 0.256
+shader_parameter/distortion_strength = 0.2
+shader_parameter/fade_start = 0.7
 
 [sub_resource type="Gradient" id="Gradient_muqxo"]
 
