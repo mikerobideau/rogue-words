@@ -35,7 +35,7 @@ func _show_title():
 func _show_boss_intro():
 	hud.visible = false
 	var boss_intro = SCREENS.boss_intro.instantiate()
-	Sound.play('boss_intro')
+	Sound.play(Sound.SOUND_BOSS_INTRO)
 	boss_intro.title = 'Incoming Storm'
 	boss_intro.description = GameState.current_boss.description
 	_show_screen(boss_intro, {})

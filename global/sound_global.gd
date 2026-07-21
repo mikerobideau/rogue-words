@@ -10,7 +10,8 @@ const sounds = {
 	'blip_select': preload("res://assets/sound/jsfxr/blipSelect.wav"),
 	'complete1': preload("res://assets/sound/pixabay/linhmitto-bubble-254777.mp3"),
 	'complete2': preload("res://assets/sound/mixkit-game-flute-bonus-2313.wav"),
-	'coin1': preload("res://assets/sound/jsfxr/coin1.wav"),
+	'coin2': preload("res://assets/sound/jsfxr/coin1.wav"),
+	'coin1': preload("res://assets/sound/pixabay/freesound_community-coin_c_02-102844.mp3"),
 	'click': preload("res://assets/sound/jsfxr/click.wav"),
 	'click1': preload("res://assets/sound/jsfxr/click (1).wav"),
 	'click2': preload("res://assets/sound/jsfxr/click (2).wav"),
@@ -45,9 +46,9 @@ const sounds = {
 	'liquid3': preload("res://assets/sound/pixabay/freesound_community-water-splash-46402.mp3"),
 	'liquid4': preload("res://assets/sound/pixabay/freesound_community-water-splash-102492.mp3"),
 	'pop2': preload("res://assets/sound/pixabay/universfield-bubble-pop-06-351337.mp3"),
-	'pop3': preload("res://assets/sound/pixabay/universfield-bubble-pop-07-487896.mp3"),
-	'pop4': preload("res://assets/sound/pixabay/universfield-bubble-popping-229138.mp3"),
-	'pop5': preload("res://assets/sound/pixabay/dragon-studio-bubble-pop-406640.mp3"),
+	'pop3': preload("res://assets/sound/pixabay/universfield-bubble-popping-229138.mp3"),
+	'pop_double': preload("res://assets/sound/pixabay/universfield-bubble-pop-07-487896.mp3"),
+	'pop_multiple': preload("res://assets/sound/pixabay/dragon-studio-bubble-pop-406640.mp3"),
 	'shimmer_bonus': preload("res://assets/sound/mixkit-extra-bonus-in-a-video-game-2045.wav"),
 	'shuffle': preload("res://assets/sound/mixkit-thin-metal-card-deck-shuffle-3175.wav"),
 	'success': preload("res://assets/sound/mixkit-fantasy-game-success-notification-270.wav"),
@@ -59,6 +60,8 @@ const sounds = {
 	'upgrade2': preload("res://assets/sound/jsfxr/upgrade2.wav"),
 	'upgrade3': preload("res://assets/sound/jsfxr/upgrade3.wav"),
 	'upgrade4': preload("res://assets/sound/jsfxr/upgrade4.wav"),
+	'whoosh1': preload("res://assets/sound/pixabay/dragon-studio-simple-whoosh-382724.mp3"),
+	'whoosh2': preload("res://assets/sound/pixabay/dragon-studio-whoosh-effect-382717.mp3"),
 	'win': preload("res://assets/sound/mixkit-completion-of-a-level-2063.wav"),
 	'win2': preload("res://assets/sound/mixkit-final-level-bonus-2061.wav"),
 	'win3': preload("res://assets/sound/mixkit-small-win-2020.wav"),
@@ -67,7 +70,8 @@ const sounds = {
 	'level_up': preload("res://assets/sound/mixkit-game-experience-level-increased-2062.wav"),
 	'item_unlocked': preload("res://assets/sound/mixkit-unlock-new-item-game-notification-254.wav"),
 	'hazard': preload("res://assets/sound/tunetank.com_video-game-boing-retro.wav"),
-	'boss_intro': preload("res://screens/title/mixkit-movie-whoosh-impact-presentation-2903.wav"),
+	'boss_intro1': preload("res://screens/title/mixkit-movie-whoosh-impact-presentation-2903.wav"),
+	'boss_intro2': preload("res://assets/sound/pixabay/dragon-studio-simple-whoosh-02-433006.mp3"),
 	'purchase': preload("res://assets/sound/vadim_makes_sound-vintage-cash-drawer-open-1-547824.mp3")	
 }
 
@@ -87,16 +91,20 @@ const SOUND_RELIC_UPGRADE = 'upgrade1'
 const SOUND_RELIC_DECAY = 'decay7'
 const SOUND_RELIC_RESET_POSITIVE = 'upgrade2'
 const SOUND_RELIC_RESET_NEGATIVE = 'decay4'
-const SOUND_RELIC_MONEY = 'pickup_coin4'
+const SOUND_RELIC_MONEY = 'coin1'
 
 const SOUND_JUICE = 'liquid4'
 
 const SOUND_WIN = 'win4' #complete1, win, win4
 
+const SOUND_BOSS_INTRO = 'boss_intro2'
+
 const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_DISABLED = 'laser_shoot' #laser_shoot or synth
 
-const SOUND_PURCHASE = 'purchase'
+const SOUND_PURCHASE = 'coin1'
+const SOUND_PACK_OPEN = 'pop_multiple' #pop_multiple
+const SOUND_OFFER_FLIPPED = 'whoosh2' #pop_double, upgrade1
 
 var sound_disabled := false
 

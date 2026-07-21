@@ -104,6 +104,7 @@ func _choose():
 func flip_open(delay := 0.0) -> void:
 	if delay > 0.0:
 		await get_tree().create_timer(delay).timeout
+	Sound.play(Sound.SOUND_OFFER_FLIPPED)
 	var t = create_tween()
 	# close to edge-on (still showing the back)
 	t.tween_property(frame, 'scale:x', 0.0, 0.12) \

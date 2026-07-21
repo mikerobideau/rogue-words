@@ -70,6 +70,7 @@ func animate_open():
 	#_burst()
 	
 	#dissolve
+	Sound.play(Sound.SOUND_PACK_OPEN)
 	var dissolve_tween = create_tween().set_parallel(true)
 	var type_label_dissolve_tween = create_tween()
 	var size_and_choice_label_dissolve_tween = create_tween()
