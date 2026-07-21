@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://c3nw5lji2mbyo"]
+
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_mycl5"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_hvwqw"]
+
+[resource]
+script = ExtResource("2_hvwqw")
+pack_name = "Super Grape Pack"
+cost = 5
+type = 2
+size = 5
+num_picks = 1
+rarity = 0
+offers = Array[ExtResource("1_mycl5")]([])
+random_enhancement = false

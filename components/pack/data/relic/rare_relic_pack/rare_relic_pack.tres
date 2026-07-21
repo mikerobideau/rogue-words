@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://dvbgygbn1i4bu"]
+
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_jwtxv"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_qa6pd"]
+
+[resource]
+script = ExtResource("2_qa6pd")
+pack_name = "Rare Relic Pack"
+cost = 12
+type = 0
+size = 3
+num_picks = 1
+rarity = 2
+offers = Array[ExtResource("1_jwtxv")]([])
+random_enhancement = false

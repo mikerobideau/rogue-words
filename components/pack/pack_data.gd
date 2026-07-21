@@ -13,21 +13,15 @@ const TYPE_NAMES: Dictionary = {
 	Type.TOKEN: 'Token'
 }
 
-@export var pack_name: String
+@export var pack_name: String	
+@export var cost: int
 @export var type: Type
 @export var size: int
 @export var num_picks: int
 @export var rarity: Rarity.Type
 @export var offers: Array[OfferData]
-
-var cost: int:
-	get:
-		match rarity:
-			Rarity.Type.COMMON:    return 5
-			Rarity.Type.UNCOMMON:  return 7
-			Rarity.Type.RARE:      return 10
-			Rarity.Type.LEGENDARY: return 15
-			_:                     return 4
+@export var enhancement: TokenEnhancement
+@export var random_enhancement := false #tokens sometimes get a random enhancement
 
 func type_name() -> String:
 	return TYPE_NAMES[type]

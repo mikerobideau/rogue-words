@@ -5,5 +5,5 @@
 
 [resource]
 script = ExtResource("1_b627x")
-enhancement_name = ""
+enhancement_name = "Clover"
 sprite_frames = ExtResource("2_r7kwy")

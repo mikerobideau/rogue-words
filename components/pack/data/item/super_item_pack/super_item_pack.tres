@@ -1,11 +1,15 @@
-[gd_resource type="Resource" script_class="PackData" load_steps=2 format=3 uid="uid://b4pwddyppllue"]
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://b4pwddyppllue"]
 
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_4x6fl"]
 [ext_resource type="Script" path="res://components/pack/pack_data.gd" id="1_253si"]
 
 [resource]
 script = ExtResource("1_253si")
 pack_name = "Super Item Pack"
+cost = 7
 type = 1
 size = 5
 num_picks = 2
 rarity = 1
+offers = Array[ExtResource("1_4x6fl")]([])
+random_enhancement = false

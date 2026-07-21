@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://bv6v50paauohh"]
+
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_e7iqy"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_ar4gp"]
+
+[resource]
+script = ExtResource("2_ar4gp")
+pack_name = "Uncommon Relic Pack"
+cost = 10
+type = 0
+size = 3
+num_picks = 1
+rarity = 1
+offers = Array[ExtResource("1_e7iqy")]([])
+random_enhancement = false

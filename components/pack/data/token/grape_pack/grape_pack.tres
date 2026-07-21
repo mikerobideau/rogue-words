@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://d4dw1tl1t4u0x"]
+
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_xusfd"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_iu88a"]
+
+[resource]
+script = ExtResource("2_iu88a")
+pack_name = "Super Grape Pack"
+cost = 3
+type = 2
+size = 3
+num_picks = 1
+rarity = 0
+offers = Array[ExtResource("1_xusfd")]([])
+random_enhancement = false

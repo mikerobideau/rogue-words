@@ -1,11 +1,15 @@
-[gd_resource type="Resource" script_class="PackData" load_steps=2 format=3 uid="uid://8xvfc52pob01"]
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://8xvfc52pob01"]
 
-[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="1_gqqf6"]
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_fwpnf"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_wu6vx"]
 
 [resource]
-script = ExtResource("1_gqqf6")
+script = ExtResource("2_wu6vx")
 pack_name = "Super Relic Pack"
+cost = 10
 type = 0
 size = 5
 num_picks = 2
 rarity = 1
+offers = Array[ExtResource("1_fwpnf")]([])
+random_enhancement = false

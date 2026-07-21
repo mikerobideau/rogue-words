@@ -1,11 +1,15 @@
-[gd_resource type="Resource" script_class="PackData" load_steps=2 format=3 uid="uid://de7mngbo5tp11"]
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://de7mngbo5tp11"]
 
 [ext_resource type="Script" path="res://components/pack/pack_data.gd" id="1_f3j2y"]
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_m710c"]
 
 [resource]
 script = ExtResource("1_f3j2y")
 pack_name = "Item Pack"
+cost = 5
 type = 1
 size = 3
 num_picks = 1
 rarity = 0
+offers = Array[ExtResource("1_m710c")]([])
+random_enhancement = false

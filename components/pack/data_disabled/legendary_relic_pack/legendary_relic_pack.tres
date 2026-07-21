@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=3 format=3 uid="uid://nvk7u50vgc3l"]
+
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="1_heucb"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="2_jno7h"]
+
+[resource]
+script = ExtResource("2_jno7h")
+pack_name = "Legendary Relic Pack"
+cost = 15
+type = 0
+size = 3
+num_picks = 1
+rarity = 3
+offers = Array[ExtResource("1_heucb")]([])
+random_enhancement = false

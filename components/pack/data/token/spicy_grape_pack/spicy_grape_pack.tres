@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PackData" load_steps=4 format=3 uid="uid://bhbaq3tvj7jc3"]
+
+[ext_resource type="Resource" uid="uid://du266m5x6igbf" path="res://components/token/enhancements/spicy_grape/spicy_grape.tres" id="1_mlpk3"]
+[ext_resource type="Script" path="res://components/offer/offer_data.gd" id="2_yvol3"]
+[ext_resource type="Script" path="res://components/pack/pack_data.gd" id="3_qb50a"]
+
+[resource]
+script = ExtResource("3_qb50a")
+pack_name = "Spicy Grape Pack"
+cost = 5
+type = 2
+size = 3
+num_picks = 1
+rarity = 0
+offers = Array[ExtResource("2_yvol3")]([])
+enhancement = ExtResource("1_mlpk3")
+random_enhancement = false
