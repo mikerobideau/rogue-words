@@ -106,6 +106,7 @@ const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_DISABLED = 'laser_shoot' #laser_shoot or synth
 
 const SOUND_PURCHASE = 'purchase1'
+const SOUND_REROLL = 'purchase1'
 const SOUND_PACK_OPEN = 'pack_open1' #pop_multiple, pack_open2
 const SOUND_OFFER_FLIPPED = 'whoosh2' #pop_double, upgrade1
 const SOUND_PACK_CLOSED = 'whoosh1'

@@ -38,8 +38,16 @@ anchor_bottom = 1.0
 offset_right = 400.0
 grow_vertical = 2
 
-[node name="Exit" type="Button" parent="ButtonContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ButtonContainer"]
 layout_mode = 2
-text = "Next Round"
+theme_override_constants/separation = 50
 
-[connection signal="pressed" from="ButtonContainer/Exit" to="." method="_on_exit_pressed"]
+[node name="Reroll" type="Button" parent="ButtonContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Exit" type="Button" parent="ButtonContainer/VBoxContainer"]
+layout_mode = 2
+text = "NEXT ROUND"
+
+[connection signal="pressed" from="ButtonContainer/VBoxContainer/Reroll" to="." method="_on_reroll_pressed"]
+[connection signal="pressed" from="ButtonContainer/VBoxContainer/Exit" to="." method="_on_exit_pressed"]

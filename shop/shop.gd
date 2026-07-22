@@ -3,17 +3,26 @@ class_name ShopScene
 
 const SlotScene = preload("res://shop/shop_slot.tscn")
 const PackContentScene = preload("res://screens/pack_content/pack_content.tscn")
+
 const SLOT_COUNT = 3
+const STARTING_REROLL_COST = 3
+const REROLL_INCREMENT = 2
 
 signal completed()
 signal pack_purchased(pack: PackData)
 
 @onready var slots = $CenterContainer/Slots
 @onready var continue_button = $Footer/FooterInner/Continue
+@onready var reroll_label = $ButtonContainer/VBoxContainer/Reroll
 
 var pack_content: PackContent
+var reroll_cost: int:
+	set(v):
+		reroll_cost = v
+		reroll_label.text = 'REROLL ($' + str(reroll_cost) + ')'
 
 func _ready():
+	reroll_cost = STARTING_REROLL_COST
 	_populate_slots()
 
 func _populate_slots():
@@ -68,3 +77,14 @@ func _on_open_pack_completed():
 
 func _on_exit_pressed() -> void:
 	completed.emit()
+
+func _on_reroll_pressed() -> void:
+	
+	if GameState.money < reroll_cost:
+		return
+	GameState.money -= reroll_cost
+	Sound.play(Sound.SOUND_REROLL)
+	reroll_cost += REROLL_INCREMENT
+	for slot in slots.get_children():
+		slot.queue_free()
+	_populate_slots()
