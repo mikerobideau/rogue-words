@@ -8,7 +8,7 @@ const DEFAULT_NUM_STARTING_SPACES = 3
 const NUM_EXPANSIONS = 1
 const MAX_RADIUS := 3
 const MAX_EDGES := 5
-const SPACING := 110
+const SPACING := 80
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
 const CENTER_BIAS_SAMPLES := 1   # 1 = pure random shape, higher = rounder/tighter
 

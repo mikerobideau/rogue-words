@@ -69,7 +69,9 @@ func _layout_tokens():
 	var diameter = Token.RADIUS * 2
 	var tokens = token_container.get_children()
 	var total_width = tokens.size() * (diameter + H_PAD) + H_PAD * 2 + discard_button.size.x
-	custom_minimum_size = Vector2(total_width, diameter)
+	var new_custom_minimum_size = Vector2(total_width, diameter)
+	if new_custom_minimum_size > custom_minimum_size:
+		custom_minimum_size = new_custom_minimum_size
 	
 	for i in range(tokens.size()):
 		var x = H_PAD + Token.RADIUS + i * (diameter + H_PAD)

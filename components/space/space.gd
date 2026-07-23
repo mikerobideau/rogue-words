@@ -11,7 +11,7 @@ signal hovered(space: Space)
 
 @onready var badge = $Badge 
 
-const RADIUS = 80
+const RADIUS = 60
 const DISABLED_RADIUS := RADIUS
 const DOUBLE_WORD_COLOR = Styles.PINK
 const TRIPLE_LETTER_COLOR = Styles.TEAL

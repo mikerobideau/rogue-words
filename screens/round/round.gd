@@ -15,8 +15,8 @@ const DEBUG = false
 @onready var board = $BoardContainer/Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var word = $TopContainer/Word
 @onready var instruction = $TopContainer/Instruction
+@onready var word = $TopContainer/Word
 @onready var score_panel = $Left/CenterContainer/ScorePanel
 @onready var round_summary = $RoundSummary
 
@@ -58,6 +58,8 @@ func _ready():
 	if DEBUG:
 		_debug()
 		
+		
+	_update_instruction()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	turn_number = 1
@@ -96,19 +98,21 @@ func _update_discard_disabled():
 	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
 	
 func _update_instruction():
-	if selected_tokens.size() < 1 or scoring:
+	if scoring:
 		instruction.visible = false
-		instruction.text = ''
+		instruction.text = 'Scoring'
+	elif selected_tokens.size() < 1:
+		instruction.visible = true
+		instruction.text = 'Choose a token'
 	elif selected_tokens.size() == 1:
 		instruction.visible = true
-		instruction.text = 'Play or discard token'
+		instruction.text = 'Play or discard'
 	elif selected_tokens.size() > 1:
 		instruction.visible = true
-		instruction.text = 'Discard tokens'
+		instruction.text = 'Discard all'
 	else:
-		instruction.visible = false
-		instruction.text = ''
-		
+		instruction.visible = true
+		instruction.text = 'Unhandled'
 	
 func _clear_selected_token():
 	if selected_token:
@@ -164,14 +168,13 @@ func _on_space_clicked(space: Space):
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
 		return
+	await get_tree().create_timer(0.5).timeout
 	_clear_selected_tokens()
 	hand.draw_tokens(1)
 	if hand.is_empty():
 		game_over.emit('You ran out of tokens')
 		return
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
-	
-	await get_tree().create_timer(0.5).timeout
 	board.grow(expansions)
 	scoring = false
 	
