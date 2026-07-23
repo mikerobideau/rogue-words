@@ -1,6 +1,9 @@
 extends AnimatedSprite2D
 class_name Space
 
+const DISABLED_TEXTURE = preload("res://assets/sprites/space/1x/space_disabled.png")
+const ENABLED_TEXTURE = preload("res://assets/sprites/space/1x/space.png")
+
 @onready var label = $Label
 
 signal clicked(space: Space)
@@ -9,6 +12,7 @@ signal hovered(space: Space)
 @onready var badge = $Badge 
 
 const RADIUS = 40
+const DISABLED_RADIUS := RADIUS
 const DOUBLE_WORD_COLOR = Styles.PINK
 const TRIPLE_LETTER_COLOR = Styles.TEAL
 
@@ -17,11 +21,19 @@ var links: Array = [null, null, null, null, null, null]
 
 @export var data: SpaceData
 @export var token: Token
-
 @export var type: SpaceData.Type:
 	get(): return data.type
 	set(v): type = v; _update_label()
+@export var disabled_color := Color(0.6, 0.6, 0.6, 0.5)
 
+var enabled: bool = true:
+	set(v):
+		var was_enabled := enabled
+		enabled = v
+		queue_redraw()
+		if is_node_ready():
+			_animate()
+		
 func _ready():
 	play('default')
 	var area = Area2D.new()
@@ -33,12 +45,18 @@ func _ready():
 	add_child(area)
 	area.input_event.connect(_on_input_event)
 	area.mouse_entered.connect(_on_mouse_entered)
-	area.mouse_exited.connect(func(): if token == null:play('default'))
-	scale = Vector2.ZERO
+	area.mouse_exited.connect(func(): if token == null: _animate())
 	_update_label()
-	_pop_open()
+	_animate()
 	
+func _animate() -> void:
+	badge.visible = enabled
+	label.visible = enabled
+	play('default') if enabled else play('disabled')
+		
 func _on_mouse_entered():
+	if !enabled:
+		return
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	if token == null:
 		play('hover')
@@ -65,7 +83,8 @@ func modify_letter_score(v: int) -> int:
 func has_enhancement():
 	return data.has_enhancement()
 	
-func _pop_open():
+func pop_open():
+	scale = Vector2.ZERO
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", Vector2.ONE, 0.4)
@@ -75,7 +94,7 @@ func _animate_badge():
 	if token == null: #return if token has been destroyed
 		return
 	badge.scale = Vector2.ZERO
-	badge.visible = true
+	badge.visible = true if enabled else false
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(badge, "scale", Vector2.ONE, 0.4)

@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bl02w530xwhxf" path="res://assets/icons/1x/discard.png" id="4_bncvi"]
 
 [node name="Hand" type="Panel"]
-custom_minimum_size = Vector2(1000, 128)
+custom_minimum_size = Vector2(1200, 128)
 offset_right = 1000.0
 offset_bottom = 128.0
 size_flags_horizontal = 3

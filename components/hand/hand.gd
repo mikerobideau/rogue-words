@@ -10,7 +10,7 @@ signal token_destroyed(token: Token)
 @onready var token_container = $Tokens
 @onready var discard_button = $DiscardContainer/DiscardButton
 
-const DEFAULT_HAND_SIZE = 5
+const DEFAULT_HAND_SIZE = 7
 const H_PAD = 50
 const V_PAD = 0
 	
@@ -68,7 +68,7 @@ func is_empty() -> bool:
 func _layout_tokens():
 	var diameter = Token.RADIUS * 2
 	var tokens = token_container.get_children()
-	var total_width = tokens.size() * (diameter + H_PAD) + H_PAD
+	var total_width = tokens.size() * (diameter + H_PAD) + H_PAD * 2 + discard_button.size.x
 	custom_minimum_size = Vector2(total_width, diameter)
 	
 	for i in range(tokens.size()):

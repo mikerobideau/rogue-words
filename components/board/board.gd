@@ -6,6 +6,8 @@ signal space_hovered(space: Space)
 
 var SpaceScene = preload("res://components/space/space.tscn")
 
+@export var max_spaces: int
+
 const BOARD_SIZE = Vector2(800, 800)
 const DEFAULT_NUM_STARTING_SPACES = 3
 const NUM_EXPANSIONS = 1
@@ -16,9 +18,9 @@ const LINK_COLOR = Color(0.75, 0.75, 0.75)
 const LINK_WIDTH = 4.0
 
 var num_starting_spaces := DEFAULT_NUM_STARTING_SPACES
-var start_space_coord = Vector2(0, 0)
+var start_space_coord = Vector2i(0, 0)
 var start_space_pos: Vector2
-var expanding := false
+var expanding := false                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 
 var spaces: Dictionary = {}
 
@@ -38,7 +40,10 @@ func _ready():
 	#_add_background()
 	
 func start():
-	_create_space(start_space_coord, true)
+	_create_all_spaces()
+	print("created: ", spaces.keys())
+	print("start coord=", start_space_coord, " type=", typeof(start_space_coord), " has key=", spaces.has(start_space_coord))
+	_enable_space(spaces[start_space_coord], true)
 	grow(num_starting_spaces - 1, true)
 	
 func get_spaces():
@@ -54,10 +59,46 @@ func highlight(path: Array):
 	#await get_tree().create_timer(0.5).timeout
 	#for space in path:
 	#	space.token.animate_default()
+	
+func _create_all_spaces():
+	var target := max_spaces if max_spaces > 0 else _all_coords_within(MAX_RADIUS).size()
+
+	_create_space(start_space_coord)                 # always start at center
+	var open := _neighbors_within(start_space_coord) # candidate coords to grow into
+
+	while spaces.size() < target and not open.is_empty():
+		var idx := randi() % open.size()
+		var coord = open[idx]
+		open.remove_at(idx)
+		if spaces.has(coord):                         # already created via another neighbor
+			continue
+		_create_space(coord)
+		for n in _neighbors_within(coord):
+			if not spaces.has(n):
+				open.append(n)
+
+func _neighbors_within(coord: Vector2i) -> Array:
+	var result := []
+	for offset in DIR_OFFSETS:
+		var n = coord + offset
+		if _hex_dist_from_center(n) <= MAX_RADIUS:
+			result.append(n)
+	return result
+	
+func _all_coords_within(radius: int) -> Array:
+	var coords := []
+	for q in range(-radius, radius + 1):
+		for r in range(-radius, radius + 1):
+			var coord = Vector2i(q, r)
+			if _hex_dist_from_center(coord) <= radius:
+				coords.append(coord)
+	return coords
 		
 func _draw():
 	var drawn := {}
 	for space in spaces.values():
+		if not space.enabled:
+			continue
 		for dir in range(6):
 			var neighbor = space.links[dir]
 			if neighbor == null:
@@ -86,17 +127,22 @@ func _coord_to_pixel(coord: Vector2i):
 	var y = SPACING * 1.5 * coord.y + start_space_pos.y
 	return Vector2(x, y)
 	
-func _create_space(coord: Vector2i, is_starting_space := false) -> Space:
+func _enable_space(space: Space, is_starting_space := false) -> void:
+	space.enabled = true
+	space.pop_open()
+	if not is_starting_space and space.has_enhancement():
+		Sound.play(Sound.SOUND_ENHANCED_SPACE)
+	
+func _create_space(coord: Vector2i) -> Space:
 	var space = SpaceFactory.create_random_scene()
 	space.coord = coord
 	space.position = _coord_to_pixel(coord)
+	space.enabled = false                      # created disabled
 	add_child(space)
 	space.clicked.connect(_on_space_clicked)
 	space.hovered.connect(_on_space_hovered)
 	spaces[coord] = space
 	_link_neighbors(space)
-	if !is_starting_space and space.has_enhancement():
-		Sound.play(Sound.SOUND_ENHANCED_SPACE)
 	return space
 	
 func _link_neighbors(space: Space):
@@ -118,49 +164,30 @@ func _on_space_clicked(space: Space):
 	
 func _on_space_hovered(space: Space):
 	space_hovered.emit(space)
-	
-func expand_around(space: Space):
-	expanding = true
-	var num_expansions = 3
-	var dirs = [0, 1, 2, 3, 4, 5]
-	dirs.shuffle()
-	var expansions = 0
-	while expansions < 3 and dirs.size() > 0:
-		var dir = dirs.pop_back()
-		if space.links[dir] != null:
-			continue
-		var target_coord = space.coord + DIR_OFFSETS[dir]
-		var neighbor = spaces.get(target_coord)
-		if neighbor == null:
-			if _hex_dist_from_center(target_coord) > MAX_RADIUS:
-				continue
-			neighbor = _create_space(target_coord)
-			await get_tree().create_timer(0.15).timeout
-			expansions += 1
-	expanding = false
 
 func grow(expansions: int, is_starting_space := false):
-	var growable = spaces.values().filter(func(s): return s.links.has(null))
-	if growable.is_empty():
-		return
-	growable.shuffle()
 	var grown := 0
 	while grown < expansions:
-		var space = growable[randi() % growable.size()]
-		if _grow_one_direction(space, is_starting_space):
-			grown += 1
+		var frontier := spaces.values().filter(func(s):
+			return s.enabled and _has_disabled_neighbor(s))
+		if frontier.is_empty():
+			return
+		var space = frontier[randi() % frontier.size()]
+		_enable_one_neighbor(space, is_starting_space)
+		grown += 1
 			
-func _grow_one_direction(space, is_starting_space := false):
-	var open_dirs := []
+func _has_disabled_neighbor(space: Space) -> bool:
 	for dir in range(6):
-		var target_coord = space.coord + DIR_OFFSETS[dir]
-		if space.links[dir] == null and not spaces.has(target_coord):
-			open_dirs.append(dir)
-	if open_dirs.is_empty():
-		return false
-	var dir = open_dirs[randi() % open_dirs.size()]
-	var target_coord = space.coord + DIR_OFFSETS[dir]
-	if _hex_dist_from_center(target_coord) > MAX_RADIUS:
-		return false
-	_create_space(target_coord, is_starting_space)
-	return true
+		var n = space.links[dir]
+		if n != null and not n.enabled:
+			return true
+	return false
+
+func _enable_one_neighbor(space: Space, is_starting_space := false) -> void:
+	var dirs := []
+	for dir in range(6):
+		var n = space.links[dir]
+		if n != null and not n.enabled:
+			dirs.append(dir)
+	var dir = dirs[randi() % dirs.size()]
+	_enable_space(space.links[dir], is_starting_space)

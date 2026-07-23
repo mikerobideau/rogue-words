@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://v6aub4m84xgt"]
+[gd_scene load_steps=9 format=3 uid="uid://v6aub4m84xgt"]
 
 [ext_resource type="Texture2D" uid="uid://nfu1dp8gaosq" path="res://assets/sprites/space/1x/space.png" id="1_3j5bs"]
 [ext_resource type="Script" path="res://components/space/space.gd" id="1_7pr7h"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://34b3pimhcnpj" path="res://assets/sprites/space/1x/space_active_2.png" id="2_81ub6"]
 [ext_resource type="Texture2D" uid="uid://po378h5s6wxk" path="res://assets/sprites/space/1x/space_active_3.png" id="3_dpnex"]
 [ext_resource type="PackedScene" uid="uid://d30nyy2c7jo0v" path="res://components/space/badge.tscn" id="4_xerhu"]
+[ext_resource type="Texture2D" uid="uid://dn22f05cb5ms" path="res://assets/sprites/space/1x/space_disabled.png" id="5_uifn4"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ghnjp"]
 animations = [{
@@ -33,6 +34,14 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": ExtResource("5_uifn4")
+}],
+"loop": true,
+"name": &"disabled",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": ExtResource("1_emren")
 }],
 "loop": true,
@@ -42,8 +51,7 @@ animations = [{
 
 [node name="Space" type="AnimatedSprite2D"]
 sprite_frames = SubResource("SpriteFrames_ghnjp")
-animation = &"hover"
-frame_progress = 0.951758
+animation = &"disabled"
 script = ExtResource("1_7pr7h")
 
 [node name="Badge" parent="." instance=ExtResource("4_xerhu")]

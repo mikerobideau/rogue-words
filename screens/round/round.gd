@@ -74,6 +74,7 @@ func _ready():
 	word_finder.relic_manager = relic_manager
 	word_finder.min_word_length = GameState.current_boss.get_min_word_length(word_finder.DEFAULT_MIN_WORD_LENGTH)
 	
+	board.max_spaces = board.num_starting_spaces + TURNS_PER_ROUND - 1
 	board.space_clicked.connect(_on_space_clicked)
 	board.space_hovered.connect(_on_space_hovered)
 	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
@@ -133,7 +134,7 @@ func _on_discard_clicked():
 
 func _on_space_clicked(space: Space):
 	#Process placement
-	if scoring or space.token != null or !selected_token:
+	if scoring or not space.enabled or space.token != null or !selected_token:
 		return
 	scoring = true
 	hand.remove_token(selected_token)

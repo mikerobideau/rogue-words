@@ -120,7 +120,7 @@ func _show_tooltip():
 	
 func get_tooltip_text():
 	var type = 'Grape' if enhancement == null else 'Enhanced'
-	return type + ' ' + data.letter + ' (' + str(data.value) + ' mL)'
+	return type + ' ' + data.letter + ' (' + str(data.value) + ')'
 	
 func _init_click_detection():
 	var area = Area2D.new()

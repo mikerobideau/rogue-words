@@ -49,7 +49,7 @@ func refresh_tooltip():
 	Tooltip.register(slot, text)
 	
 func _sell():
-	Sound.play(Sound.SOUND_MONEY)
+	Sound.play(Sound.SOUND_SELL)
 	GameState.money += relic_data.cost / 2
 	GameState.remove_relic(relic_data)
 	Tooltip.unregister(slot)
