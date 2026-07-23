@@ -18,7 +18,7 @@ const TRIPLE_LETTER_COLOR = Styles.TEAL
 
 var coord: Vector2i
 var links: Array = [null, null, null, null, null, null]
-var BASE_SCALE = Vector2(2.0, 2.0)
+var BASE_SCALE = Vector2(1.0, 1.0)
 
 @export var data: SpaceData
 @export var token: Token
@@ -37,6 +37,7 @@ var enabled: bool = true:
 		
 func _ready():
 	scale = BASE_SCALE
+	badge.visible = false
 	play('default')
 	var area = Area2D.new()
 	var shape = CollisionShape2D.new()
@@ -52,12 +53,13 @@ func _ready():
 	_animate()
 	
 func _animate() -> void:
-	badge.visible = enabled
 	label.visible = enabled
 	play('default') if enabled else play('disabled')
 		
 func _on_mouse_entered():
+	print_debug('on mouse entered')
 	if !enabled:
+		print_debug('not enabled.  Returning')
 		return
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	if token == null:
@@ -96,7 +98,7 @@ func _animate_badge():
 	if token == null: #return if token has been destroyed
 		return
 	badge.scale = Vector2.ZERO
-	badge.visible = true if enabled else false
+	badge.visible = true
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(badge, "scale", Vector2.ONE, 0.4)

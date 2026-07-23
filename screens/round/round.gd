@@ -12,7 +12,7 @@ signal completed()
 const DEBUG = false
 
 @onready var hand = $HandContainer/Hand
-@onready var board = $Board
+@onready var board = $BoardContainer/Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var word = $TopContainer/Word
