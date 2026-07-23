@@ -6,8 +6,9 @@ signal space_hovered(space: Space)
 
 const DEFAULT_NUM_STARTING_SPACES = 3
 const NUM_EXPANSIONS = 1
-const MAX_RADIUS := 5
-const SPACING := 75
+const MAX_RADIUS := 3
+const MAX_EDGES := 5
+const SPACING := 110
 const SQRT_3_OVER_2 = sqrt(3) / 2.0
 const CENTER_BIAS_SAMPLES := 1   # 1 = pure random shape, higher = rounder/tighter
 
@@ -68,6 +69,8 @@ func _create_all_spaces():
 		open.remove_at(idx)
 		if spaces.has(coord):
 			continue
+		if not _can_create(coord):
+			continue
 		_create_space(coord)
 		for n in _neighbors_within(coord):
 			if not spaces.has(n):
@@ -95,6 +98,25 @@ func _neighbors_within(coord: Vector2i) -> Array:
 
 func _disk_size(radius: int) -> int:
 	return 1 + 3 * radius * (radius + 1)
+
+# number of already-created spaces adjacent to a coord
+func _created_neighbor_count(coord: Vector2i) -> int:
+	var count := 0
+	for offset in DIR_OFFSETS:
+		if spaces.has(coord + offset):
+			count += 1
+	return count
+
+# a coord may be created only if neither it nor any existing
+# neighbor would end up touching more than MAX_EDGES spaces
+func _can_create(coord: Vector2i) -> bool:
+	if _created_neighbor_count(coord) > MAX_EDGES:
+		return false
+	for offset in DIR_OFFSETS:
+		var m = coord + offset
+		if spaces.has(m) and _created_neighbor_count(m) >= MAX_EDGES:
+			return false
+	return true
 
 func _create_space(coord: Vector2i) -> Space:
 	var space = SpaceFactory.create_random_scene()

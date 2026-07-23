@@ -170,6 +170,8 @@ func _on_space_clicked(space: Space):
 		game_over.emit('You ran out of tokens')
 		return
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
+	
+	await get_tree().create_timer(0.5).timeout
 	board.grow(expansions)
 	scoring = false
 	

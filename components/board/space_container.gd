@@ -1,7 +1,8 @@
 extends Node2D
 class_name SpaceContainer
 
-const LINK_COLOR = Color(0.75, 0.75, 0.75)
+const LINK_COLOR = Color.SADDLE_BROWN
+const LINK_COLOR_DISABLED = Color(0.75, 0.75, 0.75)
 const LINK_WIDTH = 4.0
 
 var bounds := Rect2()
@@ -21,17 +22,18 @@ func center_in(rect_size: Vector2) -> void:
 func _draw() -> void:
 	var drawn := {}
 	for space in get_children():
-		if not space is Space or not space.enabled:
+		if not space is Space:
 			continue
 		for dir in range(6):
 			var neighbor = space.links[dir]
-			if neighbor == null or not neighbor.enabled:
+			if neighbor == null:
 				continue
 			var key = _edge_key(space, neighbor)
 			if drawn.has(key):
 				continue
 			drawn[key] = true
-			draw_line(space.position, neighbor.position, LINK_COLOR, LINK_WIDTH)
+			var color = LINK_COLOR if (space.enabled and neighbor.enabled) else LINK_COLOR_DISABLED
+			draw_line(space.position, neighbor.position, color, LINK_WIDTH)
 
 func _edge_key(a: Space, b: Space) -> String:
 	if a.get_instance_id() < b.get_instance_id():

@@ -84,8 +84,9 @@ func _on_selected():
 		_animate_deselected()
 	
 func on_placed():
+	Sound.play(Sound.SOUND_TOKEN_PLACED)
 	data.spent = true
-	_animate_deselected()
+	_animate_placed()
 	is_selectable = false
 	if data.enhancement:
 		data.enhancement.on_placed()
@@ -160,6 +161,7 @@ func scale_up():
 	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.2)
 	
 func scale_down():
+	print_debug('scale down')
 	if scale_tween:
 		scale_tween.kill()
 	scale_tween = create_tween()
@@ -169,12 +171,9 @@ func _animate_placed():
 	if scale_tween:
 		scale_tween.kill()
 	var scale_tween = create_tween()
-	scale = Vector2(0, 0)
-	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.2)
-	scale_tween.tween_property(self, 'scale', Vector2(0.8, 0.8), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.1)
+	scale = Vector2(2.0, 2.0)
+	scale_tween.tween_property(self, 'scale', Vector2(1.5, 1.5), 0.2)
+	scale_tween.tween_property(self, 'scale', Vector2(1.6, 1.6), 0.1)
 	
 func _animate_selected():
 	if scale_tween:

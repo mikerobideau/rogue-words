@@ -86,7 +86,7 @@ offset_left = -650.0
 offset_right = 650.0
 offset_bottom = 50.0
 grow_horizontal = 2
-theme_override_constants/margin_top = 150
+theme_override_constants/margin_top = 75
 
 [node name="Instruction" type="Label" parent="TopContainer"]
 layout_mode = 2

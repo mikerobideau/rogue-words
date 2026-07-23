@@ -11,7 +11,7 @@ signal hovered(space: Space)
 
 @onready var badge = $Badge 
 
-const RADIUS = 40
+const RADIUS = 80
 const DISABLED_RADIUS := RADIUS
 const DOUBLE_WORD_COLOR = Styles.PINK
 const TRIPLE_LETTER_COLOR = Styles.TEAL
@@ -35,9 +35,10 @@ var enabled: bool = true:
 		if is_node_ready():
 			_animate()
 		
+		
+		
 func _ready():
 	scale = BASE_SCALE
-	badge.visible = false
 	play('default')
 	var area = Area2D.new()
 	var shape = CollisionShape2D.new()
@@ -57,9 +58,7 @@ func _animate() -> void:
 	play('default') if enabled else play('disabled')
 		
 func _on_mouse_entered():
-	print_debug('on mouse entered')
 	if !enabled:
-		print_debug('not enabled.  Returning')
 		return
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	if token == null:
@@ -67,7 +66,8 @@ func _on_mouse_entered():
 	hovered.emit(self)
 	
 func place_token(t: Token):
-	self_modulate.a = 0 #hide sprite
+	#self_modulate.a = 0 #hide sprite
+	play('default')
 	token = t
 	add_child(t)
 	t.destroyed.connect(_on_token_destroyed)
@@ -76,7 +76,7 @@ func place_token(t: Token):
 	_show_badge()
 	
 func _on_token_destroyed():
-	self_modulate.a = 1 #show sprite
+	#self_modulate.a = 1 #show sprite
 	token = null
 	play('default')
 	badge.visible = false
@@ -132,6 +132,10 @@ func _update_label():
 			_color_label(DOUBLE_WORD_COLOR)
 		_:
 			label.text = ''
+	var sprite_size = sprite_frames.get_frame_texture("default", 0).get_size()
+	label.position = -sprite_size / 2
+	label.size = sprite_size
+	badge.visible = false
 			
 func _color_label(color: String):
 	label.add_theme_color_override("font_color", color)

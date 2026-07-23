@@ -60,6 +60,7 @@ const sounds = {
 	'splat1': preload("res://assets/sound/pixabay/49053354-splat-305791.mp3"),
 	'splat2': preload("res://assets/sound/pixabay/universfield-wet-splat-impact-567197.mp3"),
 	'splat3': preload("res://assets/sound/pixabay/universfield-wet-squelch-impact-352302.mp3"),
+	'token_placed': preload("res://assets/sound/pixabay/astralsynthesizer-11l-game_complete_notifi-1749704606921-358785.mp3"),
 	'upgrade1': preload("res://assets/sound/jsfxr/upgrade1.wav"),
 	'upgrade2': preload("res://assets/sound/jsfxr/upgrade2.wav"),
 	'upgrade3': preload("res://assets/sound/jsfxr/upgrade3.wav"),
@@ -83,6 +84,8 @@ const SOUND_MOUSEOVER = 'click5' #click2 or click5
 const SOUND_TOKEN = 'click2' #click2, token,
 const SOUND_DRAW_TOKEN = 'click2'
 const SOUND_TOKEN_DESTROYED = 'splat2' #destroyed1, splat1, splat2, splat3
+const SOUND_TOKEN_PLACED = 'token_placed'
+
 const SOUND_ENHANCED_SPACE = 'pop2' #small_bonus, water_drop, pop2
 const SOUND_ENHANCED_TOKEN = 'water_drop' #small_bonus, power_up8, shimmer_bonus, water_drop
 const SOUND_ENHANCED_LETTER_SPACE = 'water_drop' #small_bonus, #bonus, power_up, blip_select, water_drop
