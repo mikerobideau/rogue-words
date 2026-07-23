@@ -18,6 +18,7 @@ const TRIPLE_LETTER_COLOR = Styles.TEAL
 
 var coord: Vector2i
 var links: Array = [null, null, null, null, null, null]
+var BASE_SCALE = Vector2(2.0, 2.0)
 
 @export var data: SpaceData
 @export var token: Token
@@ -35,6 +36,7 @@ var enabled: bool = true:
 			_animate()
 		
 func _ready():
+	scale = BASE_SCALE
 	play('default')
 	var area = Area2D.new()
 	var shape = CollisionShape2D.new()
