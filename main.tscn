@@ -1,9 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://bb6evfnlmn04c"]
+[gd_scene load_steps=4 format=3 uid="uid://bb6evfnlmn04c"]
 
 [ext_resource type="Script" path="res://main.gd" id="1_dnsmp"]
 [ext_resource type="PackedScene" uid="uid://c675q66wub3hr" path="res://components/hud/hud.tscn" id="2_23aqr"]
 [ext_resource type="PackedScene" uid="uid://dclef022d1pdn" path="res://components/relic/relic_manager.tscn" id="2_h6jec"]
-[ext_resource type="Texture2D" uid="uid://b8g302ead4a3s" path="res://assets/ui/panel/1x/sidebar.png" id="2_s06c7"]
 
 [node name="Main" type="Control"]
 custom_minimum_size = Vector2(2560, 1440)
@@ -24,15 +23,15 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LeftSidebarBackground" type="TextureRect" parent="ScreenContainer"]
+[node name="LeftSidebarBackground" type="ColorRect" parent="ScreenContainer"]
 custom_minimum_size = Vector2(560, 1440)
 layout_mode = 0
-offset_right = 431.0
+offset_right = 560.0
 offset_bottom = 1440.0
 size_flags_horizontal = 0
-texture = ExtResource("2_s06c7")
+color = Color(0.129412, 0.0352941, 0.305882, 0.882353)
 
-[node name="RightSidebarBackground" type="TextureRect" parent="ScreenContainer"]
+[node name="RightSidebarBackground" type="ColorRect" parent="ScreenContainer"]
 custom_minimum_size = Vector2(560, 1440)
 layout_mode = 1
 anchors_preset = 6
@@ -40,13 +39,14 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -431.0
+offset_left = -560.0
 offset_top = -720.0
 offset_bottom = 720.0
 grow_horizontal = 0
 grow_vertical = 2
+scale = Vector2(0.998095, 0.981664)
 size_flags_horizontal = 0
-texture = ExtResource("2_s06c7")
+color = Color(0.129412, 0.0352941, 0.305882, 0.882353)
 
 [node name="CenterPanel" type="ColorRect" parent="ScreenContainer"]
 custom_minimum_size = Vector2(1440, 1440)
