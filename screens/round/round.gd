@@ -17,7 +17,7 @@ const DEBUG = false
 @onready var scorer = $Scorer
 @onready var instruction = $TopContainer/Instruction
 @onready var word = $TopContainer/Word
-@onready var score_panel = $Left/CenterContainer/ScorePanel
+@onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
 
 var hud: Control
@@ -84,6 +84,8 @@ func _ready():
 	
 	score_panel.score = 0
 	score_panel.target_score = GameState.target_score
+	print_debug('score panel slide in')
+	score_panel.slide_in()
 	
 	hud.relic_container.refresh_relics()
 	hud.item_container.refresh_items()

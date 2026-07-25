@@ -6,6 +6,21 @@ class_name ScorePanel
 @onready var turns_remaining_row = $HBox/VBox/TurnsRemainingRow
 @onready var juice_tube = $HBox/JuiceTube
 
+var x_in: int
+var x_out: int
+var slide_distance: int
+
+func _ready():
+	print_debug('score panel ready')
+	pivot_offset = size / 2
+	_init_pos()
+	
+func _init_pos():
+	slide_distance = size.x
+	x_in = 0
+	x_out = x_in - slide_distance
+	position.x = x_out
+
 var score := 0:
 	set(v):	
 		score = v 
@@ -26,3 +41,10 @@ var turns_remaining: int:
 	
 func target_met():
 	return score >= target_score
+	
+func slide_in():
+	await get_tree().create_timer(0.5).timeout
+	position.x = x_out
+	var tween = create_tween()
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, 'position:x', x_in, 0.5)
