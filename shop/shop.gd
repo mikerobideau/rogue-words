@@ -7,9 +7,9 @@ const PackContentScene = preload("res://screens/pack_content/pack_content.tscn")
 const SLOT_COUNT = 3
 const STARTING_REROLL_COST = 3
 const REROLL_INCREMENT = 2
+const OFFER_SLOT_CHANCE = 0.5
 
 signal completed()
-signal pack_purchased(pack: PackData)
 
 @onready var slots = $CenterContainer/Slots
 @onready var continue_button = $Footer/FooterInner/Continue
@@ -26,24 +26,61 @@ func _ready():
 	_populate_slots()
 
 func _populate_slots():
-	var available := PackFactory.load_all_packs()
-	var picked := []
-	while picked.size() < SLOT_COUNT and not available.is_empty():
-		var pack = Rarity.pick_weighted(available)
-		available.erase(pack)
-		picked.append(pack)
-	for pack in picked:
-		var slot = SlotScene.instantiate()
-		slots.add_child(slot)
-		slot.setup_pack(pack)
-		slot.purchased.connect(_on_slot_purchased)
-		slot.slot_selected.connect(_on_slot_selected)
+	var available_packs := PackFactory.load_all_packs()
+	for i in SLOT_COUNT:
+		if randf() < OFFER_SLOT_CHANCE or available_packs.is_empty():
+			_add_offer_slot()
+		else:
+			_add_pack_slot(available_packs)
+
+func _add_pack_slot(available_packs: Array) -> void:
+	var pack_data = Rarity.pick_weighted(available_packs)
+	available_packs.erase(pack_data)
+	var slot = SlotScene.instantiate()
+	slots.add_child(slot)
+	slot.setup_pack(pack_data)
+	slot.purchased.connect(_on_slot_purchased)
+	slot.slot_selected.connect(_on_slot_selected)
+
+func _add_offer_slot() -> void:
+	var offer := _random_offer()
+	if offer == null:
+		return
+	var slot = SlotScene.instantiate()
+	slots.add_child(slot)
+	slot.setup_offer(offer)
+	slot.purchased.connect(_on_slot_purchased)
+	slot.slot_selected.connect(_on_slot_selected)
+
+func _random_offer() -> OfferData:
+	var types := [OfferData.Type.ITEM, OfferData.Type.TOKEN]
+	var relic_pool := _available_relics()
+	if not relic_pool.is_empty():
+		types.append(OfferData.Type.RELIC)
+
+	var offer := OfferData.new()
+	offer.type = types.pick_random()
+	match offer.type:
+		OfferData.Type.RELIC:
+			offer.relic_data = Rarity.pick_weighted(relic_pool)
+		OfferData.Type.ITEM:
+			offer.item_data = Rarity.pick_weighted(ItemFactory.load_all_items())
+		OfferData.Type.TOKEN:
+			offer.token_data = Rarity.pick_weighted(TokenFactory.load_all_tokens())
+	return offer
+	
+func _available_relics() -> Array:
+	var owned := GameState.relics.map(func(r): return r.relic_name)
+	return RelicFactory.load_all_relics().filter(func(r): return r.relic_name not in owned)
 
 func _on_slot_purchased(slot: ShopSlot):
 	GameState.money -= slot.cost
 	slot.sold = true
-	pack_purchased.emit(slot.pack_data)
-	_open_pack(slot.pack)
+	match slot.slot_type:
+		ShopSlot.Type.PACK:
+			_open_pack(slot.pack)
+		ShopSlot.Type.OFFER:
+			slot.offer_data.grant()
 
 func _on_slot_selected(s: ShopSlot):
 	for slot in slots.get_children():
@@ -60,7 +97,6 @@ func _open_pack(pack: Pack):
 	pack_content.completed.connect(_on_open_pack_completed)
 	
 func _on_pack_offer_picked(offer_data: OfferData):
-	print_debug('pack offer picked')
 	match offer_data.type:
 		OfferData.Type.RELIC:
 			print_debug('adding relic')

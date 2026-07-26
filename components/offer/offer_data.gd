@@ -8,6 +8,20 @@ enum Type { RELIC, ITEM, TOKEN }
 @export var item_data: ItemData
 @export var token_data: TokenData
 
+var cost: int:
+	get():
+		print_debug(str(type))
+		match type:
+			Type.RELIC:
+				return relic_data.cost
+			Type.ITEM:
+				print_debug(str(cost))
+				return item_data.cost
+			Type.TOKEN:
+				return token_data.cost
+			_:
+				return 0
+
 func data() -> Resource:
 	match type:
 		Type.RELIC: return relic_data

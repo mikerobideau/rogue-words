@@ -4,7 +4,7 @@ class_name ShopSlot
 signal purchased(slot: ShopSlot)
 signal slot_selected(slot: ShopSlot)
 
-enum Type { PACK }
+enum Type { PACK, OFFER }
 
 @onready var frame = $Frame
 @onready var offer = $Frame/Offer
@@ -16,6 +16,7 @@ enum Type { PACK }
 var pack: Pack
 var slot_type: Type
 var pack_data: PackData
+var offer_data: OfferData
 var default_pos: Vector2
 var cost: int:
 	set(v):
@@ -46,6 +47,13 @@ func setup_pack(data: PackData):
 	pack.position = offer.size / 2
 	offer.add_child(pack)
 	_add_offer(pack)
+	
+func setup_offer(data: OfferData):
+	slot_type = Type.OFFER
+	offer_data = data
+	cost = data.cost
+	Tooltip.register(frame, data.get_description())
+	_add_offer(data.create_scene())
 
 func _add_offer(scene: Node):
 	offer.add_child(scene)
@@ -64,6 +72,7 @@ func _on_frame_pressed() -> void:
 	])
 	
 func _buy() -> void:
+	print_debug('cost is ' + str(cost) + ' and money is ' + str(GameState.money))
 	if GameState.money < cost:
 		Sound.play(Sound.SOUND_DISABLED)
 		ScorePopup.show('Insufficient funds!', self)
