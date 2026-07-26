@@ -7,7 +7,7 @@ signal slot_selected(slot: ShopSlot)
 enum Type { PACK, OFFER }
 
 @onready var frame = $Frame
-@onready var offer = $Frame/Offer
+@onready var offer = $Frame/OfferMargin/Offer
 @onready var coin = $Coin
 @onready var cost_label = $Coin/CostLabel
 @onready var title_container = $Frame/TitleMargin
@@ -36,7 +36,8 @@ var position_tween: Tween
 	
 func _ready():
 	default_pos = frame.position
-	offer.pivot_offset = size / 2
+	pivot_offset = size / 2
+	frame.pivot_offset = frame.size / 2
 			
 func setup_pack(data: PackData):
 	slot_type = Type.PACK
@@ -63,10 +64,12 @@ func _add_offer(scene: Node):
 		scene.position = (offer.size - scene.size) / 2
 
 func _on_frame_mouse_entered() -> void:
+	print_debug('frame entered')
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	_shake_frame()
 
 func _on_frame_pressed() -> void:
+	print_debug('frame pressed')
 	SlotMenu.open(frame, [
 		{ "text": "Buy", "callback": _buy }
 	])
@@ -81,7 +84,7 @@ func _buy() -> void:
 	Sound.play(Sound.SOUND_PURCHASE)
 	purchased.emit(self)
 	coin.visible = false
-	offer.visible = false
+	frame.visible = false
 	sold = true
 	Tooltip.unregister(frame)
 	
@@ -96,8 +99,8 @@ func _animate_selection():
 	
 func _shake_frame():
 	if shake_tween:
-		shake_tween.kill()          # don't stack on rapid re-hover       # rotate around the pack's center (Control only)
+		shake_tween.kill()
 	shake_tween = create_tween()
 	var angles = [4, -3, 2, -1, 0]
 	for angle in angles:
-		shake_tween.tween_property(offer, "rotation", deg_to_rad(angle), 0.07)
+		shake_tween.tween_property(frame, "rotation", deg_to_rad(angle), 0.07)
