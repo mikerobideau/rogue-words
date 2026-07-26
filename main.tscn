@@ -67,13 +67,13 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -720.0
-offset_top = -720.0
+offset_top = -470.0
 offset_right = 720.0
-offset_bottom = 720.0
+offset_bottom = 470.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 0)
+color = Color(0.873301, 0.873297, 0.873298, 1)
 
 [node name="Bottom" type="ColorRect" parent="ScreenContainer"]
 layout_mode = 1

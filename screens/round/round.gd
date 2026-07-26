@@ -15,8 +15,9 @@ const DEBUG = false
 @onready var board = $BoardContainer/Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var instruction = $TopContainer/Instruction
-@onready var word = $TopContainer/Word
+@onready var top_container = $TopContainer
+@onready var instruction = $TopContainer/CenterContainer/Instruction
+@onready var word = $TopContainer/CenterContainer/Word
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
 
@@ -69,6 +70,7 @@ func _ready():
 	hand.token_clicked.connect(_on_token_clicked)
 	hand.token_destroyed.connect(_on_token_destroyed)
 	hand.discard_clicked.connect(_on_discard_clicked)
+	hand.slide_in()
 	hand.on_round_start()
 	
 	GameState.discarded_tokens = [] as Array[TokenData]
@@ -84,8 +86,9 @@ func _ready():
 	
 	score_panel.score = 0
 	score_panel.target_score = GameState.target_score
-	print_debug('score panel slide in')
 	score_panel.slide_in()
+	
+	top_container.slide_in()
 	
 	hud.relic_container.refresh_relics()
 	hud.item_container.refresh_items()
