@@ -1,13 +1,18 @@
 extends Control
 class_name ShopSlot
 
+const PACK_SCALE = 0.5
+const RELIC_SCALE = 0.75
+const ITEM_SCALE = 1.5
+const TOKEN_SCALE = 1.0
+
 signal purchased(slot: ShopSlot)
 signal slot_selected(slot: ShopSlot)
 
 enum Type { PACK, OFFER }
 
 @onready var frame = $Frame
-@onready var offer = $Frame/OfferMargin/Offer
+@onready var offer = $Frame/Offer
 @onready var coin = $Coin
 @onready var cost_label = $Coin/CostLabel
 @onready var title_container = $Frame/TitleMargin
@@ -44,6 +49,7 @@ func setup_pack(data: PackData):
 	pack_data = data
 	cost = data.cost
 	pack = PackFactory.create_scene(data)
+	pack.scale = Vector2(PACK_SCALE, PACK_SCALE)
 	Tooltip.register(frame, data.description)
 	pack.position = offer.size / 2
 	offer.add_child(pack)
@@ -62,20 +68,24 @@ func _add_offer(scene: Node):
 		scene.position = offer.size / 2
 	elif scene is Control:
 		scene.position = (offer.size - scene.size) / 2
+		
+	if scene is Token:
+		scene.scale = Vector2(TOKEN_SCALE, TOKEN_SCALE)
+	if scene is Item:
+		scene.scale = Vector2(ITEM_SCALE, ITEM_SCALE)
+	if scene is Relic:
+		scene.scale = Vector2(RELIC_SCALE, RELIC_SCALE)
 
 func _on_frame_mouse_entered() -> void:
-	print_debug('frame entered')
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	_shake_frame()
 
 func _on_frame_pressed() -> void:
-	print_debug('frame pressed')
 	SlotMenu.open(frame, [
 		{ "text": "Buy", "callback": _buy }
 	])
 	
 func _buy() -> void:
-	print_debug('cost is ' + str(cost) + ' and money is ' + str(GameState.money))
 	if GameState.money < cost:
 		Sound.play(Sound.SOUND_DISABLED)
 		ScorePopup.show('Insufficient funds!', self)
@@ -84,7 +94,7 @@ func _buy() -> void:
 	Sound.play(Sound.SOUND_PURCHASE)
 	purchased.emit(self)
 	coin.visible = false
-	frame.visible = false
+	#frame.visible = false
 	sold = true
 	Tooltip.unregister(frame)
 	

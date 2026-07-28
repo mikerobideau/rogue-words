@@ -4,7 +4,7 @@ class_name ShopScene
 const SlotScene = preload("res://shop/shop_slot.tscn")
 const PackContentScene = preload("res://screens/pack_content/pack_content.tscn")
 
-const SLOT_COUNT = 3
+const SLOT_COUNT = 6
 const STARTING_REROLL_COST = 3
 const REROLL_INCREMENT = 2
 const OFFER_SLOT_CHANCE = 0.5

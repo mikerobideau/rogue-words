@@ -39,9 +39,14 @@ func _fade_in_background():
 func _play_open_sequence():
 	var center = size / 2 - (pack.size / 2)
 	
-	#move pack to center
+	#move pack to center and scale
+	var scale_tween = create_tween().set_parallel(true)
+	
+	scale_tween.tween_property(pack, 'scale', Vector2.ONE, 0.2)
+
 	var move = create_tween().set_parallel(true)
 	move.tween_property(pack, 'position', center, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	
 	await move.finished
 	
 func _create_offers():
