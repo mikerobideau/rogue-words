@@ -4,7 +4,8 @@ class_name PackData
 enum Type {
 	RELIC,
 	ITEM,
-	TOKEN
+	TOKEN,
+	ANY
 }
 
 const TYPE_NAMES: Dictionary = {
