@@ -5,6 +5,7 @@ class_name Main
 @onready var screen_container = $ScreenContainer
 @onready var relic_manager = $RelicManager
 @onready var center_panel = $ScreenContainer/CenterPanel
+@onready var rain = $ScreenContainer/RainPanel
 
 const DEFAULT_CENTER_PANEL_COLOR = '#f5f5f5'
 
@@ -22,9 +23,9 @@ var current_screen: Control = null
 func _ready():
 	size = get_viewport().get_visible_rect().size
 	#_show_title()
-	GameState.money = 100
-	_enter_shop()
-	#_on_new_game()
+	#GameState.money = 100
+	#_enter_shop()
+	_on_new_game()
 	
 func _show_title():
 	hud.visible = false
@@ -62,10 +63,12 @@ func _next_round():
 	if GameState.is_boss_round:
 		await _show_boss_intro()
 		hud.title = 'Boss: ' + GameState.current_boss.description
+		rain.visible = true
 		#center_panel.color = Color.BLACK
 	else:
 		hud.title = 'Round ' + str(GameState.round_number)
 		center_panel.color = DEFAULT_CENTER_PANEL_COLOR
+		rain.visible = false
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
 	round.hud = hud
@@ -78,7 +81,8 @@ func _next_round():
 func _on_round_completed():
 	hud.on_round_complete()
 	GameState.discarded_tokens = [] as Array[TokenData]
-	_enter_shop()
+	rain.visible = false
+	_enter_shop() 
 	
 func _enter_shop():
 	center_panel.color = DEFAULT_CENTER_PANEL_COLOR
