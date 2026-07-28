@@ -13,5 +13,5 @@ size = 5
 num_picks = 1
 rarity = 0
 offers = Array[ExtResource("1_mycl5")]([])
-random_enhancement = false
+random_enhancement = true
 texture = ExtResource("3_xvruv")

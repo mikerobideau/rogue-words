@@ -6,12 +6,12 @@
 
 [resource]
 script = ExtResource("2_iu88a")
-pack_name = "Super Grape Pack"
+pack_name = "Grape Pack"
 cost = 3
 type = 2
 size = 3
 num_picks = 1
 rarity = 0
 offers = Array[ExtResource("1_xusfd")]([])
-random_enhancement = false
+random_enhancement = true
 texture = ExtResource("3_vysqt")

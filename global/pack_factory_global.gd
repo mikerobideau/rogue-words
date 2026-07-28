@@ -89,7 +89,7 @@ func _enhancement_for(pack_data: PackData) -> TokenEnhancement:
 	if pack_data.enhancement:
 		return pack_data.enhancement.duplicate()                        # themed pack → always this one
 	if pack_data.random_enhancement and randf() < ENHANCE_CHANCE:
-		return ENHANCEMENTS[randi() % ENHANCEMENTS.size()].duplicate()   # mystery pack → sometimes random
+		return ENHANCEMENTS[randi() % ENHANCEMENTS.size()].duplicate()   # random enhancements
 	return null                                                          # plain pack → never
 
 #---------------------------------------------------------------------------------------------------
