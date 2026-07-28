@@ -6,6 +6,7 @@ signal picked(data: OfferData)
 enum Type { RELIC, TOKEN, ITEM }
 
 const OFFER_SCALE := Vector2(1.0, 1.0)
+const RELIC_SCALE = Vector2(0.75, 0.75)
 const BACK_TEXTURE = preload("res://assets/ui/panel/1x/slot_back.png")
 
 @export var is_selectable := false
@@ -14,7 +15,7 @@ const BACK_TEXTURE = preload("res://assets/ui/panel/1x/slot_back.png")
 @onready var title_container = $Frame/TitleContainer
 @onready var title = $Frame/TitleContainer/VBoxContainer/Title
 @onready var rarity_label = $Frame/TitleContainer/VBoxContainer/Rarity
-@onready var offer_container = $Frame/OfferMargin/Offer
+@onready var offer_container = $Frame/Offer
 
 var data: OfferData:
 	set(v):
@@ -64,7 +65,7 @@ func _refresh() -> void:
 	Tooltip.register(frame, data.get_description())
 
 	var scene := data.create_scene()
-	scene.scale = OFFER_SCALE
+	scene.scale = RELIC_SCALE if scene is Relic else OFFER_SCALE
 	offer_container.add_child(scene)
 	_center(scene)
 
@@ -75,7 +76,7 @@ func _clear_offer() -> void:
 func _center(scene: Node) -> void:
 	await get_tree().process_frame
 	if scene is Control:
-		scene.position = (offer_container.size - scene.size * scene.scale) / 2.0
+		scene.position = (offer_container.size - scene.size) / 2.0
 	else:
 		scene.position = offer_container.size / 2.0
 

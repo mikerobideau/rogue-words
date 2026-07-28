@@ -3,7 +3,6 @@ class_name ShopSlot
 
 const PACK_SCALE = 0.5
 const RELIC_SCALE = 0.75
-const ITEM_SCALE = 1.5
 const TOKEN_SCALE = 1.0
 
 signal purchased(slot: ShopSlot)
@@ -70,11 +69,8 @@ func _add_offer(scene: Node):
 		scene.position = offer.size / 2
 	elif scene is Control:
 		scene.position = (offer.size - scene.size) / 2
-		
 	if scene is Token:
 		scene.scale = Vector2(TOKEN_SCALE, TOKEN_SCALE)
-	if scene is Item:
-		scene.scale = Vector2(ITEM_SCALE, ITEM_SCALE)
 	if scene is Relic:
 		scene.scale = Vector2(RELIC_SCALE, RELIC_SCALE)
 
