@@ -9,8 +9,6 @@ const DISCARDS_PER_ROUND = 3
 
 signal completed()
 
-const DEBUG = false
-
 @onready var hand = $HandContainer/Hand
 @onready var board = $BoardContainer/Board
 @onready var word_finder = $WordFinder
@@ -56,11 +54,6 @@ var turns_remaining := TURNS_PER_ROUND:
 		score_panel.turns_remaining = str(turns_remaining)
 
 func _ready():
-	if DEBUG:
-		_debug()
-		
-		
-	_update_instruction()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	turn_number = 1
@@ -89,6 +82,7 @@ func _ready():
 	score_panel.slide_in()
 	
 	top_container.slide_in()
+	_update_instruction()
 	
 	hud.relic_container.refresh_relics()
 	hud.item_container.refresh_items()
@@ -196,14 +190,11 @@ func _on_round_complete(context: RelicContext):
 	relic_manager.on_round_complete(context)
 	for token in GameState.tokens:
 		token.spent = false
-	var reward_money = _get_money_reward()
-	GameState.money += reward_money
 	round_summary.visible = true
-	round_summary.money_reward_label.text = '$' + str(reward_money) + ' earned ($1 per remaining turn)'
-	
-func _get_money_reward():
-	return turns_remaining
-	
+	await round_summary.play_turns_remaining(turns_remaining)
+	await round_summary.play_discards_remaining(discards_remaining)
+	await round_summary.play_interest(GameState.money, GameState.interest)
+
 func _path_to_word(path: Array):
 	var word := ""
 	for p in path:
@@ -257,14 +248,3 @@ func _get_relic_context():
 	context.turn_number = turn_number
 	context.tokens = GameState.tokens
 	return context
-
-#---debug---
-
-func _debug():
-	var line = Line2D.new()
-	var center_x = get_viewport().get_visible_rect().size.x / 2
-	line.add_point(Vector2(center_x, 0))
-	line.add_point(Vector2(center_x, get_viewport().get_visible_rect().size.y))
-	line.default_color = Color.WEB_GRAY
-	line.width = 2
-	add_child(line)

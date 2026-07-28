@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://screens/round/round_summary.gd" id="1_qkjp0"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6pn01"]
-bg_color = Color(1, 1, 1, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2evid"]
+bg_color = Color(0.129412, 0.0352941, 0.305882, 1)
 
 [node name="RoundSummary" type="CanvasLayer"]
 layer = 120
@@ -19,7 +19,7 @@ grow_vertical = 2
 color = Color(0.517184, 0.517184, 0.517184, 0.901961)
 
 [node name="Panel" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(900, 750)
+custom_minimum_size = Vector2(800, 450)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -27,31 +27,38 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -450.0
 offset_top = -375.0
-offset_right = 450.0
-offset_bottom = 375.0
+offset_right = 350.0
+offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_6pn01")
+theme_override_styles/panel = SubResource("StyleBoxFlat_2evid")
 
-[node name="Title" type="Label" parent="Panel"]
+[node name="TitleMargin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/TitleMargin"]
+custom_minimum_size = Vector2(800, 0)
+layout_mode = 2
+theme_override_constants/separation = 50
+
+[node name="Title" type="Label" parent="Panel/TitleMargin/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
-theme_type_variation = &"HeaderLarge"
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "Round Complete"
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
+[node name="GridContainer" type="GridContainer" parent="Panel/TitleMargin/VBoxContainer"]
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
-theme_override_constants/margin_left = 250
-theme_override_constants/margin_top = 250
-theme_override_constants/margin_right = 250
-theme_override_constants/margin_bottom = 250
-
-[node name="MoneyRewardLabel" type="Label" parent="Panel/Margin"]
-layout_mode = 2
-size_flags_horizontal = 0
-theme_type_variation = &"HeaderMedium"
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+columns = 2
 
 [node name="Actions" type="MarginContainer" parent="Panel"]
 layout_mode = 2
@@ -61,10 +68,11 @@ theme_override_constants/margin_top = 25
 theme_override_constants/margin_right = 25
 theme_override_constants/margin_bottom = 25
 
-[node name="Button" type="Button" parent="Panel/Actions"]
+[node name="Continue" type="Button" parent="Panel/Actions"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
 text = "Go to Shop"
 
-[connection signal="pressed" from="Panel/Actions/Button" to="." method="_on_button_pressed"]
+[connection signal="pressed" from="Panel/Actions/Continue" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="Panel/Actions/Continue" to="." method="_on_button_pressed"]

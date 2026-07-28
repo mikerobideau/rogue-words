@@ -81,6 +81,14 @@ const sounds = {
 
 const SOUND_MOUSEOVER = 'click5' #click2 or click5
 
+const SOUND_MONEY_EARNED = 'coin1'
+const SOUND_SELL = 'purchase1'
+const SOUND_PURCHASE = 'purchase1'
+const SOUND_REROLL = 'purchase1'
+const SOUND_PACK_OPEN = 'pack_open1' #pop_multiple, pack_open2
+const SOUND_OFFER_FLIPPED = 'whoosh2' #pop_double, upgrade1
+const SOUND_PACK_CLOSED = 'whoosh1'
+
 const SOUND_TOKEN = 'click2' #click2, token,
 const SOUND_DRAW_TOKEN = 'click2'
 const SOUND_TOKEN_DESTROYED = 'splat2' #destroyed1, splat1, splat2, splat3
@@ -97,7 +105,7 @@ const SOUND_RELIC_UPGRADE = 'upgrade1'
 const SOUND_RELIC_DECAY = 'decay7'
 const SOUND_RELIC_RESET_POSITIVE = 'upgrade2'
 const SOUND_RELIC_RESET_NEGATIVE = 'decay4'
-const SOUND_RELIC_MONEY = 'coin1'
+const SOUND_RELIC_MONEY = SOUND_MONEY_EARNED
 
 const SOUND_JUICE = 'liquid4'
 
@@ -107,13 +115,6 @@ const SOUND_BOSS_INTRO = 'boss_intro2'
 
 const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_DISABLED = 'laser_shoot' #laser_shoot or synth
-
-const SOUND_SELL = 'purchase1'
-const SOUND_PURCHASE = 'purchase1'
-const SOUND_REROLL = 'purchase1'
-const SOUND_PACK_OPEN = 'pack_open1' #pop_multiple, pack_open2
-const SOUND_OFFER_FLIPPED = 'whoosh2' #pop_double, upgrade1
-const SOUND_PACK_CLOSED = 'whoosh1'
 
 var sound_disabled := false
 
