@@ -6,7 +6,7 @@ signal picked(data: OfferData)
 enum Type { RELIC, TOKEN, ITEM }
 
 const OFFER_SCALE := Vector2(1.0, 1.0)
-const BACK_TEXTURE = preload("res://assets/sprites/slot/1x/slot_back.png")
+const BACK_TEXTURE = preload("res://assets/ui/panel/1x/slot_back.png")
 
 @export var is_selectable := false
 

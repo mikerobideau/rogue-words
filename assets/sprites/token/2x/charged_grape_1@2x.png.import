@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://snvlmb4x6auy"
-path="res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"
+uid="uid://cf3dyacilp3i6"
+path="res://.godot/imported/charged_grape_1@2x.png-6908fbba08847342dd272a23ae6e4942.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/clover.png"
-dest_files=["res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"]
+source_file="res://assets/sprites/token/2x/charged_grape_1@2x.png"
+dest_files=["res://.godot/imported/charged_grape_1@2x.png-6908fbba08847342dd272a23ae6e4942.ctex"]
 
 [params]
 

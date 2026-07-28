@@ -1,6 +1,11 @@
 extends Sprite2D
 class_name Item
 
+enum Size {
+	SMALL,
+	LARGE
+}
+
 signal played(item: Item)
 var scale_tween: Tween
 var position_tween: Tween
@@ -23,6 +28,15 @@ func _on_data_changed():
 	if data:
 		name = data.item_name
 		texture = data.icon
+		
+func set_size(s: Size):
+	match s:
+		Size.SMALL:
+			scale = Vector2(0.5, 0.5)
+		Size.LARGE:
+			scale = Vector2.ONE
+		_:
+			scale = Vector2(0.5, 0.5)
 
 func animate_selected(selected: bool):
 	if scale_tween:

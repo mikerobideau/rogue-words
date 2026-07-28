@@ -27,6 +27,7 @@ func set_item(data: ItemData) -> void:
 	item_data = data
 	if data:
 		item = ItemFactory.create_scene(data)
+		item.set_size(Item.Size.SMALL)
 		item.position = slot.size / 2
 		item_container.add_child(item)
 	register_tooltip()

@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://ddb54snlva1c1"]
 
 [ext_resource type="Script" path="res://shop/offer_slot.gd" id="1_lx5h6"]
-[ext_resource type="Texture2D" uid="uid://b5myrpa7gyotq" path="res://assets/sprites/slot/1x/slot.png" id="2_2ka7y"]
-[ext_resource type="Texture2D" uid="uid://cg8kng1ymjov1" path="res://assets/sprites/slot/1x/slot_hover.png" id="3_i3rbd"]
+[ext_resource type="Texture2D" uid="uid://d2sd71io5lf3a" path="res://assets/ui/panel/1x/shop_slot_default.png" id="2_nixvj"]
+[ext_resource type="Texture2D" uid="uid://bc7bhbq0mtsgm" path="res://assets/ui/panel/1x/shop_slot_active_1.png" id="3_4ynqa"]
 
 [node name="OfferSlot" type="Control"]
 custom_minimum_size = Vector2(450, 450)
@@ -18,9 +18,9 @@ offset_left = 55.0
 offset_top = 55.0
 offset_right = 396.0
 offset_bottom = 396.0
-texture_normal = ExtResource("2_2ka7y")
-texture_pressed = ExtResource("3_i3rbd")
-texture_hover = ExtResource("3_i3rbd")
+texture_normal = ExtResource("2_nixvj")
+texture_pressed = ExtResource("3_4ynqa")
+texture_hover = ExtResource("3_4ynqa")
 
 [node name="TitleContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
@@ -84,7 +84,7 @@ grow_vertical = 0
 text = "CHOOSE"
 
 [connection signal="mouse_entered" from="Frame" to="." method="_on_frame_mouse_entered"]
-[connection signal="pressed" from="Frame" to="." method="_on_frame_pressed"]
 [connection signal="pressed" from="Frame" to="." method="_on_pressed"]
-[connection signal="pressed" from="ChooseButton" to="." method="_on_button_pressed"]
+[connection signal="pressed" from="Frame" to="." method="_on_frame_pressed"]
 [connection signal="pressed" from="ChooseButton" to="." method="_on_buy_pressed"]
+[connection signal="pressed" from="ChooseButton" to="." method="_on_button_pressed"]

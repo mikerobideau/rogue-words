@@ -1,12 +1,12 @@
 [gd_resource type="Resource" script_class="Wind" load_steps=3 format=3 uid="uid://bhi7pdolvjmy1"]
 
-[ext_resource type="Texture2D" uid="uid://dxqegmyvbwyt5" path="res://assets/sprites/item/1x/wind.png" id="1_fsvpq"]
+[ext_resource type="Texture2D" uid="uid://bmxn6ak85on4" path="res://assets/sprites/item/2x/wind_1@2x.png" id="1_m06v0"]
 [ext_resource type="Script" path="res://components/item/data/wind/wind.gd" id="1_nt8m5"]
 
 [resource]
 script = ExtResource("1_nt8m5")
 item_name = "Wind"
-icon = ExtResource("1_fsvpq")
+icon = ExtResource("1_m06v0")
 cost = 1
 description = "Swap vowel to random consonant, or vice versa"
 can_enhance_token = true

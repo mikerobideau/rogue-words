@@ -15,7 +15,7 @@ enum Type { PACK, OFFER }
 @onready var offer = $Frame/Offer
 @onready var coin = $Coin
 @onready var cost_label = $Coin/CostLabel
-@onready var title_container = $Frame/TitleMargin
+@onready var title = $TitleContainer/Title
 @onready var sold_sticker = $Sold
 
 var pack: Pack
@@ -32,9 +32,9 @@ var shake_tween: Tween
 var sold := false:
 	set(v):
 		sold = v
-		if sold_sticker:
-			sold_sticker.visible = v
-		if frame:
+		if v:
+			sold_sticker.visible = true
+			offer.visible = false
 			frame.disabled = v
 		
 var position_tween: Tween
@@ -50,6 +50,7 @@ func setup_pack(data: PackData):
 	cost = data.cost
 	pack = PackFactory.create_scene(data)
 	pack.scale = Vector2(PACK_SCALE, PACK_SCALE)
+	title.text = data.pack_name
 	Tooltip.register(frame, data.description)
 	pack.position = offer.size / 2
 	offer.add_child(pack)
@@ -59,6 +60,7 @@ func setup_offer(data: OfferData):
 	slot_type = Type.OFFER
 	offer_data = data
 	cost = data.cost
+	title.text = data.get_title_text()
 	Tooltip.register(frame, data.get_description())
 	_add_offer(data.create_scene())
 
@@ -77,10 +79,14 @@ func _add_offer(scene: Node):
 		scene.scale = Vector2(RELIC_SCALE, RELIC_SCALE)
 
 func _on_frame_mouse_entered() -> void:
+	if sold:
+		return
 	Sound.play(Sound.SOUND_MOUSEOVER)
 	_shake_frame()
 
 func _on_frame_pressed() -> void:
+	if sold:
+		return
 	SlotMenu.open(frame, [
 		{ "text": "Buy", "callback": _buy }
 	])
