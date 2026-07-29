@@ -48,3 +48,6 @@ header = "Score to Beat"
 [node name="TurnsRemainingRow" parent="HBox/VBox" instance=ExtResource("3_hed3x")]
 layout_mode = 2
 header = "Turns Remaining"
+
+[node name="JuiceTarget" type="Node2D" parent="."]
+position = Vector2(51, 989)

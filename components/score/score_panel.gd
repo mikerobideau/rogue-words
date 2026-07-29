@@ -5,6 +5,7 @@ class_name ScorePanel
 @onready var goal_score_row = $HBox/VBox/GoalScoreRow
 @onready var turns_remaining_row = $HBox/VBox/TurnsRemainingRow
 @onready var juice_tube = $HBox/JuiceTube
+@onready var juice_target = $JuiceTarget
 
 var x_in: int
 var x_out: int

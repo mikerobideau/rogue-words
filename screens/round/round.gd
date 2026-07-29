@@ -90,6 +90,9 @@ func _ready():
 	
 	round_summary.closed.connect(func(): completed.emit())
 	
+	#await get_tree().create_timer(0.0).timeout
+	#_on_round_complete(RelicContext.new())
+	
 func _on_item_use_requested(slot: ItemSlot):
 	active_item_slot = slot 
 	
@@ -148,15 +151,18 @@ func _on_space_clicked(space: Space):
 
 	if space.token != null: #relic_manager.on_token_placed may destroy the token before it is scored
 		var found_words = word_finder.find_words(space)
+		var word_number = 1
 		for found_word in found_words:
 			var word_report = scorer.get_word_report(found_word)
 			context.word = word_report.word
 			context.word_score = word_report.score
 			context.word_report = word_report
 			var relic_report = await relic_manager.get_score_report(context)
-			await word.play(word_report, relic_report)
+			await word.play(word_report, relic_report, word_number > 3)
+			await word.fly_tokens_to(score_panel.juice_target.global_position)
 			score_panel.score += relic_report.new_score
 			await get_tree().create_timer(0.5).timeout
+			word_number += 1
 		
 		if score_panel.target_met():
 			_on_round_complete(context)
@@ -194,6 +200,7 @@ func _on_round_complete(context: RelicContext):
 	await round_summary.play_turns_remaining(turns_remaining)
 	await round_summary.play_discards_remaining(discards_remaining)
 	await round_summary.play_interest(GameState.money, GameState.interest)
+	round_summary.show_actions()
 
 func _path_to_word(path: Array):
 	var word := ""

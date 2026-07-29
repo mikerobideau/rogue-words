@@ -6,6 +6,8 @@ signal destroyed()
 
 const RADIUS = 48
 
+var is_animated := true
+
 @onready var label = $TokenLabel
 
 @export var data: TokenData:
@@ -155,19 +157,24 @@ func _on_input_event(_viewport, event, _shape_idx):
 #
 
 func scale_up():
+	if !is_animated:
+		return
 	if scale_tween:
 		scale_tween.kill()
 	scale_tween = create_tween()
 	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.2)
 	
 func scale_down():
-	print_debug('scale down')
+	if !is_animated:
+		return
 	if scale_tween:
 		scale_tween.kill()
 	scale_tween = create_tween()
 	scale_tween.tween_property(self, 'scale', Vector2(1, 1), 0.2)
 	
 func _animate_placed():
+	if !is_animated:
+		return
 	if scale_tween:
 		scale_tween.kill()
 	var scale_tween = create_tween()
@@ -176,6 +183,8 @@ func _animate_placed():
 	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.1)
 	
 func _animate_selected():
+	if !is_animated:
+		return
 	if scale_tween:
 		scale_tween.kill()
 	var scale_tween = create_tween()
@@ -186,9 +195,13 @@ func _animate_selected():
 	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.1)
 	
 func _animate_deselected():
+	if !is_animated:
+		return
 	scale_down()
 
 func pulse(letter_delay: float):
+	if !is_animated:
+		return
 	if scale_tween:
 		scale_tween.kill()
 	var scale_tween = create_tween()
@@ -200,12 +213,20 @@ func pulse(letter_delay: float):
 	scale_tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
 	
 func pop_open(custom_scale := Vector2.ONE):
+	if !is_animated:
+		return
 	scale = Vector2.ZERO
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", custom_scale, 0.4)
 	
-func _animate_destroyed(custom_scale := Vector2.ONE):
+func animate_destroyed(delay: float):
+	_animate_destroyed(Vector2.ONE, delay)
+	
+func _animate_destroyed(custom_scale := Vector2.ONE, delay := 0.0):
+	if !is_animated:
+		return
+	await get_tree().create_timer(delay).timeout
 	var tween = create_tween()
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.8)
@@ -213,6 +234,8 @@ func _animate_destroyed(custom_scale := Vector2.ONE):
 	queue_free()
 	
 func _transform():
+	if !is_animated:
+		return
 	var was_selectable := is_selectable
 	is_selectable = false #disable selection during transformation to prevent transform and mouseover animations from competing
 	if scale_tween:

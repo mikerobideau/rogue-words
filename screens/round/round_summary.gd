@@ -7,6 +7,7 @@ const ROW_DELAY := 0.3
 const FADE_TIME := 0.3
 
 @onready var grid: GridContainer = $Panel/TitleMargin/VBoxContainer/GridContainer
+@onready var actions = $Panel/Actions
 
 func _ready():
 	pass
@@ -45,6 +46,9 @@ func play_interest(money: int, interest: float):
 		GameState.money += interest_earned
 		Sound.play(Sound.SOUND_MONEY_EARNED)
 	await _add_row('Interest earned', '+ $' + str(interest_earned) )
+
+func show_actions():
+	actions.visible = true
 
 func _add_row(category: String, value: String) -> void:
 	var cat := _make_label(category, HORIZONTAL_ALIGNMENT_LEFT)
