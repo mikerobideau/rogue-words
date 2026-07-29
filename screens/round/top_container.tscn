@@ -7,6 +7,8 @@ bg_color = Color(1, 1, 1, 1)
 shadow_size = 10
 
 [node name="TopContainer" type="Panel"]
-custom_minimum_size = Vector2(1440, 250)
+custom_minimum_size = Vector2(750, 150)
+offset_right = 750.0
+offset_bottom = 150.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_2jjti")
 script = ExtResource("1_werm6")

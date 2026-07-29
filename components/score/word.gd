@@ -3,8 +3,8 @@ class_name Word
 
 const DUPE_TOKEN_SCALE = Vector2(0.8, 0.8)
 
-@onready var tokens = $Tokens
-@onready var score_label = $Score
+@onready var tokens = $MarginContainer/Tokens
+@onready var score_label = $MarginContainer/Score
 
 var word: String
 var score: int:
@@ -41,7 +41,7 @@ func play(word_report: WordReport, relic_report: RelicReport, speed_up: bool):
 			set_score(item.new_score, delay)
 			token.pop_open(DUPE_TOKEN_SCALE)
 			if item.text != null and item.text != '':
-				ScorePopup.show(item.text, token, delay, 0, -40)
+				ScorePopup.show(item.text, token, delay, 10, 0, ScorePopup.Anchor.RIGHT)
 			await get_tree().create_timer(delay).timeout
 		if token.data.enhancement:
 			token.data.enhancement.on_scored()

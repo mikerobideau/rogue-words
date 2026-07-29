@@ -14,8 +14,8 @@ signal completed()
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var top_container = $TopContainer
-@onready var instruction = $TopContainer/CenterContainer/Instruction
-@onready var word = $TopContainer/CenterContainer/Word
+@onready var instruction = $TopContainer/Instruction
+@onready var word = $TopContainer/Word
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
 

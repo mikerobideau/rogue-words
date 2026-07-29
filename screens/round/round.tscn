@@ -46,29 +46,36 @@ grow_vertical = 0
 layout_mode = 2
 
 [node name="TopContainer" parent="." instance=ExtResource("7_ladlb")]
-layout_mode = 0
-offset_left = 560.0
-offset_right = 2000.0
-offset_bottom = 250.0
-
-[node name="CenterContainer" type="CenterContainer" parent="TopContainer"]
+custom_minimum_size = Vector2(1000, 150)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -550.0
+offset_right = 450.0
+grow_horizontal = 2
+
+[node name="Instruction" type="Label" parent="TopContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = -25.0
+offset_right = 0.5
+offset_bottom = 25.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Instruction" type="Label" parent="TopContainer/CenterContainer"]
-layout_mode = 2
 size_flags_vertical = 1
 theme_type_variation = &"HeaderMedium"
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Word" parent="TopContainer/CenterContainer" instance=ExtResource("7_uqrp3")]
-layout_mode = 2
+[node name="Word" parent="TopContainer" instance=ExtResource("7_uqrp3")]
+layout_mode = 1
 
 [node name="BoardContainer" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 1200)
