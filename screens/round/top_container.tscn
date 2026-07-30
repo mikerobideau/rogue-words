@@ -1,14 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://crnqdyys7xg31"]
+[gd_scene load_steps=2 format=3 uid="uid://crnqdyys7xg31"]
 
 [ext_resource type="Script" path="res://screens/round/top_container.gd" id="1_werm6"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2jjti"]
-bg_color = Color(1, 1, 1, 1)
-shadow_size = 10
-
 [node name="TopContainer" type="Panel"]
-custom_minimum_size = Vector2(750, 150)
+custom_minimum_size = Vector2(1000, 150)
 offset_right = 750.0
-offset_bottom = 150.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_2jjti")
+offset_bottom = 50.0
 script = ExtResource("1_werm6")

@@ -9,13 +9,13 @@ const DISCARDS_PER_ROUND = 3
 
 signal completed()
 
-@onready var hand = $HandContainer/Hand
+@onready var hand = $BottomMargin/Hand
 @onready var board = $BoardContainer/Board
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
-@onready var top_container = $TopContainer
-@onready var instruction = $TopContainer/Instruction
-@onready var word = $TopContainer/Word
+@onready var top_container = $TopMargin/TopContainer
+@onready var instruction = $TopMargin/TopContainer/Instruction
+@onready var word = $TopMargin/TopContainer/Word
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
 

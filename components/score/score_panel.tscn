@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://uom73bc7ta52" path="res://components/score/summary_row.tscn" id="3_hed3x"]
 
 [node name="ScorePanel" type="Panel"]
-custom_minimum_size = Vector2(450, 1098)
+custom_minimum_size = Vector2(450, 1000)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -19,35 +19,41 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_type_variation = &"Panel3"
 script = ExtResource("1_koiw2")
 
-[node name="HBox" type="HBoxContainer" parent="."]
-layout_mode = 2
-offset_right = 450.0
-offset_bottom = 1098.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 100
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
 
-[node name="JuiceTube" parent="HBox" instance=ExtResource("2_0i3ee")]
+[node name="HBox" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 50
+
+[node name="JuiceTube" parent="MarginContainer/HBox" instance=ExtResource("2_0i3ee")]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="VBox" type="VBoxContainer" parent="HBox"]
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/HBox"]
 layout_mode = 2
 size_flags_horizontal = 8
 
-[node name="TotalScoreRow" parent="HBox/VBox" instance=ExtResource("3_hed3x")]
+[node name="TotalScoreRow" parent="MarginContainer/HBox/VBox" instance=ExtResource("3_hed3x")]
 layout_mode = 2
 header = "Total Score"
 
-[node name="GoalScoreRow" parent="HBox/VBox" instance=ExtResource("3_hed3x")]
+[node name="GoalScoreRow" parent="MarginContainer/HBox/VBox" instance=ExtResource("3_hed3x")]
 layout_mode = 2
 header = "Score to Beat"
 
-[node name="TurnsRemainingRow" parent="HBox/VBox" instance=ExtResource("3_hed3x")]
+[node name="TurnsRemainingRow" parent="MarginContainer/HBox/VBox" instance=ExtResource("3_hed3x")]
 layout_mode = 2
 header = "Turns Remaining"
 
-[node name="JuiceTarget" type="Node2D" parent="."]
-position = Vector2(51, 989)
+[node name="JuiceTarget" type="Node2D" parent="MarginContainer"]
+position = Vector2(126, 858)

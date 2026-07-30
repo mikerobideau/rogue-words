@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=7 format=3 uid="uid://vn3yglhuvq41"]
+[gd_resource type="Theme" load_steps=9 format=3 uid="uid://vn3yglhuvq41"]
 
 [ext_resource type="FontFile" uid="uid://cg5oah04hhmuk" path="res://assets/fonts/ElmsSans-VariableFont_wght.ttf" id="2_5hvym"]
 [ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="2_b4jpx"]
@@ -27,11 +27,36 @@ corner_radius_bottom_right = 25
 corner_radius_bottom_left = 25
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_julk1"]
-bg_color = Color(1, 1, 1, 0.129412)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(1, 0.952941, 0.870588, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.192157, 0.203922, 0.227451, 1)
+border_blend = true
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rosoe"]
+bg_color = Color(1, 0.952941, 0.870588, 0.196078)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3bt38"]
+bg_color = Color(0.192157, 0.203922, 0.227451, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.952941, 0.87451, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [resource]
 default_font_size = 18
@@ -60,3 +85,7 @@ Label/colors/font_color = Color(1, 1, 1, 1)
 Label/font_sizes/font_size = 24
 Label/fonts/font = ExtResource("2_5hvym")
 Panel/styles/panel = SubResource("StyleBoxFlat_julk1")
+Panel2/base_type = &"Panel"
+Panel2/styles/panel = SubResource("StyleBoxFlat_rosoe")
+Panel3/base_type = &"Panel"
+Panel3/styles/panel = SubResource("StyleBoxFlat_3bt38")

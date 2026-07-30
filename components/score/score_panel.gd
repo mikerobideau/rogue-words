@@ -1,11 +1,11 @@
 extends Panel
 class_name ScorePanel
 
-@onready var total_score_row = $HBox/VBox/TotalScoreRow
-@onready var goal_score_row = $HBox/VBox/GoalScoreRow
-@onready var turns_remaining_row = $HBox/VBox/TurnsRemainingRow
-@onready var juice_tube = $HBox/JuiceTube
-@onready var juice_target = $JuiceTarget
+@onready var total_score_row = $MarginContainer/HBox/VBox/TotalScoreRow
+@onready var goal_score_row = $MarginContainer/HBox/VBox/GoalScoreRow
+@onready var turns_remaining_row = $MarginContainer/HBox/VBox/TurnsRemainingRow
+@onready var juice_tube = $MarginContainer/HBox/JuiceTube
+@onready var juice_target = $MarginContainer/JuiceTarget
 
 var x_in: int
 var x_out: int

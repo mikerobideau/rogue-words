@@ -1,4 +1,4 @@
-extends Panel
+extends Container
 class_name RelicContainer
 
 @onready var slots = [$Slots/RelicSlot1, $Slots/RelicSlot2, $Slots/RelicSlot3, $Slots/RelicSlot4, $Slots/RelicSlot5]

@@ -8,6 +8,8 @@ uniform float wave_1_speed = -1.0;
 uniform float wave_1_amp = 0.13;
 uniform float wave_2_speed = 1.0;
 uniform float wave_2_amp = 0.1;
+uniform vec2 rect_size;
+uniform float corner_radius = 20.0; 
 
 vec4 wave( vec2 uv, vec4 wave_color, float level, float freq, float amp, float sin_shift, float speed ){
 	float sinus = sin( (uv.x + sin_shift + TIME * speed) * freq) * amp;
@@ -23,4 +25,9 @@ void fragment() {
 	
 	vec4 combined_waves = mix(wave1, wave2, wave2.a);
 	COLOR.rgb = mix( bg_color, combined_waves, combined_waves.a ).rgb;
+	
+	vec2 pos = UV * rect_size;
+	vec2 inner = clamp(pos, vec2(corner_radius), rect_size - vec2(corner_radius));
+	float dist = distance(pos, inner);
+	COLOR.a *= 1.0 - smoothstep(corner_radius - 1.5, corner_radius + 1.5, dist);
 }

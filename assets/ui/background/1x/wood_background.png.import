@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://snvlmb4x6auy"
-path="res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"
+uid="uid://j70i8bk0jwy1"
+path="res://.godot/imported/wood_background.png-cdbb04cc96fbd6a8de658743a8f9b8f9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/clover.png"
-dest_files=["res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"]
+source_file="res://assets/ui/background/1x/wood_background.png"
+dest_files=["res://.godot/imported/wood_background.png-cdbb04cc96fbd6a8de658743a8f9b8f9.ctex"]
 
 [params]
 

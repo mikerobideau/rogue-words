@@ -1,7 +1,8 @@
-extends Control
+extends PanelContainer
 class_name JuiceTube
 
 @onready var fill = $Fill
+@onready var bubbles = $Bubbles
 
 @export var max_value: int:
 	set(v):
@@ -12,6 +13,9 @@ class_name JuiceTube
 	set(v):
 		value = clampf(v, 0, max_value)
 		_update_progress()
+		if value > 0:
+			pass
+			#bubbles.emitting = true
 		
 var progress := 0.0
 var progress_for_animation := 0.0
@@ -20,6 +24,7 @@ var color_tween: Tween
 var is_full := false
 
 func _ready():
+	bubbles.emitting = false
 	fill.material = fill.material.duplicate()
 	fill.material.set_shader_parameter('progress', progress)
 

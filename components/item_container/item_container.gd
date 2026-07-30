@@ -1,4 +1,4 @@
-extends Control
+extends Container
 class_name ItemContainer
 
 signal item_use_requested(slot: ItemSlot)

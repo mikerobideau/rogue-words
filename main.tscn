@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://bb6evfnlmn04c"]
+[gd_scene load_steps=7 format=3 uid="uid://bb6evfnlmn04c"]
 
 [ext_resource type="Script" path="res://main.gd" id="1_dnsmp"]
 [ext_resource type="PackedScene" uid="uid://c675q66wub3hr" path="res://components/hud/hud.tscn" id="2_23aqr"]
 [ext_resource type="PackedScene" uid="uid://dclef022d1pdn" path="res://components/relic/relic_manager.tscn" id="2_h6jec"]
+[ext_resource type="Texture2D" uid="uid://j70i8bk0jwy1" path="res://assets/ui/background/1x/wood_background.png" id="2_hkmtb"]
 [ext_resource type="Shader" path="res://shader/rain_shader.gdshader" id="2_w5lrx"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_m5vbd"]
@@ -38,7 +39,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Background" type="ColorRect" parent="ScreenContainer"]
+[node name="Background" type="TextureRect" parent="ScreenContainer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -46,7 +47,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.129412, 0.0352941, 0.305882, 1)
+texture = ExtResource("2_hkmtb")
 
 [node name="LeftSidebarBackground" type="ColorRect" parent="ScreenContainer"]
 custom_minimum_size = Vector2(560, 1440)
@@ -74,17 +75,18 @@ size_flags_horizontal = 0
 color = Color(0, 0, 0, 0)
 
 [node name="CenterPanel" type="ColorRect" parent="ScreenContainer"]
-custom_minimum_size = Vector2(1440, 1440)
+visible = false
+custom_minimum_size = Vector2(1240, 1040)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -720.0
-offset_top = -470.0
-offset_right = 720.0
-offset_bottom = 470.0
+offset_left = -620.0
+offset_top = -520.0
+offset_right = 620.0
+offset_bottom = 520.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -110,6 +112,7 @@ mouse_filter = 2
 color = Color(0.288523, 0.288516, 0.288518, 1)
 
 [node name="Bottom" type="ColorRect" parent="ScreenContainer"]
+visible = false
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5

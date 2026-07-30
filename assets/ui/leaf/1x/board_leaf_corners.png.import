@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://snvlmb4x6auy"
-path="res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"
+uid="uid://oixwgsb2kxxm"
+path="res://.godot/imported/board_leaf_corners.png-a8704f1aee733e5f7db661e7a0ac17c5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/clover.png"
-dest_files=["res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"]
+source_file="res://assets/ui/leaf/1x/board_leaf_corners.png"
+dest_files=["res://.godot/imported/board_leaf_corners.png-a8704f1aee733e5f7db661e7a0ac17c5.ctex"]
 
 [params]
 

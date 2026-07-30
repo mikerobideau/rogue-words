@@ -1,7 +1,6 @@
 extends Control
 class_name RelicSlot
 
-@onready var slot = $Slot
 @onready var relic_container = $RelicContainer
 
 @export var relic_data: RelicData
@@ -10,7 +9,11 @@ var container: RelicContainer
 var drag_active := false
 
 func _ready():
-	slot.mouse_entered.connect(_on_frame_mouse_entered)
+	mouse_entered.connect(_on_hover)
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_on_pressed()
 	
 func _notification(what: int):
 	if what == NOTIFICATION_DRAG_END:
@@ -34,8 +37,15 @@ func clear() -> void:
 		relic.queue_free()
 	relic = null
 	
-func _on_frame_mouse_entered() -> void:
+func _on_hover() -> void:
 	Sound.play(Sound.SOUND_MOUSEOVER)
+	
+func _on_pressed() -> void:
+	if drag_active or relic_data == null:
+		return
+	SlotMenu.open(self, [
+		{ "text": "Sell", "callback": _sell }
+	])
 	
 func refresh_tooltip():
 	var default_text = 'Empty coupon slot'
@@ -46,20 +56,13 @@ func refresh_tooltip():
 		text = relic.data.get_tooltip_text(context)
 	else:
 		text = default_text
-	Tooltip.register(slot, text)
+	Tooltip.register(self, text)
 	
 func _sell():
 	Sound.play(Sound.SOUND_SELL)
 	GameState.money += relic_data.cost / 2
 	GameState.remove_relic(relic_data)
-	Tooltip.unregister(slot)
-
-func _on_slot_pressed() -> void:
-	if drag_active or relic_data == null:
-		return
-	SlotMenu.open(slot, [
-		{ "text": "Sell", "callback": _sell }
-	])
+	Tooltip.unregister(self)
 	
 func _get_drag_data(at_position):
 	print("get_drag_data on ", name, " relic_data=", relic_data)

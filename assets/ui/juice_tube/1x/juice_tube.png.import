@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dydwkverxr3w4"
-path="res://.godot/imported/juice_tube_border.png-2cd91cc84e3c04b5f6607d0cde4e80eb.ctex"
+uid="uid://ddcxsbgstduf4"
+path="res://.godot/imported/juice_tube.png-5d888041ad0e0adb8717beadeb17b5dc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/juice_tube/1x/juice_tube_border.png"
-dest_files=["res://.godot/imported/juice_tube_border.png-2cd91cc84e3c04b5f6607d0cde4e80eb.ctex"]
+source_file="res://assets/ui/juice_tube/1x/juice_tube.png"
+dest_files=["res://.godot/imported/juice_tube.png-5d888041ad0e0adb8717beadeb17b5dc.ctex"]
 
 [params]
 

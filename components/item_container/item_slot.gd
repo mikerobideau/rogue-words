@@ -10,11 +10,16 @@ signal use_requested(slot: ItemSlot)
 
 const SLOT_SIZE = Vector2(106, 106)
 
-var item_data: ItemData
+var item_data: ItemData:
+	set(v):
+		item_data = v
+		slot.disabled = item_data == null 
+		
 var item: Item
 var is_selected := false
 
 func _ready():
+	slot.disabled = true
 	size = SLOT_SIZE
 	slot.toggle_mode = true
 	slot.mouse_entered.connect(_on_frame_mouse_entered)
@@ -89,3 +94,7 @@ func _on_slot_pressed() -> void:
 		select()
 	else:
 		deselect()
+
+
+func _on_slot_mouse_entered() -> void:
+	pass # Replace with function body.
