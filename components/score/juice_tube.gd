@@ -2,7 +2,7 @@ extends PanelContainer
 class_name JuiceTube
 
 @onready var fill = $Fill
-@onready var bubbles = $Bubbles
+@onready var bubbles = $Fill/Bubbles
 
 @export var max_value: int:
 	set(v):
@@ -14,8 +14,7 @@ class_name JuiceTube
 		value = clampf(v, 0, max_value)
 		_update_progress()
 		if value > 0:
-			pass
-			#bubbles.emitting = true
+			bubbles.emitting = true
 		
 var progress := 0.0
 var progress_for_animation := 0.0

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://components/score/juice_tube.gd" id="1_c2dtg"]
 [ext_resource type="Shader" path="res://shader/liquid_progress.gdshader" id="2_0dllr"]
 [ext_resource type="Texture2D" uid="uid://ddcxsbgstduf4" path="res://assets/ui/juice_tube/1x/juice_tube.png" id="3_frm3p"]
-[ext_resource type="Texture2D" uid="uid://bm1rjx852ceva" path="res://assets/ui/juice_tube/1x/bubble.png" id="4_gngsx"]
+[ext_resource type="Texture2D" uid="uid://b1a5rhiglewbg" path="res://assets/ui/juice_tube/1x/bubble.png" id="4_gngsx"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vo6t7"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
@@ -33,19 +33,14 @@ layout_mode = 2
 
 [node name="Fill" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_mwcw4")
+clip_contents = true
 custom_minimum_size = Vector2(100, 870)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="Border" type="TextureRect" parent="."]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-texture = ExtResource("3_frm3p")
-
-[node name="Bubbles" type="CPUParticles2D" parent="."]
-position = Vector2(59, 830)
+[node name="Bubbles" type="CPUParticles2D" parent="Fill"]
+position = Vector2(49, 815)
 amount = 4
 speed_scale = 0.5
 explosiveness = 0.51
@@ -56,3 +51,9 @@ emission_sphere_radius = 25.0
 gravity = Vector2(0, -980)
 scale_amount_min = 0.05
 scale_amount_max = 0.5
+
+[node name="Border" type="TextureRect" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("3_frm3p")

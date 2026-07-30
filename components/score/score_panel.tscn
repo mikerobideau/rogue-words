@@ -56,4 +56,4 @@ layout_mode = 2
 header = "Turns Remaining"
 
 [node name="JuiceTarget" type="Node2D" parent="MarginContainer"]
-position = Vector2(126, 858)
+position = Vector2(129, 786)
