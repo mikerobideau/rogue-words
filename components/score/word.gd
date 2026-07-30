@@ -2,9 +2,11 @@ extends Control
 class_name Word
 
 const DUPE_TOKEN_SCALE = Vector2(0.8, 0.8)
+const DEFAULT_SCORE_LABEL_TEXT = ''
 
-@onready var tokens = $MarginContainer/Tokens
-@onready var score_label = $MarginContainer/Score
+@onready var tokens = $MarginContainer/HBoxContainer/Tokens
+@onready var score_container = $MarginContainer/HBoxContainer/ScoreContainer
+@onready var score_label = $MarginContainer/HBoxContainer/ScoreContainer/Score
 
 var word: String
 var score: int:
@@ -24,12 +26,14 @@ func _squish():
 
 func set_score(v: int, delay: float):
 	score = v
+	_pulse_score()
 
 func play(word_report: WordReport, relic_report: RelicReport, speed_up: bool):
+	score_container.visible = true
 	var speed = 2 if speed_up else 1
 	score_label.visible = true
 	word = word_report.word
-	_reserve_token_row(word_report.letter_reports) 
+	#_reserve_token_row(word_report.letter_reports) 
 	for letter_report in word_report.letter_reports:
 		var token = await add_token(letter_report.space.token)
 		if letter_report.display_letter != letter_report.letter:
@@ -51,7 +55,7 @@ func play(word_report: WordReport, relic_report: RelicReport, speed_up: bool):
 		var report = word_report.word_mult_report
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG / speed)
 		ScorePopup.show(report.text, score_label, Settings.SCORE_DELAY_LONG / speed, 
-			10, 0, ScorePopup.Anchor.RIGHT)
+			-score_container.size.x / 2, 0, ScorePopup.Anchor.RIGHT)
 		await get_tree().create_timer(Settings.SCORE_DELAY_LONG / speed).timeout
 	
 	for report in relic_report.items:
@@ -62,7 +66,8 @@ func play(word_report: WordReport, relic_report: RelicReport, speed_up: bool):
 		await get_tree().create_timer(0.3).timeout
 		
 	#_squish()
-	score_label.text = ''
+	#score_container.visible = false
+	score_label.text = DEFAULT_SCORE_LABEL_TEXT
 	await get_tree().create_timer(0.3).timeout
 	
 func _reserve_token_row(letter_reports: Array) -> void:
@@ -116,7 +121,7 @@ func fly_tokens_to(target_global: Vector2) -> void:
 	for i in dupes.size():
 		var dupe: Token = dupes[i]
 		var start := dupe.global_position
-		dupe.top_level = true #detach from the HBox layout → free movement
+		dupe.top_level = true
 		dupe.global_position = start
 		dupe.is_animated = true
 		var t := create_tween()
