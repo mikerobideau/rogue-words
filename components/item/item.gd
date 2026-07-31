@@ -3,6 +3,7 @@ class_name Item
 
 enum Size {
 	SMALL,
+	MEDIUM,
 	LARGE
 }
 
@@ -28,22 +29,20 @@ func _on_data_changed():
 	if data:
 		name = data.item_name
 		texture = data.icon
-		
+	
 func set_size(s: Size):
+	scale = get_size(s)
+		
+func get_size(s: Size):
 	match s:
 		Size.SMALL:
-			scale = Vector2(0.5, 0.5)
+			return Vector2(0.5, 0.5)
+		Size.MEDIUM:
+			return Vector2(0.6, 0.6)
 		Size.LARGE:
-			scale = Vector2.ONE
+			return Vector2.ONE
 		_:
-			scale = Vector2(0.5, 0.5)
-
-func animate_selected(selected: bool):
-	if scale_tween:
-		scale_tween.kill()
-	var scale_tween = create_tween()
-	var target = Vector2(1.1, 1.1) if selected else Vector2(1, 1)
-	scale_tween.tween_property(self, "scale", target, 0.15)
+			return Vector2(0.5, 0.5)
 	
 func float_to_target(target_global_pos: Vector2) -> void:
 	if position_tween:

@@ -17,6 +17,7 @@ var item_data: ItemData:
 		
 var item: Item
 var is_selected := false
+var scale_tween: Tween
 
 func _ready():
 	slot.disabled = true
@@ -33,7 +34,7 @@ func set_item(data: ItemData) -> void:
 	if data:
 		item = ItemFactory.create_scene(data)
 		item.set_size(Item.Size.SMALL)
-		item.position = slot.size / 2
+		item.position = item_container.size / 2
 		item_container.add_child(item)
 	register_tooltip()
 
@@ -49,12 +50,19 @@ func select():
 	is_selected = true
 	slot.button_pressed = true
 	if item:
-		item.animate_selected(true)
+		_animate_selected(item, true)
 	item_selected.emit(self)
 	SlotMenu.open(slot, [
 		{ "text": "Use",  "callback": _use },
 		{ "text": "Sell", "callback": _sell },
 	])
+
+func _animate_selected(item: Item, selected: bool):
+	if scale_tween:
+		scale_tween.kill()
+	var scale_tween = create_tween()
+	var target = item.get_size(item.Size.MEDIUM) if selected else item.get_size(item.Size.SMALL)
+	scale_tween.tween_property(item, "scale", target, 0.15)
 
 func _use() -> void:
 	use_requested.emit(self)
@@ -63,8 +71,9 @@ func deselect():
 	is_selected = false
 	slot.button_pressed = false
 	if item:
-		item.animate_selected(false)
+		_animate_selected(item, false)
 	item_deselected.emit(self)	
+	SlotMenu.close()
 
 func _keep():
 	pass
@@ -94,7 +103,6 @@ func _on_slot_pressed() -> void:
 		select()
 	else:
 		deselect()
-
 
 func _on_slot_mouse_entered() -> void:
 	pass # Replace with function body.
