@@ -78,6 +78,7 @@ custom_minimum_size = Vector2(1100, 150)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+theme_type_variation = &"Panel3"
 
 [node name="Instruction" type="Label" parent="TopMargin/TopContainer"]
 layout_mode = 1
@@ -94,7 +95,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 1
 theme_type_variation = &"HeaderMedium"
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -138,6 +139,7 @@ offset_bottom = 500.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_type_variation = &"Panel3"
 
 [node name="Leaf" type="TextureRect" parent="BoardContainer"]
 modulate = Color(1, 1, 1, 0.588235)

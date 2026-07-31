@@ -1,6 +1,18 @@
-[gd_scene load_steps=2 format=3 uid="uid://ejiashxsho2h"]
+[gd_scene load_steps=3 format=3 uid="uid://ejiashxsho2h"]
 
 [ext_resource type="Script" path="res://components/score/word.gd" id="1_k6b5l"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r6v71"]
+bg_color = Color(0.352941, 0.219608, 0.588235, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.952941, 0.870588, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [node name="Word" type="Control"]
 layout_mode = 3
@@ -29,10 +41,10 @@ layout_mode = 2
 size_flags_horizontal = 0
 theme_override_constants/separation = 32
 
-[node name="ScoreContainer" type="ColorRect" parent="MarginContainer/HBoxContainer"]
+[node name="ScoreContainer" type="Panel" parent="MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(200, 100)
 layout_mode = 2
-color = Color(0.317647, 0.0705882, 0.505882, 1)
+theme_override_styles/panel = SubResource("StyleBoxFlat_r6v71")
 
 [node name="Score" type="Label" parent="MarginContainer/HBoxContainer/ScoreContainer"]
 custom_minimum_size = Vector2(175, 0)
