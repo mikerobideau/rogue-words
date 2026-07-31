@@ -15,7 +15,7 @@ func create_scene(data: SpaceData) -> Space:
 func create_random_data() -> SpaceData:
 	var data = SpaceData.new()
 	var enhanced_types = SpaceData.Type.values().filter(func(t): return t != SpaceData.Type.STANDARD)
-	if randf() > 0.75:
+	if randf() > 0:
 		data.type = enhanced_types[randi() % enhanced_types.size()]
 	else:
 		data.type = SpaceData.Type.STANDARD

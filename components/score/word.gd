@@ -45,7 +45,7 @@ func play(word_report: WordReport, relic_report: RelicReport, speed_up: bool):
 			set_score(item.new_score, delay)
 			token.pop_open(DUPE_TOKEN_SCALE)
 			if item.text != null and item.text != '':
-				ScorePopup.show(item.text, token, delay, 10, 0, ScorePopup.Anchor.RIGHT)
+				ScorePopup.show(item.text, token, delay, 0, -token.RADIUS)
 			await get_tree().create_timer(delay).timeout
 		if token.data.enhancement:
 			token.data.enhancement.on_scored()
@@ -54,14 +54,13 @@ func play(word_report: WordReport, relic_report: RelicReport, speed_up: bool):
 		Sound.play(Sound.SOUND_ENHANCED_WORD_SPACE)
 		var report = word_report.word_mult_report
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG / speed)
-		ScorePopup.show(report.text, score_label, Settings.SCORE_DELAY_LONG / speed, 
-			-score_container.size.x / 2, 0, ScorePopup.Anchor.RIGHT)
+		ScorePopup.show(report.text, score_container, Settings.SCORE_DELAY_LONG / speed)
 		await get_tree().create_timer(Settings.SCORE_DELAY_LONG / speed).timeout
 	
 	for report in relic_report.items:
 		Sound.play(Sound.SOUND_RELIC_SCORE)
 		report.relic.pulse(Settings.SCORE_DELAY_LONG / speed)
-		ScorePopup.show(report.text, score_label, Settings.SCORE_DELAY_LONG / speed, 10, 0, ScorePopup.Anchor.RIGHT)
+		ScorePopup.show(report.text, score_container, Settings.SCORE_DELAY_LONG / speed)
 		set_score(report.new_score, Settings.SCORE_DELAY_LONG / speed)
 		await get_tree().create_timer(0.3).timeout
 		
