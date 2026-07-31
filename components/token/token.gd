@@ -180,7 +180,7 @@ func _animate_placed():
 	var scale_tween = create_tween()
 	scale = Vector2(2.0, 2.0)
 	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.1)
 	
 func _animate_selected():
 	if !is_animated:

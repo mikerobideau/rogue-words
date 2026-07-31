@@ -21,6 +21,7 @@ var progress_for_animation := 0.0
 var fill_tween: Tween
 var color_tween: Tween
 var is_full := false
+var is_styled_complete := false
 
 func _ready():
 	bubbles.emitting = false
@@ -37,7 +38,7 @@ func _update_progress():
 	if value >= max_value:
 		is_full = true
 	_animate_progress()
-	if progress >= 1:
+	if progress >= 1 and !is_styled_complete:
 		_style_complete()
 
 func _animate_progress():
@@ -49,6 +50,8 @@ func _animate_progress():
 func _style_complete():
 	if color_tween:
 		color_tween.kill()
+	bubbles.amount = 500
 	color_tween = create_tween()
 	color_tween.parallel().tween_property(fill, 'material:shader_parameter/wave_1_color', Color.DARK_MAGENTA, 0.4).set_trans(Tween.TRANS_SINE)
 	color_tween.parallel().tween_property(fill, 'material:shader_parameter/wave_2_color', Color.MAGENTA, 0.4).set_trans(Tween.TRANS_SINE)
+	is_styled_complete = true

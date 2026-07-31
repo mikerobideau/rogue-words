@@ -41,9 +41,9 @@ size_flags_vertical = 4
 
 [node name="Bubbles" type="CPUParticles2D" parent="Fill"]
 position = Vector2(49, 815)
-amount = 4
+amount = 10
+lifetime = 2.0
 speed_scale = 0.5
-explosiveness = 0.51
 randomness = 1.0
 texture = ExtResource("4_gngsx")
 emission_shape = 1
