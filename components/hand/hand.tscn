@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://components/hand/hand.gd" id="1_v6a6q"]
 [ext_resource type="PackedScene" uid="uid://b67tiw3jr7lj4" path="res://components/ui/button/icon_button.tscn" id="3_fwm4h"]
-[ext_resource type="Texture2D" uid="uid://bl02w530xwhxf" path="res://assets/icons/1x/discard.png" id="4_bncvi"]
+[ext_resource type="Texture2D" uid="uid://cqn0vvhmbrq40" path="res://assets/ui/button/1x/discard_icon.png" id="3_yyhwj"]
 
 [node name="Hand" type="Panel"]
 custom_minimum_size = Vector2(1100, 150)
@@ -51,6 +51,6 @@ theme_override_constants/margin_right = 25
 
 [node name="DiscardButton" parent="DiscardContainer" instance=ExtResource("3_fwm4h")]
 layout_mode = 2
-icon_texture = ExtResource("4_bncvi")
+icon_texture = ExtResource("3_yyhwj")
 
 [connection signal="pressed" from="DiscardContainer/DiscardButton" to="." method="_on_discard_button_pressed"]
