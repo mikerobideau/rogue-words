@@ -24,8 +24,8 @@ func _ready():
 	size = get_viewport().get_visible_rect().size
 	#_show_title()
 	#GameState.money = 100
-	#_enter_shop()
-	_on_new_game()
+	_enter_shop()
+	#_on_new_game()
 	
 func _show_title():
 	hud.visible = false
