@@ -80,7 +80,7 @@ func _position_tooltip(target: Control) -> void:
 
 	var pos := Vector2(
 		target_rect.position.x - tooltip_size.x - GAP,
-		target_rect.position.y + (target_rect.size.y - tooltip_size.y) / 2.0
+		target_rect.position.y                          # flush with the slot's top
 	)
 
 	var viewport_size := get_viewport().get_visible_rect().size
