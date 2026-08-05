@@ -3,9 +3,8 @@ class_name Hud
 
 @onready var title_label = $Header/InnerMargin/Title
 @onready var money = $Header/InnerMargin/Money
-@onready var relic_container = $Right/CenterContainer/Inventory/RelicContainer
+@onready var relic_container = $Right/CenterContainer/Inventory/CenterContainer/RelicContainer
 @onready var item_container = $Right/CenterContainer/Inventory/ItemContainer
-
 @export var title: String:
 	set(v):
 		title = v

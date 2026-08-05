@@ -1,7 +1,6 @@
-[gd_resource type="Theme" load_steps=9 format=3 uid="uid://vn3yglhuvq41"]
+[gd_resource type="Theme" load_steps=8 format=3 uid="uid://vn3yglhuvq41"]
 
 [ext_resource type="FontFile" uid="uid://cg5oah04hhmuk" path="res://assets/fonts/ElmsSans-VariableFont_wght.ttf" id="2_5hvym"]
-[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="2_b4jpx"]
 [ext_resource type="FontFile" uid="uid://qu1ord30501e" path="res://assets/fonts/commissioner/Commissioner-Bold.ttf" id="2_p1joy"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i83q2"]
@@ -76,7 +75,6 @@ Button/styles/normal = SubResource("StyleBoxFlat_t67yg")
 Button/styles/pressed = SubResource("StyleBoxFlat_i83q2")
 HeaderLarge/colors/font_color = Color(0.34902, 0.0705882, 0.682353, 1)
 HeaderLarge/font_sizes/font_size = 100
-HeaderLarge/fonts/font = ExtResource("2_b4jpx")
 HeaderMedium/colors/font_color = Color(0, 0, 0, 1)
 HeaderMedium/font_sizes/font_size = 40
 HeaderMedium/fonts/font = ExtResource("2_p1joy")

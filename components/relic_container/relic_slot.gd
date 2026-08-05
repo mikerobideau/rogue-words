@@ -56,13 +56,13 @@ func refresh_tooltip():
 		text = relic.data.get_tooltip_text(context)
 	else:
 		text = default_text
-	Tooltip.register(self, text)
+	Tooltip.register(relic_container, text)
 	
 func _sell():
 	Sound.play(Sound.SOUND_SELL)
 	GameState.money += relic_data.cost / 2
 	GameState.remove_relic(relic_data)
-	Tooltip.unregister(self)
+	Tooltip.unregister(relic_container)
 	
 func _get_drag_data(at_position):
 	print("get_drag_data on ", name, " relic_data=", relic_data)
