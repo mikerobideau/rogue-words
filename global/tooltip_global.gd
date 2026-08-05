@@ -3,9 +3,9 @@ extends CanvasLayer
 const TooltipScene := preload("res://components/tooltip/tooltip_node.tscn")
 const GAP := 8.0
 
-var tooltip: PanelContainer          # the currently-shown tooltip, or null
+var tooltip: PanelContainer
 var current_target: Control
-var tooltip_texts: Dictionary = {}   # target -> text
+var tooltip_texts: Dictionary = {}
 
 func _ready() -> void:
 	layer = 100
@@ -17,7 +17,7 @@ func register(target: Control, text: String) -> void:
 		target.mouse_entered.connect(entered)
 		target.mouse_exited.connect(_on_target_exited.bind(target))
 		target.tree_exiting.connect(_on_target_freed.bind(target))
-	if current_target == target and tooltip:   # live refresh while hovered
+	if current_target == target and tooltip:
 		_present_for_control(target)
 
 func unregister(target: Control) -> void:
@@ -53,15 +53,15 @@ func _on_target_freed(target: Control) -> void:
 # --- lifecycle ---
 
 func _spawn_tooltip(text: String) -> void:
-	_clear_tooltip()                        # kill any previous instance
+	_clear_tooltip()
 	tooltip = TooltipScene.instantiate()
-	tooltip.visible = false                 # stay hidden until positioned (no flash)
+	tooltip.visible = false
 	add_child(tooltip)
 	tooltip.set_text(text)
 
 func _clear_tooltip() -> void:
 	if is_instance_valid(tooltip):
-		tooltip.hide()                      # avoid a one-frame double-show
+		tooltip.hide()
 		tooltip.queue_free()
 	tooltip = null
 
@@ -80,7 +80,7 @@ func _position_tooltip(target: Control) -> void:
 
 	var pos := Vector2(
 		target_rect.position.x - tooltip_size.x - GAP,
-		target_rect.position.y                          # flush with the slot's top
+		target_rect.position.y
 	)
 
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -95,9 +95,9 @@ func show_for_node(target: Node2D, text: String) -> void:
 	if not is_instance_valid(target):
 		return
 	_spawn_tooltip(text)
-	var screen_pos := target.get_global_transform_with_canvas().origin  # capture BEFORE await
-	await get_tree().process_frame                                      # let it size to text
-	if not tooltip:                                                     # could be cleared during await
+	var screen_pos := target.get_global_transform_with_canvas().origin
+	await get_tree().process_frame
+	if not tooltip:
 		return
 	tooltip.global_position = Vector2(
 		screen_pos.x - tooltip.size.x / 2.0,
