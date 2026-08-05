@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("2_qa6pd")
-pack_name = "Rare Relic Pack"
+pack_name = "Rare Coupon Pack"
 cost = 12
 type = 0
 size = 3

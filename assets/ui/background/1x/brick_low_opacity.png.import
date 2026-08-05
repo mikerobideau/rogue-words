@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://wtnytglwtlcw"
-path="res://.godot/imported/frame.png-ea7dab4631d65da4a76534a5bc31de8d.ctex"
+uid="uid://wth60cyvb320"
+path="res://.godot/imported/brick_low_opacity.png-2cda1797e79e91d7c7f1eaa1e0a74184.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/slot/1x/frame.png"
-dest_files=["res://.godot/imported/frame.png-ea7dab4631d65da4a76534a5bc31de8d.ctex"]
+source_file="res://assets/ui/background/1x/brick_low_opacity.png"
+dest_files=["res://.godot/imported/brick_low_opacity.png-2cda1797e79e91d7c7f1eaa1e0a74184.ctex"]
 
 [params]
 

@@ -3,22 +3,27 @@
 [ext_resource type="Script" path="res://components/money.gd" id="1_25w62"]
 [ext_resource type="Texture2D" uid="uid://d1wchquejmngn" path="res://assets/sprites/money/1x/small_coin_icon.png" id="2_6n2q8"]
 
-[node name="Money" type="HBoxContainer"]
-custom_minimum_size = Vector2(135, 50)
+[node name="Money" type="Panel"]
+custom_minimum_size = Vector2(150, 50)
 offset_right = 218.0
 offset_bottom = 50.0
-theme_override_constants/separation = 16
 script = ExtResource("1_25w62")
 
 [node name="Icon" type="TextureRect" parent="."]
 layout_mode = 2
+offset_right = 48.0
+offset_bottom = 50.0
 texture = ExtResource("2_6n2q8")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 2
+offset_left = 60.0
+offset_top = 2.0
+offset_right = 61.0
+offset_bottom = 47.0
 size_flags_horizontal = 8
 theme_type_variation = &"HeaderMedium"
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.10748, 0.10748, 0.10748, 1)
 theme_override_font_sizes/font_size = 36
 horizontal_alignment = 1
 vertical_alignment = 1

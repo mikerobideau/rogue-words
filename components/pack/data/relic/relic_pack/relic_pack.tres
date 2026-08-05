@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("1_bmaoc")
-pack_name = "Relic Pack"
+pack_name = "Coupon Pack"
 cost = 7
 type = 0
 size = 3

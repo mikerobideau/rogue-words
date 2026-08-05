@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("2_ar4gp")
-pack_name = "Uncommon Relic Pack"
+pack_name = "Uncommon Coupon Pack"
 cost = 10
 type = 0
 size = 3

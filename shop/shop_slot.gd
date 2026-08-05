@@ -14,7 +14,7 @@ enum Type { PACK, OFFER }
 @onready var offer = $Frame/Offer
 @onready var coin = $Coin
 @onready var cost_label = $Coin/CostLabel
-@onready var title = $TitleContainer/Title
+@onready var title = $Frame/TitleContainer/Title
 @onready var sold_sticker = $Sold
 
 var pack: Pack
