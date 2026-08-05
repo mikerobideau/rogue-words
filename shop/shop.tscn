@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://beksc6x4wjafd"]
+[gd_scene load_steps=4 format=3 uid="uid://beksc6x4wjafd"]
 
 [ext_resource type="Script" path="res://shop/shop.gd" id="1_6vhgx"]
 [ext_resource type="Texture2D" uid="uid://bpoue6glwuebf" path="res://assets/ui/background/1x/shop_background3.png" id="2_vstb7"]
+[ext_resource type="PackedScene" uid="uid://clwf6hvbwqhy5" path="res://shop/shop_sign.tscn" id="3_yjwte"]
 
 [node name="Shop" type="Control"]
 layout_mode = 3
@@ -47,7 +48,7 @@ custom_minimum_size = Vector2(560, 0)
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_right = 400.0
+offset_right = 560.0
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ButtonContainer"]
@@ -60,6 +61,16 @@ layout_mode = 2
 [node name="Exit" type="Button" parent="ButtonContainer/VBoxContainer"]
 layout_mode = 2
 text = "NEXT ROUND"
+
+[node name="ShopSign" parent="." instance=ExtResource("3_yjwte")]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -314.0
+offset_right = 314.0
+offset_bottom = 180.0
+grow_horizontal = 2
 
 [connection signal="pressed" from="ButtonContainer/VBoxContainer/Reroll" to="." method="_on_reroll_pressed"]
 [connection signal="pressed" from="ButtonContainer/VBoxContainer/Exit" to="." method="_on_exit_pressed"]

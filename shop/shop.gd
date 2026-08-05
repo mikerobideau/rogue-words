@@ -14,6 +14,7 @@ signal completed()
 @onready var slots = $CenterContainer/Slots
 @onready var continue_button = $Footer/FooterInner/Continue
 @onready var reroll_label = $ButtonContainer/VBoxContainer/Reroll
+@onready var sign = $ShopSign
 
 var pack_content: PackContent
 var reroll_cost: int:
@@ -24,6 +25,7 @@ var reroll_cost: int:
 func _ready():
 	reroll_cost = STARTING_REROLL_COST
 	_populate_slots()
+	sign.slide_in()
 
 func _populate_slots():
 	var available_packs := PackFactory.load_all_packs()
