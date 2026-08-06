@@ -182,3 +182,22 @@ grow_vertical = 2
 
 [node name="ScorePanel" parent="Left" instance=ExtResource("2_7t8ks")]
 layout_mode = 2
+
+[node name="BottomLeft" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -55.0
+offset_right = 148.0
+grow_vertical = 0
+theme_override_constants/margin_left = 500
+theme_override_constants/margin_bottom = 50
+
+[node name="BagButton" type="Button" parent="BottomLeft"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+text = "Bag"
+
+[connection signal="pressed" from="BottomLeft/BagButton" to="." method="_on_bag_button_pressed"]

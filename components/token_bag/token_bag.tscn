@@ -54,3 +54,18 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="BottomRight" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="CloseButton" type="Button" parent="Panel/BottomRight"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "Close"
+
+[connection signal="pressed" from="Panel/BottomRight/CloseButton" to="." method="_on_close_button_pressed"]

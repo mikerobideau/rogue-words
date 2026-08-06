@@ -7,6 +7,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("view_token_bag"):
 		_toggle()
 	
+func toggle():
+	_toggle()
+	
 func _toggle():
 	visible = !visible
 	if !visible:
@@ -30,3 +33,6 @@ func _toggle():
 func _clear():
 	for child in tokens.get_children():
 		child.queue_free()
+
+func _on_close_button_pressed() -> void:
+	toggle()

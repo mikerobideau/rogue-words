@@ -18,6 +18,7 @@ signal completed()
 @onready var word = $TopMargin/TopContainer/Word
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
+@onready var token_bag = $TokenBag
 
 var hud: Control
 var relic_manager: Node
@@ -255,3 +256,6 @@ func _get_relic_context():
 	context.turn_number = turn_number
 	context.tokens = GameState.tokens
 	return context
+
+func _on_bag_button_pressed() -> void:
+	token_bag.toggle()
