@@ -93,6 +93,9 @@ func get_score_text(context: RelicContext):
 func get_score(context: RelicContext) -> int:
 	return -1
 	
+func get_mult() -> int:
+	return 1
+	
 #---------------------------------------------------------------------------------------------------
 # Round Events
 #---------------------------------------------------------------------------------------------------

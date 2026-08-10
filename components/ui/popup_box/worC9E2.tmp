@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dyt7uqk8ggyvm"]
+
+[node name="WordPopup" type="Label"]
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "GRAPEVINE"

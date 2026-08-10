@@ -199,7 +199,7 @@ func _animate_deselected():
 		return
 	scale_down()
 
-func pulse(letter_delay: float):
+func pulse(letter_delay := 0):
 	if !is_animated:
 		return
 	if scale_tween:

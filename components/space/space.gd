@@ -33,9 +33,7 @@ var enabled: bool = true:
 		enabled = v
 		queue_redraw()
 		if is_node_ready():
-			_animate()
-		
-		
+			_animate()	
 		
 func _ready():
 	scale = BASE_SCALE
@@ -80,6 +78,9 @@ func _on_token_destroyed():
 	token = null
 	play('default')
 	badge.visible = false
+	
+func get_mult() -> int:
+	return data.get_mult()
 	
 func modify_letter_score(v: int) -> int:
 	return data.modify_letter_score(v)

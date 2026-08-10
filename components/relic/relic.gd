@@ -21,7 +21,7 @@ func _update_label():
 			name_label.text = data.relic_name
 				
 func _on_data_scaled(v: int):
-	ScorePopup.show('+' + str(v), self)
+	ScorePopup.show(ScorePopup.Template.DEFAULT, '+' + str(v), self)
 
 func pulse(delay := Settings.SCORE_DELAY_NORMAL):
 	var tween = create_tween()

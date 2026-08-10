@@ -90,7 +90,7 @@ func _on_frame_pressed() -> void:
 func _buy() -> void:
 	if GameState.money < cost:
 		Sound.play(Sound.SOUND_DISABLED)
-		ScorePopup.show('Insufficient funds!', self)
+		ScorePopup.show(ScorePopup.Template.DEFAULT, 'Insufficient funds!', self)
 		return
 		
 	Sound.play(Sound.SOUND_PURCHASE)

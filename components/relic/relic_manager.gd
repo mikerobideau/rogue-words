@@ -16,6 +16,12 @@ func on_token_destroyed(context: RelicContext):
 		if response:
 			_activate_relic(relic, response, relic.data.get_on_token_destroyed_text(response))
 		relic.data.data_changed.emit()
+
+func get_mult() -> int:
+	var mult = 1
+	for relic in GameState.relics:
+		mult *= relic.get_mult()
+	return mult
 		
 func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()  
@@ -88,9 +94,8 @@ func _activate_relic(relic: Relic, response := RelicData.RelicResponse.NONE, tex
 			pass
 		RelicData.RelicResponse.COUNTDOWN:
 			pass
-	print_debug('pulsing')
 	relic.pulse()
 	if text != null and text != '':
-		ScorePopup.show(text, relic)
+		ScorePopup.show(ScorePopup.Template.DEFAULT, text, relic)
 	await get_tree().create_timer(0.4).timeout
 		

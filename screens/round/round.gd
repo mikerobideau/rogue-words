@@ -15,7 +15,8 @@ signal completed()
 @onready var scorer = $Scorer
 @onready var top_container = $TopMargin/TopContainer
 @onready var instruction = $TopMargin/TopContainer/Instruction
-@onready var word = $TopMargin/TopContainer/Word
+#@onready var word = $TopMargin/TopContainer/Word
+@onready var word_target = $BoardContainer/WordTarget
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
 @onready var token_bag = $TokenBag
@@ -153,17 +154,25 @@ func _on_space_clicked(space: Space):
 	if space.token != null: #relic_manager.on_token_placed may destroy the token before it is scored
 		var found_words = word_finder.find_words(space)
 		var word_number = 1
-		for found_word in found_words:
-			var word_report = scorer.get_word_report(found_word)
-			context.word = word_report.word
-			context.word_score = word_report.score
-			context.word_report = word_report
-			var relic_report = await relic_manager.get_score_report(context)
-			await word.play(word_report, relic_report, word_number > 3)
-			await word.fly_tokens_to(score_panel.juice_target.global_position)
-			score_panel.score += relic_report.new_score
-			await get_tree().create_timer(0.5).timeout
-			word_number += 1
+		
+		await _score_words(found_words, context, space)
+		
+		#var word_animation_enabled = false
+		#for found_word in found_words:
+			#ScorePopup.show(found_word.word, space.token)
+			#await get_tree().create_timer(1.0).timeout
+			
+			#if word_animation_enabled:
+			#	var word_report = scorer.get_word_report(found_word)
+			#	context.word = word_report.word
+			#	context.word_score = word_report.score
+			#	context.word_report = word_report
+			#	var relic_report = await relic_manager.get_score_report(context)
+			#	await word.play(word_report, relic_report, word_number > 3)
+			#	await word.fly_tokens_to(score_panel.juice_target.global_position)
+			#	score_panel.score += relic_report.new_score
+			#	await get_tree().create_timer(0.5).timeout
+			#	word_number += 1
 		
 		if score_panel.target_met():
 			_on_round_complete(context)
@@ -174,7 +183,7 @@ func _on_space_clicked(space: Space):
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
 		return
-	await get_tree().create_timer(0.5).timeout
+	await get_tree().create_timer(1.0).timeout
 	_clear_selected_tokens()
 	hand.draw_tokens(1)
 	if hand.is_empty():
@@ -183,6 +192,30 @@ func _on_space_clicked(space: Space):
 	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
 	board.grow(expansions)
 	scoring = false
+
+func _score_words(found_words: Array, context: RelicContext, space: Space):
+	for found_word in found_words:
+		var word_score = scorer.score_word(found_word)
+		await _animate_word(word_score, context, space)
+		score_panel.score += word_score.total
+		#await _send_juice(word_score)
+		
+	await get_tree().create_timer(0.25).timeout
+		
+		
+func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
+	var relic_report = await relic_manager.get_score_report(context)
+	var popups = {}
+	var word_popup = await ScorePopup.spawn(ScorePopup.Template.WORD, word_score.word, word_target)
+	for tile in word_score.tiles:
+		tile.space.token.pulse()
+		ScorePopup.show(ScorePopup.Template.DEFAULT, str(tile.base) + ' x ' + str(tile.mult), tile.space)
+	Sound.play(Sound.SOUND_TOKEN)
+	await get_tree().create_timer(Settings.BEAT).timeout
+	ScorePopup.dismiss(word_popup)
+	
+func _send_juice(word_score: WordScore):
+	pass
 	
 func _on_space_hovered(space: Space):
 	if selected_token:

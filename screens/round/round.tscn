@@ -74,6 +74,7 @@ grow_horizontal = 2
 theme_override_constants/margin_top = 32
 
 [node name="TopContainer" parent="TopMargin" instance=ExtResource("7_ladlb")]
+visible = false
 custom_minimum_size = Vector2(1100, 150)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -102,9 +103,8 @@ vertical_alignment = 1
 [node name="Word" parent="TopMargin/TopContainer" instance=ExtResource("7_uqrp3")]
 layout_mode = 1
 anchors_preset = 4
-anchor_top = 0.5
+anchor_left = 0.0
 anchor_right = 0.0
-anchor_bottom = 0.5
 grow_horizontal = 1
 
 [node name="BottomMargin" type="MarginContainer" parent="."]
@@ -140,6 +140,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_type_variation = &"Panel3"
+
+[node name="WordTarget" type="Node2D" parent="BoardContainer"]
+position = Vector2(550, 100)
 
 [node name="Leaf" type="TextureRect" parent="BoardContainer"]
 modulate = Color(1, 1, 1, 0.588235)

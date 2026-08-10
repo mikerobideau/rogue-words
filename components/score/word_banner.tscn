@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://0fkck8lrtvpl"]
+
+[sub_resource type="GDScript" id="GDScript_bqjob"]
+script/source = "extends Control
+class_name WordBanner
+
+@onready var tokens = $Tokens
+
+const DUPE_TOKEN_SCALE = Vector2(0.8, 0.8)
+
+func _ready():
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tokens.alignment = BoxContainer.ALIGNMENT_CENTER
+	tokens.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+func show_word(word_score: WordScore) -> void:
+	for child in tokens.get_children():
+		child.queue_free()
+	for tile in word_score.tiles:
+		var dupe := _add_token(tile.space.token)
+		dupe.pop_open(DUPE_TOKEN_SCALE)
+	visible = true
+
+func hide_banner() -> void:
+	visible = false
+	
+func _add_token(token: Token) -> Token:
+	var dupe_token = token.duplicate()
+	dupe_token.is_animated = false
+	dupe_token.scale = DUPE_TOKEN_SCALE
+	var wrapper = Control.new()
+	var token_size = _get_token_size(dupe_token) * dupe_token.scale
+	wrapper.custom_minimum_size = token_size
+	wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tokens.add_child(wrapper)
+	wrapper.add_child(dupe_token) 
+	dupe_token.position += wrapper.size / 2
+	return dupe_token
+
+func _get_token_size(token: Token) -> Vector2:
+	var frames = token.sprite_frames
+	return frames.get_frame_texture(token.animation, token.frame).get_size()
+"
+
+[node name="WordBanner" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = SubResource("GDScript_bqjob")
+
+[node name="Tokens" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

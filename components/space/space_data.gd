@@ -9,6 +9,11 @@ enum Type {
 
 @export var type: Type
 
+func get_mult() -> int:
+	if type == Type.TRIPLE_LETTER:
+		return 3
+	return -1
+
 func modify_letter_score(v: int) -> int:
 	if type == Type.TRIPLE_LETTER:
 		return v * 3
