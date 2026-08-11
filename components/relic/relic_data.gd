@@ -1,5 +1,5 @@
 extends Resource
-class_name RelicData
+class_name RelicDataOld
 
 signal data_changed()
 signal scaled(v: int)
