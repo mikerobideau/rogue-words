@@ -42,6 +42,13 @@ func dismiss(popup: Control, fade := true) -> void:
 		await t.finished
 	popup.queue_free()
 
+func pin_node(node: Control, target: Node, anchor := Anchor.CENTER, offset_x := 0, offset_y := 0) -> Control:
+	layer.add_child(node)
+	await get_tree().process_frame
+	node.reset_size()
+	_position(node, target, anchor, offset_x, offset_y)
+	return node
+
 func _position(popup: Control, target: Node, anchor: int, offset_x: int, offset_y: int) -> void:
 	var rect = target.get_global_rect() if target is Control else Rect2(target.global_position, Vector2.ZERO)
 	if anchor == Anchor.RIGHT:

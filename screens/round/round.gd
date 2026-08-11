@@ -4,6 +4,7 @@ class_name Round
 signal game_over(message: String)
 signal game_won()
 
+const TilePopupScene = preload("res://components/ui/popup_box/tile_score_popup.tscn")
 const TURNS_PER_ROUND = 12
 const DISCARDS_PER_ROUND = 3
 
@@ -207,12 +208,19 @@ func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
 	var relic_report = await relic_manager.get_score_report(context)
 	var popups = {}
 	var word_popup = await ScorePopup.spawn(ScorePopup.Template.WORD, word_score.word, word_target)
+	var tile_popups: Array[TileScorePopup] = []
 	for tile in word_score.tiles:
 		tile.space.token.pulse()
-		ScorePopup.show(ScorePopup.Template.DEFAULT, str(tile.base) + ' x ' + str(tile.mult), tile.space)
+		var tile_popup = TilePopupScene.instantiate()
+		await ScorePopup.pin_node(tile_popup, tile.space, ScorePopup.Anchor.CENTER, 0, -60)
+		tile_popup.set_base(tile.base)
+		tile_popup.set_mult(tile.mult)
+		tile_popups.append(tile_popup)
 	Sound.play(Sound.SOUND_TOKEN)
 	await get_tree().create_timer(Settings.BEAT).timeout
 	ScorePopup.dismiss(word_popup)
+	for popup in tile_popups:
+		ScorePopup.dismiss(popup)
 	
 func _send_juice(word_score: WordScore):
 	pass
