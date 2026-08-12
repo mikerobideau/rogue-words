@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Fizz" load_steps=2 format=3 uid="uid://cegrnfiuaxaas"]
+
+[ext_resource type="Script" path="res://components/relic/data/basic/fizz/fizz.gd" id="1_o1beb"]
+
+[resource]
+script = ExtResource("1_o1beb")
+value = 1
+relic_name = "Fizz"
+description = "All tokens earn +1 mult"
+rarity = 0

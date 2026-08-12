@@ -28,6 +28,7 @@ func _score_tile(space: Space, display_letter: String, word: String, context: Re
 	for relic in context.relics:
 		var j = relic.data.get_juice(context)
 		var m = relic.data.get_mult(context)
+		print_debug(str(m))
 		if j != 0.0 or m != 0.0:
 			juice += j
 			mult += m
