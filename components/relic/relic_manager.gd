@@ -16,12 +16,6 @@ func on_token_destroyed(context: RelicContext):
 		if response:
 			_activate_relic(relic, response, relic.data.get_on_token_destroyed_text(response))
 		relic.data.data_changed.emit()
-
-func get_mult() -> int:
-	var mult = 1
-	for relic in GameState.relics:
-		mult *= relic.get_mult()
-	return mult
 		
 func get_score_report(context: RelicContext) -> RelicReport:
 	var report = RelicReport.new()  

@@ -1,5 +1,5 @@
 extends Resource
-class_name RelicDataOld
+class_name RelicData
 
 signal data_changed()
 signal scaled(v: int)
@@ -76,25 +76,30 @@ func before_score(context: RelicContext) -> RelicResponse:
 func get_before_score_text(response: RelicResponse) -> String:
 	return ''
 
-func get_score_report(context: RelicContext) -> RelicReportItem:
-	var score = get_score(context)
-	if score == -1: #Relic condition not met
-		return null
-	var report = RelicReportItem.new()
-	report.relic = context.relic
-	report.prev_score = context.word_score
-	report.new_score = score
-	report.text = get_score_text(context)
-	return report
+func get_juice(context: RelicContext) -> int:
+	return 0
 
-func get_score_text(context: RelicContext):
-	return ''
-
-func get_score(context: RelicContext) -> int:
-	return -1
-	
-func get_mult() -> int:
+func get_mult(context: RelicContext) -> int:
 	return 1
+
+#func get_score_report(context: RelicContext) -> RelicReportItem:
+#	var score = get_score(context)
+#	if score == -1: #Relic condition not met
+#		return null
+#	var report = RelicReportItem.new()
+#	report.relic = context.relic
+#	report.prev_score = context.word_score
+#	report.new_score = score
+#	report.text = get_score_text(context)
+#	return report
+
+#func get_score_text(context: RelicContext):
+#	return ''
+
+#func get_score(context: RelicContext) -> int:
+#	return -1
+	
+
 	
 #---------------------------------------------------------------------------------------------------
 # Round Events
