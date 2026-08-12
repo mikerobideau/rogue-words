@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_b87st")
-value = 10
+value = 1
 relic_name = "Juice"
-description = "+10 score"
-cost = 3
+description = "All scored tokens earn +1 juice"
+rarity = 0

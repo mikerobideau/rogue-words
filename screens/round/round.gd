@@ -4,7 +4,7 @@ class_name Round
 signal game_over(message: String)
 signal game_won()
 
-const TilePopupScene = preload("res://components/ui/popup_box/tile_score_popup.tscn")
+const TilePopupScene = preload('res://components/ui/popup_box/tile_score_popup.tscn')
 const TURNS_PER_ROUND = 12
 const DISCARDS_PER_ROUND = 3
 
@@ -199,54 +199,55 @@ func _score_words(found_words: Array, context: RelicContext, space: Space):
 		var word_score = scorer.score_word(found_word, context)
 		await _animate_word(word_score, context, space)
 		score_panel.score += word_score.total
-		#await _send_juice(word_score)
+		#await get_tree().create_timer(Settings.BEAT * 2).timeout
 		
-	await get_tree().create_timer(0.25).timeout
+	#await get_tree().create_timer(Settings.BEAT * 2).timeout
 		
 func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
-	var relic_report = await relic_manager.get_score_report(context)
-	var popups = {}
 	var word_popup = await ScorePopup.spawn(ScorePopup.Template.WORD, word_score.word, word_target)
-	var tile_popups: Array[TileScorePopup] = []
-	
-	#initial beat
+	var popups := {}
+	var max_beats := 0
 	for tile in word_score.tiles:
 		tile.space.token.pulse()
 		var tile_popup = TilePopupScene.instantiate()
 		await ScorePopup.pin_node(tile_popup, tile.space, ScorePopup.Anchor.CENTER, 0, -60)
-		tile_popup.set_base(tile.base)
-		tile_popup.set_mult(tile.mult)
-		tile_popups.append(tile_popup)
-	Sound.play(Sound.SOUND_TOKEN)
-	await get_tree().create_timer(Settings.BEAT).timeout
-	
-	#relic beats
-	for beat in word_score.relic_beats:
-		var relic_node = _relic_node(beat["relic"])
-		if relic_node:
-			relic_node.pulse()
-		for hit in beat["hits"]:
-			var popup = popups[hit["tile"].space]
-			if hit["juice"] != 0.0:
-				popup.add_base(hit["juice"])
-			if hit["mult"] != 0.0 or hit["xmult"] != 1.0:
-				popup.apply_mult(hit["mult"], hit["xmult"])
-		Sound.play(Sound.SOUND_RELIC_SCORE)
-		await get_tree().create_timer(Settings.BEAT).timeout
-	
-	#dismiss
-	ScorePopup.dismiss(word_popup)
-	for popup in tile_popups:
-		ScorePopup.dismiss(popup)
-	
-func _relic_node(data: RelicData) -> Relic:
-	for r in hud.get_relics():
-		if r.data == data:
-			return r
-	return null
+		popups[tile.space] = tile_popup
+		max_beats = max(max_beats, tile.beats.size())
 
-func _send_juice(word_score: WordScore):
-	pass
+	for i in max_beats:
+		var pulsed := {}
+		for tile in word_score.tiles:
+			if i < tile.beats.size():
+				var beat = tile.beats[i]
+				var popup = popups[tile.space]
+				popup.set_base(beat['juice'])
+				popup.set_mult(beat['mult'])
+				if beat['relic'] != null:
+					var node = beat['relic']
+					if node and not pulsed.has(node):
+						node.pulse()
+						pulsed[node] = true
+		Sound.play(Sound.SOUND_RELIC_SCORE if i > 0 else Sound.SOUND_TOKEN)
+		await get_tree().create_timer(Settings.BEAT).timeout
+
+	for popup in popups.values():
+		popup.resolve()
+	ScorePopup.dismiss(word_popup)
+	await get_tree().create_timer(Settings.BEAT).timeout
+	_send_juice(popups.values())
+	await get_tree().create_timer(Settings.BEAT).timeout
+	#for popup in popups.values():
+	#	ScorePopup.dismiss(popup)
+
+func _send_juice(popups: Array):
+	var tweens: Array[Tween] = [] 
+	for popup in popups:
+		popup.top_level = true
+		var t := create_tween()
+		t.tween_property(popup, "global_position", score_panel.juice_target.global_position, Settings.BEAT).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		t.tween_callback(popup.queue_free)
+		tweens.append(t)
+	await tweens[0].finished
 	
 func _on_space_hovered(space: Space):
 	if selected_token:
@@ -268,7 +269,7 @@ func _on_round_complete(context: RelicContext):
 	round_summary.show_actions()
 
 func _path_to_word(path: Array):
-	var word := ""
+	var word := ''
 	for p in path:
 		word += p.token.letter
 	return word

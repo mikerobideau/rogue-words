@@ -2,30 +2,63 @@
 
 [ext_resource type="Script" path="res://components/ui/popup_box/tile_score_popup.gd" id="1_ishhw"]
 
-[node name="TileScorePopup" type="HBoxContainer"]
+[node name="TileScorePopup" type="Control"]
+custom_minimum_size = Vector2(107, 23)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 107.0
+size_flags_horizontal = 4
+script = ExtResource("1_ishhw")
+
+[node name="Row" type="HBoxContainer" parent="."]
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_right = 37.0
-offset_bottom = 23.0
+offset_left = -53.5
+offset_top = -11.5
+offset_right = 53.5
+offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_ishhw")
+alignment = 1
 
-[node name="Base" type="Label" parent="."]
+[node name="Base" type="Label" parent="Row"]
 layout_mode = 2
 theme_type_variation = &"HeaderSmall"
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 text = "1"
 
-[node name="X" type="Label" parent="."]
+[node name="X" type="Label" parent="Row"]
 layout_mode = 2
 theme_type_variation = &"HeaderSmall"
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 text = "x"
 
-[node name="Mult" type="Label" parent="."]
+[node name="Mult" type="Label" parent="Row"]
 layout_mode = 2
 theme_type_variation = &"HeaderSmall"
 theme_override_colors/font_color = Color(1, 0.0705882, 0.505882, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 text = "1"
+
+[node name="Total" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -16.0
+offset_right = 20.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HeaderSmall"
+theme_override_colors/font_color = Color(0.715771, 0.477701, 0.972723, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+horizontal_alignment = 1
+vertical_alignment = 1

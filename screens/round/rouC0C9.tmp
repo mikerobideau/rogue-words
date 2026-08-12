@@ -1,0 +1,206 @@
+[gd_scene load_steps=14 format=3 uid="uid://f6qf3gwnek5j"]
+
+[ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
+[ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/score_panel.tscn" id="2_7t8ks"]
+[ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
+[ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
+[ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
+[ext_resource type="PackedScene" uid="uid://hs3l7uvt8ar5" path="res://components/token_bag/token_bag.tscn" id="4_4uwb7"]
+[ext_resource type="PackedScene" uid="uid://1kpm86kugbt5" path="res://screens/round/round_summary.tscn" id="5_0k0pu"]
+[ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
+[ext_resource type="Texture2D" uid="uid://oixwgsb2kxxm" path="res://assets/ui/leaf/1x/board_leaf_corners.png" id="6_ej0v7"]
+[ext_resource type="Texture2D" uid="uid://csdwe5opnsotx" path="res://assets/ui/leaf/1x/leaf_round_corners.png" id="6_r1oy6"]
+[ext_resource type="PackedScene" uid="uid://crnqdyys7xg31" path="res://screens/round/top_container.tscn" id="7_ladlb"]
+[ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/score/word.tscn" id="7_uqrp3"]
+[ext_resource type="Texture2D" uid="uid://fkyubdsotgea" path="res://assets/ui/leaf/1x/grape_leaf_large.png" id="10_8tgtu"]
+
+[node name="Round" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_51id5")
+
+[node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
+
+[node name="Scorer" parent="." instance=ExtResource("5_va824")]
+
+[node name="TokenBag" parent="." instance=ExtResource("4_4uwb7")]
+
+[node name="RoundSummary" parent="." instance=ExtResource("5_0k0pu")]
+
+[node name="RoundLeafCorners" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -1361.0
+offset_top = -785.0
+offset_right = 1361.0
+offset_bottom = 785.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_r1oy6")
+
+[node name="BoardLeafEdges" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -605.5
+offset_top = -441.0
+offset_right = 605.5
+offset_bottom = 441.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_ej0v7")
+
+[node name="TopMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -550.0
+offset_right = 550.0
+offset_bottom = 200.0
+grow_horizontal = 2
+theme_override_constants/margin_top = 32
+
+[node name="TopContainer" parent="TopMargin" instance=ExtResource("7_ladlb")]
+visible = false
+custom_minimum_size = Vector2(1100, 150)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_type_variation = &"Panel3"
+
+[node name="Instruction" type="Label" parent="TopMargin/TopContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = -25.0
+offset_right = 0.5
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Word" parent="TopMargin/TopContainer" instance=ExtResource("7_uqrp3")]
+layout_mode = 1
+anchors_preset = 4
+anchor_left = 0.0
+anchor_right = 0.0
+grow_horizontal = 1
+
+[node name="BottomMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -128.0
+offset_right = 500.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 32
+
+[node name="Hand" parent="BottomMargin" instance=ExtResource("3_thhj8")]
+layout_mode = 2
+
+[node name="BoardContainer" type="Panel" parent="."]
+custom_minimum_size = Vector2(1100, 1000)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -500.0
+offset_right = 500.0
+offset_bottom = 500.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"Panel3"
+
+[node name="WordTarget" type="Node2D" parent="BoardContainer"]
+position = Vector2(550, 100)
+
+[node name="Leaf" type="TextureRect" parent="BoardContainer"]
+modulate = Color(1, 1, 1, 0.588235)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -331.0
+offset_top = -359.5
+offset_right = 331.0
+offset_bottom = 359.5
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("10_8tgtu")
+
+[node name="Board" parent="BoardContainer" instance=ExtResource("3_jxqlj")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -750.0
+offset_top = -250.0
+offset_right = 750.0
+offset_bottom = 250.0
+
+[node name="Left" type="CenterContainer" parent="."]
+custom_minimum_size = Vector2(700, 1440)
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -720.0
+offset_right = 560.0
+offset_bottom = 720.0
+grow_vertical = 2
+
+[node name="ScorePanel" parent="Left" instance=ExtResource("2_7t8ks")]
+layout_mode = 2
+
+[node name="BottomLeft" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -55.0
+offset_right = 148.0
+grow_vertical = 0
+theme_override_constants/margin_left = 500
+theme_override_constants/margin_bottom = 50
+
+[node name="BagButton" type="Button" parent="BottomLeft"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+text = "Bag"
+
+[connection signal="pressed" from="BottomLeft/BagButton" to="." method="_on_bag_button_pressed"]

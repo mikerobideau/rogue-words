@@ -80,7 +80,7 @@ func get_juice(context: RelicContext) -> int:
 	return 0
 
 func get_mult(context: RelicContext) -> int:
-	return 1
+	return 0
 
 #func get_score_report(context: RelicContext) -> RelicReportItem:
 #	var score = get_score(context)
