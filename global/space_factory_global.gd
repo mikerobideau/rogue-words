@@ -6,7 +6,7 @@ var StandardSpace = preload("res://components/space/data/space/standard_space.tr
 var JuiceSpace = preload("res://components/space/data/juice_space/juice_space.tres")
 var MultSpace = preload("res://components/space/data/mult_space/mult_space.tres")
 
-const ENHANCED_PROBABILITY = 0.5
+const ENHANCED_PROBABILITY = 0.2
 
 func create_random_scene() -> Space:
 	var data = create_random_data()
@@ -15,12 +15,11 @@ func create_random_scene() -> Space:
 func create_scene(data: SpaceData) -> Space:
 	var scene = SpaceScene.instantiate()
 	scene.data = data
-	print_debug(str(data))
 	return scene
 
 func create_random_data() -> SpaceData:
 	var data: SpaceData
-	if randf() > ENHANCED_PROBABILITY:
+	if randf() < ENHANCED_PROBABILITY:
 		var enhanced_spaces = [JuiceSpace, MultSpace]
 		return enhanced_spaces.pick_random()
 	else:

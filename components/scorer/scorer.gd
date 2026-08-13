@@ -15,9 +15,13 @@ func _score_tile(space: Space, display_letter: String, word: String, context: Re
 	var tile := TileScore.new()
 	tile.space = space
 	tile.display_letter = display_letter
+	var token_mult := 0
+	if space.token.enhancement:
+		space.token.enhancement.on_scored(space.token)
+		token_mult = space.token.enhancement.get_mult()
 
 	var juice := float(space.token.value + space.data.get_juice())
-	var mult := float(1 + space.data.get_mult())
+	var mult := float(1 + space.data.get_mult() + token_mult)
 	
 	#if space.token.data.enhancement:
 	#	mult *= space.token.data.enhancement.get_mult()
@@ -27,7 +31,6 @@ func _score_tile(space: Space, display_letter: String, word: String, context: Re
 	for relic in context.relics:
 		var j = relic.data.get_juice(context)
 		var m = relic.data.get_mult(context)
-		print_debug(str(m))
 		if j != 0.0 or m != 0.0:
 			juice += j
 			mult += m

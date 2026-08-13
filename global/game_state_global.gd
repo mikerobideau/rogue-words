@@ -85,7 +85,6 @@ func add_item(item: ItemData):
 	items_changed.emit()
 	
 func remove_item(item: ItemData):
-	print_debug('removing item')
 	items.erase(item)
 	items_changed.emit()
 

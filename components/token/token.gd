@@ -32,7 +32,7 @@ var is_animated := true
 	get(): return data.value
 	set(v): 
 		data.value = v
-		_update_label()
+		_on_value_changed()
 		
 var is_selectable := true
 		
@@ -51,7 +51,6 @@ func _ready():
 	_update_sprite()
 	_init_click_detection()
 	data.letter_changed.connect(_on_letter_changed)
-	data.value_changed.connect(_on_value_changed)
 	
 func enhance(e: TokenEnhancement):
 	Tooltip.hide_for_node()

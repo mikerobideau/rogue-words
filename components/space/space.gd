@@ -114,7 +114,6 @@ func _animate_badge():
 	tween.tween_property(badge, "scale", Vector2.ONE, 0.4)
 
 func _show_badge():
-	print_debug('show badge')
 	badge.z_index = 1
 	badge.position = Vector2(-Token.RADIUS, 0)
 	badge.color = data.color

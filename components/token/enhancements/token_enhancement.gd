@@ -11,11 +11,8 @@ signal charged()
 func on_placed():
 	pass
 	
-func on_scored():
+func on_scored(token: Token):
 	pass
 	
 func get_mult() -> int:
-	return 1
-
-func get_plus_score() -> int:
 	return 0
