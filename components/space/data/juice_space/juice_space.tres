@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="JuiceSpace" load_steps=2 format=3 uid="uid://bwltx1m2mfhy5"]
+
+[ext_resource type="Script" path="res://components/space/data/juice_space/juice_space.gd" id="1_gqlhh"]
+
+[resource]
+script = ExtResource("1_gqlhh")
+juice = 5
+color = Color(0.317647, 0.0705882, 0.505882, 1)
+has_badge = true

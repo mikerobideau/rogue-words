@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://v6aub4m84xgt"]
+[gd_scene load_steps=11 format=3 uid="uid://v6aub4m84xgt"]
 
 [ext_resource type="Texture2D" uid="uid://co6dsl3andg0e" path="res://assets/sprites/space/1x/space.png" id="1_3j5bs"]
 [ext_resource type="Script" path="res://components/space/space.gd" id="1_7pr7h"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://d30nyy2c7jo0v" path="res://components/space/badge.tscn" id="4_xerhu"]
 [ext_resource type="Texture2D" uid="uid://beu8dap5t0fsp" path="res://assets/sprites/space/1x/space_disabled.png" id="5_uifn4"]
 [ext_resource type="Texture2D" uid="uid://bswsxna4gfu1r" path="res://assets/sprites/space/1x/space_hover.png" id="6_4g3uk"]
+[ext_resource type="Texture2D" uid="uid://ckmkqypbji3qg" path="res://assets/sprites/space/1x/space_glow.png" id="6_8a2ld"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ghnjp"]
 animations = [{
@@ -43,6 +44,14 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": ExtResource("6_8a2ld")
+}],
+"loop": true,
+"name": &"glow",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": ExtResource("6_4g3uk")
 }],
 "loop": true,
@@ -52,7 +61,7 @@ animations = [{
 
 [node name="Space" type="AnimatedSprite2D"]
 sprite_frames = SubResource("SpriteFrames_ghnjp")
-animation = &"active"
+animation = &"glow"
 script = ExtResource("1_7pr7h")
 
 [node name="Badge" parent="." instance=ExtResource("4_xerhu")]

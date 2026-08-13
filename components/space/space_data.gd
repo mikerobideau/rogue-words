@@ -1,43 +1,16 @@
 extends Resource
 class_name SpaceData
 
-enum Type {
-	STANDARD,
-	TRIPLE_LETTER,
-	DOUBLE_WORD
-}
+@export var has_badge := false
 
-@export var type: Type
+func get_juice() -> int:
+	return 0
 
 func get_mult() -> int:
-	if type == Type.TRIPLE_LETTER:
-		return 3
-	return -1
+	return 0
 
-func modify_letter_score(v: int) -> int:
-	if type == Type.TRIPLE_LETTER:
-		return v * 3
-	return v
+func get_badge_text() -> String:
+	return ''
 
-func type_label():
-	match type:
-		Type.STANDARD: return ''
-		Type.TRIPLE_LETTER: return 'Letter x3'
-		Type.DOUBLE_WORD: return 'Word x2'
-
-func get_word_mult():
-	match type:
-		Type.DOUBLE_WORD:
-			return 2
-		_:
-			return 1
-
-func has_letter_effect():
-	match type:
-		Type.TRIPLE_LETTER:
-			return true
-		_:
-			return false
-			
-func has_enhancement():
-	return type != Type.STANDARD
+func get_label_text() -> String:
+	return ''

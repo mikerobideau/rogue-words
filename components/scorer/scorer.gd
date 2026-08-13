@@ -16,9 +16,8 @@ func _score_tile(space: Space, display_letter: String, word: String, context: Re
 	tile.space = space
 	tile.display_letter = display_letter
 
-	var juice := float(space.token.value)
-	#var mult := float(space.get_letter_mult())
-	var mult = 1.0
+	var juice := float(space.token.value + space.data.get_juice())
+	var mult := float(1 + space.data.get_mult())
 	
 	#if space.token.data.enhancement:
 	#	mult *= space.token.data.enhancement.get_mult()

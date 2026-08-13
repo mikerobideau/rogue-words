@@ -2,6 +2,11 @@ extends Node
 class_name SpaceFactoryGlobal
 
 var SpaceScene = preload("res://components/space/space.tscn")
+var StandardSpace = preload("res://components/space/data/space/standard_space.tres")
+var JuiceSpace = preload("res://components/space/data/juice_space/juice_space.tres")
+var MultSpace = preload("res://components/space/data/mult_space/mult_space.tres")
+
+const ENHANCED_PROBABILITY = 0.5
 
 func create_random_scene() -> Space:
 	var data = create_random_data()
@@ -10,13 +15,13 @@ func create_random_scene() -> Space:
 func create_scene(data: SpaceData) -> Space:
 	var scene = SpaceScene.instantiate()
 	scene.data = data
+	print_debug(str(data))
 	return scene
 
 func create_random_data() -> SpaceData:
-	var data = SpaceData.new()
-	var enhanced_types = SpaceData.Type.values().filter(func(t): return t != SpaceData.Type.STANDARD)
-	if randf() > 0.8:
-		data.type = enhanced_types[randi() % enhanced_types.size()]
+	var data: SpaceData
+	if randf() > ENHANCED_PROBABILITY:
+		var enhanced_spaces = [JuiceSpace, MultSpace]
+		return enhanced_spaces.pick_random()
 	else:
-		data.type = SpaceData.Type.STANDARD
-	return data
+		return StandardSpace

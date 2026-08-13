@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="StandardSpace" load_steps=2 format=3 uid="uid://da2831qv7ffww"]
+
+[ext_resource type="Script" path="res://components/space/data/space/standard_space.gd" id="1_hkrnj"]
+
+[resource]
+script = ExtResource("1_hkrnj")
+juice = 0
+color = Color(0, 0, 0, 1)
+has_badge = false

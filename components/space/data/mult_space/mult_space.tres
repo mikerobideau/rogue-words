@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="MultSpace" load_steps=2 format=3 uid="uid://dbt3atdu856jm"]
+
+[ext_resource type="Script" path="res://components/space/data/mult_space/mult_space.gd" id="1_lvjlt"]
+
+[resource]
+script = ExtResource("1_lvjlt")
+mult = 2
+color = Color(0.298039, 0.631373, 0.639216, 1)
+has_badge = true

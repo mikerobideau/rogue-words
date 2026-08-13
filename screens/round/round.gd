@@ -208,7 +208,7 @@ func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
 	var popups := {}
 	var max_beats := 0
 	for tile in word_score.tiles:
-		tile.space.token.pulse()
+		tile.space.play_glow()
 		var tile_popup = TilePopupScene.instantiate()
 		await ScorePopup.pin_node(tile_popup, tile.space, ScorePopup.Anchor.CENTER, 0, -60)
 		popups[tile.space] = tile_popup
@@ -234,10 +234,10 @@ func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
 		popup.resolve()
 	ScorePopup.dismiss(word_popup)
 	await get_tree().create_timer(Settings.BEAT).timeout
+	for tile in word_score.tiles:
+		tile.space.play_default()
 	_send_juice(popups.values())
 	await get_tree().create_timer(Settings.BEAT).timeout
-	#for popup in popups.values():
-	#	ScorePopup.dismiss(popup)
 
 func _send_juice(popups: Array):
 	var tweens: Array[Tween] = [] 
