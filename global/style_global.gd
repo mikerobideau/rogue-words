@@ -16,6 +16,7 @@ const DARK_RED = 'c60000'
 const YELLOW = 'ffd000'
 const AMBER = 'ffba00'
 const ORANGE = 'ffa12a'
+const SKY_BLUE = '29abe2'
 
 #---
 

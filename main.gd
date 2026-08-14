@@ -4,10 +4,9 @@ class_name Main
 @onready var hud = $Hud
 @onready var screen_container = $ScreenContainer
 @onready var relic_manager = $RelicManager
-@onready var center_panel = $ScreenContainer/CenterPanel
 @onready var rain = $ScreenContainer/RainPanel
-
-const DEFAULT_CENTER_PANEL_COLOR = '#f5f5f5'
+@onready var cloud_far = $ScreenContainer/ParallaxBackground/CloudFar
+@onready var cloud_near = $ScreenContainer/ParallaxBackground/CloudNear
 
 const SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
@@ -67,7 +66,6 @@ func _next_round():
 		#center_panel.color = Color.BLACK
 	else:
 		hud.title = 'Round ' + str(GameState.round_number)
-		center_panel.color = DEFAULT_CENTER_PANEL_COLOR
 		rain.visible = false
 	GameState.tokens.shuffle()
 	var round = SCREENS.round.instantiate()
@@ -85,7 +83,6 @@ func _on_round_completed():
 	_enter_shop() 
 	
 func _enter_shop():
-	center_panel.color = DEFAULT_CENTER_PANEL_COLOR
 	hud.title = 'Shop'
 	var shop = SCREENS.shop.instantiate()
 	shop.completed.connect(_next_round)

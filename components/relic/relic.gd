@@ -23,7 +23,7 @@ func _update_label():
 func _on_data_scaled(v: int):
 	ScorePopup.show(ScorePopup.Template.DEFAULT, '+' + str(v), self)
 
-func pulse(delay := Settings.SCORE_DELAY_NORMAL):
+func pulse(delay := Settings.BEAT):
 	var tween = create_tween()
 	var original = rotation
 	var d = delay / 5
