@@ -278,7 +278,7 @@ func _on_token_clicked(token: Token):
 	if scoring: 
 		return
 	if active_item_slot:
-		var item_data = active_item_slot.item_data
+		var item_data = active_item_slot.item.data
 		if item_data and item_data.can_enhance_token:
 			await active_item_slot.animate_and_consume(token)
 			_apply_item(item_data, token)
