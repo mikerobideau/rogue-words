@@ -92,22 +92,20 @@ func _buy() -> void:
 		Sound.play(Sound.SOUND_DISABLED)
 		ScorePopup.show(ScorePopup.Template.DEFAULT, 'Insufficient funds!', self)
 		return
-		
+	if _inventory_full():
+		Sound.play(Sound.SOUND_DISABLED)
+		ScorePopup.show(ScorePopup.Template.DEFAULT, 'No room!', self)
+		return
 	Sound.play(Sound.SOUND_PURCHASE)
 	purchased.emit(self)
 	coin.visible = false
-	#frame.visible = false
 	sold = true
 	Tooltip.unregister(frame)
-	
-func _animate_selection():
-	pass
-	#if position_tween:
-	#	position_tween.kill()
-	#position_tween = create_tween()
-	#var target_pos = default_pos + Vector2(0, -10) if selected else default_pos
-	#var duration = 0.1 if selected else 0
-	#position_tween.tween_property(frame, 'position', target_pos, duration)
+
+func _inventory_full() -> bool:
+	if slot_type != Type.OFFER:
+		return false
+	return not GameState.has_room_for(offer_data)
 	
 func _shake_frame():
 	if shake_tween:

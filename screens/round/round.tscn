@@ -127,6 +127,9 @@ theme_override_constants/margin_bottom = 32
 [node name="Hand" parent="BottomMargin" instance=ExtResource("3_thhj8")]
 layout_mode = 2
 
+[node name="WordTarget" type="Node2D" parent="."]
+position = Vector2(1280, 250)
+
 [node name="BoardContainer" type="Panel" parent="."]
 custom_minimum_size = Vector2(1100, 1000)
 layout_mode = 1
@@ -144,9 +147,6 @@ grow_vertical = 2
 mouse_filter = 2
 theme_type_variation = &"Panel3"
 theme_override_styles/panel = SubResource("StyleBoxEmpty_0cvov")
-
-[node name="WordTarget" type="Node2D" parent="BoardContainer"]
-position = Vector2(550, 100)
 
 [node name="Leaf" type="TextureRect" parent="BoardContainer"]
 visible = false

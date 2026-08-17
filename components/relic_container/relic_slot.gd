@@ -60,7 +60,7 @@ func refresh_tooltip():
 	
 func _sell():
 	Sound.play(Sound.SOUND_SELL)
-	GameState.money += relic_data.cost / 2
+	GameState.money += relic_data.cost / 2.0
 	GameState.remove_relic(relic_data)
 	Tooltip.unregister(relic_container)
 	

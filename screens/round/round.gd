@@ -17,7 +17,7 @@ signal completed()
 @onready var top_container = $TopMargin/TopContainer
 @onready var instruction = $TopMargin/TopContainer/Instruction
 #@onready var word = $TopMargin/TopContainer/Word
-@onready var word_target = $BoardContainer/WordTarget
+@onready var word_target = $WordTarget
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
 @onready var token_bag = $TokenBag

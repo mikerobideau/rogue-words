@@ -57,7 +57,7 @@ func add_token(token: TokenData):
 var discarded_tokens: Array[TokenData]
 
 #---------------------------------------------------------------------------------------------------
-#RELICS
+#RELICS AND ITEMS
 #---------------------------------------------------------------------------------------------------
 
 var relics: Array[RelicData]
@@ -71,13 +71,9 @@ func remove_relic(relic: RelicData):
 	relics.erase(relic)
 	relics_changed.emit()
 	
-func relic_slots_available():
+func has_empty_relic_slot():
 	return max_relics - relics.size()
 	
-#---------------------------------------------------------------------------------------------------
-#ITEMS
-#---------------------------------------------------------------------------------------------------
-
 var items: Array[ItemData]
 var max_items = 3
 
@@ -89,8 +85,16 @@ func remove_item(item: ItemData):
 	items.erase(item)
 	items_changed.emit()
 
-func item_slots_available() -> int:
+func has_empty_item_slot() -> int:
 	return max_items - items.size()
+
+func has_room_for(offer_data: OfferData) -> bool:
+	match offer_data.type:
+		OfferData.Type.RELIC:
+			return has_empty_relic_slot()
+		OfferData.Type.ITEM:
+			return has_empty_item_slot()
+	return true
 
 #---------------------------------------------------------------------------------------------------
 #BOSS

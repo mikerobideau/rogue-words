@@ -89,6 +89,10 @@ func _add_offer(scene: Node):
 			scene.position = (offer_container.size - scene.size) / 2
 
 func _choose():
+	if not GameState.has_room_for(data):
+		Sound.play(Sound.SOUND_DISABLED)
+		ScorePopup.show(ScorePopup.Template.DEFAULT, 'No room!', frame)
+		return
 	is_picked = true
 	Tooltip.unregister(frame)
 	picked.emit(data)

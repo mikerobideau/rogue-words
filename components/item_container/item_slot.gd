@@ -9,13 +9,11 @@ signal use_requested(slot: ItemSlot)
 @onready var item_container = $ItemContainer
 
 const SLOT_SIZE = Vector2(106, 106)
-
-var item_data: ItemData:
-	set(v):
-		item_data = v
-		slot.disabled = item_data == null 
 		
-var item: Item
+var item: Item:
+	set(v):
+		item = v
+		slot.disabled = item == null
 var is_selected := false
 var scale_tween: Tween
 
@@ -30,7 +28,6 @@ func _on_frame_mouse_entered() -> void:
 
 func set_item(data: ItemData) -> void:
 	clear()
-	item_data = data
 	if data:
 		item = ItemFactory.create_scene(data)
 		item.set_size(Item.Size.SMALL)
@@ -43,7 +40,6 @@ func clear() -> void:
 	Tooltip.unregister(slot)
 	if item and is_instance_valid(item):
 		item.queue_free()
-	item_data = null
 	item = null
 
 func select():
@@ -79,24 +75,23 @@ func _keep():
 	pass
 	
 func _sell():
-	Sound.play(Sound.SOUND_MONEY)
-	GameState.money += item_data.cost / 2
-	GameState.remove_item(item_data)
+	Sound.play(Sound.SOUND_MONEY_EARNED)
+	GameState.money += round(item.data.cost / 2.0)
+	GameState.remove_item(item.data)
 	Tooltip.unregister(slot)
 
 func animate_and_consume(target: Node2D):
 	await item.float_to_target(target.global_position)
 	deselect()
-	item_data = null
 	item = null
 	
 func register_tooltip():
 	var default_text = 'Empty item slot'
-	var text = item_data.description if item_data else default_text
+	var text = item.data.description if item.data else default_text
 	Tooltip.register(slot, text)
 
 func _on_slot_pressed() -> void:
-	if item_data == null:
+	if item == null:
 		slot.button_pressed = false
 		return
 	if slot.button_pressed:
