@@ -7,6 +7,9 @@ signal destroyed()
 const RADIUS = 48
 
 var is_animated := true
+var default_pos: Vector2
+var has_default := false
+var raised := false
 
 @onready var label = $TokenLabel
 
@@ -43,6 +46,7 @@ var selected: bool = false:
 			_on_selected()
 	
 var scale_tween: Tween
+var pos_tween: Tween
 var transform_tween: Tween
 
 func _ready():
@@ -162,7 +166,7 @@ func scale_up():
 		scale_tween.kill()
 	scale_tween = create_tween()
 	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.2)
-	
+
 func scale_down():
 	if !is_animated:
 		return
@@ -184,33 +188,24 @@ func _animate_placed():
 func _animate_selected():
 	if !is_animated:
 		return
-	if scale_tween:
-		scale_tween.kill()
-	var scale_tween = create_tween()
-	scale_tween.tween_property(self, 'scale', Vector2(1.4, 1.4), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.1)
-	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.1)
-	
+	if not has_default:
+		default_pos = position
+		has_default = true
+	if raised:
+		return
+	raised = true
+	_slide(default_pos + Vector2(0, -50))
+	#_pop_scale_up()
+
 func _animate_deselected():
 	if !is_animated:
 		return
+	if not raised:
+		return
+	raised = false
+	_slide(default_pos)
 	scale_down()
 
-func pulse(letter_delay := 0):
-	if !is_animated:
-		return
-	if scale_tween:
-		scale_tween.kill()
-	var scale_tween = create_tween()
-	var base_scale = scale
-	scale_tween.tween_property(self, 'scale', base_scale * 1.2, letter_delay / 5)
-	scale_tween.tween_property(self, 'scale', base_scale * 0.8, letter_delay / 5)
-	scale_tween.tween_property(self, 'scale', base_scale * 1.1, letter_delay / 5)
-	scale_tween.tween_property(self, 'scale', base_scale * 0.9, letter_delay / 5)
-	scale_tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
-	
 func pop_open(custom_scale := Vector2.ONE):
 	if !is_animated:
 		return
@@ -258,3 +253,34 @@ func _transform():
 	transform_tween.tween_property(self, 'scale', Vector2(0.9, 0.9), 0.08)
 	transform_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.08)
 	transform_tween.tween_callback(func(): is_selectable = was_selectable)
+
+func pulse(letter_delay := 0):
+	if !is_animated:
+		return
+	if scale_tween:
+		scale_tween.kill()
+	var scale_tween = create_tween()
+	var base_scale = scale
+	scale_tween.tween_property(self, 'scale', base_scale * 1.2, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale * 0.8, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale * 1.1, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale * 0.9, letter_delay / 5)
+	scale_tween.tween_property(self, 'scale', base_scale, letter_delay / 5)
+
+func _pop_scale_up():
+	if !is_animated:
+		return
+	if scale_tween:
+		scale_tween.kill()
+	var scale_tween = create_tween()
+	scale_tween.tween_property(self, 'scale', Vector2(1.4, 1.4), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.0, 1.0), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.3, 1.3), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.1, 1.1), 0.1)
+	scale_tween.tween_property(self, 'scale', Vector2(1.2, 1.2), 0.1)
+
+func _slide(target_pos: Vector2):
+	if pos_tween:
+		pos_tween.kill()
+	pos_tween = create_tween()
+	pos_tween.tween_property(self, 'position', target_pos, 0.2)
