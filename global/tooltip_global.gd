@@ -6,6 +6,7 @@ const GAP := 8.0
 var tooltip: PanelContainer
 var current_target: Control
 var tooltip_texts: Dictionary = {}
+var suppressed := false
 
 func _ready() -> void:
 	layer = 100
@@ -32,6 +33,12 @@ func unregister(target: Control) -> void:
 	if target.tree_exiting.is_connected(freed):
 		target.tree_exiting.disconnect(freed)
 	if current_target == target:
+		_clear_tooltip()
+		current_target = null
+
+func set_suppressed(value: bool) -> void:
+	suppressed = value
+	if suppressed:
 		_clear_tooltip()
 		current_target = null
 
@@ -66,6 +73,8 @@ func _clear_tooltip() -> void:
 	tooltip = null
 
 func _present_for_control(target: Control) -> void:
+	if suppressed:
+		return
 	_spawn_tooltip(tooltip_texts.get(target, ""))
 	_position_tooltip(target)
 	tooltip.visible = true
@@ -92,7 +101,7 @@ func _position_tooltip(target: Control) -> void:
 # --- Node2D variant ---
 
 func show_for_node(target: Node2D, text: String) -> void:
-	if not is_instance_valid(target):
+	if suppressed or not is_instance_valid(target):
 		return
 	_spawn_tooltip(text)
 	var screen_pos := target.get_global_transform_with_canvas().origin

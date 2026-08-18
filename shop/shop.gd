@@ -101,13 +101,10 @@ func _open_pack(pack: Pack):
 func _on_pack_offer_picked(offer_data: OfferData):
 	match offer_data.type:
 		OfferData.Type.RELIC:
-			print_debug('adding relic')
 			GameState.add_relic(offer_data.relic_data)
 		OfferData.Type.ITEM:
-			print_debug('adding item')
 			GameState.add_item(offer_data.item_data)
 		OfferData.Type.TOKEN:
-			print_debug('adding token')
 			GameState.add_token(offer_data.token_data)
 
 func _on_open_pack_completed():
@@ -117,7 +114,6 @@ func _on_exit_pressed() -> void:
 	completed.emit()
 
 func _on_reroll_pressed() -> void:
-	
 	if GameState.money < reroll_cost:
 		return
 	GameState.money -= reroll_cost

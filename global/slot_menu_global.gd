@@ -21,6 +21,7 @@ func _ready() -> void:
 
 # actions: Array of { "text": String, "callback": Callable }
 func open(target: Control, actions: Array) -> void:
+	Tooltip.set_suppressed(true)
 	current_target = target
 	menu.set_actions(actions)
 	backdrop.visible = true
@@ -29,6 +30,7 @@ func open(target: Control, actions: Array) -> void:
 	_position_menu(target)
 
 func close() -> void:
+	Tooltip.set_suppressed(false)
 	menu.visible = false
 	backdrop.visible = false
 	current_target = null
