@@ -9,13 +9,15 @@ const OFFER_SCALE := Vector2(1.0, 1.0)
 const RELIC_SCALE = Vector2(0.75, 0.75)
 const BACK_TEXTURE = preload("res://assets/ui/panel/1x/slot_back.png")
 
-@export var is_selectable := false
-
 @onready var frame = $Frame
 @onready var title_container = $Frame/TitleContainer
 @onready var title = $Frame/TitleContainer/VBoxContainer/Title
 @onready var rarity_label = $Frame/TitleContainer/VBoxContainer/Rarity
 @onready var offer_container = $Frame/Offer
+@export var is_selectable := false:
+	set(v):
+		is_selectable = v
+		frame.disabled = !v
 
 var data: OfferData:
 	set(v):
@@ -34,6 +36,7 @@ func _ready():
 	title_container.visible = false
 	pivot_offset = size / 2
 	frame.pivot_offset = frame.size / 2
+	frame.disabled = true
 	scale = Vector2.ZERO
 	front_texture = frame.texture_normal
 	_set_face_down()
