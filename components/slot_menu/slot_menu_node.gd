@@ -10,7 +10,9 @@ func set_actions(actions: Array) -> void:
 	for action in actions:
 		var button := Button.new()
 		button.text = action["text"]
-		button.pressed.connect(_on_action_pressed.bind(action["callback"]))
+		button.disabled = action.get("disabled", false)
+		if not button.disabled:
+			button.pressed.connect(_on_action_pressed.bind(action["callback"]))
 		actions_container.add_child(button)
 
 func _clear() -> void:

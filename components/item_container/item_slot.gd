@@ -48,8 +48,18 @@ func select():
 	if item:
 		_animate_selected(item, true)
 	item_selected.emit(self)
+	var container := _find_item_container()
+	if container and not container.token_selected_changed.is_connected(_refresh_menu):
+		container.token_selected_changed.connect(_refresh_menu)
+	_open_menu()
+
+func _refresh_menu(_value: bool) -> void:
+	if is_selected:
+		_open_menu()
+
+func _open_menu() -> void:
 	SlotMenu.open(slot, [
-		{ "text": "Use",  "callback": _use },
+		{ "text": "Use",  "callback": _use, "disabled": not _can_use() },
 		{ "text": "Sell", "callback": _sell },
 	])
 
@@ -63,12 +73,25 @@ func _animate_selected(item: Item, selected: bool):
 func _use() -> void:
 	use_requested.emit(self)
 	
+func _can_use() -> bool:
+	var container := _find_item_container()
+	return item != null and item.data.can_enhance_token and container != null and container.token_selected
+
+func _find_item_container() -> ItemContainer:
+	var node := get_parent()
+	while node != null and not (node is ItemContainer):
+		node = node.get_parent()
+	return node as ItemContainer
+	
 func deselect():
 	is_selected = false
 	slot.button_pressed = false
 	if item:
 		_animate_selected(item, false)
-	item_deselected.emit(self)	
+	item_deselected.emit(self)
+	var container := _find_item_container()
+	if container and container.token_selected_changed.is_connected(_refresh_menu):
+		container.token_selected_changed.disconnect(_refresh_menu)
 	SlotMenu.close()
 
 func _keep():

@@ -28,13 +28,12 @@ var scoring := false:
 	set(v):
 		scoring = v
 		_update_instruction()
-		
-var active_item_slot: ItemSlot
 
 var selected_tokens: Array[Token]:
 	set(v):
 		selected_tokens = v
 		selected_token = selected_tokens[0] if selected_tokens.size() == 1 else null
+		hud.item_container.token_selected = v.size() == 1
 		_update_discard_disabled()
 		_update_instruction()
 
@@ -97,7 +96,13 @@ func _ready():
 	#_on_round_complete(RelicContext.new())
 	
 func _on_item_use_requested(slot: ItemSlot):
-	active_item_slot = slot 
+	if scoring or selected_token == null:
+		return
+	var token := selected_token
+	var item_data := slot.item.data
+	await slot.animate_and_consume(token)
+	_apply_item(item_data, token)
+	_clear_selected_tokens() 
 	
 func _update_discard_disabled():
 	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
@@ -275,22 +280,9 @@ func _path_to_word(path: Array):
 	return word
 			
 func _on_token_clicked(token: Token):
-	if scoring: 
+	if scoring:
 		return
-	if active_item_slot:
-		var item_data = active_item_slot.item.data
-		if item_data and item_data.can_enhance_token:
-			await active_item_slot.animate_and_consume(token)
-			_apply_item(item_data, token)
-			active_item_slot = null
-			_clear_selected_tokens()
-		else:
-			#item is selected but can't be applied to token
-			#auto-deselect item and select token
-			_toggle_token_selection(token)
-			hud.item_container.deselect()
-	else:
-		_toggle_token_selection(token)
+	_toggle_token_selection(token)
 
 func _on_token_destroyed(token: Token):
 	var context = _get_relic_context()

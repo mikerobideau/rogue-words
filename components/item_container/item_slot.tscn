@@ -48,9 +48,6 @@ offset_right = 20.0
 offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-mouse_filter = 2
 
 [connection signal="mouse_entered" from="Slot" to="." method="_on_slot_mouse_entered"]
 [connection signal="pressed" from="Slot" to="." method="_on_slot_pressed"]
