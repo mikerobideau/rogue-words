@@ -8,8 +8,6 @@ const RADIUS = 48
 
 var is_animated := true
 var default_pos: Vector2
-var has_default := false
-var raised := false
 
 @onready var label = $TokenLabel
 
@@ -37,7 +35,10 @@ var raised := false
 		data.value = v
 		_on_value_changed()
 		
-var is_selectable := true
+var is_selectable := true:
+	set(v):
+		is_selectable = v
+		selected = false
 		
 var selected: bool = false:
 	set(v): 
@@ -141,6 +142,9 @@ func _init_click_detection():
 	area.mouse_exited.connect(_on_mouse_exited)
 
 func _on_mouse_entered():
+	print_debug('mouse entered')
+	print_debug('is selectable: ' + str(is_selectable))
+	print_debug('selected ' + str(selected))
 	_show_tooltip()
 	if is_selectable and not selected: 
 		Sound.play(Sound.SOUND_MOUSEOVER)
@@ -188,22 +192,11 @@ func _animate_placed():
 func _animate_selected():
 	if !is_animated:
 		return
-	if not has_default:
-		default_pos = position
-		has_default = true
-	if raised:
-		return
-	raised = true
-	_slide(default_pos + Vector2(0, -50))
-	#_pop_scale_up()
+	_pop_scale_up()
 
 func _animate_deselected():
 	if !is_animated:
 		return
-	if not raised:
-		return
-	raised = false
-	_slide(default_pos)
 	scale_down()
 
 func pop_open(custom_scale := Vector2.ONE):
@@ -231,7 +224,9 @@ func _transform():
 	if !is_animated:
 		return
 	var was_selectable := is_selectable
+	print_debug(str(was_selectable))
 	is_selectable = false #disable selection during transformation to prevent transform and mouseover animations from competing
+	
 	if scale_tween:
 		scale_tween.kill()
 	

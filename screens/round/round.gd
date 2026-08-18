@@ -15,8 +15,6 @@ signal completed()
 @onready var word_finder = $WordFinder
 @onready var scorer = $Scorer
 @onready var top_container = $TopMargin/TopContainer
-@onready var instruction = $TopMargin/TopContainer/Instruction
-#@onready var word = $TopMargin/TopContainer/Word
 @onready var word_target = $WordTarget
 @onready var score_panel = $Left/ScorePanel
 @onready var round_summary = $RoundSummary
@@ -27,17 +25,16 @@ var relic_manager: Node
 var scoring := false:
 	set(v):
 		scoring = v
-		_update_instruction()
 
-var selected_tokens: Array[Token]:
+var selected_token: Token:
 	set(v):
-		selected_tokens = v
-		selected_token = selected_tokens[0] if selected_tokens.size() == 1 else null
-		hud.item_container.token_selected = v.size() == 1
-		_update_discard_disabled()
-		_update_instruction()
-
-var selected_token: Token
+		if selected_token:
+			print_debug('clearing selected token')
+			selected_token.selected = false
+		selected_token = v
+		if v:
+			v.selected = true
+		hud.item_container.token_selected = v != null
 		
 var discards_remaining: int:
 	set(v):
@@ -84,7 +81,6 @@ func _ready():
 	score_panel.slide_in()
 	
 	top_container.slide_in()
-	_update_instruction()
 	
 	hud.relic_container.refresh_relics()
 	hud.item_container.refresh_items()
@@ -102,49 +98,18 @@ func _on_item_use_requested(slot: ItemSlot):
 	var item_data := slot.item.data
 	await slot.animate_and_consume(token)
 	_apply_item(item_data, token)
-	_clear_selected_tokens() 
+	selected_token = null
 	
 func _update_discard_disabled():
-	hand.discard_button.disabled = discards_remaining == 0 or selected_tokens.size() < 1
-	
-func _update_instruction():
-	if scoring:
-		instruction.visible = false
-		instruction.text = 'Scoring'
-	elif selected_tokens.size() < 1:
-		instruction.visible = true
-		instruction.text = 'Choose a token'
-	elif selected_tokens.size() == 1:
-		instruction.visible = true
-		instruction.text = 'Play or discard'
-	elif selected_tokens.size() > 1:
-		instruction.visible = true
-		instruction.text = 'Discard all'
-	else:
-		instruction.visible = true
-		instruction.text = 'Unhandled'
-	
-func _clear_selected_token():
-	if selected_token:
-		selected_token.selected = false
-		selected_token = null
-		
-func _clear_selected_tokens():
-	for token in selected_tokens:
-		if is_instance_valid(token):
-			token.selected = false
-	selected_tokens = []
-	_clear_selected_token()
+	hand.discard_button.disabled = discards_remaining == 0
 	
 func _on_discard_clicked():
-	if selected_tokens.size() < 1:
-		return
+	var selected_tokens = hand.all_tokens()
 	var context = _get_relic_context()
 	hand.discard(selected_tokens as Array[Token])
 	discards_remaining -= 1
 	context.discarded_tokens = selected_tokens
 	relic_manager.on_discard(context)
-	_clear_selected_tokens()
 
 func _on_space_clicked(space: Space):
 	#Process placement
@@ -155,30 +120,13 @@ func _on_space_clicked(space: Space):
 	board.place(selected_token, space)
 	var context = _get_relic_context()
 	await relic_manager.on_token_placed(context)
-	selected_tokens.erase(selected_token)
+	selected_token = null
 
 	if space.token != null: #relic_manager.on_token_placed may destroy the token before it is scored
 		var found_words = word_finder.find_words(space)
 		var word_number = 1
 		
 		await _score_words(found_words, context, space)
-		
-		#var word_animation_enabled = false
-		#for found_word in found_words:
-			#ScorePopup.show(found_word.word, space.token)
-			#await get_tree().create_timer(1.0).timeout
-			
-			#if word_animation_enabled:
-			#	var word_report = scorer.get_word_report(found_word)
-			#	context.word = word_report.word
-			#	context.word_score = word_report.score
-			#	context.word_report = word_report
-			#	var relic_report = await relic_manager.get_score_report(context)
-			#	await word.play(word_report, relic_report, word_number > 3)
-			#	await word.fly_tokens_to(score_panel.juice_target.global_position)
-			#	score_panel.score += relic_report.new_score
-			#	await get_tree().create_timer(0.5).timeout
-			#	word_number += 1
 		
 		if score_panel.target_met():
 			_on_round_complete(context)
@@ -190,7 +138,6 @@ func _on_space_clicked(space: Space):
 		game_over.emit('You ran out of turns')
 		return
 	await get_tree().create_timer(1.0).timeout
-	_clear_selected_tokens()
 	hand.draw_tokens(1)
 	if hand.is_empty():
 		game_over.emit('You ran out of tokens')
@@ -204,9 +151,6 @@ func _score_words(found_words: Array, context: RelicContext, space: Space):
 		var word_score = scorer.score_word(found_word, context)
 		await _animate_word(word_score, context, space)
 		score_panel.score += word_score.total
-		#await get_tree().create_timer(Settings.BEAT * 2).timeout
-		
-	#await get_tree().create_timer(Settings.BEAT * 2).timeout
 		
 func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
 	var word_popup = await ScorePopup.spawn(ScorePopup.Template.WORD, word_score.word, word_target)
@@ -291,19 +235,15 @@ func _on_token_destroyed(token: Token):
 
 func _apply_item(item_data: ItemData, token: Token):
 	item_data.enhance_token(token)
-	_clear_selected_token()
 	GameState.remove_item(item_data)
-	return
+	selected_token = null
 
 func _toggle_token_selection(token: Token):
 	token.selected = not token.selected
 	if token.selected:
-		var addition: Array[Token] = [token]
-		selected_tokens = selected_tokens + addition
+		selected_token = token
 	else:
-		var filtered: Array[Token] = []
-		filtered.assign(selected_tokens.filter(func(t): return t != token))
-		selected_tokens = filtered
+		selected_token = null
 
 func _get_relic_context():
 	var context = RelicContext.new()

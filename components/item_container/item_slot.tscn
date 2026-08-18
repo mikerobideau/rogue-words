@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://cgh7prf2qr1ay"]
 
 [ext_resource type="Script" path="res://components/item_container/item_slot.gd" id="2_s3aho"]
-[ext_resource type="Texture2D" uid="uid://mvljux1cnem7" path="res://assets/sprites/slot/1x/item_slot.png" id="2_su7oe"]
-[ext_resource type="Texture2D" uid="uid://choo5vegvwaot" path="res://assets/sprites/slot/1x/item_slot_hover.png" id="3_a8grf"]
+[ext_resource type="Texture2D" uid="uid://bass50gdl5nfi" path="res://assets/sprites/slot/1x/item_slot.png" id="2_su7oe"]
+[ext_resource type="Texture2D" uid="uid://cvyqko6l6mh2q" path="res://assets/sprites/slot/1x/item_slot_hover.png" id="3_a8grf"]
 
 [node name="ItemSlot" type="Control"]
 custom_minimum_size = Vector2(136, 136)

@@ -40,6 +40,12 @@ func remove_token(token: Token):
 	_layout_tokens()
 	return token
 	
+func all_tokens() -> Array[Token]:
+	var tokens: Array[Token]
+	for child in token_container.get_children():
+		tokens.append(child)
+	return tokens
+
 func draw_tokens(n: int):
 	for i in range(n):
 		if bag.is_empty():
