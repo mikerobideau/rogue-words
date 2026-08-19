@@ -13,20 +13,18 @@ var current_mult: float
 var min_mult = 1
 
 func before_score(context: RelicContext) -> RelicResponse:
-	if context.word.length() == decay_word_length:
+	print_debug('before score')
+	if context.word.length() <= decay_word_length:
 		_decay()
 		return RelicResponse.DECAY
-	elif context.word.length() == reset_word_length:
+	elif context.word.length() >= reset_word_length:
 		_reset()
 		return RelicResponse.RESET_POSITIVE
 	else:
 		return RelicResponse.NONE
 
-func get_score(context: RelicContext) -> int:
-	return context.word_score * current_mult
-
-func get_score_text(context: RelicContext) -> String:
-	return 'Refill x' + str(current_mult)
+func get_mult(context: RelicContext) -> int:
+	return current_mult
 	
 func get_tooltip_text(context: RelicContext) -> String:
 	return description + ' (' + 'currently x' + str(current_mult) + ')'

@@ -10,6 +10,13 @@ func on_token_placed(context: RelicContext):
 			_activate_relic(relic, response, relic.data.get_on_placed_text(response))
 			relic.data.data_changed.emit()
 
+func before_score(context: RelicContext):
+	for relic in context.relics:
+		var response = relic.data.before_score(context)
+		if response != RelicData.RelicResponse.NONE:
+			relic.data.data_changed.emit()
+			await _activate_relic(relic, response, relic.data.get_before_score_text(response))
+
 func on_token_destroyed(context: RelicContext):
 	for relic in context.relics:
 		var response = await relic.data.on_token_destroyed(context)

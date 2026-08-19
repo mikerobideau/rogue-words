@@ -29,7 +29,6 @@ var scoring := false:
 var selected_token: Token:
 	set(v):
 		if selected_token:
-			print_debug('clearing selected token')
 			selected_token.selected = false
 		selected_token = v
 		if v:
@@ -124,7 +123,6 @@ func _on_space_clicked(space: Space):
 
 	if space.token != null: #relic_manager.on_token_placed may destroy the token before it is scored
 		var found_words = word_finder.find_words(space)
-		var word_number = 1
 		
 		await _score_words(found_words, context, space)
 		
@@ -148,6 +146,8 @@ func _on_space_clicked(space: Space):
 
 func _score_words(found_words: Array, context: RelicContext, space: Space):
 	for found_word in found_words:
+		context.word = found_word["word"]
+		await relic_manager.before_score(context)
 		var word_score = scorer.score_word(found_word, context)
 		await _animate_word(word_score, context, space)
 		score_panel.score += word_score.total

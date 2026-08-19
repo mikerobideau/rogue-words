@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Inventory" load_steps=2 format=3 uid="uid://cody60wonaj1o"]
+
+[ext_resource type="Script" path="res://components/relic/data/consonant/sleep/sleep.gd" id="1_lsxbd"]
+
+[resource]
+script = ExtResource("1_lsxbd")
+bonus = 1
+relic_name = "Sleep"
+description = "Every tile scores +1 juice for each z in your bag"
+rarity = 0

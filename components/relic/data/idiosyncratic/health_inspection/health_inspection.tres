@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="HealthInspection" load_steps=2 format=3 uid="uid://rw8t8ecltyby"]
+
+[ext_resource type="Script" path="res://components/relic/data/idiosyncratic/health_inspection/health_inspection.gd" id="1_f6nt6"]
+
+[resource]
+script = ExtResource("1_f6nt6")
+scale_by = 5
+relic_name = "Health Inspection"
+description = "Gains +5 juice for each A placed.  Resets if a B, C, D, or F is placed."
+rarity = 0

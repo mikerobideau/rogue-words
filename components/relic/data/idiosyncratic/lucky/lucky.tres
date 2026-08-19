@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Lucky" load_steps=2 format=3 uid="uid://b3p1lv6ygkqd0"]
 
-[ext_resource type="Script" path="res://components/relic/data_disabled/idosyncratic/lucky/lucky.gd" id="1_ty33t"]
+[ext_resource type="Script" path="res://components/relic/data/idiosyncratic/lucky/lucky.gd" id="1_ty33t"]
 
 [resource]
 script = ExtResource("1_ty33t")

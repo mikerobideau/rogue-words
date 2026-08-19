@@ -5,8 +5,7 @@ class_name Lucky
 
 func on_token_placed(context: RelicContext) -> RelicResponse:
 	if 'LUCKY'.contains(context.placed_token.data.letter):
-		#if randf() < 0.25:
-		if randf() < 1:
+		if randf() < 0.25:
 			GameState.money += money_reward
 			return RelicResponse.MONEY_REWARD
 	return RelicResponse.NONE

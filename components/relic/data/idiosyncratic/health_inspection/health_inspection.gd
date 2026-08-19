@@ -14,13 +14,8 @@ func on_token_placed(context: RelicContext) -> RelicResponse:
 		return RelicResponse.RESET_NEGATIVE
 	return RelicResponse.NONE
 		
-func get_score(context: RelicContext) -> int:
-	if current_value > 0:
-		return context.word_score + current_value
-	return -1
-	
-func get_score_text(context: RelicContext) -> String:
-	return 'Straight A\'s +' + str(current_value)
+func get_juice(context: RelicContext) -> int:
+	return current_value
 
 func get_on_placed_text(response: RelicResponse) -> String:
 	if response == RelicResponse.UPGRADE:
