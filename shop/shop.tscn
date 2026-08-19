@@ -41,7 +41,7 @@ theme_override_constants/margin_bottom = 100
 layout_mode = 2
 theme_override_constants/h_separation = 100
 theme_override_constants/v_separation = 150
-columns = 3
+columns = 2
 
 [node name="ButtonContainer" type="CenterContainer" parent="."]
 custom_minimum_size = Vector2(560, 0)

@@ -4,7 +4,6 @@ class_name ShopScene
 const SlotScene = preload("res://shop/shop_slot.tscn")
 const PackContentScene = preload("res://screens/pack_content/pack_content.tscn")
 
-const SLOT_COUNT = 6
 const STARTING_REROLL_COST = 3
 const REROLL_INCREMENT = 2
 const OFFER_SLOT_CHANCE = 0.5
@@ -29,11 +28,13 @@ func _ready():
 
 func _populate_slots():
 	var available_packs := PackFactory.load_all_packs()
-	for i in SLOT_COUNT:
-		if randf() < OFFER_SLOT_CHANCE or available_packs.is_empty():
-			_add_offer_slot()
-		else:
-			_add_pack_slot(available_packs)
+	var per_row = slots.columns
+	for i in per_row:
+		_add_offer_slot()
+	for i in per_row:
+		if available_packs.is_empty():
+			break
+		_add_pack_slot(available_packs)
 
 func _add_pack_slot(available_packs: Array) -> void:
 	var pack_data = Rarity.pick_weighted(available_packs)
@@ -55,7 +56,7 @@ func _add_offer_slot() -> void:
 	slot.slot_selected.connect(_on_slot_selected)
 
 func _random_offer() -> OfferData:
-	var types := [OfferData.Type.ITEM, OfferData.Type.TOKEN]
+	var types := [OfferData.Type.ITEM]
 	var relic_pool := _available_relics()
 	if not relic_pool.is_empty():
 		types.append(OfferData.Type.RELIC)
