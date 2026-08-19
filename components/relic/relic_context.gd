@@ -12,3 +12,5 @@ class_name RelicContext
 @export var relic: Relic
 @export var turn_number: int
 @export var word_report: WordReport
+@export var scored_space: Space
+@export var scored_letter: String

@@ -28,6 +28,8 @@ func _score_tile(space: Space, display_letter: String, word: String, context: Re
 	
 	tile.beats.append({ "juice": juice, "mult": mult, "relic": null })
 
+	context.scored_space = space
+	context.scored_letter = display_letter
 	for relic in context.relics:
 		var j = relic.data.get_juice(context)
 		var m = relic.data.get_mult(context)

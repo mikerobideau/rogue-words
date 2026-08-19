@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CompostConsonants" load_steps=2 format=3 uid="uid://cyy2x602u5yp0"]
+
+[ext_resource type="Script" path="res://components/relic/data/consonant/compost_consonants/compost_consonants.gd" id="1_ejt7v"]
+
+[resource]
+script = ExtResource("1_ejt7v")
+scale_by = 1
+threshold = 5
+relic_name = "Compost"
+description = "Gains +1 juice for every 5 discarded consonants"
+rarity = 1
