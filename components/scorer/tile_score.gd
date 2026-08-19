@@ -1,4 +1,4 @@
-extends RefCounted
+extends Node
 class_name TileScore
 
 enum MultKind { SPACE, ENHANCEMENT, RELIC }

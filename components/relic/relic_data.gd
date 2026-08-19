@@ -111,5 +111,8 @@ func on_discard(context: RelicContext) -> RelicResponse:
 func get_discard_text(response: RelicResponse) -> String:
 	return ''
 	
-func on_round_complete(context: RelicContext) -> bool:
-	return false
+func on_round_complete(context: RelicContext) -> RelicResponse:
+	return RelicResponse.NONE
+
+func get_round_complete_text(response: RelicResponse) -> String:
+	return ''

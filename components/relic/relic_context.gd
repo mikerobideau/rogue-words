@@ -7,10 +7,9 @@ class_name RelicContext
 @export var discarded_tokens: Array[Token]
 @export var destroyed_token: TokenData
 @export var word: String
-@export var word_score: int
+@export var word_score: WordScore
 @export var relics: Array[Relic]
 @export var relic: Relic
 @export var turn_number: int
-@export var word_report: WordReport
 @export var scored_space: Space
 @export var scored_letter: String

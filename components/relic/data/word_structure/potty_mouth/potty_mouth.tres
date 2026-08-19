@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PottyMouth" load_steps=2 format=3 uid="uid://icym3ak2xno0"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/potty_mouth/potty_mouth.gd" id="1_jimwa"]
+
+[resource]
+script = ExtResource("1_jimwa")
+juice = 5
+relic_name = "$#*!"
+description = "All tiles score +5 juice if word contains exactly 4 letters"
+rarity = 0

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TopShelf" load_steps=2 format=3 uid="uid://11k2bcago3k4"]
+
+[ext_resource type="Script" path="res://components/relic/data/rare_letter/top_shelf/top_shelf.gd" id="1_0hbdt"]
+
+[resource]
+script = ExtResource("1_0hbdt")
+money_reward = 1
+relic_name = "Top Shelf"
+description = "Earn $1 when a rare letter (JQVXZ) is placed"
+rarity = 1

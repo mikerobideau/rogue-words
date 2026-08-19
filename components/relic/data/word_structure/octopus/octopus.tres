@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Octopus" load_steps=2 format=3 uid="uid://b6w8y85w5nbe6"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/octopus/octopus.gd" id="1_44d06"]
+
+[resource]
+script = ExtResource("1_44d06")
+mult = 8
+relic_name = "Octopus"
+description = "All tiles score +8 mult if word contains at least 8 letters"
+rarity = 1

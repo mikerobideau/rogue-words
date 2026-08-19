@@ -53,8 +53,10 @@ func on_discard(context: RelicContext):
 			
 func on_round_complete(context: RelicContext):
 	for relic in context.relics:
-		if relic.data.on_round_complete(context):
-			await _activate_relic(relic)
+		var response = relic.data.on_round_complete(context)
+		if response:
+			var text = relic.data.get_round_complete_text(response)
+			await _activate_relic(relic, response, text)
 			
 func add_grow_amount(context: RelicContext):
 	var expansions = 0
@@ -92,7 +94,7 @@ func _activate_relic(relic: Relic, response := RelicData.RelicResponse.NONE, tex
 		RelicData.RelicResponse.MONEY_REWARD:
 			Sound.play(Sound.SOUND_RELIC_MONEY)
 		RelicData.RelicResponse.EVENT:
-			pass
+			Sound.play(Sound.SOUND_RELIC_UPGRADE)
 		RelicData.RelicResponse.COUNTDOWN:
 			pass
 	relic.pulse()

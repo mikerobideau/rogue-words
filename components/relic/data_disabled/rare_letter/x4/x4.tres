@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="XFactor" load_steps=2 format=3 uid="uid://ci8ofhwsmuk22"]
-
-[ext_resource type="Script" path="res://components/relic/data_disabled/rare_letter/x4/x4.gd" id="1_tgndy"]
-
-[resource]
-script = ExtResource("1_tgndy")
-relic_name = "X4"
-description = "x4 if your word contains an X"
-rarity = 2

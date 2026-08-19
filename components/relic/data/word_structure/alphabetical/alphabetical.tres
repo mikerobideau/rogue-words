@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Alphabetical" load_steps=2 format=3 uid="uid://daog3k60o182j"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/alphabetical/alphabetical.gd" id="1_iom7j"]
+
+[resource]
+script = ExtResource("1_iom7j")
+mult = 3
+relic_name = "Alphabetical"
+description = "All tiles score +3 mult if word's letters are in alphabetical order"
+rarity = 0

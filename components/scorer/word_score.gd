@@ -1,5 +1,5 @@
+extends Node
 class_name WordScore
-extends RefCounted
 
 var word: String
 var tiles: Array[TileScore] = []

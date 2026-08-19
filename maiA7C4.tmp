@@ -1,0 +1,117 @@
+[gd_scene load_steps=7 format=3 uid="uid://bb6evfnlmn04c"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_dnsmp"]
+[ext_resource type="PackedScene" uid="uid://c675q66wub3hr" path="res://components/hud/hud.tscn" id="2_23aqr"]
+[ext_resource type="PackedScene" uid="uid://dclef022d1pdn" path="res://components/relic/relic_manager.tscn" id="2_h6jec"]
+[ext_resource type="Script" path="res://components/environment/cloud_spawner.gd" id="2_jmdje"]
+[ext_resource type="Shader" path="res://shader/rain_shader.gdshader" id="2_w5lrx"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_m5vbd"]
+shader = ExtResource("2_w5lrx")
+shader_parameter/rain_amount = 300.0
+shader_parameter/near_rain_length = 0.109
+shader_parameter/far_rain_length = 0.02
+shader_parameter/near_rain_width = 0.357
+shader_parameter/far_rain_width = 0.246
+shader_parameter/near_rain_transparency = 0.19
+shader_parameter/far_rain_transparency = 0.119
+shader_parameter/rain_color = Color(0.8, 0.8, 0.8, 1)
+shader_parameter/base_rain_speed = 0.511
+shader_parameter/additional_rain_speed = 0.1
+shader_parameter/slant = 0.2
+
+[node name="Main" type="Control"]
+custom_minimum_size = Vector2(2560, 1440)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 2560.0
+offset_bottom = 1440.0
+mouse_filter = 2
+script = ExtResource("1_dnsmp")
+
+[node name="ScreenContainer" type="Control" parent="."]
+custom_minimum_size = Vector2(2560, 1440)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="ScreenContainer"]
+
+[node name="ParallaxLayer" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]
+
+[node name="ColorRect" type="ColorRect" parent="ScreenContainer/ParallaxBackground/ParallaxLayer"]
+custom_minimum_size = Vector2(2560, 1440)
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0.160784, 0.670588, 0.886275, 1)
+
+[node name="CloudFar" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]
+
+[node name="CloudSpawner" type="Node2D" parent="ScreenContainer/ParallaxBackground/CloudFar"]
+script = ExtResource("2_jmdje")
+tint = Color(1, 1, 1, 0.588235)
+spawn_interval = 30.0
+min_scale = 0.4
+max_scale = 0.8
+speed = 25.0
+initial_count = 5
+
+[node name="CloudNear" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]
+motion_scale = Vector2(0.5, 0.5)
+
+[node name="CloudSpawner" type="Node2D" parent="ScreenContainer/ParallaxBackground/CloudNear"]
+script = ExtResource("2_jmdje")
+tint = Color(1, 1, 1, 1)
+spawn_interval = 15.0
+min_scale = 0.6
+max_scale = 1.0
+spawn_x = -1000.0
+initial_count = 5
+
+[node name="LeftSidebarBackground" type="ColorRect" parent="ScreenContainer"]
+custom_minimum_size = Vector2(560, 1440)
+layout_mode = 0
+offset_right = 560.0
+offset_bottom = 1440.0
+size_flags_horizontal = 0
+color = Color(0, 0, 0, 0)
+
+[node name="RightSidebarBackground" type="ColorRect" parent="ScreenContainer"]
+custom_minimum_size = Vector2(560, 1440)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -560.0
+offset_top = -720.0
+offset_bottom = 720.0
+grow_horizontal = 0
+grow_vertical = 2
+scale = Vector2(0.998095, 0.981664)
+size_flags_horizontal = 0
+color = Color(0, 0, 0, 0)
+
+[node name="RainPanel" type="ColorRect" parent="ScreenContainer"]
+visible = false
+material = SubResource("ShaderMaterial_m5vbd")
+custom_minimum_size = Vector2(1440, 1440)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.784314)
+
+[node name="RelicManager" parent="." instance=ExtResource("2_h6jec")]
+
+[node name="Hud" parent="." instance=ExtResource("2_23aqr")]
+custom_minimum_size = Vector2(2560, 1440)
+layout_mode = 1

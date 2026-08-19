@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="Harvest" load_steps=2 format=3 uid="uid://cxp5h1ur1pr77"]
+
+[ext_resource type="Script" path="res://components/relic/data/turn_and_round/harvest/harvest.gd" id="1_3xo36"]
+
+[resource]
+script = ExtResource("1_3xo36")
+money_reward = 5
+threshold = 20
+relic_name = "Harvest"
+description = "Earn $5 after every 20 words scored"
+rarity = 0

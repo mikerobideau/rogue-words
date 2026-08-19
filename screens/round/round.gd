@@ -147,12 +147,13 @@ func _on_space_clicked(space: Space):
 func _score_words(found_words: Array, context: RelicContext, space: Space):
 	for found_word in found_words:
 		context.word = found_word["word"]
+		context.word_score = scorer.score_word(found_word, context)
 		await relic_manager.before_score(context)
-		var word_score = scorer.score_word(found_word, context)
-		await _animate_word(word_score, context, space)
-		score_panel.score += word_score.total
+		await _animate_word(context, space)
+		score_panel.score += context.word_score.total
 		
-func _animate_word(word_score: WordScore, context: RelicContext, space: Space):
+func _animate_word(context: RelicContext, space: Space):
+	var word_score = context.word_score
 	var word_popup = await ScorePopup.spawn(ScorePopup.Template.WORD, word_score.word, word_target)
 	var popups := {}
 	var max_beats := 0

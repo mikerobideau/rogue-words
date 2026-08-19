@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Banana" load_steps=2 format=3 uid="uid://v5uq5lgddjex"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/banana/banana.gd" id="1_3x68y"]
+
+[resource]
+script = ExtResource("1_3x68y")
+mult = 3
+relic_name = "Banana"
+description = "All tiles score +3 mult if word contains at least 3 of the same letter"
+rarity = 0

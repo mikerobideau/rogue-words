@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Vine" load_steps=2 format=3 uid="uid://k16nhqeowcm6"]
+
+[ext_resource type="Script" path="res://components/relic/data/rare_letter/vine/vine.gd" id="1_dia2i"]
+
+[resource]
+script = ExtResource("1_dia2i")
+scale_by = 2
+relic_name = "Vine"
+description = "Gains +2 juice when a V is placed"
+rarity = 0

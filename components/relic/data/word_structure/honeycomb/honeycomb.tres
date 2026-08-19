@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Honeycomb" load_steps=2 format=3 uid="uid://74ryqe2kwq5u"]
+
+[ext_resource type="Script" path="res://components/relic/data/word_structure/honeycomb/honeycomb.gd" id="1_acoqc"]
+
+[resource]
+script = ExtResource("1_acoqc")
+juice = 25
+relic_name = "Honeycomb"
+description = "All tiles score +25 juice if word has exactly 6 letters"
+rarity = 0

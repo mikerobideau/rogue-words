@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Queue" load_steps=2 format=3 uid="uid://bqi14toymms5y"]
+
+[ext_resource type="Script" path="res://components/relic/data/rare_letter/queue/queue.gd" id="1_2nrbi"]
+
+[resource]
+script = ExtResource("1_2nrbi")
+mult = 1
+relic_name = "Queue"
+description = "All tiles score +1 mult for each Q in hand"
+rarity = 0

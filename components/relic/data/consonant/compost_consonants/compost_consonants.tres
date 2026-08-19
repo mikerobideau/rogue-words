@@ -7,5 +7,5 @@ script = ExtResource("1_ejt7v")
 scale_by = 1
 threshold = 5
 relic_name = "Compost"
-description = "Gains +1 juice for every 5 discarded consonants"
+description = "Gains +1 juice for every 5th time discarded consonant"
 rarity = 1
