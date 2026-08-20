@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3 uid="uid://bhgjwyhmf20on"]
+
+[ext_resource type="Script" path="res://components/run/loadout/loadouts.gd" id="1_mk4rt"]
+
+[node name="Loadouts" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_mk4rt")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.196078)
+
+[node name="Window" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -197.5
+offset_top = -86.0
+offset_right = 197.5
+offset_bottom = 86.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Window"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Window/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"HeaderMedium"
+text = "New Game"
+
+[node name="Nav" type="HBoxContainer" parent="Window/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="PrevButton" type="Button" parent="Window/VBox/Nav"]
+layout_mode = 2
+text = "<"
+
+[node name="Display" type="CenterContainer" parent="Window/VBox/Nav"]
+layout_mode = 2
+
+[node name="NextButton" type="Button" parent="Window/VBox/Nav"]
+layout_mode = 2
+text = ">"
+
+[node name="StartButton" type="Button" parent="Window/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "START"
+
+[connection signal="pressed" from="Window/VBox/Nav/PrevButton" to="." method="_on_prev_button_pressed"]
+[connection signal="pressed" from="Window/VBox/Nav/NextButton" to="." method="_on_next_button_pressed"]
+[connection signal="pressed" from="Window/VBox/StartButton" to="." method="_on_start_button_pressed"]

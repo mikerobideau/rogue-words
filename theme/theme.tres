@@ -13,27 +13,23 @@ corner_radius_top_right = 25
 corner_radius_bottom_right = 25
 corner_radius_bottom_left = 25
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i83q2"]
-content_margin_left = 50.0
-content_margin_top = 10.0
-content_margin_right = 50.0
-content_margin_bottom = 10.0
-bg_color = Color(0.298039, 0.631373, 0.639216, 1)
-corner_radius_top_left = 25
-corner_radius_top_right = 25
-corner_radius_bottom_right = 25
-corner_radius_bottom_left = 25
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_52lhm"]
+bg_color = Color(0, 0.671739, 0.0629645, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t67yg"]
 content_margin_left = 50.0
 content_margin_top = 10.0
 content_margin_right = 50.0
 content_margin_bottom = 10.0
-bg_color = Color(0.298039, 0.631373, 0.639216, 1)
-corner_radius_top_left = 25
-corner_radius_top_right = 25
-corner_radius_bottom_right = 25
-corner_radius_bottom_left = 25
+bg_color = Color(0, 0.52549, 0.0392157, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_julk1"]
 bg_color = Color(1, 0.952941, 0.870588, 1)
@@ -79,11 +75,10 @@ Button/colors/font_pressed_color = Color(1, 1, 1, 1)
 Button/constants/h_separation = 4
 Button/font_sizes/font_size = 28
 Button/styles/disabled = SubResource("StyleBoxFlat_jn7qu")
-Button/styles/focus = SubResource("StyleBoxFlat_i83q2")
-Button/styles/hover = SubResource("StyleBoxFlat_i83q2")
-Button/styles/hover_pressed = SubResource("StyleBoxFlat_i83q2")
+Button/styles/hover = SubResource("StyleBoxFlat_52lhm")
+Button/styles/hover_pressed = SubResource("StyleBoxFlat_52lhm")
 Button/styles/normal = SubResource("StyleBoxFlat_t67yg")
-Button/styles/pressed = SubResource("StyleBoxFlat_i83q2")
+Button/styles/pressed = SubResource("StyleBoxFlat_t67yg")
 HeaderLarge/colors/font_color = Color(0.34902, 0.0705882, 0.682353, 1)
 HeaderLarge/font_sizes/font_size = 100
 HeaderMedium/colors/font_color = Color(0, 0, 0, 1)

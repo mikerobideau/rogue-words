@@ -1,10 +1,10 @@
 [gd_scene load_steps=5 format=3 uid="uid://s4433o5tkgfd"]
 
 [ext_resource type="Script" path="res://screens/title/title.gd" id="1_nw644"]
-[ext_resource type="Theme" uid="uid://vn3yglhuvq41" path="res://theme/theme.tres" id="2_ajdky"]
-[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="2_oqjts"]
+[ext_resource type="Texture2D" uid="uid://co4owfdow880o" path="res://assets/ui/logo/1x/logo.png" id="2_tqnd2"]
+[ext_resource type="PackedScene" uid="uid://bhgjwyhmf20on" path="res://components/run/loadout/loadouts.tscn" id="4_yvt82"]
 
-[sub_resource type="Theme" id="Theme_cj03g"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ers07"]
 
 [node name="Title" type="Control"]
 layout_mode = 3
@@ -15,60 +15,70 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_nw644")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = ExtResource("2_ajdky")
-
-[node name="Body" type="VBoxContainer" parent="."]
+[node name="Panel" type="Panel" parent="."]
+custom_minimum_size = Vector2(1200, 800)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -117.0
-offset_right = 200.0
-offset_bottom = 117.0
+offset_left = -600.0
+offset_top = -400.0
+offset_right = 600.0
+offset_bottom = 400.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"Panel2"
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ers07")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -452.0
+offset_top = -200.0
+offset_right = 452.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 150
+
+[node name="Logo" type="TextureRect" parent="Panel/VBox"]
+layout_mode = 2
+texture = ExtResource("2_tqnd2")
+
+[node name="RunMenu" type="VBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 100
+
+[node name="Loadouts" parent="Panel/VBox/RunMenu" instance=ExtResource("4_yvt82")]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Body" type="VBoxContainer" parent="Panel"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -452.0
+offset_top = 37.5
+offset_right = 452.0
+offset_bottom = 375.5
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 75
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Body"]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="Body/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.286275, 0, 0.545098, 1)
-theme_override_fonts/font = ExtResource("2_oqjts")
-theme_override_font_sizes/font_size = 150
-text = "Grapevine"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="Body/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 28
-text = "A word roguelike"
-horizontal_alignment = 1
-
-[node name="PlayButton" type="Button" parent="Body"]
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme = SubResource("Theme_cj03g")
-text = "PLAY"
-
-[node name="Description" type="Label" parent="Body"]
+[node name="Description" type="Label" parent="Panel/Body"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 16
 text = "The game of tangled vines and massive word combos"
 horizontal_alignment = 1
-
-[connection signal="pressed" from="Body/PlayButton" to="." method="_on_play_button_pressed"]

@@ -21,10 +21,10 @@ var current_screen: Control = null
 
 func _ready():
 	size = get_viewport().get_visible_rect().size
-	#_show_title()
+	_show_title()
 	#GameState.money = 100
 	#_enter_shop()
-	_on_new_game()
+	#_on_new_game()
 	
 func _show_title():
 	hud.visible = false
@@ -42,10 +42,10 @@ func _show_boss_intro():
 	await get_tree().create_timer(3).timeout
 	hud.visible = true
 	
-func _on_new_game():
+func _on_new_game(data: LoadoutData):
 	GameState.round_number = 0
 	GameState.money = 0
-	GameState.tokens = TokenFactory.create_starting_tokens()
+	GameState.tokens = data.create_starting_tokens()
 	#var test_relic1 = preload("res://components/relic/data_disabled/word_structure/potty_mouth/potty_mouth.tres")
 	#var test_item1 = preload("res://components/item/data/lightning/lightning.tres")
 	#var test_item2 = preload("res://components/item/data/lightning/lightning.tres")

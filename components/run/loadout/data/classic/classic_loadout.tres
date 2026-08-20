@@ -1,0 +1,139 @@
+[gd_resource type="Resource" script_class="LoadoutData" load_steps=29 format=3 uid="uid://d064kem0ur7pc"]
+
+[ext_resource type="Script" path="res://components/run/loadout/loadout_data.gd" id="1_6pgjc"]
+[ext_resource type="Script" path="res://components/run/loadout/tile_frequency.gd" id="2_n4l0n"]
+
+[sub_resource type="Resource" id="Resource_46ltr"]
+script = ExtResource("2_n4l0n")
+letter = "A"
+count = 5
+
+[sub_resource type="Resource" id="Resource_knyn1"]
+script = ExtResource("2_n4l0n")
+letter = "B"
+count = 1
+
+[sub_resource type="Resource" id="Resource_jfonb"]
+script = ExtResource("2_n4l0n")
+letter = "C"
+count = 1
+
+[sub_resource type="Resource" id="Resource_qaf8a"]
+script = ExtResource("2_n4l0n")
+letter = "D"
+count = 1
+
+[sub_resource type="Resource" id="Resource_dahxr"]
+script = ExtResource("2_n4l0n")
+letter = "E"
+count = 5
+
+[sub_resource type="Resource" id="Resource_4hmme"]
+script = ExtResource("2_n4l0n")
+letter = "F"
+count = 1
+
+[sub_resource type="Resource" id="Resource_hje6e"]
+script = ExtResource("2_n4l0n")
+letter = "G"
+count = 1
+
+[sub_resource type="Resource" id="Resource_vjc5y"]
+script = ExtResource("2_n4l0n")
+letter = "H"
+count = 1
+
+[sub_resource type="Resource" id="Resource_uyc7p"]
+script = ExtResource("2_n4l0n")
+letter = "I"
+count = 5
+
+[sub_resource type="Resource" id="Resource_m3pjk"]
+script = ExtResource("2_n4l0n")
+letter = "J"
+count = 1
+
+[sub_resource type="Resource" id="Resource_6qyi0"]
+script = ExtResource("2_n4l0n")
+letter = "K"
+count = 1
+
+[sub_resource type="Resource" id="Resource_xoota"]
+script = ExtResource("2_n4l0n")
+letter = "L"
+count = 3
+
+[sub_resource type="Resource" id="Resource_ucpil"]
+script = ExtResource("2_n4l0n")
+letter = "M"
+count = 1
+
+[sub_resource type="Resource" id="Resource_6b5ov"]
+script = ExtResource("2_n4l0n")
+letter = "N"
+count = 3
+
+[sub_resource type="Resource" id="Resource_5ltsl"]
+script = ExtResource("2_n4l0n")
+letter = "O"
+count = 5
+
+[sub_resource type="Resource" id="Resource_yq784"]
+script = ExtResource("2_n4l0n")
+letter = "P"
+count = 1
+
+[sub_resource type="Resource" id="Resource_u0r12"]
+script = ExtResource("2_n4l0n")
+letter = "Q"
+count = 1
+
+[sub_resource type="Resource" id="Resource_nflam"]
+script = ExtResource("2_n4l0n")
+letter = "R"
+count = 3
+
+[sub_resource type="Resource" id="Resource_n6t3p"]
+script = ExtResource("2_n4l0n")
+letter = "S"
+count = 3
+
+[sub_resource type="Resource" id="Resource_51kwh"]
+script = ExtResource("2_n4l0n")
+letter = "T"
+count = 3
+
+[sub_resource type="Resource" id="Resource_vjj5u"]
+script = ExtResource("2_n4l0n")
+letter = "U"
+count = 5
+
+[sub_resource type="Resource" id="Resource_dgu5r"]
+script = ExtResource("2_n4l0n")
+letter = "V"
+count = 1
+
+[sub_resource type="Resource" id="Resource_gsmfn"]
+script = ExtResource("2_n4l0n")
+letter = "W"
+count = 1
+
+[sub_resource type="Resource" id="Resource_54l48"]
+script = ExtResource("2_n4l0n")
+letter = "X"
+count = 1
+
+[sub_resource type="Resource" id="Resource_66wiy"]
+script = ExtResource("2_n4l0n")
+letter = "Y"
+count = 1
+
+[sub_resource type="Resource" id="Resource_p13fy"]
+script = ExtResource("2_n4l0n")
+letter = "Z"
+count = 1
+
+[resource]
+script = ExtResource("1_6pgjc")
+loadout_name = "Classic"
+tiles = Array[ExtResource("2_n4l0n")]([SubResource("Resource_46ltr"), SubResource("Resource_knyn1"), SubResource("Resource_jfonb"), SubResource("Resource_qaf8a"), SubResource("Resource_dahxr"), SubResource("Resource_4hmme"), SubResource("Resource_hje6e"), SubResource("Resource_vjc5y"), SubResource("Resource_uyc7p"), SubResource("Resource_m3pjk"), SubResource("Resource_6qyi0"), SubResource("Resource_xoota"), SubResource("Resource_ucpil"), SubResource("Resource_6b5ov"), SubResource("Resource_5ltsl"), SubResource("Resource_yq784"), SubResource("Resource_u0r12"), SubResource("Resource_nflam"), SubResource("Resource_n6t3p"), SubResource("Resource_51kwh"), SubResource("Resource_vjj5u"), SubResource("Resource_dgu5r"), SubResource("Resource_gsmfn"), SubResource("Resource_54l48"), SubResource("Resource_66wiy"), SubResource("Resource_p13fy")])

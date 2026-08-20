@@ -47,18 +47,18 @@ mouse_filter = 2
 custom_minimum_size = Vector2(2560, 1440)
 offset_right = 40.0
 offset_bottom = 40.0
-color = Color(0.160784, 0.670588, 0.886275, 1)
+color = Color(0.562655, 0.843328, 0.992001, 1)
 
 [node name="CloudFar" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]
 
 [node name="CloudSpawner" type="Node2D" parent="ScreenContainer/ParallaxBackground/CloudFar"]
 script = ExtResource("2_jmdje")
-tint = Color(1, 1, 1, 0.588235)
+tint = Color(1, 1, 1, 0.196078)
 spawn_interval = 30.0
-min_scale = 0.4
-max_scale = 0.8
+min_scale = 0.3
+max_scale = 0.6
 speed = 25.0
-initial_count = 5
+initial_count = 7
 
 [node name="CloudNear" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]
 motion_scale = Vector2(0.5, 0.5)
@@ -67,10 +67,10 @@ motion_scale = Vector2(0.5, 0.5)
 script = ExtResource("2_jmdje")
 tint = Color(1, 1, 1, 1)
 spawn_interval = 15.0
-min_scale = 0.6
-max_scale = 1.0
+min_scale = 0.4
+max_scale = 0.8
 spawn_x = -1000.0
-initial_count = 5
+initial_count = 7
 
 [node name="LeftSidebarBackground" type="ColorRect" parent="ScreenContainer"]
 custom_minimum_size = Vector2(560, 1440)
