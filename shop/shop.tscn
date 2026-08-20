@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://beksc6x4wjafd"]
+[gd_scene load_steps=5 format=3 uid="uid://beksc6x4wjafd"]
 
 [ext_resource type="Script" path="res://shop/shop.gd" id="1_6vhgx"]
 [ext_resource type="Texture2D" uid="uid://bpoue6glwuebf" path="res://assets/ui/background/1x/shop_background3.png" id="2_vstb7"]
+[ext_resource type="PackedScene" uid="uid://bsrrnb7yg74t7" path="res://components/ui/button/button_default/button_default.tscn" id="3_kki1j"]
 [ext_resource type="PackedScene" uid="uid://clwf6hvbwqhy5" path="res://shop/shop_sign.tscn" id="3_yjwte"]
 
 [node name="Shop" type="Control"]
@@ -55,12 +56,13 @@ grow_vertical = 2
 layout_mode = 2
 theme_override_constants/separation = 50
 
-[node name="Reroll" type="Button" parent="ButtonContainer/VBoxContainer"]
+[node name="Reroll" parent="ButtonContainer/VBoxContainer" instance=ExtResource("3_kki1j")]
 layout_mode = 2
+text = "REROLL"
 
-[node name="Exit" type="Button" parent="ButtonContainer/VBoxContainer"]
+[node name="Exit" parent="ButtonContainer/VBoxContainer" instance=ExtResource("3_kki1j")]
 layout_mode = 2
-text = "NEXT ROUND"
+text = "EXIT"
 
 [node name="ShopSign" parent="." instance=ExtResource("3_yjwte")]
 layout_mode = 1

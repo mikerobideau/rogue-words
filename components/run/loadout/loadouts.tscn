@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://bhgjwyhmf20on"]
+[gd_scene load_steps=4 format=3 uid="uid://bhgjwyhmf20on"]
 
 [ext_resource type="Script" path="res://components/run/loadout/loadouts.gd" id="1_mk4rt"]
+[ext_resource type="PackedScene" uid="uid://bsrrnb7yg74t7" path="res://components/ui/button/button_default/button_default.tscn" id="2_7lpfd"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ldqtm"]
 
 [node name="Loadouts" type="Control"]
 layout_mode = 3
@@ -30,35 +33,40 @@ offset_right = 197.5
 offset_bottom = 86.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ldqtm")
 
 [node name="VBox" type="VBoxContainer" parent="Window"]
 layout_mode = 2
 
 [node name="Title" type="Label" parent="Window/VBox"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 theme_type_variation = &"HeaderMedium"
 text = "New Game"
 
 [node name="Nav" type="HBoxContainer" parent="Window/VBox"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="PrevButton" type="Button" parent="Window/VBox/Nav"]
+visible = false
 layout_mode = 2
 text = "<"
 
 [node name="Display" type="CenterContainer" parent="Window/VBox/Nav"]
+visible = false
 layout_mode = 2
 
 [node name="NextButton" type="Button" parent="Window/VBox/Nav"]
+visible = false
 layout_mode = 2
 text = ">"
 
-[node name="StartButton" type="Button" parent="Window/VBox"]
+[node name="StartButton" parent="Window/VBox" instance=ExtResource("2_7lpfd")]
 layout_mode = 2
 size_flags_horizontal = 4
-size_flags_vertical = 4
 text = "START"
 
 [connection signal="pressed" from="Window/VBox/Nav/PrevButton" to="." method="_on_prev_button_pressed"]
