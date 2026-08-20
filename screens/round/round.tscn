@@ -1,7 +1,8 @@
-[gd_scene load_steps=12 format=3 uid="uid://f6qf3gwnek5j"]
+[gd_scene load_steps=13 format=3 uid="uid://f6qf3gwnek5j"]
 
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/score_panel.tscn" id="2_7t8ks"]
+[ext_resource type="AudioStream" uid="uid://wpel6qlefbc1" path="res://assets/sound/pixabay/background/soundreality-wind-blowing-457954.mp3" id="2_taenq"]
 [ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
@@ -22,6 +23,13 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_51id5")
+
+[node name="Music" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("2_taenq")
+volume_db = 13.629
+autoplay = true
+stream_paused = true
+parameters/looping = true
 
 [node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
 

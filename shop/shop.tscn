@@ -62,7 +62,7 @@ text = "REROLL"
 
 [node name="Exit" parent="ButtonContainer/VBoxContainer" instance=ExtResource("3_kki1j")]
 layout_mode = 2
-text = "EXIT"
+text = "NEXT ROUND"
 
 [node name="ShopSign" parent="." instance=ExtResource("3_yjwte")]
 layout_mode = 1

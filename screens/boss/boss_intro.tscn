@@ -1,8 +1,22 @@
-[gd_scene load_steps=4 format=3 uid="uid://3ayubhlkh1y6"]
+[gd_scene load_steps=5 format=3 uid="uid://3ayubhlkh1y6"]
 
 [ext_resource type="Script" path="res://screens/boss/boss_intro.gd" id="1_uyule"]
 [ext_resource type="Theme" uid="uid://vn3yglhuvq41" path="res://theme/theme.tres" id="2_hw4ai"]
-[ext_resource type="FontFile" uid="uid://b2b3dfrkn4pn4" path="res://assets/fonts/CherryBombOne-Regular.ttf" id="3_f7ec5"]
+[ext_resource type="Shader" path="res://shader/rain_shader.gdshader" id="3_ck1b8"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gy7vg"]
+shader = ExtResource("3_ck1b8")
+shader_parameter/rain_amount = 300.0
+shader_parameter/near_rain_length = 0.109
+shader_parameter/far_rain_length = 0.02
+shader_parameter/near_rain_width = 0.357
+shader_parameter/far_rain_width = 0.246
+shader_parameter/near_rain_transparency = 0.19
+shader_parameter/far_rain_transparency = 0.119
+shader_parameter/rain_color = Color(0.8, 0.8, 0.8, 1)
+shader_parameter/base_rain_speed = 0.511
+shader_parameter/additional_rain_speed = 0.1
+shader_parameter/slant = 0.2
 
 [node name="BossIntro" type="Control"]
 layout_mode = 3
@@ -22,6 +36,18 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_hw4ai")
 color = Color(0, 0, 0, 1)
+
+[node name="RainPanel" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_gy7vg")
+custom_minimum_size = Vector2(1440, 1440)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.784314)
 
 [node name="Body" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -43,15 +69,15 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="Body/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.286275, 0, 0.545098, 1)
-theme_override_fonts/font = ExtResource("3_f7ec5")
-theme_override_font_sizes/font_size = 150
+theme_type_variation = &"HeaderLarge"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 200
 text = "Incoming Boss"
 horizontal_alignment = 1
 
 [node name="Description" type="Label" parent="Body/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 64
 text = "I hope you prepared for this"
 horizontal_alignment = 1

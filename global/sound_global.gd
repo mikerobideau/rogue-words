@@ -60,6 +60,7 @@ const sounds = {
 	'splat1': preload("res://assets/sound/pixabay/49053354-splat-305791.mp3"),
 	'splat2': preload("res://assets/sound/pixabay/universfield-wet-splat-impact-567197.mp3"),
 	'splat3': preload("res://assets/sound/pixabay/universfield-wet-squelch-impact-352302.mp3"),
+	'thunder': preload("res://global/universfield-loud-thunder-192165.mp3"),
 	'token_placed': preload("res://assets/sound/pixabay/astralsynthesizer-11l-game_complete_notifi-1749704606921-358785.mp3"),
 	'upgrade1': preload("res://assets/sound/jsfxr/upgrade1.wav"),
 	'upgrade2': preload("res://assets/sound/jsfxr/upgrade2.wav"),
@@ -111,7 +112,7 @@ const SOUND_JUICE = 'liquid4'
 
 const SOUND_WIN = 'win4' #complete1, win, win4
 
-const SOUND_BOSS_INTRO = 'boss_intro2'
+const SOUND_BOSS_INTRO = 'thunder'
 
 const SOUND_ENEMY = 'power_up2' #power_up2, power_up3, power_up4, power_up5
 const SOUND_DISABLED = 'laser_shoot' #laser_shoot or synth
