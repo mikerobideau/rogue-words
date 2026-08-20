@@ -1,11 +1,35 @@
-[gd_resource type="Theme" load_steps=8 format=3 uid="uid://vn3yglhuvq41"]
+[gd_resource type="Theme" load_steps=9 format=3 uid="uid://vn3yglhuvq41"]
 
-[ext_resource type="Texture2D" uid="uid://bjc1svxlggadm" path="res://assets/ui/button/1x/button_blue_leaf_pressed.png" id="1_p5hyj"]
 [ext_resource type="FontFile" uid="uid://cg5oah04hhmuk" path="res://assets/fonts/ElmsSans-VariableFont_wght.ttf" id="2_5hvym"]
 [ext_resource type="FontFile" uid="uid://qu1ord30501e" path="res://assets/fonts/commissioner/Commissioner-Bold.ttf" id="2_p1joy"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_7dtg3"]
-texture = ExtResource("1_p5hyj")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tqluq"]
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_035px"]
+bg_color = Color(5.10186e-06, 0.887848, 0.406962, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+expand_margin_left = 20.0
+expand_margin_top = 10.0
+expand_margin_right = 20.0
+expand_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8axyg"]
+bg_color = Color(0, 0.720386, 0.326396, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+expand_margin_left = 20.0
+expand_margin_top = 10.0
+expand_margin_right = 20.0
+expand_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_julk1"]
 bg_color = Color(1, 0.952941, 0.870588, 1)
@@ -50,7 +74,11 @@ Button/colors/font_outline_color = Color(1, 1, 1, 1)
 Button/colors/font_pressed_color = Color(1, 1, 1, 1)
 Button/constants/h_separation = 4
 Button/font_sizes/font_size = 28
-Button/styles/pressed = SubResource("StyleBoxTexture_7dtg3")
+Button/styles/disabled = SubResource("StyleBoxFlat_tqluq")
+Button/styles/focus = SubResource("StyleBoxFlat_035px")
+Button/styles/hover = SubResource("StyleBoxFlat_035px")
+Button/styles/normal = SubResource("StyleBoxFlat_8axyg")
+Button/styles/pressed = SubResource("StyleBoxFlat_035px")
 HeaderLarge/colors/font_color = Color(0.34902, 0.0705882, 0.682353, 1)
 HeaderLarge/font_sizes/font_size = 100
 HeaderMedium/colors/font_color = Color(0, 0, 0, 1)

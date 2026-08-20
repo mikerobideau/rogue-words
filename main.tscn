@@ -49,6 +49,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(2560, 1440)
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
 color = Color(0.562655, 0.843328, 0.992001, 1)
 
 [node name="CloudFar" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]

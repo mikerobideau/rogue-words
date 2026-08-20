@@ -59,8 +59,7 @@ func create_starting_tokens() -> Array[TokenData]:
 	var tokens = [] as Array[TokenData]
 	for key in LETTERS.keys():
 		var config = LETTERS[key]
-		for i in config.freq:
-			var data = create_data(config)
-			tokens.append(data)
+		var data = create_data(config)
+		tokens.append(data)
 	tokens.shuffle()
 	return tokens

@@ -25,9 +25,6 @@ func _ready():
 	#GameState.money = 100
 	#_enter_shop()
 	#_on_new_game()
-
-func _process(_delta):
-	print(get_viewport().gui_get_hovered_control())
 	
 func _show_title():
 	hud.visible = false
@@ -49,13 +46,13 @@ func _on_new_game(data: LoadoutData):
 	GameState.round_number = 0
 	GameState.money = 0
 	GameState.tokens = data.create_starting_tokens()
-	#var test_relic1 = preload("res://components/relic/data_disabled/word_structure/potty_mouth/potty_mouth.tres")
+	var test_relic1 = preload("res://components/relic/data/consonant/hard_work/hard_work.tres")
 	#var test_item1 = preload("res://components/item/data/lightning/lightning.tres")
 	#var test_item2 = preload("res://components/item/data/lightning/lightning.tres")
 	#var test_item3 = preload("res://components/item/data/pepper/pepper.tres")
-	#GameState.relics = [test_relic1.duplicate()]
+	GameState.relics = [test_relic1.duplicate()]
 	#GameState.items = [test_item1.duplicate(), test_item2.duplicate(), test_item3.duplicate()]
-	GameState.relics = [] as Array[RelicData]
+	#GameState.relics = [] as Array[RelicData]
 	GameState.items = [] as Array[ItemData]
 	hud.visible = true
 	var round = SCREENS.round.instantiate()

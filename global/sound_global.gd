@@ -100,7 +100,7 @@ const SOUND_ENHANCED_LETTER_SPACE = 'water_drop' #small_bonus, #bonus, power_up,
 const SOUND_ENHANCED_WORD_SPACE = 'water_drop'  #bonus, power_up, blip_select, water_drop
 const SOUND_MULT = 'bonus' #power_up
 
-const SOUND_RELIC_SCORE = 'bonus' #small_bonus, bonus, #upgrade4, power_up, blip_select, pop2
+const SOUND_RELIC_SCORE = 'pop_double' #pop_double small_bonus, bonus, #upgrade4, power_up, blip_select, pop2
 const SOUND_RELIC_UPGRADE = 'upgrade1'
 const SOUND_RELIC_DECAY = 'decay7'
 const SOUND_RELIC_RESET_POSITIVE = 'upgrade2'
