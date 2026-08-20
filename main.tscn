@@ -1,10 +1,12 @@
-[gd_scene load_steps=7 format=3 uid="uid://bb6evfnlmn04c"]
+[gd_scene load_steps=9 format=3 uid="uid://bb6evfnlmn04c"]
 
 [ext_resource type="Script" path="res://main.gd" id="1_dnsmp"]
 [ext_resource type="PackedScene" uid="uid://c675q66wub3hr" path="res://components/hud/hud.tscn" id="2_23aqr"]
 [ext_resource type="PackedScene" uid="uid://dclef022d1pdn" path="res://components/relic/relic_manager.tscn" id="2_h6jec"]
 [ext_resource type="Script" path="res://components/environment/cloud_spawner.gd" id="2_jmdje"]
 [ext_resource type="Shader" path="res://shader/rain_shader.gdshader" id="2_w5lrx"]
+[ext_resource type="Script" path="res://components/environment/leaf_spawner.gd" id="3_gu1k2"]
+[ext_resource type="Texture2D" uid="uid://11mwc42dk8mk" path="res://assets/ui/leaf/1x/leaf.png" id="4_2rxmc"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_m5vbd"]
 shader = ExtResource("2_w5lrx")
@@ -71,6 +73,16 @@ min_scale = 0.4
 max_scale = 0.8
 spawn_x = -1000.0
 initial_count = 7
+
+[node name="Leaves" type="ParallaxLayer" parent="ScreenContainer/ParallaxBackground"]
+
+[node name="LeafSpawner" type="Node2D" parent="ScreenContainer/ParallaxBackground/Leaves"]
+script = ExtResource("3_gu1k2")
+texture = ExtResource("4_2rxmc")
+spawn_interval = 7.0
+sway_amplitude = 80.0
+sway_speed = 1.0
+initial_count = 2
 
 [node name="LeftSidebarBackground" type="ColorRect" parent="ScreenContainer"]
 custom_minimum_size = Vector2(560, 1440)

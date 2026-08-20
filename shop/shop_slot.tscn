@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://g5mnwhts447"]
 
 [ext_resource type="Script" path="res://shop/shop_slot.gd" id="1_lx5h6"]
-[ext_resource type="Texture2D" uid="uid://wtnytglwtlcw" path="res://assets/sprites/slot/1x/frame.png" id="2_1c5yh"]
+[ext_resource type="Texture2D" uid="uid://b4lb5khvp6sut" path="res://assets/sprites/slot/1x/shop_slot_blue.png" id="2_ob8q1"]
 [ext_resource type="Texture2D" uid="uid://bwa1p81id5lki" path="res://assets/sprites/money/1x/coin.png" id="3_dg6cp"]
 [ext_resource type="Texture2D" uid="uid://b0ovir00xcq3p" path="res://assets/sprites/money/1x/sold.png" id="5_3gu4n"]
 
@@ -18,9 +18,10 @@ script = ExtResource("1_lx5h6")
 layout_mode = 1
 offset_right = 424.0
 offset_bottom = 476.0
-texture_normal = ExtResource("2_1c5yh")
-texture_pressed = ExtResource("2_1c5yh")
-texture_hover = ExtResource("2_1c5yh")
+texture_normal = ExtResource("2_ob8q1")
+texture_pressed = ExtResource("2_ob8q1")
+texture_hover = ExtResource("2_ob8q1")
+texture_focused = ExtResource("2_ob8q1")
 
 [node name="Offer" type="Control" parent="Frame"]
 custom_minimum_size = Vector2(96, 96)

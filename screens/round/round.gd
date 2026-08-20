@@ -111,6 +111,7 @@ func _on_discard_clicked():
 	relic_manager.on_discard(context)
 
 func _on_space_clicked(space: Space):
+	print_debug('space clicked')
 	#Process placement
 	if scoring or not space.enabled or space.token != null or !selected_token:
 		return

@@ -9,5 +9,4 @@ func create_scene(data: LoadoutData) -> Loadout:
 	return scene
 
 func load_all_loadouts() -> Array[LoadoutData]:
-	print_debug('load all loadouts')
 	return DataLoader.load_all("res://components/run/loadout/data/", LoadoutData)

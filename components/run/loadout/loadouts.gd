@@ -32,6 +32,5 @@ func _on_next_button_pressed() -> void:
 	_show_current()
 
 func _on_start_button_pressed() -> void:
-	print_debug('start pressed!')
 	if not loadouts.is_empty():
 		loadout_selected.emit(loadouts[current_index])

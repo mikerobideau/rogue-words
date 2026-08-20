@@ -58,6 +58,7 @@ func _animate() -> void:
 	play('default') if enabled else play('disabled')
 		
 func _on_mouse_entered():
+	print_debug('mouse entered!')
 	if !enabled:
 		return
 	Sound.play(Sound.SOUND_MOUSEOVER)

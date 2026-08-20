@@ -21,10 +21,13 @@ var current_screen: Control = null
 
 func _ready():
 	size = get_viewport().get_visible_rect().size
-	#_show_title()
-	GameState.money = 100
-	_enter_shop()
+	_show_title()
+	#GameState.money = 100
+	#_enter_shop()
 	#_on_new_game()
+
+func _process(_delta):
+	print(get_viewport().gui_get_hovered_control())
 	
 func _show_title():
 	hud.visible = false
