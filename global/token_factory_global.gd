@@ -2,6 +2,7 @@ extends Node
 class_name TokenFactoryGlobal
 
 var TokenScene = preload("res://components/token/token.tscn")
+var LeafScene = preload("res://components/token/leaf_token.tscn")
 
 const LETTERS: Dictionary = {
 	"A": {'letter': 'A', 'value': 1}, 
@@ -49,6 +50,15 @@ func create_data(config: Dictionary) -> TokenData:
 
 func create_scene(data: TokenData):
 	var scene = TokenScene.instantiate()
+	scene.data = data
+	return scene
+
+# a leaf is a random letter with no base juice -- the board grows these itself,
+# they are never dealt to the player
+func create_leaf() -> Token:
+	var data = create_data_by_letter(LETTERS.keys().pick_random())
+	data.value = 0
+	var scene = LeafScene.instantiate()
 	scene.data = data
 	return scene
 	
