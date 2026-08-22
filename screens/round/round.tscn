@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://screens/round/round.gd" id="1_51id5"]
 [ext_resource type="PackedScene" uid="uid://c6igyavmdklna" path="res://components/score/score_panel.tscn" id="2_7t8ks"]
 [ext_resource type="AudioStream" uid="uid://wpel6qlefbc1" path="res://assets/sound/pixabay/background/soundreality-wind-blowing-457954.mp3" id="2_taenq"]
-[ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="3_jxqlj"]
 [ext_resource type="PackedScene" uid="uid://b784162vwvujp" path="res://components/hand/hand.tscn" id="3_thhj8"]
 [ext_resource type="PackedScene" uid="uid://dbw08w12l88i8" path="res://components/word_finder/word_finder.tscn" id="4_0e5bs"]
 [ext_resource type="PackedScene" uid="uid://hs3l7uvt8ar5" path="res://components/token_bag/token_bag.tscn" id="4_4uwb7"]
@@ -11,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://dn7yfotoker3r" path="res://components/scorer/scorer.tscn" id="5_va824"]
 [ext_resource type="PackedScene" uid="uid://crnqdyys7xg31" path="res://screens/round/top_container.tscn" id="7_ladlb"]
 [ext_resource type="PackedScene" uid="uid://ejiashxsho2h" path="res://components/score/word.tscn" id="7_uqrp3"]
+[ext_resource type="PackedScene" uid="uid://c27enromrh22k" path="res://components/board/board.tscn" id="10_75xn7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0cvov"]
 
@@ -28,7 +28,6 @@ script = ExtResource("1_51id5")
 stream = ExtResource("2_taenq")
 volume_db = 13.629
 autoplay = true
-stream_paused = true
 parameters/looping = true
 
 [node name="WordFinder" parent="." instance=ExtResource("4_0e5bs")]
@@ -122,7 +121,7 @@ mouse_filter = 2
 theme_type_variation = &"Panel3"
 theme_override_styles/panel = SubResource("StyleBoxEmpty_0cvov")
 
-[node name="Board" parent="BoardContainer" instance=ExtResource("3_jxqlj")]
+[node name="Board" parent="BoardContainer" instance=ExtResource("10_75xn7")]
 layout_mode = 1
 
 [node name="Left" type="CenterContainer" parent="."]

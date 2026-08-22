@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://c27enromrh22k"]
 
-[ext_resource type="Script" path="res://components/board/board.gd" id="1_svnc4"]
+[ext_resource type="Script" path="res://components/board/beanstalk_board.gd" id="1_ly8hr"]
 [ext_resource type="PackedScene" uid="uid://ccuqslqfhnqkp" path="res://components/board/space_container.tscn" id="2_ruwfe"]
 
 [node name="Board" type="Control"]
@@ -12,6 +12,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("1_svnc4")
+script = ExtResource("1_ly8hr")
 
 [node name="SpaceContainer" parent="." instance=ExtResource("2_ruwfe")]
