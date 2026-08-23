@@ -37,23 +37,36 @@ func is_word(word: String) -> bool:
 	return dictionary.has(word.to_upper())
 
 func find_words(placed_space: Space):
+	return find_words_including([placed_space])
+
+# Words must contain at least one of `required`. Passing more than one anchor
+# lets spaces the board grew this turn -- a leaf -- score the words they
+# complete, even when the player's own token is not part of them.
+func find_words_including(required: Array):
 	var found := []
 	var seen_words := {}
-	
-	var start_spaces := _get_connected_occupied(placed_space)
-	
-	for start in start_spaces:
+
+	# a required space may sit in its own disconnected clump, so gather the
+	# occupied neighbourhood of each one
+	var start_spaces := {}
+	for space in required:
+		if space == null or space.token == null:
+			continue
+		for start in _get_connected_occupied(space):
+			start_spaces[start] = true
+
+	for start in start_spaces.keys():
 		var matches = [start.token.letter]
 		if relic_manager:
 			matches = relic_manager.get_letter_matches(start.token.letter)
 		for letter in matches:
-			_dfs([start], [letter], letter, placed_space, found, seen_words)
-	
+			_dfs([start], [letter], letter, required, found, seen_words)
+
 	found.sort_custom(func(a, b):
 		if a['word'] == b['word']:
 			return _path_signature(a['path']) < _path_signature(b['path'])   # tiebreaker
 		return a['word'] < b['word'])
-		
+
 	return found
 	
 func _get_connected_occupied(start: Space) -> Array:
@@ -67,8 +80,8 @@ func _get_connected_occupied(start: Space) -> Array:
 				queue.append(neighbor)
 	return visited.keys()
 
-func _dfs(path: Array, letters: Array, word: String, must_include: Space, found: Array, seen: Dictionary):
-	if word.length() >= min_word_length and is_word(word) and path.has(must_include):
+func _dfs(path: Array, letters: Array, word: String, must_include: Array, found: Array, seen: Dictionary):
+	if word.length() >= min_word_length and is_word(word) and _includes_any(path, must_include):
 		var sig := word + "|" + _path_signature(path)
 		if not seen.has(sig):
 			seen[sig] = true
@@ -85,6 +98,12 @@ func _dfs(path: Array, letters: Array, word: String, must_include: Space, found:
 				letters.pop_back()
 				path.pop_back()
 				
+func _includes_any(path: Array, required: Array) -> bool:
+	for space in required:
+		if path.has(space):
+			return true
+	return false
+
 #The same word can score multiple times in a turn, but it must have a unique combination of tokens
 func _path_signature(path: Array) -> String:
 	var ids := []

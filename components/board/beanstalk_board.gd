@@ -62,6 +62,10 @@ var spaces: Dictionary = {}      # coord -> Space, promoted spaces only
 var _draft: Array = []           # buds awaiting the player's choice
 var _leaf_count := 0             # leaf spaces, excluded from the max_spaces budget
 
+# leaves grown by the most recent draft. Round feeds these to the word finder
+# so a leaf can score the words it completes on the turn it appears.
+var last_leaves: Array = []
+
 func _ready():
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -115,6 +119,7 @@ func _offer_draft(count: int) -> void:
 # random, but how many is not -- growth is the same every turn.
 func _resolve_draft(chosen: Space) -> void:
 	_promote_bud(chosen)
+	last_leaves.clear()
 	var passed := []
 	for bud in _draft:
 		if bud != chosen:
@@ -129,6 +134,7 @@ func _resolve_draft(chosen: Space) -> void:
 			_promote_bud(bud)
 			_leaf_count += 1
 			bud.place_token(TokenFactory.create_leaf())
+			last_leaves.append(bud)
 			leaves_left -= 1
 		else:
 			_wither_bud(bud)

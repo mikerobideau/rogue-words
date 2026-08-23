@@ -123,7 +123,11 @@ func _on_space_clicked(space: Space):
 	selected_token = null
 
 	if space.token != null: #relic_manager.on_token_placed may destroy the token before it is scored
-		var found_words = word_finder.find_words(space)
+		# leaves grown this turn score alongside the placed token, so a leaf
+		# can complete a word even when the player's token is not in it
+		var anchors := [space]
+		anchors.append_array(board.last_leaves)
+		var found_words = word_finder.find_words_including(anchors)
 		
 		await _score_words(found_words, context, space)
 		

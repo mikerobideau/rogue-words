@@ -57,7 +57,7 @@ func create_scene(data: TokenData):
 # they are never dealt to the player
 func create_leaf() -> Token:
 	var data = create_data_by_letter(LETTERS.keys().pick_random())
-	data.value = 0
+	data.value = 1
 	var scene = LeafScene.instantiate()
 	scene.data = data
 	return scene
