@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://c1lf4nq8xw2ea"]
+
+[ext_resource type="Texture2D" uid="uid://dgrx2k5vj7kkg" path="res://assets/sprites/token/1x/Green Grape.png" id="1_leaf0"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_leaf0")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
