@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://ccuqslqfhnqkp"]
+[gd_scene load_steps=3 format=3 uid="uid://ccuqslqfhnqkp"]
 
 [ext_resource type="Script" path="res://components/board/space_container.gd" id="1_8t1o7"]
+[ext_resource type="Texture2D" uid="uid://bdc3wqb8ljsoh" path="res://assets/sprites/space/1x/link.png" id="2_g4pgg"]
 
 [node name="SpaceContainer" type="Node2D"]
 script = ExtResource("1_8t1o7")
+link_texture = ExtResource("2_g4pgg")
