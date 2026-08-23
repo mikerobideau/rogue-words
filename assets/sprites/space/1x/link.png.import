@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://snvlmb4x6auy"
-path="res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"
+uid="uid://bdc3wqb8ljsoh"
+path="res://.godot/imported/link.png-e658bff326ecc57824ab0f14c09a4dae.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/token/1x/clover.png"
-dest_files=["res://.godot/imported/clover.png-6be46f02b6a772ef8a6a2d48ddce9d76.ctex"]
+source_file="res://assets/sprites/space/1x/link.png"
+dest_files=["res://.godot/imported/link.png-e658bff326ecc57824ab0f14c09a4dae.ctex"]
 
 [params]
 
