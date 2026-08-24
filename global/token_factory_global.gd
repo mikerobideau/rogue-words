@@ -55,8 +55,8 @@ func create_scene(data: TokenData):
 
 # a leaf is a random letter with no base juice -- the board grows these itself,
 # they are never dealt to the player
-func create_leaf() -> Token:
-	var data = create_data_by_letter(LETTERS.keys().pick_random())
+func create_leaf(letters := TokenData.VOWELS) -> Token:
+	var data = create_data_by_letter(letters.pick_random())
 	data.value = 0
 	var scene = LeafScene.instantiate()
 	scene.data = data

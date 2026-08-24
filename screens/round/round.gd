@@ -7,6 +7,10 @@ signal game_won()
 const TilePopupScene = preload('res://components/ui/popup_box/tile_score_popup.tscn')
 const TURNS_PER_ROUND = 12
 const DISCARDS_PER_ROUND = 3
+const LEAVES_PER_ROUND = 3
+
+var leaves_per_round := LEAVES_PER_ROUND
+var _leaf_turns: Array = []
 
 signal completed()
 
@@ -69,10 +73,13 @@ func _ready():
 	word_finder.relic_manager = relic_manager
 	word_finder.min_word_length = GameState.current_boss.get_min_word_length(word_finder.DEFAULT_MIN_WORD_LENGTH)
 	
+	_leaf_turns = _pick_leaf_turns()
+	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
+	board.turns_per_round = TURNS_PER_ROUND
+	board.leaves_per_round = leaves_per_round
 	board.max_spaces = board.num_starting_spaces + TURNS_PER_ROUND - 1
 	board.space_clicked.connect(_on_space_clicked)
 	board.space_hovered.connect(_on_space_hovered)
-	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
 	board.start()
 	
 	score_panel.score = 0
@@ -131,6 +138,8 @@ func _on_space_clicked(space: Space):
 			return
 			
 	#After turn
+	if turn_number in _leaf_turns:
+		board.bloom_leaf()
 	turn_number += 1
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
@@ -140,8 +149,6 @@ func _on_space_clicked(space: Space):
 	if hand.is_empty():
 		game_over.emit('You ran out of tokens')
 		return
-	var expansions = board.NUM_EXPANSIONS + relic_manager.add_grow_amount(context)
-	board.grow(expansions)
 	scoring = false
 
 func _score_words(found_words: Array, context: RelicContext, space: Space):
@@ -245,6 +252,11 @@ func _toggle_token_selection(token: Token):
 		selected_token = token
 	else:
 		selected_token = null
+
+func _pick_leaf_turns() -> Array:
+	var turns := range(1, TURNS_PER_ROUND + 1)
+	turns.shuffle()
+	return turns.slice(0, mini(leaves_per_round, turns.size()))
 
 func _get_relic_context():
 	var context = RelicContext.new()
