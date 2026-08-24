@@ -1,3 +1,54 @@
-[gd_scene format=3 uid="uid://1mmbsc2mpjls"]
+[gd_scene load_steps=7 format=3 uid="uid://1mmbsc2mpjls"]
 
-[node name="Sprite" type="Node2D"]
+[ext_resource type="Script" path="res://components/space/link.gd" id="1_6lnc0"]
+[ext_resource type="Shader" path="res://shader/reveal_shader.gdshader" id="2_6uiwi"]
+[ext_resource type="Texture2D" uid="uid://cvyjw3gbukqk" path="res://assets/sprites/space/1x/vine.png" id="2_x0mhp"]
+[ext_resource type="Texture2D" uid="uid://bc0swoatoaa32" path="res://assets/sprites/space/1x/vine_leaf.png" id="3_xehrm"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nb5m0"]
+resource_local_to_scene = true
+shader = ExtResource("2_6uiwi")
+shader_parameter/progress = 1.0
+shader_parameter/origin = Vector2(0, 0.5)
+shader_parameter/direction = Vector2(1, 0)
+shader_parameter/softness = 0.06
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vvww6"]
+resource_local_to_scene = true
+shader = ExtResource("2_6uiwi")
+shader_parameter/progress = 1.0
+shader_parameter/origin = Vector2(0, 0)
+shader_parameter/direction = Vector2(0, 200)
+shader_parameter/softness = 0.06
+
+[node name="Link" type="Node2D"]
+script = ExtResource("1_6lnc0")
+
+[node name="Vine" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_nb5m0")
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("2_x0mhp")
+
+[node name="Leaf1" type="Sprite2D" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_vvww6")
+position = Vector2(4.76837e-07, 11)
+rotation = 0.741732
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("3_xehrm")
+
+[node name="Leaf2" type="Sprite2D" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_vvww6")
+position = Vector2(17, -4)
+rotation = -2.35344
+scale = Vector2(0.5625, 0.5625)
+texture = ExtResource("3_xehrm")
+
+[node name="Leaf3" type="Sprite2D" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_vvww6")
+position = Vector2(-4, -10)
+rotation = 3.1058
+scale = Vector2(0.316406, 0.316406)
+texture = ExtResource("3_xehrm")

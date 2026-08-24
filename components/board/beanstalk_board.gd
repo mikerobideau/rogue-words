@@ -16,7 +16,7 @@ signal space_hovered(space: Space)
 const DEFAULT_NUM_STARTING_SPACES = 1
 const NUM_EXPANSIONS = 1
 const SPACING := 90
-const SQRT_3_OVER_2 = sqrt(3) / 2.0
+const SQRT_3_OVER_2 = sqrt(3) / 2.0	
 
 # buds offered per turn, and how many of the ones the player passed over turn
 # into leaves. Deterministic on purpose: every turn grows exactly one playable
@@ -231,11 +231,17 @@ func _create_bud(coord: Vector2i) -> Space:
 func _promote_bud(bud: Space) -> void:
 	spaces[bud.coord] = bud
 	_link_neighbors(bud)
+	_grow_links(bud)
 	bud.modulate.a = 1.0
 	bud.pop_open()
-	space_container.queue_redraw()
 	if bud.has_enhancement():
 		Sound.play(Sound.SOUND_ENHANCED_SPACE)
+
+func _grow_links(space: Space) -> void:
+	for dir in range(6):
+		var neighbor = space.links[dir]
+		if neighbor != null:
+			space_container.add_link(space, neighbor)
 
 func _create_space(coord: Vector2i, space_data: SpaceData = null) -> Space:
 	var space = SpaceFactory.create_scene(space_data) if space_data \
