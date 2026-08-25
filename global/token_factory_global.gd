@@ -5,7 +5,7 @@ var TokenScene = preload("res://components/token/token.tscn")
 var LeafScene = preload("res://components/token/leaf_token.tscn")
 const ClassicLoadout = preload("res://components/run/loadout/data/classic/classic_loadout.tres")
 
-var _leaf_letter_pool: Array = []
+var leaf_letter_pool: Array = []
 
 const LETTERS: Dictionary = {
 	"A": {'letter': 'A', 'value': 1}, 
@@ -63,15 +63,15 @@ func create_leaf() -> Token:
 	return scene
 
 func _get_leaf_letter_pool() -> Array:
-	if _leaf_letter_pool.is_empty():
+	if leaf_letter_pool.is_empty():
 		for entry in ClassicLoadout.tiles:
 			if entry == null or entry.count <= 0:
 				continue
 			for i in entry.count:
-				_leaf_letter_pool.append(entry.letter)
-		if _leaf_letter_pool.is_empty():
-			_leaf_letter_pool = LETTERS.keys()
-	return _leaf_letter_pool
+				leaf_letter_pool.append(entry.letter)
+		if leaf_letter_pool.is_empty():
+			leaf_letter_pool = LETTERS.keys()
+	return leaf_letter_pool
 	
 func load_all_tokens() -> Array[TokenData]:
 	return create_starting_tokens()

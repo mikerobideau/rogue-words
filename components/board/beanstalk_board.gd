@@ -36,7 +36,7 @@ var leaves_per_round := 0
 
 var spaces: Dictionary = {}
 
-var _placed_count := 0
+var placed_count := 0
 
 func _ready():
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -58,7 +58,7 @@ func get_spaces():
 
 func place(token: Token, space: Space):
 	space.place_token(token)
-	_placed_count += 1
+	placed_count += 1
 	if space.has_enhancement():
 		Sound.play(Sound.SOUND_ENHANCED_SPACE)
 	_grow_links(space)
@@ -189,7 +189,7 @@ func _coord_to_pixel(coord: Vector2i) -> Vector2:
 
 func _on_space_clicked(space: Space):
 	if space.token == null:
-		var full := max_spaces > 0 and _placed_count >= max_spaces
+		var full := max_spaces > 0 and placed_count >= max_spaces
 		if full:
 			return
 	space_clicked.emit(space)
