@@ -9,6 +9,7 @@ const TURNS_PER_ROUND = 12
 const DISCARDS_PER_ROUND = 3
 const LEAVES_PER_ROUND = 3
 
+var turns_per_round := TURNS_PER_ROUND
 var leaves_per_round := LEAVES_PER_ROUND
 
 signal completed()
@@ -37,6 +38,15 @@ var selected_token: Token:
 		if v:
 			v.selected = true
 		hud.item_container.token_selected = v != null
+
+var selected_leaf: Space:
+	set(v):
+		if selected_leaf and is_instance_valid(selected_leaf):
+			selected_leaf.set_targeted(false)
+		selected_leaf = v
+		if v:
+			v.set_targeted(true)
+		hud.item_container.board_target_selected = v != null
 		
 var discards_remaining: int:
 	set(v):
@@ -47,7 +57,7 @@ var discards_remaining: int:
 var turn_number: int:
 	set(v):
 		turn_number = v
-		turns_remaining = TURNS_PER_ROUND - (turn_number - 1)
+		turns_remaining = turns_per_round - (turn_number - 1)
 			
 var turns_remaining := TURNS_PER_ROUND:
 	set(v):
@@ -56,7 +66,9 @@ var turns_remaining := TURNS_PER_ROUND:
 
 func _ready():
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
+
+	turns_per_round = GameState.current_boss.get_turns_per_round(TURNS_PER_ROUND)
+	leaves_per_round = GameState.current_boss.get_leaves_per_round(LEAVES_PER_ROUND)
 	turn_number = 1
 	discards_remaining = GameState.current_boss.get_discards(DISCARDS_PER_ROUND)
 	
@@ -73,20 +85,22 @@ func _ready():
 	word_finder.min_word_length = GameState.current_boss.get_min_word_length(word_finder.DEFAULT_MIN_WORD_LENGTH)
 	
 	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
-	board.turns_per_round = TURNS_PER_ROUND
+	board.turns_per_round = turns_per_round
 	board.leaves_per_round = leaves_per_round
-	board.max_spaces = board.num_starting_spaces + TURNS_PER_ROUND - 1
+	board.poisoned_count = GameState.current_boss.get_poisoned_space_count()
+	board.max_spaces = board.num_starting_spaces + turns_per_round - 1
 	board.space_clicked.connect(_on_space_clicked)
 	board.space_hovered.connect(_on_space_hovered)
 	board.start()
 	
 	score_panel.score = 0
-	score_panel.target_score = GameState.target_score
+	score_panel.target_score = GameState.current_boss.get_target_score(GameState.target_score)
 	score_panel.slide_in()
 	
 	top_container.slide_in()
 	
 	hud.relic_container.refresh_relics()
+	_apply_boss_relic_disable()
 	hud.item_container.refresh_items()
 	hud.item_container.item_use_requested.connect(_on_item_use_requested)
 	
@@ -96,10 +110,21 @@ func _ready():
 	#_on_round_complete(RelicContext.new())
 	
 func _on_item_use_requested(slot: ItemSlot):
-	if scoring or selected_token == null:
+	if scoring:
+		return
+	var item_data := slot.item.data
+	if item_data.affects_board:
+		if selected_leaf == null:
+			return
+		var leaf := selected_leaf
+		selected_leaf = null
+		await slot.animate_and_consume(leaf)
+		item_data.use_on_board(board, leaf)
+		GameState.remove_item(item_data)
+		return
+	if selected_token == null:
 		return
 	var token := selected_token
-	var item_data := slot.item.data
 	await slot.animate_and_consume(token)
 	_apply_item(item_data, token)
 	selected_token = null
@@ -116,8 +141,13 @@ func _on_discard_clicked():
 	relic_manager.on_discard(context)
 
 func _on_space_clicked(space: Space):
+	if scoring:
+		return
+	if space.token is LeafToken:
+		selected_leaf = null if selected_leaf == space else space
+		return
 	#Process placement
-	if scoring or not space.enabled or space.token != null or !selected_token:
+	if not space.enabled or space.token != null or !selected_token:
 		return
 	scoring = true
 	hand.remove_token(selected_token)
@@ -136,6 +166,7 @@ func _on_space_clicked(space: Space):
 			return
 			
 	#After turn
+	GameState.current_boss.on_turn_scored(board)
 	turn_number += 1
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
@@ -249,9 +280,23 @@ func _toggle_token_selection(token: Token):
 	else:
 		selected_token = null
 
+func _apply_boss_relic_disable():
+	var relics = hud.get_relics()
+	for relic in relics:
+		relic.set_disabled(false)
+	var count = GameState.current_boss.get_disabled_relic_count()
+	if count > 0:
+		relics.shuffle()
+		for i in mini(count, relics.size()):
+			relics[i].set_disabled(true)
+
 func _get_relic_context():
 	var context = RelicContext.new()
-	context.relics = hud.get_relics()
+	var enabled: Array[Relic] = []
+	for r in hud.get_relics():
+		if not r.data.disabled:
+			enabled.append(r)
+	context.relics = enabled
 	context.placed_token = selected_token
 	context.hand = hand.get_hand()
 	context.turn_number = turn_number

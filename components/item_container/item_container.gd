@@ -3,6 +3,7 @@ class_name ItemContainer
 
 signal item_use_requested(slot: ItemSlot)
 signal token_selected_changed(value: bool)
+signal board_target_selected_changed(value: bool)
 
 var selected_slot: ItemSlot = null
 var token_selected := false:
@@ -11,6 +12,12 @@ var token_selected := false:
 			return
 		token_selected = v
 		token_selected_changed.emit(v)
+var board_target_selected := false:
+	set(v):
+		if board_target_selected == v:
+			return
+		board_target_selected = v
+		board_target_selected_changed.emit(v)
 
 @onready var slots: Array[ItemSlot] = [$VBoxContainer/Items/Slot1, $VBoxContainer/Items/Slot2, $VBoxContainer/Items/Slot3]
 @onready var label = $VBoxContainer/Label

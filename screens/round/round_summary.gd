@@ -18,14 +18,6 @@ func _on_continue_pressed() -> void:
 	visible = false
 	closed.emit()
 
-#func play(rows: Array):
-#	for child in grid.get_children():
-#		child.queue_free()
-#	visible = true
-#	for row in rows:
-#		await _add_row(row["category"], row["value"])
-#		await get_tree().create_timer(ROW_DELAY).timeout
-
 func play_turns_remaining(turns: int):
 	await _add_row(str(turns) +  ' turns remaining ', '+ $' + str(turns))
 	if turns > 0:
@@ -69,4 +61,5 @@ func _make_label(text: String, align: int) -> Label:
 	l.text = text
 	l.horizontal_alignment = align
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.add_theme_color_override("font_color", Color.BLACK)
 	return l

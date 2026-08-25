@@ -2,8 +2,17 @@
 
 [ext_resource type="Script" path="res://screens/round/round_summary.gd" id="1_qkjp0"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2evid"]
-bg_color = Color(0.129412, 0.0352941, 0.305882, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sr5sq"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.129412, 0.0352941, 0.305882, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="RoundSummary" type="CanvasLayer"]
 layer = 120
@@ -31,7 +40,7 @@ offset_right = 400.0
 offset_bottom = 225.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_2evid")
+theme_override_styles/panel = SubResource("StyleBoxFlat_sr5sq")
 
 [node name="TitleMargin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
@@ -50,7 +59,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
 theme_type_variation = &"HeaderMedium"
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 text = "Round Complete"
 
 [node name="GridContainer" type="GridContainer" parent="Panel/TitleMargin/VBoxContainer"]

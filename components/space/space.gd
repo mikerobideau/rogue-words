@@ -19,12 +19,25 @@ const TRIPLE_LETTER_COLOR = Styles.TEAL
 var coord: Vector2i
 var links: Array = [null, null, null, null, null, null]
 var BASE_SCALE = Vector2(1.0, 1.0)
+var _target_tween: Tween
+
+func set_targeted(on: bool) -> void:
+	if _target_tween:
+		_target_tween.kill()
+	_target_tween = create_tween()
+	_target_tween.tween_property(self, "scale", BASE_SCALE * (1.15 if on else 1.0), 0.1)
 
 @export var data: SpaceData:
 	set(v):
 		data = v
 		if is_node_ready():
+			_apply_sprite_frames()
 			_update_label()
+
+func _apply_sprite_frames() -> void:
+	if data and data.sprite_frames:
+		sprite_frames = data.sprite_frames
+		play('default')
 		
 @export var token: Token
 @export var disabled_color := Color(0.6, 0.6, 0.6, 0.5)
@@ -39,6 +52,7 @@ var enabled: bool = true:
 		
 func _ready():
 	scale = BASE_SCALE
+	_apply_sprite_frames()
 	play('default')
 	var area = Area2D.new()
 	var shape = CollisionShape2D.new()
@@ -76,6 +90,24 @@ func place_token(t: Token):
 	if data.has_badge:
 		_show_badge()
 	
+func take_token() -> Token:
+	var t := token
+	if t and t.destroyed.is_connected(_on_token_destroyed):
+		t.destroyed.disconnect(_on_token_destroyed)
+	if t and t.get_parent() == self:
+		remove_child(t)
+	token = null
+	return t
+
+func give_token(t: Token) -> void:
+	token = t
+	add_child(t)
+	t.position = Vector2.ZERO
+	if not t.destroyed.is_connected(_on_token_destroyed):
+		t.destroyed.connect(_on_token_destroyed)
+	if data.has_badge:
+		_show_badge()
+
 func _on_token_destroyed():
 	#self_modulate.a = 1 #show sprite
 	token = null
@@ -116,7 +148,7 @@ func _animate_badge():
 func _show_badge():
 	badge.z_index = 1
 	badge.position = Vector2(-Token.RADIUS, 0)
-	badge.color = data.color
+	badge.color = data.get_badge_color()
 	badge.text = data.get_badge_text()
 	_animate_badge()
 func _on_input_event(_viewport, event, _shape_idx):
@@ -127,7 +159,7 @@ func _update_label():
 	if !data:
 		return
 	label.text = data.get_label_text()
-	label.add_theme_color_override("font_color", data.color)
+	label.add_theme_color_override("font_color", data.get_text_color())
 	var sprite_size = sprite_frames.get_frame_texture("default", 0).get_size()
 	label.position = -sprite_size / 2
 	label.size = sprite_size

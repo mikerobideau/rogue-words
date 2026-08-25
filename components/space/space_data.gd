@@ -2,6 +2,16 @@ extends Resource
 class_name SpaceData
 
 @export var has_badge := false
+@export var sprite_frames: SpriteFrames
+
+func is_poison() -> bool:
+	return false
+
+func get_text_color() -> Color:
+	return Color.WHITE
+
+func get_badge_color() -> Color:
+	return Color.WHITE
 
 func get_juice() -> int:
 	return 0

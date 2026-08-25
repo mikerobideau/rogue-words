@@ -4,6 +4,8 @@ class_name RelicData
 signal data_changed()
 signal scaled(v: int)
 
+var disabled := false
+
 enum RelicResponse {
 	NONE,
 	UPGRADE,

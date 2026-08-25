@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="WindBoss" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/boss/data/wind/wind.gd" id="1_wind"]
+
+[resource]
+script = ExtResource("1_wind")
+boss_name = "Wind"
+description = "Swaps two tiles after each turn"

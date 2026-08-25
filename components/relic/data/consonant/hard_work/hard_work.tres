@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_rgvcy")
-juice_per_consonant = 5
+juice_per_consonant = 2
 relic_name = "Hard Work"
-description = "Consonants score +5 juice"
+description = "Consonants score +2 juice"
 rarity = 0

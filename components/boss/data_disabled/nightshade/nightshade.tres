@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="NightshadeBoss" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/boss/data_disabled/nightshade/nightshade.gd" id="1_nghts"]
+
+[resource]
+script = ExtResource("1_nghts")
+boss_name = "Nightshade"
+description = "Poisons spaces on the board"

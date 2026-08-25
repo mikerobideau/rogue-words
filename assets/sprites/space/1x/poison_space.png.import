@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c4u7akpnurtih"
-path="res://.godot/imported/space_filled.png-6011b9b1d91be53f2c7362716bd978cc.ctex"
+uid="uid://crmndm2rmpckf"
+path="res://.godot/imported/poison_space.png-b2484bd090b7ab41f349034a199f8409.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/space/1x/space_filled.png"
-dest_files=["res://.godot/imported/space_filled.png-6011b9b1d91be53f2c7362716bd978cc.ctex"]
+source_file="res://assets/sprites/space/1x/poison_space.png"
+dest_files=["res://.godot/imported/poison_space.png-b2484bd090b7ab41f349034a199f8409.ctex"]
 
 [params]
 

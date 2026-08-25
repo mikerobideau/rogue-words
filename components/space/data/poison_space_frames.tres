@@ -1,0 +1,31 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/space/1x/poison_space.png" id="1_poison"]
+
+[resource]
+animations = [{
+"frames": [{"duration": 1.0, "texture": ExtResource("1_poison")}],
+"loop": true,
+"name": &"active",
+"speed": 8.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("1_poison")}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("1_poison")}],
+"loop": true,
+"name": &"disabled",
+"speed": 5.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("1_poison")}],
+"loop": true,
+"name": &"glow",
+"speed": 5.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("1_poison")}],
+"loop": true,
+"name": &"hover",
+"speed": 5.0
+}]

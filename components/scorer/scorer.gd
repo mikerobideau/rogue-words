@@ -20,7 +20,8 @@ func _score_tile(space: Space, display_letter: String, word: String, context: Re
 		space.token.enhancement.on_scored(space.token)
 		token_mult = space.token.enhancement.get_mult()
 
-	var juice := float(space.token.value + space.data.get_juice())
+	var token_value := GameState.current_boss.get_token_value(space.token.value, display_letter)
+	var juice := float(token_value + space.data.get_juice())
 	var mult := float(1 + space.data.get_mult() + token_mult)
 	
 	#if space.token.data.enhancement:

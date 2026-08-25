@@ -62,8 +62,8 @@ func enhance(e: TokenEnhancement):
 	data.enhance(e)
 	_transform()
 	
-func destroy():
-	Sound.play(Sound.SOUND_TOKEN_DESTROYED)
+func destroy(sound := Sound.SOUND_TOKEN_DESTROYED):
+	Sound.play(sound)
 	destroyed.emit()
 	_animate_destroyed()
 	
