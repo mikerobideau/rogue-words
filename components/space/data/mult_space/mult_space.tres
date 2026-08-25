@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_lvjlt")
 mult = 2
-color = Color(0.298039, 0.631373, 0.639216, 1)
+color = Color(1, 0.0705882, 0.505882, 1)
 has_badge = true

@@ -3,6 +3,9 @@ class_name TokenFactoryGlobal
 
 var TokenScene = preload("res://components/token/token.tscn")
 var LeafScene = preload("res://components/token/leaf_token.tscn")
+const ClassicLoadout = preload("res://components/run/loadout/data/classic/classic_loadout.tres")
+
+var leaf_letter_pool: Array = []
 
 const LETTERS: Dictionary = {
 	"A": {'letter': 'A', 'value': 1}, 
@@ -53,14 +56,22 @@ func create_scene(data: TokenData):
 	scene.data = data
 	return scene
 
-# a leaf is a random letter with no base juice -- the board grows these itself,
-# they are never dealt to the player
 func create_leaf() -> Token:
-	var data = create_data_by_letter(LETTERS.keys().pick_random())
-	data.value = 0
+	var data = create_data_by_letter(_get_leaf_letter_pool().pick_random())
 	var scene = LeafScene.instantiate()
 	scene.data = data
 	return scene
+
+func _get_leaf_letter_pool() -> Array:
+	if leaf_letter_pool.is_empty():
+		for entry in ClassicLoadout.tiles:
+			if entry == null or entry.count <= 0:
+				continue
+			for i in entry.count:
+				leaf_letter_pool.append(entry.letter)
+		if leaf_letter_pool.is_empty():
+			leaf_letter_pool = LETTERS.keys()
+	return leaf_letter_pool
 	
 func load_all_tokens() -> Array[TokenData]:
 	return create_starting_tokens()
