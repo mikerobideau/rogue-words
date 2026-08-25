@@ -12,6 +12,8 @@ const SQRT_3_OVER_2 = sqrt(3) / 2.0
 const MAX_ROWS := 7
 const MAX_COLS := 7
 
+const SHAPE_SLACK := 1
+
 const EMPTY_ALPHA := 0.55
 
 const DIR_OFFSETS := [
@@ -31,7 +33,6 @@ var start_space_pos: Vector2
 var max_spaces := 0
 var turns_per_round := 0
 var leaves_per_round := 0
-var leaf_letters := TokenData.VOWELS
 
 var spaces: Dictionary = {}
 
@@ -46,8 +47,9 @@ func start():
 	for coord in _generate_shape(_total_spaces()):
 		_create_space(coord)
 	var seed_space: Space = spaces[start_space_coord]
-	seed_space.place_token(TokenFactory.create_leaf(TokenFactory.LETTERS.keys()))
+	seed_space.place_token(TokenFactory.create_leaf())
 	_grow_links(seed_space)
+	_plant_leaves(leaves_per_round)
 	_update_opacity()
 	_center_board()
 
@@ -68,14 +70,25 @@ func highlight(path: Array):
 
 #--- growth ---
 
-func bloom_leaf() -> void:
+func _plant_leaves(count: int) -> void:
 	var options := _empty_spaces()
-	if options.is_empty():
-		return
-	var leaf_space: Space = options.pick_random()
-	leaf_space.place_token(TokenFactory.create_leaf(leaf_letters))
-	_grow_links(leaf_space)
-	_update_opacity()
+	options.shuffle()
+	var placed := 0
+	for leaf_space in options:
+		if placed >= count:
+			break
+		if _adjacent_to_leaf(leaf_space.coord):
+			continue
+		leaf_space.place_token(TokenFactory.create_leaf())
+		_grow_links(leaf_space)
+		placed += 1
+
+func _adjacent_to_leaf(coord: Vector2i) -> bool:
+	for offset in DIR_OFFSETS:
+		var neighbor: Space = spaces.get(coord + offset)
+		if neighbor != null and neighbor.token != null:
+			return true
+	return false
 
 func _update_opacity() -> void:
 	for space in spaces.values():
@@ -87,13 +100,6 @@ func _empty_spaces() -> Array:
 		if space.token == null:
 			result.append(space)
 	return result
-
-func _adjacent_to_filled(coord: Vector2i) -> bool:
-	for offset in DIR_OFFSETS:
-		var neighbor: Space = spaces.get(coord + offset)
-		if neighbor != null and neighbor.token != null:
-			return true
-	return false
 
 #--- creation ---
 
@@ -109,7 +115,7 @@ func _generate_shape(count: int) -> Array:
 		var min_shared := 7
 		for c in frontier:
 			min_shared = mini(min_shared, _shared_count(c, shape))
-		var candidates := frontier.filter(func(c): return _shared_count(c, shape) == min_shared)
+		var candidates := frontier.filter(func(c): return _shared_count(c, shape) <= min_shared + SHAPE_SLACK)
 		shape[candidates.pick_random()] = true
 	return shape.keys()
 
@@ -184,7 +190,7 @@ func _coord_to_pixel(coord: Vector2i) -> Vector2:
 func _on_space_clicked(space: Space):
 	if space.token == null:
 		var full := max_spaces > 0 and _placed_count >= max_spaces
-		if full or not _adjacent_to_filled(space.coord):
+		if full:
 			return
 	space_clicked.emit(space)
 
