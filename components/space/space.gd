@@ -19,6 +19,13 @@ const TRIPLE_LETTER_COLOR = Styles.TEAL
 var coord: Vector2i
 var links: Array = [null, null, null, null, null, null]
 var BASE_SCALE = Vector2(1.0, 1.0)
+var _target_tween: Tween
+
+func set_targeted(on: bool) -> void:
+	if _target_tween:
+		_target_tween.kill()
+	_target_tween = create_tween()
+	_target_tween.tween_property(self, "scale", BASE_SCALE * (1.15 if on else 1.0), 0.1)
 
 @export var data: SpaceData:
 	set(v):

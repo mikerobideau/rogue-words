@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="MinusOneHandSizeBoss" load_steps=2 format=3 uid="uid://dysqmwp74j1li"]
 
-[ext_resource type="Script" path="res://components/boss/data/minus_one_hand_size_boss/minus_one_hand_size_boss.gd" id="1_2spgk"]
+[ext_resource type="Script" path="res://components/boss/data_disabled/minus_one_hand_size_boss/minus_one_hand_size_boss.gd" id="1_2spgk"]
 
 [resource]
 script = ExtResource("1_2spgk")

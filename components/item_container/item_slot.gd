@@ -51,6 +51,8 @@ func select():
 	var container := _find_item_container()
 	if container and not container.token_selected_changed.is_connected(_refresh_menu):
 		container.token_selected_changed.connect(_refresh_menu)
+	if container and not container.board_target_selected_changed.is_connected(_refresh_menu):
+		container.board_target_selected_changed.connect(_refresh_menu)
 	_open_menu()
 
 func _refresh_menu(_value: bool) -> void:
@@ -74,8 +76,12 @@ func _use() -> void:
 	use_requested.emit(self)
 	
 func _can_use() -> bool:
+	if item == null:
+		return false
 	var container := _find_item_container()
-	return item != null and item.data.can_enhance_token and container != null and container.token_selected
+	if item.data.affects_board:
+		return container != null and container.board_target_selected
+	return item.data.can_enhance_token and container != null and container.token_selected
 
 func _find_item_container() -> ItemContainer:
 	var node := get_parent()
@@ -92,6 +98,8 @@ func deselect():
 	var container := _find_item_container()
 	if container and container.token_selected_changed.is_connected(_refresh_menu):
 		container.token_selected_changed.disconnect(_refresh_menu)
+	if container and container.board_target_selected_changed.is_connected(_refresh_menu):
+		container.board_target_selected_changed.disconnect(_refresh_menu)
 	SlotMenu.close()
 
 func _keep():

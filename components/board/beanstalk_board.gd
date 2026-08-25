@@ -101,6 +101,12 @@ func _empty_spaces() -> Array:
 			result.append(space)
 	return result
 
+func remove_leaf(leaf: Space) -> void:
+	space_container.remove_links_for(leaf, leaf.links)
+	if leaf.token != null:
+		leaf.token.destroy()
+	_update_opacity()
+
 #--- creation ---
 
 func _total_spaces() -> int:

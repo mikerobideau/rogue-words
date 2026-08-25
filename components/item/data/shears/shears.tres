@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Shears" load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/item/1x/shears.png" id="1_shears"]
+[ext_resource type="Script" path="res://components/item/data/shears/shears.gd" id="2_shears"]
+
+[resource]
+script = ExtResource("2_shears")
+item_name = "Shears"
+icon = ExtResource("1_shears")
+cost = 3
+description = "Remove a leaf from the board"
+affects_board = true

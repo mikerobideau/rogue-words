@@ -30,6 +30,15 @@ func add_link(a: Space, b: Space) -> void:
 	_links[key] = link
 	
 
+func remove_links_for(space: Space, neighbors: Array) -> void:
+	for neighbor in neighbors:
+		if neighbor == null:
+			continue
+		var key = _edge_key(space, neighbor)
+		if _links.has(key):
+			_links[key].queue_free()
+			_links.erase(key)
+
 func _edge_key(a: Space, b: Space) -> String:
 	if a.get_instance_id() < b.get_instance_id():
 		return str(a.get_instance_id()) + "-" + str(b.get_instance_id())

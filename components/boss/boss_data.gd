@@ -15,3 +15,9 @@ func get_min_word_length(base: int) -> int:
 
 func get_starting_board_size(base: int) -> int:
 	return base
+
+func get_turns_per_round(base: int) -> int:
+	return base
+
+func get_leaves_per_round(base: int) -> int:
+	return base

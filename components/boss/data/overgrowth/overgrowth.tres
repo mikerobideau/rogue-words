@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="OvergrowthBoss" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/boss/data/overgrowth/overgrowth.gd" id="1_ovgrw"]
+
+[resource]
+script = ExtResource("1_ovgrw")
+boss_name = "Overgrowth"
+description = "+2 leaves, -2 turns"
