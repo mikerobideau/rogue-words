@@ -33,6 +33,7 @@ var start_space_pos: Vector2
 var max_spaces := 0
 var turns_per_round := 0
 var leaves_per_round := 0
+var poisoned_count := 0
 
 var spaces: Dictionary = {}
 
@@ -44,12 +45,18 @@ func _ready():
 	resized.connect(_center_board)
 
 func start():
+	await get_tree().process_frame
+	var i := 0
 	for coord in _generate_shape(_total_spaces()):
 		_create_space(coord)
+		i += 1
+		if i % 4 == 0:
+			await get_tree().process_frame
 	var seed_space: Space = spaces[start_space_coord]
 	seed_space.place_token(TokenFactory.create_leaf())
 	_grow_links(seed_space)
 	_plant_leaves(leaves_per_round)
+	_plant_poison(poisoned_count)
 	_update_opacity()
 	_center_board()
 
@@ -59,7 +66,9 @@ func get_spaces():
 func place(token: Token, space: Space):
 	space.place_token(token)
 	placed_count += 1
-	if space.has_enhancement():
+	if space.data.is_poison():
+		Sound.play(Sound.SOUND_POISON)
+	elif space.has_enhancement():
 		Sound.play(Sound.SOUND_ENHANCED_SPACE)
 	_grow_links(space)
 	_update_opacity()
@@ -69,6 +78,12 @@ func highlight(path: Array):
 		space.token.pulse()
 
 #--- growth ---
+
+func _plant_poison(count: int) -> void:
+	var options := _empty_spaces()
+	options.shuffle()
+	for i in mini(count, options.size()):
+		options[i].data = SpaceFactory.create_poison_data()
 
 func _plant_leaves(count: int) -> void:
 	var options := _empty_spaces()
@@ -101,10 +116,40 @@ func _empty_spaces() -> Array:
 			result.append(space)
 	return result
 
+func swap_random_tokens() -> void:
+	var occupied := _occupied_spaces()
+	if occupied.size() < 2:
+		return
+	occupied.shuffle()
+	_swap_tokens(occupied[0], occupied[1])
+
+func _occupied_spaces() -> Array:
+	var result := []
+	for space in spaces.values():
+		if space.token != null:
+			result.append(space)
+	return result
+
+func _swap_tokens(a: Space, b: Space) -> void:
+	Sound.play(Sound.SOUND_WIND)
+	var ta: Token = a.token
+	var tb: Token = b.token
+	var pos_a := ta.global_position
+	var pos_b := tb.global_position
+	a.take_token()
+	b.take_token()
+	a.give_token(tb)
+	b.give_token(ta)
+	tb.global_position = pos_b
+	ta.global_position = pos_a
+	var t := create_tween().set_parallel(true)
+	t.tween_property(tb, "position", Vector2.ZERO, 0.4).set_trans(Tween.TRANS_SINE)
+	t.tween_property(ta, "position", Vector2.ZERO, 0.4).set_trans(Tween.TRANS_SINE)
+
 func remove_leaf(leaf: Space) -> void:
 	space_container.remove_links_for(leaf, leaf.links)
 	if leaf.token != null:
-		leaf.token.destroy()
+		leaf.token.destroy(Sound.SOUND_LEAF_REMOVED)
 	_update_opacity()
 
 #--- creation ---

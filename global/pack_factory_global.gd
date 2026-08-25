@@ -19,8 +19,14 @@ func create_scene(data: PackData):
 	scene.data = data
 	return scene
 
+var _packs_cache: Array[PackData] = []
+var _packs_loaded := false
+
 func load_all_packs() -> Array[PackData]:
-	return DataLoader.load_all("res://components/pack/data/", PackData)
+	if not _packs_loaded:
+		_packs_cache = DataLoader.load_all("res://components/pack/data/", PackData)
+		_packs_loaded = true
+	return _packs_cache.duplicate()
 
 #---------------------------------------------------------------------------------------------------
 # Offer generation

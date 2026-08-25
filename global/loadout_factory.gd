@@ -8,5 +8,11 @@ func create_scene(data: LoadoutData) -> Loadout:
 	scene.data = data
 	return scene
 
+var _loadouts_cache: Array[LoadoutData] = []
+var _loadouts_loaded := false
+
 func load_all_loadouts() -> Array[LoadoutData]:
-	return DataLoader.load_all("res://components/run/loadout/data/", LoadoutData)
+	if not _loadouts_loaded:
+		_loadouts_cache = DataLoader.load_all("res://components/run/loadout/data/", LoadoutData)
+		_loadouts_loaded = true
+	return _loadouts_cache.duplicate()

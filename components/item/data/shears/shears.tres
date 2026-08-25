@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Shears" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="Shears" load_steps=3 format=3 uid="uid://bcsr42cbi6mnc"]
 
-[ext_resource type="Texture2D" path="res://assets/sprites/item/1x/shears.png" id="1_shears"]
+[ext_resource type="Texture2D" uid="uid://dw1ujurl5avde" path="res://assets/sprites/item/1x/shears.png" id="1_shears"]
 [ext_resource type="Script" path="res://components/item/data/shears/shears.gd" id="2_shears"]
 
 [resource]
@@ -9,4 +9,5 @@ item_name = "Shears"
 icon = ExtResource("1_shears")
 cost = 3
 description = "Remove a leaf from the board"
+can_enhance_token = false
 affects_board = true

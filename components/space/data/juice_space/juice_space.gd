@@ -7,6 +7,12 @@ class_name JuiceSpace
 func get_juice() -> int:
 	return juice
 
+func get_text_color() -> Color:
+	return color
+
+func get_badge_color() -> Color:
+	return color
+
 func get_badge_text() -> String:
 	return str(juice)
 	

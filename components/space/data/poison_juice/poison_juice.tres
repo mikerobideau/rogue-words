@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PoisonJuiceSpace" load_steps=3 format=3 uid="uid://gwkfae3wfpj1"]
+
+[ext_resource type="Script" path="res://components/space/data/poison_juice/poison_juice.gd" id="1_pjuic"]
+[ext_resource type="SpriteFrames" path="res://components/space/data/poison_space_frames.tres" id="2_pframes"]
+
+[resource]
+script = ExtResource("1_pjuic")
+juice = -5
+color = Color(1, 1, 1, 1)
+has_badge = true
+sprite_frames = ExtResource("2_pframes")

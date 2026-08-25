@@ -7,7 +7,16 @@ extends Control
 	set(value):
 		data = value
 		_update_label()
-		
+		_refresh_disabled()
+
+func set_disabled(v: bool) -> void:
+	if data:
+		data.disabled = v
+	_refresh_disabled()
+
+func _refresh_disabled() -> void:
+	modulate = Color(0.45, 0.45, 0.45, 0.7) if (data and data.disabled) else Color.WHITE
+
 func _ready():
 	pivot_offset = size / 2
 	if data:

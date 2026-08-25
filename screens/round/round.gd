@@ -87,18 +87,20 @@ func _ready():
 	board.num_starting_spaces = GameState.current_boss.get_starting_board_size(board.DEFAULT_NUM_STARTING_SPACES)
 	board.turns_per_round = turns_per_round
 	board.leaves_per_round = leaves_per_round
+	board.poisoned_count = GameState.current_boss.get_poisoned_space_count()
 	board.max_spaces = board.num_starting_spaces + turns_per_round - 1
 	board.space_clicked.connect(_on_space_clicked)
 	board.space_hovered.connect(_on_space_hovered)
 	board.start()
 	
 	score_panel.score = 0
-	score_panel.target_score = GameState.target_score
+	score_panel.target_score = GameState.current_boss.get_target_score(GameState.target_score)
 	score_panel.slide_in()
 	
 	top_container.slide_in()
 	
 	hud.relic_container.refresh_relics()
+	_apply_boss_relic_disable()
 	hud.item_container.refresh_items()
 	hud.item_container.item_use_requested.connect(_on_item_use_requested)
 	
@@ -164,6 +166,7 @@ func _on_space_clicked(space: Space):
 			return
 			
 	#After turn
+	GameState.current_boss.on_turn_scored(board)
 	turn_number += 1
 	if turns_remaining < 1:
 		game_over.emit('You ran out of turns')
@@ -277,9 +280,23 @@ func _toggle_token_selection(token: Token):
 	else:
 		selected_token = null
 
+func _apply_boss_relic_disable():
+	var relics = hud.get_relics()
+	for relic in relics:
+		relic.set_disabled(false)
+	var count = GameState.current_boss.get_disabled_relic_count()
+	if count > 0:
+		relics.shuffle()
+		for i in mini(count, relics.size()):
+			relics[i].set_disabled(true)
+
 func _get_relic_context():
 	var context = RelicContext.new()
-	context.relics = hud.get_relics()
+	var enabled: Array[Relic] = []
+	for r in hud.get_relics():
+		if not r.data.disabled:
+			enabled.append(r)
+	context.relics = enabled
 	context.placed_token = selected_token
 	context.hand = hand.get_hand()
 	context.turn_number = turn_number

@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="TheGiantBoss" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/boss/data_disabled/the_giant/the_giant.gd" id="1_giant"]
+
+[resource]
+script = ExtResource("1_giant")
+boss_name = "The Giant"
+description = "Requires double the score"

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PoisonMultSpace" load_steps=3 format=3 uid="uid://bym66g2vcktrq"]
+
+[ext_resource type="Script" path="res://components/space/data/poison_mult/poison_mult.gd" id="1_pmult"]
+[ext_resource type="SpriteFrames" path="res://components/space/data/poison_space_frames.tres" id="2_pframes"]
+
+[resource]
+script = ExtResource("1_pmult")
+mult = -2
+color = Color(1, 1, 1, 1)
+has_badge = true
+sprite_frames = ExtResource("2_pframes")

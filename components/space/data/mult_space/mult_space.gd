@@ -6,6 +6,12 @@ class_name MultSpace
 
 func get_mult() -> int:
 	return mult
+
+func get_text_color() -> Color:
+	return color
+
+func get_badge_color() -> Color:
+	return color
 	
 func get_badge_text() -> String:
 	return str(mult)

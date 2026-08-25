@@ -93,6 +93,9 @@ const SOUND_PACK_CLOSED = 'whoosh1'
 const SOUND_TOKEN = 'click2' #click2, token,
 const SOUND_DRAW_TOKEN = 'click2'
 const SOUND_TOKEN_DESTROYED = 'splat2' #destroyed1, splat1, splat2, splat3
+const SOUND_LEAF_REMOVED = 'whoosh1'
+const SOUND_POISON = 'decay2'
+const SOUND_WIND = 'whoosh2'
 const SOUND_TOKEN_PLACED = 'token_placed'
 
 const SOUND_ENHANCED_SPACE = 'pop2' #small_bonus, water_drop, pop2

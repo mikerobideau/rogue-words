@@ -70,6 +70,8 @@ func add_grow_amount(context: RelicContext):
 func get_letter_matches(letter: String) -> Array:
 	var matches = [letter]
 	for relic_data in GameState.relics:
+		if relic_data.disabled:
+			continue
 		matches = relic_data.modify_letter_matches(letter, matches)
 	return matches
 

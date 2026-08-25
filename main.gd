@@ -46,14 +46,14 @@ func _on_new_game(data: LoadoutData):
 	GameState.round_number = 0
 	GameState.money = 0
 	GameState.tokens = data.create_starting_tokens()
-	#var test_relic1 = preload("res://components/relic/data/consonant/hard_work/hard_work.tres")
-	var test_item1 = preload("res://components/item/data/shears/shears.tres")
+	var test_relic1 = preload("res://components/relic/data/consonant/hard_work/hard_work.tres")
+	#var test_item1 = preload("res://components/item/data/shears/shears.tres")
 	#var test_item2 = preload("res://components/item/data/ligh	tning/lightning.tres")
 	#var test_item3 = preload("res://components/item/data/pepper/pepper.tres")
-	#GameState.relics = [test_relic1.duplicate()]
-	GameState.items = [test_item1.duplicate()]
-	GameState.relics = [] as Array[RelicData]
-	#GameState.items = [] as Array[ItemData]
+	GameState.relics = [test_relic1.duplicate()]
+	#GameState.items = [test_item1.duplicate()]
+	#GameState.relics = [] as Array[RelicData]
+	GameState.items = [] as Array[ItemData]
 	hud.visible = true
 	var round = SCREENS.round.instantiate()
 	_next_round()

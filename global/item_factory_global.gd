@@ -8,5 +8,11 @@ func create_scene(data: ItemData):
 	scene.data = data
 	return scene
 	
+var _items_cache: Array[ItemData] = []
+var _items_loaded := false
+
 func load_all_items() -> Array[ItemData]:
-	return DataLoader.load_all("res://components/item/data/", ItemData)
+	if not _items_loaded:
+		_items_cache = DataLoader.load_all("res://components/item/data/", ItemData)
+		_items_loaded = true
+	return _items_cache.duplicate()
