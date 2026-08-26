@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c1qj04ei63oyj"]
+
+[ext_resource type="Script" path="res://screens/map/map_row.gd" id="1_xbsas"]
+
+[node name="MapRow" type="HBoxContainer"]
+script = ExtResource("1_xbsas")
