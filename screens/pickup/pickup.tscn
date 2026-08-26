@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://ben2f61w11pvm"]
+
+[ext_resource type="Script" path="res://screens/pickup/pickup.gd" id="1_o7emr"]
+
+[node name="Pickup" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_o7emr")

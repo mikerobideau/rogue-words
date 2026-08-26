@@ -15,6 +15,9 @@ signal completed()
 @onready var reroll_label = $ButtonContainer/VBoxContainer/Reroll
 @onready var sign = $ShopSign
 
+var num_offers := 2
+var num_packs := 2
+
 var pack_content: PackContent
 var reroll_cost: int:
 	set(v):
@@ -28,10 +31,10 @@ func _ready():
 
 func _populate_slots():
 	var available_packs := PackFactory.load_all_packs()
-	var per_row = slots.columns
-	for i in per_row:
+	slots.columns = maxi(num_offers, 1)
+	for i in num_offers:
 		_add_offer_slot()
-	for i in per_row:
+	for i in num_packs:
 		if available_packs.is_empty():
 			break
 		_add_pack_slot(available_packs)

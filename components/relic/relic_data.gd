@@ -39,6 +39,12 @@ var cost: int:
 func get_tooltip_text(context: RelicContext):
 	return description
 
+func upgrade() -> void:
+	data_changed.emit()
+
+func get_upgrade_text() -> String:
+	return 'Upgraded!'
+
 #---------------------------------------------------------------------------------------------------
 # Token Events
 #---------------------------------------------------------------------------------------------------

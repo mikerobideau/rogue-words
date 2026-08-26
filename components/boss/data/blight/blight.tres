@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="BlightBoss" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://components/boss/data_disabled/blight/blight.gd" id="1_blght"]
+[ext_resource type="Script" path="res://components/boss/data/blight/blight.gd" id="1_blght"]
 
 [resource]
 script = ExtResource("1_blght")

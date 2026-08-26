@@ -3,7 +3,11 @@ class_name BossData
 
 @export var boss_name: String
 @export var description: String
-	
+@export var difficulty := 1
+
+func get_difficulty() -> int:
+	return difficulty
+
 func get_discards(base: int) -> int:
 	return base
 
