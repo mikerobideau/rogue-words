@@ -35,6 +35,7 @@ script = ExtResource("1_dnsmp")
 [node name="Music" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("2_g1fmj")
 volume_db = 12.768
+parameters/looping = false
 
 [node name="ScreenContainer" type="Control" parent="."]
 custom_minimum_size = Vector2(2560, 1440)

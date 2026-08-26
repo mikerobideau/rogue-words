@@ -53,6 +53,7 @@ func start():
 		if i % 4 == 0:
 			await get_tree().process_frame
 	var seed_space: Space = spaces[start_space_coord]
+	seed_space.data = SpaceFactory.StandardSpace
 	seed_space.place_token(TokenFactory.create_leaf())
 	_grow_links(seed_space)
 	_plant_leaves(leaves_per_round)
@@ -92,6 +93,8 @@ func _plant_leaves(count: int) -> void:
 	for leaf_space in options:
 		if placed >= count:
 			break
+		if leaf_space.has_enhancement():
+			continue
 		if _adjacent_to_leaf(leaf_space.coord):
 			continue
 		leaf_space.place_token(TokenFactory.create_leaf())
