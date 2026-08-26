@@ -27,6 +27,7 @@ const sounds = {
 	'decay7': preload("res://assets/sound/jsfxr/decay7.wav"),
 	'destroyed1': preload("res://assets/sound/jsfxr/destroyed1.wav"),
 	'laser_shoot': preload("res://assets/sound/jsfxr/laserShoot.wav"),
+	'music_acoustic_guitar_andriig': preload("res://assets/sound/pixabay/music/andriig-acoustic-acoustic-guitar-568196.mp3"),
 	'pack_open1': preload("res://assets/sound/lucadialessandro-intro-sound-180639.mp3"),
 	'pack_open2': preload("res://assets/sound/yodguard-item-pickup-1-540174.mp3"),
 	'pickup_coin': preload("res://assets/sound/jsfxr/pickupCoin.wav"),

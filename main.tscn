@@ -1,7 +1,8 @@
-[gd_scene load_steps=9 format=3 uid="uid://bb6evfnlmn04c"]
+[gd_scene load_steps=10 format=3 uid="uid://bb6evfnlmn04c"]
 
 [ext_resource type="Script" path="res://main.gd" id="1_dnsmp"]
 [ext_resource type="PackedScene" uid="uid://c675q66wub3hr" path="res://components/hud/hud.tscn" id="2_23aqr"]
+[ext_resource type="AudioStream" uid="uid://danyyalpie3fa" path="res://assets/sound/pixabay/music/andriig-acoustic-acoustic-guitar-568196.mp3" id="2_g1fmj"]
 [ext_resource type="PackedScene" uid="uid://dclef022d1pdn" path="res://components/relic/relic_manager.tscn" id="2_h6jec"]
 [ext_resource type="Script" path="res://components/environment/cloud_spawner.gd" id="2_jmdje"]
 [ext_resource type="Shader" path="res://shader/rain_shader.gdshader" id="2_w5lrx"]
@@ -30,6 +31,10 @@ offset_right = 2560.0
 offset_bottom = 1440.0
 mouse_filter = 2
 script = ExtResource("1_dnsmp")
+
+[node name="Music" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("2_g1fmj")
+volume_db = 12.768
 
 [node name="ScreenContainer" type="Control" parent="."]
 custom_minimum_size = Vector2(2560, 1440)

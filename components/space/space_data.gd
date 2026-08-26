@@ -13,6 +13,9 @@ func get_text_color() -> Color:
 func get_badge_color() -> Color:
 	return Color.WHITE
 
+func on_token_placed(token) -> void:
+	pass
+
 func get_juice() -> int:
 	return 0
 

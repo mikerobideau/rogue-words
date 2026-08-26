@@ -87,6 +87,7 @@ func place_token(t: Token):
 	t.destroyed.connect(_on_token_destroyed)
 	t.position = Vector2.ZERO
 	t.on_placed()
+	data.on_token_placed(t)
 	if data.has_badge:
 		_show_badge()
 	

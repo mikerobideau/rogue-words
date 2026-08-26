@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="MoneySpace" load_steps=2 format=3 uid="uid://c7oix4b3aooq1"]
+
+[ext_resource type="Script" path="res://components/space/data/money_space/money_space.gd" id="1_money"]
+
+[resource]
+script = ExtResource("1_money")
+money = 5
+required_letter = "A"
+color = Color(1, 0.815686, 0, 1)
+has_badge = true

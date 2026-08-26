@@ -10,3 +10,4 @@ icon = ExtResource("1_jsw2p")
 cost = 3
 description = "Enhances selected token into a clover"
 can_enhance_token = true
+affects_board = false

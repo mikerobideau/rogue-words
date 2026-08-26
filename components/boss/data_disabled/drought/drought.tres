@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DroughtBoss" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="DroughtBoss" load_steps=2 format=3 uid="uid://bncsw84c5q1f7"]
 
 [ext_resource type="Script" path="res://components/boss/data_disabled/drought/drought.gd" id="1_drght"]
 
