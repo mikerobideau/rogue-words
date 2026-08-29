@@ -1,6 +1,56 @@
-[gd_scene load_steps=2 format=3 uid="uid://c1qj04ei63oyj"]
+[gd_scene load_steps=2 format=3 uid="uid://cqf7dulq1m25q"]
 
-[ext_resource type="Script" path="res://screens/map/map_row.gd" id="1_xbsas"]
+[sub_resource type="GDScript" id="GDScript_bapse"]
+script/source = "extends HBoxContainer
+class_name MapRow
+
+var MapNodeScene = preload(\"res://screens/map/map_node.tscn\")
+
+const COLS = 5
+const CELL_SIZE := Vector2(120, 120)
+const NODE_CHANCE := 0.6
+
+var single_node := false
+var nodes: Array = []   # length COLS: a MapNode or null per column
+
+func _ready() -> void:
+	alignment = BoxContainer.ALIGNMENT_CENTER
+	_generate()
+
+func _generate() -> void:
+	nodes.clear()
+	var placed := 0
+	for col in range(COLS):
+		var cell := CenterContainer.new()
+		cell.custom_minimum_size = CELL_SIZE
+		add_child(cell)
+		var fill := (col == COLS / 2) if single_node else (randf() < NODE_CHANCE)
+		if fill:
+			nodes.append(_add_node(cell, col))
+			placed += 1
+		else:
+			nodes.append(null)
+	if placed == 0:
+		var col := randi() % COLS
+		nodes[col] = _add_node(get_child(col), col)
+
+func _add_node(cell: Control, col: int) -> MapNode:
+	var node = MapNodeScene.instantiate()
+	node.col = col
+	cell.add_child(node)
+	node.setup(_random_type(), {})
+	return node
+
+func _random_type() -> int:
+	var roll := randf()
+	if roll < 0.55:
+		return MapNode.Type.ROUND
+	elif roll < 0.75:
+		return MapNode.Type.SHOP
+	elif roll < 0.9:
+		return MapNode.Type.UPGRADE
+	return MapNode.Type.PICKUP
+"
 
 [node name="MapRow" type="HBoxContainer"]
-script = ExtResource("1_xbsas")
+script = SubResource("GDScript_bapse")

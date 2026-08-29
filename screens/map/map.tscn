@@ -1,6 +1,93 @@
-[gd_scene load_steps=2 format=3 uid="uid://tlh0sj5kxxxn"]
+[gd_scene load_steps=2 format=3 uid="uid://7vy7maw156pp"]
 
-[ext_resource type="Script" path="res://screens/map/map.gd" id="1_qah2q"]
+[sub_resource type="GDScript" id="GDScript_xnuiy"]
+script/source = "extends Control
+class_name Map
+
+const NUM_ROWS = 7
+const LINK_COLOR := Color(0.42, 0.28, 0.13)
+const LINK_WIDTH := 6.0
+
+var MapRowScene = preload(\"res://screens/map/map_row.tscn\")
+
+@onready var rows = $Rows
+
+func _ready() -> void:
+	_generate()
+	_connect()
+	resized.connect(queue_redraw)
+	await get_tree().process_frame
+	queue_redraw()
+
+func _generate():
+	for i in range(NUM_ROWS):
+		var row = MapRowScene.instantiate()
+		row.single_node = i == 0 or i == NUM_ROWS - 1
+		rows.add_child(row)
+
+#--- connections ---
+
+func _connect() -> void:
+	var row_nodes := rows.get_children()
+	for i in range(row_nodes.size() - 1):
+		_connect_rows(row_nodes[i], row_nodes[i + 1])
+
+func _connect_rows(lower: MapRow, upper: MapRow) -> void:
+	var incoming := {}
+	for c in range(MapRow.COLS):
+		var node = lower.nodes[c]
+		if node == null:
+			continue
+		var candidates := []
+		for dc in [-1, 0, 1]:
+			var uc = c + dc
+			if uc >= 0 and uc < MapRow.COLS and upper.nodes[uc] != null:
+				candidates.append(upper.nodes[uc])
+		if candidates.is_empty():
+			var nearest = _nearest_node(upper, c)
+			if nearest:
+				candidates.append(nearest)
+		candidates.shuffle()
+		var count := mini(randi_range(1, 2), candidates.size())
+		for j in range(count):
+			node.next.append(candidates[j])
+			incoming[candidates[j]] = true
+	for c in range(MapRow.COLS):
+		var un = upper.nodes[c]
+		if un != null and not incoming.has(un):
+			var src = _nearest_node(lower, c)
+			if src:
+				src.next.append(un)
+
+func _nearest_node(row: MapRow, col: int) -> MapNode:
+	var best: MapNode = null
+	var best_dist := 999
+	for c in range(MapRow.COLS):
+		if row.nodes[c] != null and absi(c - col) < best_dist:
+			best_dist = absi(c - col)
+			best = row.nodes[c]
+	return best
+
+#--- drawing ---
+
+func _all_nodes() -> Array:
+	var result := []
+	for row in rows.get_children():
+		if row is MapRow:
+			for n in row.nodes:
+				if n != null:
+					result.append(n)
+	return result
+
+func _center(node: MapNode) -> Vector2:
+	return node.global_position - global_position + node.size / 2.0
+
+func _draw() -> void:
+	for node in _all_nodes():
+		var from := _center(node)
+		for target in node.next:
+			draw_line(from, _center(target), LINK_COLOR, LINK_WIDTH)
+"
 
 [node name="Map" type="Control"]
 layout_mode = 3
@@ -9,4 +96,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_qah2q")
+script = SubResource("GDScript_xnuiy")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+alignment = 1

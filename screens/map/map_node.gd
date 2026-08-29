@@ -1,7 +1,7 @@
-extends Control
+extends TextureButton
 class_name MapNode
 
-enum Type { ROUND, SHOP, UPGRADE, PICKUP }
+enum Type { ROUND, SHOP, UPGRADE, PICKUP, GOLD, BOSS, START }
 
 @onready var label = $Label
 
@@ -16,11 +16,13 @@ var visited := false
 var reachable := false
 
 func _ready():
-	pass
+	pressed.connect(_on_pressed)
+	_refresh()
 
 func setup(t: int, c: Dictionary) -> void:
 	type = t
 	config = c
+	_refresh()
 
 func _get_label() -> String:
 	match type:
@@ -32,6 +34,12 @@ func _get_label() -> String:
 			return 'Upgrade'
 		Type.PICKUP:
 			return 'Pickup'
+		Type.GOLD:
+			return 'Gold'
+		Type.BOSS:
+			return 'Boss'
+		Type.START:
+			return 'Start'
 	return "?"
 
 func _on_pressed() -> void:
@@ -48,11 +56,11 @@ func mark_visited() -> void:
 	_refresh()
 
 func _refresh() -> void:
-	label.text = _get_label()
-	#self.disabled = not reachable
-	#if visited:
-	#	modulate = Color(0.6, 0.85, 0.6, 1.0)
-	#elif reachable:
-	#	modulate = Color.WHITE
-	#else:
-#		modulate = Color(1, 1, 1, 0.4)
+	if label:
+		label.text = _get_label()
+	if visited:
+		modulate = Color(0.5, 0.5, 0.5, 1.0)
+	elif reachable:
+		modulate = Color(1.0, 0.95, 0.4, 1.0)
+	else:
+		modulate = Color(1.0, 1.0, 1.0, 0.55)

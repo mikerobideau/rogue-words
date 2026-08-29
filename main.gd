@@ -13,7 +13,7 @@ const SCREENS = {
 	'title':  preload("res://screens/title/title.tscn"),
 	'round': preload("res://screens/round/round.tscn"),
 	'shop': preload("res://shop/shop.tscn"),
-	'map': preload("res://screens/map/map.tscn"),
+	'map': preload("res://screens/map/converging_map.tscn"),
 	'upgrade': preload("res://screens/upgrade_relic/upgrade_relic.tscn"),
 	'pickup': preload("res://screens/pickup/pickup.tscn"),
 	'boss_intro': preload("res://screens/boss/boss_intro.tscn"),
@@ -22,7 +22,7 @@ const SCREENS = {
 }
 
 var current_screen: Control = null
-var map: Map
+var map
 var current_node: MapNode
 
 func _ready():
@@ -78,7 +78,7 @@ func _on_map_node_selected(node: MapNode):
 	current_node = node
 	map.visible = false
 	match node.type:
-		MapNode.Type.ROUND:
+		MapNode.Type.ROUND, MapNode.Type.BOSS:
 			await _start_round(node)
 		MapNode.Type.SHOP:
 			_start_shop(node)
@@ -86,6 +86,8 @@ func _on_map_node_selected(node: MapNode):
 			_start_upgrade(node)
 		MapNode.Type.PICKUP:
 			_start_pickup(node)
+		MapNode.Type.GOLD:
+			_start_gold(node)
 
 func _start_round(node: MapNode):
 	GameState.current_boss = node.config.boss
@@ -124,8 +126,13 @@ func _start_pickup(_node: MapNode):
 	pk.completed.connect(_on_node_finished)
 	_show_screen(pk, {})
 
+func _start_gold(node: MapNode):
+	GameState.money += node.config.get("money", 0)
+	Sound.play(Sound.SOUND_MONEY_EARNED)
+	_on_node_finished()
+
 func _on_node_finished():
-	if current_node.type == MapNode.Type.ROUND:
+	if current_node.type == MapNode.Type.ROUND or current_node.type == MapNode.Type.BOSS:
 		_grant_reward(current_node.config.get("reward", {}))
 		hud.on_round_complete()
 		GameState.discarded_tokens = [] as Array[TokenData]
