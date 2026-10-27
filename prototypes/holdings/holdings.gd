@@ -2,6 +2,8 @@ extends Node2D
 class_name HoldingsPrototype
 
 const D := preload("res://prototypes/holdings/holdings_data.gd")
+const ART_DIRS := ["res://prototypes/holdings/art/", "res://prototypes/holdings/art_silhouette/"]
+const ART_SCALE := 2.5
 
 enum Phase { ACTION, REPORT, GAMEOVER }
 enum MissRule { STRIKES, DEBT }
@@ -28,6 +30,11 @@ enum MissRule { STRIKES, DEBT }
 @export_group("Economy")
 @export var exchange_rate: int = 3
 @export var storage_cap: int = 0
+
+@export_group("Cards")
+@export_enum("Classic frame", "Modern gradient", "Foil rarity") var card_style: int = 0
+@export_enum("Halo", "Sunburst", "Skyline", "Art window", "Icon pattern") var card_bg: int = 1
+@export_enum("Illustrated", "Silhouette") var art_set: int = 1
 
 @export_group("Forecast")
 @export var forecast_length: int = 3
@@ -127,6 +134,7 @@ var mods := {}
 var dice: Array[Die] = []
 var selected_die := -1
 var act_vp := 0
+var spent := {}
 var activations := 0
 var types_activated := {}
 var extra_dice_next := 0
@@ -175,6 +183,7 @@ var font_heavy: Font
 var font_title: Font
 var style := StyleBoxFlat.new()
 var base_xform := Transform2D.IDENTITY
+var art_cache := {}
 
 func _ready() -> void:
 	_load_fonts()
@@ -346,6 +355,7 @@ func _new_event(for_round: int) -> Dictionary:
 func _start_round() -> void:
 	mods = {"cost_plus": {}, "refresh_plus": 0, "dice_delta": 0}
 	act_vp = 0
+	spent = {}
 	activations = 0
 	types_activated = {}
 	selected_die = -1
@@ -505,6 +515,11 @@ func _base_value(inst: CardInst) -> int:
 
 func _effective_value(inst: CardInst) -> int:
 	var v := _base_value(inst)
+	var t := _card_type(inst.id)
+	for n in _neighbors(inst):
+		var aura: Dictionary = D.CARDS[n.id].get("passive", {}).get("adjacent_value", {})
+		if not n.dormant and not aura.is_empty() and String(aura["type"]) == t:
+			v += int(aura["amount"])
 	if int(mods.get("halve_value_uid", -1)) == inst.uid:
 		v = floori(v * 0.5)
 	return v
@@ -633,15 +648,8 @@ func _market_count() -> int:
 			n += 1
 	return n
 
-func _passive_vp() -> int:
-	var total := 0
-	for inst in board:
-		if inst != null and not inst.dormant:
-			total += _effective_value(inst)
-	return total
-
 func _round_vp() -> int:
-	return _passive_vp() + act_vp
+	return act_vp
 
 func _target_for(r: int) -> int:
 	var t: int = D.TARGETS[clampi(r - 1, 0, D.TARGETS.size() - 1)]
@@ -850,6 +858,9 @@ func _operate(inst: CardInst, ctx: Dictionary, depth: int, chain: bool) -> void:
 	activations += 1
 	types_activated[_card_type(inst.id)] = true
 	var half := int(mods.get("halve_output_uid", -1)) == inst.uid
+	var worth := _effective_value(inst)
+	if worth > 0:
+		_add_vp(worth, _board_rect(_slot_of(inst)).get_center() + Vector2(0, -40))
 	for e: Dictionary in _effects_of(inst):
 		_run_effect(e, inst, half, ctx, depth)
 	if not chain or depth > 6:
@@ -857,7 +868,7 @@ func _operate(inst: CardInst, ctx: Dictionary, depth: int, chain: bool) -> void:
 	for n in _neighbors(inst):
 		if n.dormant:
 			continue
-		_fire(n, "neighbor_operate", {"source": inst.uid})
+		_fire(n, "neighbor_operate", {"source": inst.uid, "source_type": _card_type(inst.id)})
 		if bool(D.CARDS[n.id].get("chain_left", false)) and _left_of(n) == inst:
 			n.flash = 1.0
 			_operate(n, {"dice": []}, depth + 1, true)
@@ -868,6 +879,8 @@ func _fire(inst: CardInst, hook: String, ctx: Dictionary = {}) -> void:
 		return
 	var half := int(mods.get("halve_output_uid", -1)) == inst.uid
 	for e: Dictionary in list:
+		if e.has("if_source_type") and String(e["if_source_type"]) != String(ctx.get("source_type", "")):
+			continue
 		_run_effect(e, inst, half, ctx, 0)
 
 func _fire_all(hook: String, ctx: Dictionary = {}) -> void:
@@ -882,6 +895,9 @@ func _distress(inst: CardInst, source: String) -> void:
 		for guard in board:
 			if guard != null and not guard.dormant and _has_passive(guard, "prevent_distress"):
 				mods["insured"] = true
+				var reward := int(D.CARDS[guard.id]["passive"]["prevent_distress"].get("vp", 0))
+				if reward > 0:
+					_add_vp(reward, _board_rect(_slot_of(guard)).get_center())
 				round_notes.append("%s: %s protected %s" % [source, _card_name(guard.id), _card_name(inst.id)])
 				_say("%s protected %s" % [_card_name(guard.id), _card_name(inst.id)])
 				return
@@ -902,10 +918,14 @@ func _mature(inst: CardInst, min_value: int) -> void:
 	inst.flash = 1.0
 	round_notes.append("%s grew into %s" % [old, _card_name(inst.id)])
 
-func _check(cond: Dictionary) -> bool:
+func _check(cond: Dictionary, inst: CardInst = null) -> bool:
 	match String(cond["kind"]):
 		"type_count_at_most":
 			return _count_per({"per": "board_type", "type": cond["type"]}, null, {}) <= int(cond["amount"])
+		"adjacent_type_at_most":
+			return _count_per({"per": "adjacent_type", "type": cond["type"]}, inst, {}) <= int(cond["amount"])
+		"ops_at_least":
+			return inst != null and inst.ops >= int(cond["amount"])
 	return true
 
 func _halve(amt: int, half: bool) -> int:
@@ -922,6 +942,12 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 				if amt > 0:
 					res[r] = _r(r) + amt
 					_float(at, "+%d %s" % [amt, D.RES_NAMES[r]], _tcol(r))
+		"gain_per":
+			var r := String(e["res"])
+			var amt := _halve(_count_per(e, inst, ctx) * int(e.get("amount", 1)), half)
+			if amt > 0:
+				res[r] = _r(r) + amt
+				_float(at, "+%d %s" % [amt, D.RES_NAMES[r]], _tcol(r))
 		"gain_ctx":
 			var r := String(e["res"])
 			var amt := _halve(int(ctx.get(e["key"], 0)), half)
@@ -933,11 +959,12 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 		"vp_per":
 			_add_vp(_halve(_count_per(e, inst, ctx) * int(e["amount"]), half), at)
 		"vp_if":
-			_add_vp(_halve(int(e["amount"]) if _check(e["cond"]) else int(e.get("else", 0)), half), at)
+			_add_vp(_halve(int(e["amount"]) if _check(e["cond"], inst) else int(e.get("else", 0)), half), at)
 		"pay":
 			var pay: Dictionary = e["res"]
 			for r: String in pay:
 				res[r] = _r(r) - int(pay[r])
+				spent[r] = int(spent.get(r, 0)) + int(pay[r])
 				_float(at, "-%d %s" % [int(pay[r]), D.RES_NAMES[r]], _tcol(r))
 		"grow":
 			if not bool(e.get("if_operated", false)) or inst.activated:
@@ -952,6 +979,8 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 		"retrigger_adjacent":
 			if depth < 6:
 				for n in _neighbors(inst):
+					if e.has("type") and _card_type(n.id) != String(e["type"]):
+						continue
 					if n.activated and not n.dormant:
 						n.flash = 1.0
 						var vals: Array[int] = []
@@ -960,10 +989,21 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 						_operate(n, {"dice": vals}, depth + 1, false)
 		"mature":
 			inst.age += 1
+			if e.has("speed_per"):
+				inst.age += _count_per({"per": e["speed_per"], "type": e.get("type", "")}, inst, ctx)
 			if inst.age >= int(e["quarters"]):
 				_mature(inst, int(e["min_value"]))
 		"absorb":
 			choice_queue.append({"kind": "absorb", "uid": inst.uid})
+		"upgrade_adjacent":
+			choice_queue.append({"kind": "upgrade", "uid": inst.uid, "amount": int(e.get("amount", 1))})
+		"grow_adjacent":
+			for n in _neighbors(inst):
+				if e.has("tag") and not _has_tag(n.id, String(e["tag"])):
+					continue
+				n.bonus += int(e.get("amount", 1))
+				n.flash = 1.0
+				_float(_board_rect(_slot_of(n)).get_center(), "+%d value" % int(e.get("amount", 1)), c_good)
 		"extra_die":
 			extra_dice_next += int(e["amount"])
 			_float(at, "+%d die next quarter" % int(e["amount"]), c_accent)
@@ -990,7 +1030,7 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 		"refresh_market":
 			_refresh_market()
 		"gain_random_card":
-			var id := _deal_card()
+			var id := _deal_card() if not e.has("type") else _deal_of_type(String(e["type"]))
 			if id == "":
 				_say("No deals left in the deck")
 			else:
@@ -998,6 +1038,7 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 				if slot >= 0:
 					board[slot] = _make_inst(id)
 					board[slot].flash = 1.0
+					_placement_brand(board[slot])
 					_say("Acquired %s" % _card_name(id))
 				else:
 					discard.append(id)
@@ -1006,12 +1047,34 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 			var pay: Dictionary = e["pay"]
 			for r: String in pay:
 				res[r] = _r(r) - int(pay[r])
+				spent[r] = int(spent.get(r, 0)) + int(pay[r])
 				_float(at, "-%d %s" % [int(pay[r]), D.RES_NAMES[r]], _tcol(r))
 			_add_vp(_halve(int(e["vp"]), half), at)
 		"replace_market", "peek_swap", "refresh_type", "restore_dormant":
 			choice_queue.append(e.duplicate())
 		_:
 			push_warning("Unknown effect %s" % kind)
+
+func _has_tag(id: String, tag: String) -> bool:
+	return (D.CARDS[id].get("tags", []) as Array).has(tag)
+
+func _deal_of_type(t: String) -> String:
+	for i in range(deck.size() - 1, -1, -1):
+		if _card_type(deck[i]) == t:
+			var id := deck[i]
+			deck.remove_at(i)
+			return id
+	for i in range(discard.size() - 1, -1, -1):
+		if _card_type(discard[i]) == t:
+			var id := discard[i]
+			discard.remove_at(i)
+			return id
+	return ""
+
+func _placement_brand(inst: CardInst) -> void:
+	var worth := _effective_value(inst)
+	if worth > 0:
+		_add_vp(worth, _board_rect(_slot_of(inst)).get_center())
 
 func _add_vp(amt: int, at: Vector2) -> void:
 	act_vp += amt
@@ -1034,6 +1097,35 @@ func _count_per(e: Dictionary, inst: CardInst, ctx: Dictionary) -> int:
 			n = open_slots - _board_count()
 		"adjacent":
 			n = _neighbors(inst).size()
+		"adjacent_other_type":
+			for b in _neighbors(inst):
+				if _card_type(b.id) != _card_type(inst.id):
+					n += 1
+		"adjacent_type_operated":
+			for b in _neighbors(inst):
+				if b.activated and _card_type(b.id) == String(e["type"]):
+					n += 1
+		"operated":
+			for b in board:
+				if b != null and b.activated:
+					n += 1
+		"type_operated":
+			for b in board:
+				if b != null and b.activated and _card_type(b.id) == String(e["type"]):
+					n += 1
+		"spent":
+			n = int(spent.get(String(e["res"]), 0))
+		"adjacent_type":
+			for b in _neighbors(inst):
+				if _card_type(b.id) == String(e["type"]):
+					n += 1
+		"row_type":
+			var slot := _slot_of(inst)
+			var row := slot - slot % GRID_COLS
+			for i in GRID_COLS:
+				var b: CardInst = board[row + i] if row + i < board.size() else null
+				if b != null and b != inst and _card_type(b.id) == String(e["type"]):
+					n += 1
 		"adjacent_empty":
 			for s in _adjacent_slots(_slot_of(inst)):
 				if s < open_slots and board[s] == null:
@@ -1090,6 +1182,12 @@ func _next_choice() -> void:
 				choice = {"kind": kind, "cards": cards, "picked": -1, "prompt": "Pick a deal to swap into deal flow"}
 		elif kind == "refresh_type":
 			choice = {"kind": kind, "prompt": "Choose a sector to rescout"}
+		elif kind == "upgrade":
+			var up_inst := _inst_by_uid(int(e["uid"]))
+			if up_inst == null or _neighbors(up_inst).is_empty():
+				_say("Nothing adjacent to upgrade")
+			else:
+				choice = {"kind": kind, "uid": up_inst.uid, "amount": int(e["amount"]), "prompt": "Choose an adjacent business to upgrade"}
 		elif kind == "absorb":
 			var src_inst := _inst_by_uid(int(e["uid"]))
 			if src_inst == null or _neighbors(src_inst).is_empty():
@@ -1175,11 +1273,10 @@ func _buy_pick() -> void:
 	if why != "":
 		_say(why)
 		return
-	var slot := _free_slot()
-	if slot < 0:
-		choice = {"kind": "discard_for", "market": i, "prompt": "Portfolio full: choose a business to sell off (no refund)"}
+	if _free_slot() < 0:
+		choice = {"kind": "discard_for", "market": i, "prompt": "Portfolio full: choose a business to sell for Cash and replace"}
 		return
-	_complete_buy(i, slot)
+	choice = {"kind": "place", "market": i, "prompt": "Choose an open lot for %s" % _card_name(market[i])}
 
 func _complete_buy(i: int, slot: int) -> void:
 	var id := market[i]
@@ -1189,6 +1286,7 @@ func _complete_buy(i: int, slot: int) -> void:
 	var inst := _make_inst(id)
 	inst.flash = 1.0
 	board[slot] = inst
+	_placement_brand(inst)
 	market[i] = _deal_card()
 	_say("Acquired %s" % _card_name(id))
 	_fire(inst, "buy")
@@ -1205,12 +1303,24 @@ func _remove_from_board(slot: int) -> void:
 	_say("Sold off %s" % _card_name(inst.id))
 	_fire_all("sell", {"value": _base_value(inst)})
 
+func _sell_price(inst: CardInst) -> int:
+	return ceili((_base_value(inst) + D.COST_EXTRA) * 0.5)
+
+func _sell(slot: int) -> void:
+	var inst := board[slot]
+	if inst == null:
+		return
+	var price := _sell_price(inst)
+	res["cash"] = _r("cash") + price
+	_float(_board_rect(slot).get_center(), "+%d Cash" % price, _tcol("cash"))
+	_remove_from_board(slot)
+
 func _sell_pick() -> void:
 	var slot := board_pick
 	board_pick = -1
 	if slot < 0 or board[slot] == null or not choice.is_empty() or phase != Phase.ACTION:
 		return
-	_remove_from_board(slot)
+	_sell(slot)
 
 func _on_board(slot: int) -> void:
 	market_pick = -1
@@ -1223,9 +1333,17 @@ func _on_board(slot: int) -> void:
 			return
 		var mi := int(choice["market"])
 		choice = {}
-		_remove_from_board(slot)
+		_sell(slot)
 		_complete_buy(mi, slot)
 		_next_choice()
+		return
+	if kind == "place":
+		if inst == null and slot < open_slots:
+			var pi := int(choice["market"])
+			choice = {}
+			if _buy_block(pi) == "":
+				_complete_buy(pi, slot)
+			_next_choice()
 		return
 	if kind == "restore_dormant":
 		if inst != null and inst.dormant:
@@ -1243,6 +1361,15 @@ func _on_board(slot: int) -> void:
 			discard.append(inst.id)
 			board[slot] = null
 			_say("%s absorbed %s" % [_card_name(src_inst.id), _card_name(inst.id)])
+			_fire_all("sell", {"value": _base_value(inst)})
+			_finish_choice()
+		return
+	if kind == "upgrade":
+		var up_inst := _inst_by_uid(int(choice["uid"]))
+		if inst != null and up_inst != null and _neighbors(up_inst).has(inst):
+			inst.bonus += int(choice["amount"])
+			inst.flash = 1.0
+			_say("%s upgraded to value %d" % [_card_name(inst.id), _base_value(inst)])
 			_finish_choice()
 		return
 	if not choice.is_empty() or inst == null or phase != Phase.ACTION:
@@ -1312,6 +1439,15 @@ func _start_exchange() -> void:
 	choice = {"kind": "exchange", "give": "", "prompt": "Exchange: choose a resource to give (%d)" % _rate()}
 
 func _on_chip(r: String) -> void:
+	if String(choice.get("kind", "")) == "die_trade":
+		var di := int(choice["die"])
+		if _die_free(di):
+			dice[di].used = true
+			res[r] = _r(r) + trade_die_cash
+			_float(_die_home(di), "+%d %s" % [trade_die_cash, D.RES_NAMES[r]], _tcol(r))
+			_say("Traded a die for %d %s" % [trade_die_cash, D.RES_NAMES[r]])
+		_finish_choice()
+		return
 	if String(choice.get("kind", "")) != "exchange":
 		return
 	var give := String(choice["give"])
@@ -1350,10 +1486,8 @@ func _trade_die() -> void:
 		_say(why)
 		return
 	var i := _trade_target()
-	dice[i].used = true
-	res["cash"] = _r("cash") + trade_die_cash
-	_float(_die_home(i), "+%d Cash" % trade_die_cash, _tcol("cash"))
 	selected_die = -1
+	choice = {"kind": "die_trade", "die": i, "give": "", "prompt": "Trade the die for %d of any resource: choose one" % trade_die_cash}
 
 func _intel_block(price: int) -> String:
 	if phase != Phase.ACTION or not choice.is_empty():
@@ -1424,12 +1558,19 @@ func _end_round() -> void:
 	for inst in board:
 		if inst != null:
 			_return_pending(inst)
+	var sold := 0
+	for i in dice.size():
+		if _die_free(i):
+			dice[i].used = true
+			sold += 1
+	if sold > 0:
+		res["cash"] = _r("cash") + sold * trade_die_cash
+		round_notes.append("Sold %d unused %s for %d Cash" % [sold, "die" if sold == 1 else "dice", sold * trade_die_cash])
 	_fire_all("quarter_end")
-	var passive := _passive_vp()
-	var vp := passive + act_vp
+	var vp := act_vp
 	var target := _target_for(round_n)
 	var hit := vp >= target
-	var rep := {"round": round_n, "passive": passive, "act": act_vp, "vp": vp, "target": target,
+	var rep := {"round": round_n, "vp": vp, "target": target,
 		"hit": hit, "activations": activations, "event": _event_name(forecast[0])}
 	if hit:
 		rep["surplus"] = vp - target
@@ -1884,8 +2025,10 @@ func _draw_header() -> void:
 	var target := _target_for(round_n)
 	var met := vp >= target
 	var vs := str(vp)
-	_heavy(Vector2(x, r.position.y + 106.0), vs, T_HERO, c_good if met else c_ink)
-	_text(Vector2(x + _heavy_w(vs, T_HERO) + 10.0, r.position.y + 104.0), "/ %d" % target, T_LG, c_muted, true)
+	_icon("vp", Vector2(x + 28.0, r.position.y + 84.0), 30.0)
+	var nx := x + 70.0
+	_heavy(Vector2(nx, r.position.y + 106.0), vs, T_HERO, c_good if met else c_ink)
+	_text(Vector2(nx + _heavy_w(vs, T_HERO) + 10.0, r.position.y + 104.0), "/ %d" % target, T_LG, c_muted, true)
 	var bar := Rect2(x, r.position.y + 120.0, r.size.x - 56.0, 6.0)
 	_panel(bar, c_line, 3)
 	var fill := clampf(float(vp) / maxf(1.0, target), 0.0, 1.0)
@@ -1903,7 +2046,7 @@ func _draw_header() -> void:
 			draw_circle(c, 11.0, c_bad if i < strikes else c_line)
 	else:
 		_text_right(r.end.x - 76.0, r.position.y + 44.0, "DEBT %d" % debt, T_XS, c_bad if debt > 0 else c_muted, true)
-	var tip := "Brand this quarter = %d from reputation + %d from campaigns.\nMeet the target or take a strike. Brand resets each quarter; surplus becomes Brand Equity." % [_passive_vp(), act_vp]
+	var tip := "Brand this quarter: %d, earned by operating businesses.\nBrand starts at 0 each quarter. Meet the target or take a strike; surplus becomes Brand Equity." % act_vp
 	_tip(Rect2(r.position, Vector2(r.size.x - 80.0, r.size.y)), tip)
 
 func _draw_forecast_tile(r: Rect2, i: int) -> void:
@@ -2080,7 +2223,6 @@ func _draw_locked_slot(r: Rect2, next: bool) -> void:
 
 func _draw_portfolio() -> void:
 	_region(p_portfolio, "Portfolio", c_desk)
-	_text_right(p_portfolio.end.x - PANEL_PAD, p_portfolio.position.y + 42.0, "%d Brand from reputation" % _passive_vp(), T_SM, c_muted, true)
 	var kind := String(choice.get("kind", ""))
 	var warned := {}
 	for j in range(1, forecast.size()):
@@ -2096,10 +2238,15 @@ func _draw_portfolio() -> void:
 			_draw_locked_slot(r, i == open_slots)
 			continue
 		if inst == null:
-			_panel(r, Color(c_ink, 0.045), 20)
+			var placing := kind == "place"
+			_panel(r, Color(c_accent, 0.12 + 0.08 * sin(clock * 5.0)) if placing else Color(c_ink, 0.045), 20, Color(c_accent, 0.7) if placing else Color(0, 0, 0, 0), 3 if placing else 0)
 			var cc := r.get_center()
-			draw_line(cc - Vector2(14, 0), cc + Vector2(14, 0), Color(c_ink, 0.15), 3.0, true)
-			draw_line(cc - Vector2(0, 14), cc + Vector2(0, 14), Color(c_ink, 0.15), 3.0, true)
+			var pc := Color(c_accent, 0.8) if placing else Color(c_ink, 0.15)
+			draw_line(cc - Vector2(14, 0), cc + Vector2(14, 0), pc, 3.0, true)
+			draw_line(cc - Vector2(0, 14), cc + Vector2(0, 14), pc, 3.0, true)
+			if placing:
+				_register(r, _on_board.bind(i))
+				_tip(r, "Place %s here" % _card_name(market[int(choice["market"])]))
 			continue
 		var glow := Color(0, 0, 0, 0)
 		var tip := ""
@@ -2109,6 +2256,9 @@ func _draw_portfolio() -> void:
 		elif kind == "absorb" and _inst_by_uid(int(choice["uid"])) != null and _neighbors(_inst_by_uid(int(choice["uid"]))).has(inst):
 			glow = Color(c_gold, 0.55 + 0.3 * sin(clock * 5.0))
 			tip = "Absorb %s" % _card_name(inst.id)
+		elif kind == "upgrade" and _inst_by_uid(int(choice["uid"])) != null and _neighbors(_inst_by_uid(int(choice["uid"]))).has(inst):
+			glow = Color(c_good, 0.55 + 0.3 * sin(clock * 5.0))
+			tip = "Upgrade %s" % _card_name(inst.id)
 		elif kind == "restore_dormant" and inst.dormant:
 			glow = Color(c_gold, 0.55 + 0.3 * sin(clock * 5.0))
 		elif hover_uid == inst.uid:
@@ -2142,7 +2292,7 @@ func _draw_portfolio() -> void:
 			var k := r.size.y / 340.0
 			_panel(r, Color(c_ink, 0.42), int(16.0 * k))
 			var br := Rect2(r.get_center() - Vector2(84.0, 36.0) * k, Vector2(168.0, 72.0) * k)
-			_button(br, "Sell", _sell_pick, true, c_bad, T_LG, "no refund")
+			_button(br, "Sell", _sell_pick, true, c_bad, T_LG, "+%d Cash" % _sell_price(inst))
 		if tip == "" and not inst.pending.is_empty():
 			tip = "Click or right-click to take the die back"
 		if tip == "":
@@ -2152,10 +2302,10 @@ func _draw_portfolio() -> void:
 func _draw_supply() -> void:
 	_region(p_supply, "Treasury", c_panel)
 	_text_right(p_supply.end.x - PANEL_PAD, p_supply.position.y + 42.0, "Yours to spend", T_SM, c_muted, true)
-	var exchanging := String(choice.get("kind", "")) == "exchange"
+	var exchanging := ["exchange", "die_trade"].has(String(choice.get("kind", "")))
 	var give := String(choice.get("give", ""))
 	var roles := {
-		"cash": "Pays the rest of most business costs. Scouts deals and expands your portfolio. Trade a die for 1. Finance businesses cost mostly Cash.",
+		"cash": "Pays the rest of most business costs. Scouts deals and expands your portfolio. Unused dice become Cash at quarter end. Finance businesses cost mostly Cash.",
 		"labor": "Services businesses cost mostly Labor. Finance businesses pay the rest in Labor. Some businesses turn Labor into Brand.",
 		"equipment": "Industry businesses cost mostly Equipment. Every business worth 5+ also needs 1.",
 		"intel": "Tech businesses cost mostly Intelligence. Also adds a die or rerolls.",
@@ -2230,10 +2380,10 @@ func _draw_supply() -> void:
 	var b2 := Rect2(dx + bw + 12.0, by, bw, 72.0)
 	var b3 := Rect2(dx + (bw + 12.0) * 2.0, by, bw, 72.0)
 	var trade_why := _trade_block()
-	_button(b1, "-1 die", _trade_die, trade_why == "", _tcol("cash"), T_MD, "+%d Cash" % trade_die_cash)
+	_button(b1, "-1 die", _trade_die, trade_why == "", _tcol("cash"), T_MD, "+%d any" % trade_die_cash)
 	_button(b2, "+1 die", _add_die, _add_die_block() == "", intel_col, T_MD, "%d Intelligence" % add_die_cost)
 	_button(b3, "Reroll all", _reroll_all, _reroll_block() == "", intel_col, T_MD, "%d Intelligence" % reroll_cost)
-	_tip(b1, trade_why if trade_why != "" else "Give up %s for %d Cash." % ["the selected die" if _die_free(selected_die) else "an unused die", trade_die_cash])
+	_tip(b1, trade_why if trade_why != "" else "Give up %s for %d of any resource." % ["the selected die" if _die_free(selected_die) else "an unused die", trade_die_cash])
 	_tip(b2, _add_die_block() if _add_die_block() != "" else "Roll one more die this quarter.")
 	_tip(b3, _reroll_block() if _reroll_block() != "" else "Reroll every unused die.")
 	_tile(s_end)
@@ -2247,14 +2397,14 @@ func _draw_supply() -> void:
 	var head := "Target met" if met else "Short by %d Brand" % (target - vp)
 	_heavy(Vector2(s_end.position.x + 24.0, s_end.position.y + 54.0), head, T_LG, c_good if met else c_warn)
 	if free > 0:
-		_text_right(s_end.end.x - 24.0, s_end.position.y + 52.0, "%d unused %s" % [free, "die" if free == 1 else "dice"], T_SM, c_muted, true)
+		_text_right(s_end.end.x - 24.0, s_end.position.y + 52.0, "%d %s: +%d Cash" % [free, "die" if free == 1 else "dice", free * trade_die_cash], T_SM, c_muted, true)
 	var eb := Rect2(s_end.position.x + 24.0, s_end.end.y - 24.0 - 104.0, s_end.size.x - 48.0, 104.0)
 	_button(eb, "End Quarter", _end_round, phase == Phase.ACTION and choice.is_empty(), c_accent if met else c_ink, T_XL)
 
 func _card_tip(id: String) -> String:
 	var c: Dictionary = D.CARDS[id]
 	var p := _base_pattern(id)
-	var s := "%s (%s, %s, adds %d Brand)\n%s" % [c["name"], D.TYPE_NAMES[c["type"]], String(c.get("rarity", "common")), int(c["value"]), c["text"]]
+	var s := "%s (%s, %s, value %d: earns that much Brand each time it operates)\n%s" % [c["name"], D.TYPE_NAMES[c["type"]], String(c.get("rarity", "common")), int(c["value"]), c["text"]]
 	if not p.is_empty():
 		s += "\nOperate with: %s (%s)" % [_pattern_label(p), _pattern_rule(p)]
 	return s
@@ -2413,39 +2563,87 @@ func _draw_card(r: Rect2, id: String, inst: CardInst, where: String, glow: Color
 	if glow.a > 0.0:
 		_panel(r.grow(7.0), glow, radius + 6)
 	_shadow(r, radius, 6.0 * k)
-	_panel(r, Color.WHITE, radius)
+	var dark := tcol.darkened(0.35)
+	var rarity := String(c.get("rarity", "common"))
 	var inner := r.grow(-9.0 * k)
 	var ir := int(10.0 * k)
-	_panel(inner, tcol.lerp(Color.WHITE, 0.6), ir)
+	match card_style:
+		0:
+			_grad_panel(r, radius, tcol.darkened(0.2), tcol.darkened(0.5))
+			_grad_panel(inner, ir, tcol.lerp(Color.WHITE, 0.5), tcol.lerp(Color.WHITE, 0.8))
+			_panel(inner, Color(0, 0, 0, 0), ir, Color(1, 1, 1, 0.6), maxi(1, int(2.0 * k)))
+		1:
+			_panel(r, dark, radius)
+			inner = r.grow(-7.0 * k)
+			_grad_panel(inner, ir, tcol.lerp(Color.WHITE, 0.45), tcol.darkened(0.08))
+			var sheen := PackedVector2Array([inner.position + Vector2(inner.size.x * 0.55, 0), inner.position + Vector2(inner.size.x * 0.85, 0), inner.position + Vector2(inner.size.x * 0.35, inner.size.y * 0.6), inner.position + Vector2(inner.size.x * 0.05, inner.size.y * 0.6)])
+			draw_colored_polygon(sheen, Color(1, 1, 1, 0.12))
+		_:
+			_panel(r, dark, radius)
+			if D.RARITY_COLORS.has(rarity):
+				var foil := Color("e9c46a") if rarity == "rare" else Color("c9d1da")
+				_panel(r.grow(-4.0 * k), Color(0, 0, 0, 0), radius - int(3.0 * k), foil, maxi(2, int(3.0 * k)))
+			_panel(inner, tcol.lerp(Color.WHITE, 0.62), ir)
+			var step := 13.0 * k
+			var dot := Color(tcol.darkened(0.25), 0.13)
+			var y := inner.position.y + ir
+			var row := 0
+			while y < inner.end.y - ir:
+				var x := inner.position.x + ir + (step * 0.5 if row % 2 == 1 else 0.0)
+				while x < inner.end.x - ir:
+					draw_circle(Vector2(x, y), 1.7 * k, dot)
+					x += step
+				y += step
+				row += 1
 	var pad := 8.0 * k
 	var bar := Rect2(inner.position + Vector2(pad, pad), Vector2(inner.size.x - pad * 2.0, 70.0 * k))
 	var lines := _ability_lines(id)
-	var strip := Rect2(inner.position.x, inner.end.y - 10.0 * k - 84.0 * k, inner.size.x, 84.0 * k)
-	_draw_art(inner, id, tcol, bar.end.y - 24.0 * k, strip.position.y + 10.0 * k)
-	_material(bar, Color.WHITE, int(12.0 * k))
-	var badge := bar.position + Vector2(24.0 * k, bar.size.y * 0.5)
 	var value := _effective_value(inst) if inst != null else int(c["value"])
+	var strip_h := 100.0 * k
+	var strip := Rect2(inner.position.x, inner.end.y - 10.0 * k - strip_h, inner.size.x, strip_h)
+	_draw_art(inner, id, tcol, bar.end.y - 24.0 * k, strip.position.y + 10.0 * k)
+	match card_style:
+		0:
+			_material(bar, Color.WHITE, int(12.0 * k))
+			_panel(bar, Color(0, 0, 0, 0), int(12.0 * k), Color(dark, 0.55), maxi(1, int(2.0 * k)))
+		1:
+			_material(bar, Color(1, 1, 1, 0.9), int(bar.size.y * 0.5))
+		_:
+			_material(bar, Color.WHITE, int(12.0 * k))
+			_panel_corners(Rect2(bar.position.x, bar.end.y - 5.0 * k, bar.size.x, 5.0 * k), tcol, 0, 0, int(12.0 * k), int(12.0 * k))
+	var badge := bar.position + Vector2(24.0 * k, bar.size.y * 0.5)
 	draw_circle(badge, 16.0 * k, tcol)
 	_heavy_center(Rect2(badge - Vector2(16, 17) * k, Vector2(32, 32) * k), str(value), int(19.0 * k), Color.WHITE)
 	var nx := bar.position.x + 48.0 * k
 	var name := String(c["name"])
 	var nsz := _fit(name, bar.end.x - 26.0 * k - nx, int(22.0 * k))
-	var rarity := String(c.get("rarity", "common"))
 	if D.RARITY_COLORS.has(rarity):
 		var gc := Vector2(bar.end.x - 14.0 * k, bar.position.y + 14.0 * k)
 		var gs := 7.0 * k
 		draw_colored_polygon(PackedVector2Array([gc + Vector2(0, -gs), gc + Vector2(gs, 0), gc + Vector2(0, gs), gc + Vector2(-gs, 0)]), Color(D.RARITY_COLORS[rarity]))
 	_heavy(Vector2(nx, bar.position.y + 30.0 * k), name, nsz, c_ink)
 	_tokens(nx, bar.position.y + 52.0 * k, _cost(id), 9.0 * k, int(18.0 * k), where == "market")
-	_material(strip, Color("fbf9f2"), 0)
+	var desc := Rect2(inner.position.x + pad, strip.position.y, inner.size.x - pad * 2.0, inner.end.y - pad - strip.position.y)
+	match card_style:
+		0:
+			_material(desc, Color("fbf9f2"), int(10.0 * k))
+			_panel(desc, Color(0, 0, 0, 0), int(10.0 * k), Color(dark, 0.4), maxi(1, int(2.0 * k)))
+		1:
+			_material(desc, Color(1, 1, 1, 0.92), int(12.0 * k))
+		_:
+			desc = strip
+			_material(strip, Color("fbf9f2"), 0)
+			draw_line(strip.position, Vector2(strip.end.x, strip.position.y), tcol, 3.0 * k)
+	var tx := desc.position.x + 10.0 * k
+	var tw := desc.size.x - 20.0 * k
 	var lh := 26.0 * k
-	var top := strip.position.y + 18.0 * k
-	var ly := top + (strip.end.y - 4.0 * k - top - lines.size() * lh) * 0.5 + lh * 0.5
+	var top := strip.position.y + 26.0 * k
+	var ly := top + (desc.end.y - 4.0 * k - top - lines.size() * lh) * 0.5 + lh * 0.5
 	if c.has("short"):
-		_rich_wrap(Vector2(inner.position.x + 12.0 * k, top - 4.0 * k), String(c["short"]), inner.size.x - 24.0 * k, int(15.0 * k), 3)
+		_rich_wrap(Vector2(tx, top - 4.0 * k), String(c["short"]), tw, int(15.0 * k), 3)
 	else:
 		for line: Array in lines:
-			_draw_token_line(Vector2(inner.position.x + 12.0 * k, ly), line, int(17.0 * k), k * 0.9)
+			_draw_token_line(Vector2(tx, ly), line, int(17.0 * k), k * 0.9)
 			ly += lh
 	var p := _effective_pattern(inst) if inst != null else _base_pattern(id)
 	var need := _dice_needed(p)
@@ -2485,6 +2683,93 @@ func _draw_card(r: Rect2, id: String, inst: CardInst, where: String, glow: Color
 		_heavy_center(Rect2(pill.position, Vector2(pw, 48.0 * k)), "Distressed", int(24.0 * k), c_ink)
 		_text_center(Rect2(pill.position + Vector2(0, 42.0 * k), Vector2(pw, 28.0 * k)), "Any die turns it around", int(15.0 * k), c_muted, true)
 
+func _round_points(r: Rect2, radius: float) -> PackedVector2Array:
+	var rad := minf(radius, minf(r.size.x, r.size.y) * 0.5)
+	var centers := [Vector2(r.end.x - rad, r.end.y - rad), Vector2(r.position.x + rad, r.end.y - rad), Vector2(r.position.x + rad, r.position.y + rad), Vector2(r.end.x - rad, r.position.y + rad)]
+	var pts := PackedVector2Array()
+	for q in 4:
+		for i in 7:
+			var a := (q + i / 6.0) * PI * 0.5
+			pts.append(centers[q] + Vector2(cos(a), sin(a)) * rad)
+	return pts
+
+func _grad_panel(r: Rect2, radius: float, top: Color, bottom: Color) -> void:
+	var pts := _round_points(r, radius)
+	var cols := PackedColorArray()
+	for pt in pts:
+		cols.append(top.lerp(bottom, clampf((pt.y - r.position.y) / r.size.y, 0.0, 1.0)))
+	draw_polygon(pts, cols)
+
+func _draw_card_bg(r: Rect2, t: String, id: String, tcol: Color, top: float, ground: float, k: float, focus: Vector2) -> void:
+	var cx := focus.x
+	var cy := focus.y
+	var br := minf(r.size.x * 0.4, (ground - top) * 0.5)
+	match card_bg:
+		1:
+			var clip := _round_points(r, 10.0 * k)
+			var reach := r.size.length()
+			var n := 20
+			for i in range(0, n, 2):
+				var a0 := i * TAU / n
+				var a1 := (i + 1) * TAU / n
+				var ray := PackedVector2Array([Vector2(cx, cy), Vector2(cx, cy) + Vector2(cos(a0), sin(a0)) * reach, Vector2(cx, cy) + Vector2(cos(a1), sin(a1)) * reach])
+				for piece: PackedVector2Array in Geometry2D.intersect_polygons(ray, clip):
+					draw_colored_polygon(piece, Color(1, 1, 1, 0.3))
+			draw_circle(Vector2(cx, cy), br * 0.85, Color(1, 1, 1, 0.45))
+			_dome(Vector2(cx, r.end.y), r.size.x * 0.46, 22.0 * k, tcol.lerp(Color.WHITE, 0.42))
+		2:
+			var rng2 := RandomNumberGenerator.new()
+			rng2.seed = hash(id)
+			draw_circle(Vector2(r.position.x + r.size.x * 0.24, top + 34.0 * k), 13.0 * k, Color(1, 1, 1, 0.75))
+			_ell(Vector2(r.position.x + r.size.x * 0.72, top + 30.0 * k), 22.0 * k, 7.0 * k, 0.0, Color(1, 1, 1, 0.7))
+			_ell(Vector2(r.position.x + r.size.x * 0.64, top + 36.0 * k), 14.0 * k, 5.0 * k, 0.0, Color(1, 1, 1, 0.7))
+			var far := Color(tcol.lerp(Color.WHITE, 0.38), 0.75)
+			var x := r.position.x + 6.0 * k
+			while x < r.end.x - 10.0 * k:
+				var w := rng2.randf_range(14.0, 26.0) * k
+				var h := rng2.randf_range(36.0, 96.0) * k
+				w = minf(w, r.end.x - 6.0 * k - x)
+				draw_rect(Rect2(x, ground - h, w, h), far)
+				var wy := ground - h + 6.0 * k
+				while wy < ground - 10.0 * k:
+					draw_rect(Rect2(x + 3.0 * k, wy, 3.0 * k, 3.0 * k), Color(1, 1, 1, 0.35))
+					if w > 12.0 * k:
+						draw_rect(Rect2(x + w - 6.0 * k, wy, 3.0 * k, 3.0 * k), Color(1, 1, 1, 0.35))
+					wy += 9.0 * k
+				x += w + rng2.randf_range(1.0, 4.0) * k
+			draw_rect(Rect2(r.position.x, ground - 16.0 * k, r.size.x, 16.0 * k), tcol.lerp(Color.WHITE, 0.3))
+		3:
+			_panel(r, Color("f4eedf"), int(10.0 * k))
+			var step := 9.0 * k
+			var y := r.position.y + 10.0 * k
+			while y < r.end.y - 10.0 * k:
+				var x := r.position.x + 10.0 * k
+				while x < r.end.x - 10.0 * k:
+					draw_rect(Rect2(x, y, 1.2 * k, 1.2 * k), Color(tcol, 0.12))
+					x += step
+				y += step
+			var win := Rect2(r.position.x + 8.0 * k, top + 8.0 * k, r.size.x - 16.0 * k, ground - top + 4.0 * k)
+			_grad_panel(win, 9.0 * k, tcol.lerp(Color.WHITE, 0.78), tcol.lerp(Color.WHITE, 0.45))
+			draw_rect(Rect2(win.position.x, ground - 14.0 * k, win.size.x, 18.0 * k), tcol.lerp(Color.WHITE, 0.25))
+			_panel(win, Color(0, 0, 0, 0), int(9.0 * k), Color(tcol.darkened(0.35), 0.6), maxi(1, int(2.0 * k)))
+		4:
+			var step := 30.0 * k
+			var y := r.position.y + 18.0 * k
+			var row := 0
+			while y < r.end.y - 12.0 * k:
+				var x := r.position.x + 18.0 * k + (step * 0.5 if row % 2 == 1 else 0.0)
+				while x < r.end.x - 12.0 * k:
+					_res_icon(t, Vector2(x, y), 6.0 * k)
+					x += step
+				y += step
+				row += 1
+			_grad_panel(r, 10.0 * k, Color(tcol.lerp(Color.WHITE, 0.5), 0.8), Color(tcol.lerp(Color.WHITE, 0.8), 0.8))
+			draw_circle(Vector2(cx, cy), br, tcol.lerp(Color.WHITE, 0.82))
+			_dome(Vector2(cx, r.end.y), r.size.x * 0.46, 22.0 * k, tcol.lerp(Color.WHITE, 0.42))
+		_:
+			draw_circle(Vector2(cx, cy), br, tcol.lerp(Color.WHITE, 0.78))
+			_dome(Vector2(cx, r.end.y), r.size.x * 0.46, 22.0 * k, tcol.lerp(Color.WHITE, 0.42))
+
 func _ell(c: Vector2, rx: float, ry: float, rot: float, col: Color, n: int = 18) -> void:
 	var pts := PackedVector2Array()
 	for i in n:
@@ -2502,14 +2787,55 @@ func _dome(c: Vector2, rx: float, ry: float, col: Color) -> void:
 func _draw_art(r: Rect2, id: String, tcol: Color, top: float, ground: float) -> void:
 	var a: Dictionary = D.CARDS[id].get("art", {})
 	var k := r.size.y / 340.0
-	var br := minf(r.size.x * 0.4, (ground - top) * 0.5)
-	draw_circle(Vector2(r.get_center().x, top + (ground - top) * 0.5), br, tcol.lerp(Color.WHITE, 0.78))
-	_dome(Vector2(r.get_center().x, r.end.y), r.size.x * 0.46, 22.0 * k, tcol.lerp(Color.WHITE, 0.42))
 	var s := minf((ground - top) / 160.0, r.size.x / 150.0)
 	var origin := Vector2(r.get_center().x - 80.0 * s, ground - 160.0 * s)
+	var art := _art_entry(id)
+	var tex: Texture2D = art.get("tex")
+	var offset := Vector2(0.0, -12.0)
+	var focus := Vector2(r.get_center().x, top + (ground - top) * 0.5)
+	var fit := 1.0
+	if tex != null:
+		var box: Rect2 = art["box"]
+		var room := 140.0 - (top + 28.0 * k - origin.y) / s
+		fit = minf(1.0, room / box.size.y)
+		offset = Vector2(80.0 - box.get_center().x * fit, 140.0 - box.end.y * fit)
+		focus = origin + Vector2(80.0, 140.0 - box.size.y * fit * 0.5) * s
+	_draw_card_bg(r, String(D.CARDS[id]["type"]), id, tcol, top, ground, k, focus)
 	draw_set_transform_matrix(base_xform * Transform2D(0.0, Vector2(s, s), 0.0, origin))
-	_draw_business(a)
+	if tex != null:
+		draw_texture_rect(tex, Rect2(offset, Vector2(160.0, 160.0) * fit), false)
+	else:
+		_draw_business(a)
 	draw_set_transform_matrix(base_xform)
+
+func _art_entry(id: String) -> Dictionary:
+	var key := "%d/%s" % [art_set, id]
+	if art_cache.has(key):
+		return art_cache[key]
+	var entry := {}
+	for dir: String in [ART_DIRS[art_set], ART_DIRS[0]]:
+		var path := dir + id + ".svg"
+		if FileAccess.file_exists(path):
+			var img := Image.new()
+			if img.load_svg_from_string(FileAccess.get_file_as_string(path), ART_SCALE) == OK:
+				entry["box"] = _art_box(img)
+				img.generate_mipmaps()
+				entry["tex"] = ImageTexture.create_from_image(img)
+				break
+	art_cache[key] = entry
+	return entry
+
+func _art_box(img: Image) -> Rect2:
+	var lo := Vector2i(img.get_width(), img.get_height())
+	var hi := Vector2i(-1, -1)
+	for y in range(0, img.get_height(), 2):
+		for x in range(0, img.get_width(), 2):
+			if img.get_pixel(x, y).a > 0.3:
+				lo = Vector2i(mini(lo.x, x), mini(lo.y, y))
+				hi = Vector2i(maxi(hi.x, x), maxi(hi.y, y))
+	if hi.x < 0:
+		return Rect2(0.0, 0.0, 160.0, 160.0)
+	return Rect2(Vector2(lo) / ART_SCALE, Vector2(hi - lo + Vector2i(2, 2)) / ART_SCALE)
 
 func _windows(r: Rect2, cols: int, rows: int, col: Color) -> void:
 	var cw := r.size.x / cols
@@ -2704,7 +3030,7 @@ func _draw_banner() -> void:
 	var alpha := 1.0
 	if kind != "":
 		text = String(choice["prompt"])
-		action = "Cancel" if kind == "discard_for" or kind == "exchange" else "Skip"
+		action = "Cancel" if ["discard_for", "exchange", "place", "die_trade"].has(kind) else "Skip"
 	elif _die_free(selected_die) and phase == Phase.ACTION:
 		var v := dice[selected_die].value
 		text = "Place the %d on a glowing business" % v
@@ -2793,17 +3119,15 @@ func _row(x: float, w: float, y: float, label: String, value: String, col: Color
 
 func _draw_report() -> void:
 	var extra := int(report.has("cond")) + (report["lost"] as Dictionary).size() + (report["notes"] as Array).size()
-	var r := _modal(900.0, 620.0 + extra * 40.0)
+	var r := _modal(900.0, 572.0 + extra * 40.0)
 	var hit := bool(report["hit"])
 	var x := r.position.x + 64.0
 	var w := r.size.x - 128.0
 	_text(Vector2(x, r.position.y + 76.0), "Q%d  ·  %s" % [int(report["round"]), String(report["event"]).to_upper()], T_SM, c_muted, true)
 	_heavy(Vector2(x, r.position.y + 146.0), "Target met" if hit else "Target missed", T_HERO, c_good if hit else c_bad)
 	var y := r.position.y + 228.0
-	_row(x, w, y, "From reputation", str(int(report["passive"])))
-	y += 48.0
 	var n := int(report["activations"])
-	_row(x, w, y, "From campaigns (%d business%s)" % [n, "" if n == 1 else "es"], str(int(report["act"])))
+	_row(x, w, y, "Earned from %d operation%s" % [n, "" if n == 1 else "s"], str(int(report["vp"])))
 	y += 22.0
 	draw_line(Vector2(x, y), Vector2(x + w, y), c_line, 2.0)
 	y += 44.0
@@ -2851,12 +3175,6 @@ func _draw_gameover() -> void:
 	_heavy(Vector2(x, r.position.y + 260.0), sc, T_HERO - 8, c_ink)
 	var best_txt := "New best" if score >= best_score and score > 0 else "Best %d" % best_score
 	_text(Vector2(x + _heavy_w(sc, T_HERO - 8) + 28.0, r.position.y + 256.0), best_txt, T_LG, c_accent, true)
-	var tp := 0
-	var ta := 0
-	for h in history:
-		tp += int(h["passive"])
-		ta += int(h["act"])
-	_text(Vector2(x, r.position.y + 310.0), "%d%% of Brand came from campaigns" % roundi(100.0 * ta / maxi(1, tp + ta)), T_MD, c_muted, true)
 	var chart := Rect2(x, r.position.y + 360.0, r.size.x - 140.0, 360.0)
 	var top := 1
 	for h in history:
@@ -2866,16 +3184,14 @@ func _draw_gameover() -> void:
 		var h: Dictionary = history[i]
 		var bx := chart.position.x + i * bw + bw * 0.2
 		var bww := bw * 0.6
-		var ph := chart.size.y * int(h["passive"]) / top
-		var ah := chart.size.y * int(h["act"]) / top
+		var ah := chart.size.y * int(h["vp"]) / top
 		var base_y := chart.end.y
-		_panel(Rect2(bx, base_y - ph, bww, ph), Color(c_accent, 0.5), 4)
 		if ah > 0.0:
-			_panel(Rect2(bx, base_y - ph - ah, bww, ah), c_gold, 4)
+			_panel(Rect2(bx, base_y - ah, bww, ah), c_gold, 4)
 		var ty := base_y - chart.size.y * int(h["target"]) / top
 		draw_line(Vector2(bx - 8.0, ty), Vector2(bx + bww + 8.0, ty), c_bad if not bool(h["hit"]) else c_ink, 3.0)
 		_text_center(Rect2(bx, base_y + 6.0, bww, 32.0), str(i + 1), T_SM, c_muted, true)
-	_text(Vector2(chart.position.x, chart.end.y + 70.0), "Green: reputation   Gold: campaigns   Line: target", T_SM, c_muted, true)
+	_text(Vector2(chart.position.x, chart.end.y + 70.0), "Gold: Brand earned   Line: target", T_SM, c_muted, true)
 	_button(Rect2(r.end.x - 430.0, r.end.y - 116.0, 360.0, 80.0), "New run", func() -> void: _new_run(randi_range(1, 999999)), true, c_accent, T_LG)
 	_ghost(Rect2(r.end.x - 810.0, r.end.y - 116.0, 360.0, 80.0), "Replay seed", func() -> void: _new_run(seed_used), true)
 
@@ -2889,12 +3205,13 @@ func _draw_help() -> void:
 		"1. This quarter's outlook event takes effect.",
 		"2. Roll %d dice (always %d-%d after modifiers)." % [base_dice, min_dice, max_dice],
 		"3. Click a die, then a business whose pattern it matches to operate it. Each business operates once per quarter. Two-die patterns operate once both dice are placed.",
-		"4. Buy businesses from deal flow (they go straight into your portfolio), scout new deals for %d Cash, exchange %d:1, trade an unused die for %d Cash, or spend Intelligence on dice (%d: +1 die, %d: reroll all)." % [refresh_cost, exchange_rate, trade_die_cash, add_die_cost, reroll_cost],
-		"5. End the quarter. Brand = reputation (business values) + campaigns (Brand from operating). Meet the target or take a strike (%d strikes and the board votes you out). Brand resets each quarter; surplus adds to Brand Equity." % strikes_to_lose,
+		"4. Buy businesses from deal flow (they go straight into your portfolio), scout new deals for %d Cash, exchange %d:1, trade an unused die for %d of any resource, or spend Intelligence on dice (%d: +1 die, %d: reroll all)." % [refresh_cost, exchange_rate, trade_die_cash, add_die_cost, reroll_cost],
+		"5. End the quarter. Brand starts at 0 each quarter and is earned only by operating businesses: each operation earns the business's value plus its ability. Meet the target or take a strike (%d strikes and the board votes you out). Surplus adds to Brand Equity." % strikes_to_lose,
 		"6. The outlook moves forward." if storage_cap <= 0 else "6. Resources above %d are lost. The outlook moves forward." % storage_cap,
 		"",
 		"Distressed businesses add no Brand and can't operate. Any die turns one around, without triggering its ability.",
-		"Click a business (with no die selected) to sell it. Adjacent means directly left, right, above or below.",
+		"Buying a business lets you choose its lot; it can't be moved afterwards. A newly placed business earns its value in Brand right away. Click a business (with no die selected) to sell it for about half its cost in Cash. Adjacent means directly left, right, above or below.",
+		"Unused dice are sold for %d Cash each when the quarter ends." % trade_die_cash,
 		"Rarity: no gem = common, blue = uncommon, gold = rare.",
 	])
 	_wrap(Vector2(x, r.position.y + 140.0), left, col_w, T_MD, c_ink)
@@ -2904,7 +3221,7 @@ func _draw_help() -> void:
 		"- Half (rounded up) in the business's sector resource.",
 		"- Value 5+: 1 Equipment (unless it's Industry).",
 		"- The rest in Cash (Finance businesses: Labor).",
-		"You start with %d portfolio slots. Spend Cash to open more (%s)." % [D.START_SLOTS, ", ".join(D.EXPAND_COSTS.map(func(x): return str(x)))],
+		"The top row of %d lots starts open. Opening a lot costs Cash: %s, in order." % [D.START_SLOTS, ", ".join(D.EXPAND_COSTS.map(func(x): return str(x)))],
 		"Some businesses spend Labor or Advertising for Brand.",
 		"",
 		"Patterns: Odd, Even, Low (1-3), High (4-6), Exactly N, N+, N or less, Any, Pair, Sum N+, Sum = N, Run (two consecutive values).",
