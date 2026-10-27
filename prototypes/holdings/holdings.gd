@@ -5,7 +5,7 @@ const D := preload("res://prototypes/holdings/holdings_data.gd")
 const ART_DIRS := ["res://prototypes/holdings/art/", "res://prototypes/holdings/art_silhouette/"]
 const ART_SCALE := 2.5
 
-enum Phase { ACTION, REPORT, GAMEOVER }
+enum Phase { ACTION, REPORT, GAMEOVER, MENU }
 enum MissRule { STRIKES, DEBT }
 
 @export_group("Run")
@@ -87,6 +87,8 @@ const MARGIN := 40.0
 const COL_GAP := 28.0
 const PANEL_PAD := 28.0
 const PANEL_HEAD := 64.0
+const SPINE := 60.0
+const BIND_STRIP := 26.0
 const HEADER_Y := 28.0
 const HEADER_H := 140.0
 const BODY_TOP := 196.0
@@ -142,6 +144,8 @@ var pending_meeting := {}
 var board_pick := -1
 var debt := 0
 var best_quarters := 0
+var sheet_best := {}
+var sheet_id := ""
 var game_result := ""
 var res := {}
 var board: Array[CardInst] = []
@@ -221,7 +225,7 @@ func _ready() -> void:
 	_recompute_layout()
 	get_viewport().size_changed.connect(_recompute_layout)
 	_validate_data()
-	_new_run(run_seed if run_seed != 0 else randi_range(1, 999999))
+	phase = Phase.MENU
 
 func _load_fonts() -> void:
 	var ts := TextServerManager.get_primary_interface()
@@ -268,19 +272,19 @@ func _recompute_layout() -> void:
 	var gh := rows * CARD_H + (rows - 1) * CARD_GAP
 	var ph := PANEL_HEAD + gh + PANEL_PAD
 	var market_w := card_w * 2.0 + CARD_GAP + PANEL_PAD * 2.0
-	var portfolio_w := gw + PANEL_PAD * 2.0
+	var portfolio_w := gw + PANEL_PAD * 2.0 + SPINE
 	var supply_w := 560.0
 	var x0 := (UI_W - market_w - portfolio_w - supply_w - COL_GAP * 2.0) * 0.5
 	p_market = Rect2(x0, BODY_TOP, market_w, ph)
 	p_portfolio = Rect2(p_market.end.x + COL_GAP, BODY_TOP, portfolio_w, ph)
 	p_supply = Rect2(p_portfolio.end.x + COL_GAP, BODY_TOP, supply_w, ph)
-	r_portfolio = Rect2(p_portfolio.position.x + PANEL_PAD, BODY_TOP + PANEL_HEAD, gw, gh)
+	r_portfolio = Rect2(p_portfolio.position.x + PANEL_PAD + SPINE, BODY_TOP + PANEL_HEAD, gw, gh)
 	r_market = Rect2(p_market.position.x + PANEL_PAD, r_portfolio.position.y, card_w * 2.0 + CARD_GAP, gh)
 	r_supply = Rect2(p_supply.position.x + PANEL_PAD, r_portfolio.position.y, supply_w - PANEL_PAD * 2.0, gh)
 	h_left = Rect2(p_market.position.x, HEADER_Y, market_w, HEADER_H)
 	h_center = Rect2(p_portfolio.position.x, HEADER_Y, p_supply.end.x - p_portfolio.position.x, HEADER_H)
-	s_mat = Rect2(r_supply.position, Vector2(r_supply.size.x, 790.0))
-	s_end = Rect2(r_supply.position.x, s_mat.end.y + 20.0, r_supply.size.x, r_supply.end.y - s_mat.end.y - 20.0)
+	s_mat = Rect2(r_supply.position, Vector2(r_supply.size.x, 470.0))
+	s_end = Rect2(r_supply.position.x, r_supply.end.y - 104.0, r_supply.size.x, 104.0)
 
 func _validate_data() -> void:
 	for id: String in D.CARDS:
@@ -295,14 +299,25 @@ func _load_best() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) == OK:
 		best_quarters = int(cfg.get_value("run", "best_quarters", 0))
+		if cfg.has_section("sheets"):
+			for k in cfg.get_section_keys("sheets"):
+				sheet_best[k] = int(cfg.get_value("sheets", k, 0))
 
 func _save_best() -> void:
 	var reached := history.size()
-	if reached <= best_quarters:
+	var changed := false
+	if reached > best_quarters:
+		best_quarters = reached
+		changed = true
+	if sheet_id != "" and reached > int(sheet_best.get(sheet_id, 0)):
+		sheet_best[sheet_id] = reached
+		changed = true
+	if not changed:
 		return
-	best_quarters = reached
 	var cfg := ConfigFile.new()
 	cfg.set_value("run", "best_quarters", best_quarters)
+	for k in sheet_best:
+		cfg.set_value("sheets", k, int(sheet_best[k]))
 	cfg.save(SAVE_PATH)
 
 func _new_run(s: int) -> void:
@@ -323,6 +338,16 @@ func _new_run(s: int) -> void:
 	slot_mods.clear()
 	slot_mods.resize(board_slots)
 	slot_mods.fill("")
+	var sheet: Dictionary = D.SHEETS.get(sheet_id, {})
+	if not sheet.is_empty():
+		if not bool(sheet["random"]) and (sheet["rules"] as Array).size() >= board_slots:
+			for i in board_slots:
+				slot_rules[i] = (sheet["rules"][i] as Dictionary).duplicate(true)
+				slot_locks[i] = (sheet["locks"][i] as Dictionary).duplicate(true)
+				slot_mods[i] = String(sheet["pockets"][i])
+		var bonus: Dictionary = sheet["bonus"]
+		for r: String in bonus:
+			res[r] = _r(r) + int(bonus[r])
 	meeting.clear()
 	meeting_info = {}
 	market_eds = {}
@@ -885,7 +910,7 @@ func _market_cost(i: int) -> Dictionary:
 
 func _cost(id: String) -> Dictionary:
 	var c: Dictionary = D.CARDS[id]
-	var out := _rule_cost(id)
+	var out: Dictionary = (c["cost"] as Dictionary).duplicate() if c.has("cost") else _rule_cost(id)
 	var cp: Dictionary = mods.get("cost_plus", {})
 	for r: String in cp:
 		out[r] = int(out.get(r, 0)) + int(cp[r])
@@ -1234,6 +1259,8 @@ func _run_effect(e: Dictionary, inst: CardInst, half: bool, ctx: Dictionary = {}
 			for n in _neighbors(inst):
 				if e.has("tag") and not _has_tag(n.id, String(e["tag"])):
 					continue
+				if e.has("type") and _card_type(n.id) != String(e["type"]):
+					continue
 				n.bonus += int(e.get("amount", 1))
 				n.flash = 1.0
 				_float(_board_rect(_slot_of(n)).get_center(), "+%d value" % int(e.get("amount", 1)), c_good)
@@ -1416,7 +1443,7 @@ func _next_choice() -> void:
 			if cards.is_empty():
 				_say("No deals left in the deck")
 			else:
-				choice = {"kind": kind, "cards": cards, "picked": -1, "prompt": "Pick a deal to swap into deal flow"}
+				choice = {"kind": kind, "cards": cards, "picked": -1, "prompt": "Pick a deal to swap into the Market"}
 		elif kind == "refresh_type":
 			choice = {"kind": kind, "prompt": "Choose a sector to rescout"}
 		elif kind == "upgrade":
@@ -1494,7 +1521,7 @@ func _on_market(i: int) -> void:
 		if market[i] != "":
 			discard.append(market[i])
 		market[i] = cards[picked]
-		_say("Swapped %s into deal flow" % _card_name(cards[picked]))
+		_say("Swapped %s into the Market" % _card_name(cards[picked]))
 		_return_peek(picked)
 		_finish_choice()
 		return
@@ -2009,6 +2036,89 @@ func _draw_meeting() -> void:
 		_wrap(Vector2(cr.position.x + 24.0, cr.position.y + 176.0), String(o["text"]), cw - 48.0, T_SM, c_body, true, 4)
 		_button(Rect2(cr.position.x + 40.0, cr.end.y - 76.0, cw - 80.0, 56.0), "Choose", _take_offer.bind(id), true, c_accent, T_MD)
 
+func _sheet_name() -> String:
+	return String(D.SHEETS.get(sheet_id, {}).get("name", "Random Sheet"))
+
+func _start_sheet(id: String) -> void:
+	sheet_id = id
+	_new_run(randi_range(1, 999999))
+
+func _quarters_text(q: int) -> String:
+	if q <= 0:
+		return "-"
+	if q >= rounds_per_run:
+		return "Won"
+	return "Y%d Q%d" % [_year_of(q), _quarter_in_year(q)]
+
+func _draw_menu() -> void:
+	_heavy(Vector2(UI_W * 0.5 - _heavy_w("HOLDINGS", T_HERO + 24) * 0.5, 150.0), "HOLDINGS", T_HERO + 24, c_light)
+	var sub := "Choose a portfolio sheet. Survive %d years of yearly Brand targets." % _total_years()
+	_text(Vector2(UI_W * 0.5 - _text_w(sub, T_MD, true) * 0.5, 202.0), sub, T_MD, c_light_muted, true)
+	var ids: Array = D.SHEETS.keys()
+	var cols := 4
+	var tw := 548.0
+	var th := 320.0
+	var gap := 28.0
+	var x0 := (UI_W - cols * tw - (cols - 1) * gap) * 0.5
+	var y0 := 250.0
+	for i in ids.size():
+		var id := String(ids[i])
+		var sh: Dictionary = D.SHEETS[id]
+		var r := Rect2(x0 + (i % cols) * (tw + gap), y0 + floori(i / float(cols)) * (th + gap), tw, th)
+		var hov := r.has_point(mouse)
+		if hov:
+			_panel(r.grow(6.0), Color(c_accent, 0.8), 26)
+		_shadow(r, 20, 6.0)
+		_panel(r, c_card, 20)
+		_draw_sheet_thumb(Rect2(r.position + Vector2(24.0, 46.0), Vector2(228.0, 228.0)), sh)
+		var tx := r.position.x + 276.0
+		var w := r.end.x - 22.0 - tx
+		var nm := String(sh["name"])
+		_heavy(Vector2(tx, r.position.y + 62.0), nm, _fit(nm, w, T_LG), c_ink)
+		var d := int(sh["difficulty"])
+		var dl: String = ["", "EASY", "MEDIUM", "HARD"][clampi(d, 1, 3)]
+		var dcol: Color = [c_good, c_good, c_warn, c_bad][clampi(d, 1, 3)]
+		for j in 3:
+			draw_circle(Vector2(tx + 7.0 + j * 18.0, r.position.y + 92.0), 6.0, dcol if j < d else c_line)
+		_text(Vector2(tx + 62.0, r.position.y + 98.0), dl, T_XS, dcol.darkened(0.15), true)
+		_wrap(Vector2(tx, r.position.y + 114.0), String(sh["description"]), w, T_SM, c_body, false, 6)
+		var best := _quarters_text(int(sheet_best.get(id, 0)))
+		_text(Vector2(tx, r.end.y - 24.0), "Best: %s" % best, T_SM, c_muted, true)
+		_text_right(r.end.x - 22.0, r.end.y - 24.0, "Play →", T_SM, c_accent if hov else c_muted, true)
+		_register(r, _start_sheet.bind(id))
+
+func _draw_sheet_thumb(r: Rect2, sh: Dictionary) -> void:
+	_panel(r.grow(8.0), Color("dfe7f1"), 12)
+	var cell := (r.size.x - 2.0 * 8.0) / 3.0
+	var random := bool(sh["random"])
+	for i in 9:
+		var c := Rect2(r.position + Vector2((i % 3) * (cell + 8.0), floori(i / 3.0) * (cell + 8.0)), Vector2(cell, cell))
+		if random:
+			_panel(c, Color(c_ink, 0.08), 8)
+			_heavy_center(c, "?", T_XL, Color(c_ink, 0.3))
+			continue
+		var rule: Dictionary = sh["rules"][i]
+		var lock: Dictionary = sh["locks"][i]
+		var pocket := String(sh["pockets"][i])
+		match String(rule["kind"]):
+			"sector":
+				var tc := _tcol(String(rule["type"]))
+				_panel(c, tc.lerp(Color.WHITE, 0.35), 8)
+				draw_circle(c.get_center(), cell * 0.24, Color.WHITE)
+				_res_icon(String(rule["type"]), c.get_center(), cell * 0.16)
+			"cap":
+				_panel(c, Color("5b6577").lerp(Color.WHITE, 0.45), 8)
+				var label := "%d+" % int(rule["min"]) if int(rule["max"]) >= 99 else "%d-%d" % [int(rule["min"]), int(rule["max"])]
+				_heavy_center(c, label, T_SM, Color.WHITE)
+			_:
+				_panel(c, Color.WHITE, 8, Color(c_ink, 0.12), 2)
+		if pocket != "":
+			_panel(c, Color(0, 0, 0, 0), 8, Color(D.POCKET_MODS[pocket]["color"]), 4)
+		if not lock.is_empty():
+			_panel(c, Color(c_ink, 0.45), 8)
+			draw_circle(c.get_center(), cell * 0.22, Color.WHITE)
+			_icon("lock", c.get_center(), cell * 0.14)
+
 func _best_text() -> String:
 	if best_quarters <= 0:
 		return "-"
@@ -2044,7 +2154,7 @@ func _primary_action() -> void:
 		Phase.REPORT:
 			_continue()
 		Phase.GAMEOVER:
-			_new_run(randi_range(1, 999999))
+			phase = Phase.MENU
 
 func _debug_skip_round() -> void:
 	if round_n >= rounds_per_run:
@@ -2373,6 +2483,8 @@ func _card_tooltip_body(pos: Vector2, w: float, do_draw: bool) -> float:
 			var note := "Mostly %s, the rest %s" % [D.RES_NAMES[t], D.RES_NAMES[filler]]
 			if cv >= D.GATE_VALUE and t != D.GATE_RES:
 				note += ", plus 1 %s" % D.RES_NAMES[D.GATE_RES]
+			if c.has("cost"):
+				note = "Set price"
 			if ed != "":
 				note += ". Enhanced: +1 Cash"
 			draw_string(font_italic, Vector2(x, y + 14.0), note, HORIZONTAL_ALIGNMENT_LEFT, w, T_XS, c_muted)
@@ -2535,6 +2647,13 @@ func _draw() -> void:
 	base_xform = Transform2D(0.0, Vector2(ui_scale, ui_scale), 0.0, screen_origin)
 	draw_set_transform_matrix(base_xform)
 	card_xform = base_xform
+	if phase == Phase.MENU:
+		ui_live = true
+		_draw_menu()
+		if hover_tip != "":
+			_draw_tooltip(hover_tip)
+		draw_set_transform(Vector2.ZERO)
+		return
 	var picker := _picker_active() and phase == Phase.ACTION
 	var in_meeting := not meeting.is_empty() and phase == Phase.ACTION
 	var intro := event_intro and phase == Phase.ACTION
@@ -2577,81 +2696,181 @@ func _tile(r: Rect2, border: Color = Color(0, 0, 0, 0)) -> void:
 	_panel(r, c_card, 20, border, 3 if border.a > 0.0 else 0)
 
 func _draw_header() -> void:
-	var l := h_left
-	_tile(l)
-	_text(Vector2(l.position.x + 28.0, l.position.y + 44.0), "HOLDINGS", T_XS, c_muted, true)
-	var day := "Year %d" % _year_of(round_n)
-	_heavy(Vector2(l.position.x + 28.0, l.position.y + 112.0), day, T_HERO, c_ink)
-	_text(Vector2(l.position.x + 40.0 + _heavy_w(day, T_HERO), l.position.y + 110.0), "Q%d" % _quarter_in_year(round_n), T_LG, c_muted, true)
-	var ny := _total_years()
-	var hc := Vector2(l.end.x - 42.0, l.position.y + 40.0)
-	var hr := Rect2(hc - Vector2(20, 20), Vector2(40, 40))
-	draw_circle(hc, 20.0, Color(c_ink, 0.12 if ui_live and hr.has_point(mouse) else 0.06))
-	_heavy_center(hr, "?", T_MD, c_ink)
-	_register(hr, func() -> void: show_help = true)
-	_tip(hr, "How to play (H)")
-	for i in ny:
-		var c := Vector2(l.end.x - 90.0 - (ny - 1 - i) * 22.0, l.position.y + 40.0)
-		if i < years.size():
-			draw_circle(c, 7.0, c_good if bool(years[i]["hit"]) else c_bad)
-		elif i == _year_of(round_n) - 1:
-			draw_circle(c, 7.0, c_ink)
-		else:
-			draw_circle(c, 7.0, c_line)
-	_text_right(l.end.x - 28.0, l.position.y + 110.0, "Best: %s" % _best_text(), T_SM, c_muted, true)
-	_tip(Rect2(l.end.x - 260.0, l.position.y, 196.0, 60.0), "Years so far (%d to win): green met the yearly Brand target, red missed it." % ny)
+	var cal := Rect2(h_left.position.x, HEADER_Y + 4.0, 176.0, HEADER_H - 8.0)
+	_draw_calendar(cal)
+	_draw_brand_plaque(Rect2(cal.end.x + 20.0, HEADER_Y, h_left.end.x - cal.end.x - 20.0, HEADER_H))
+	var note := Rect2(h_center.end.x - 104.0, HEADER_Y + 14.0, 100.0, 100.0)
 	if not forecast.is_empty():
-		_draw_forecast_tile(Rect2(h_center.position.x, HEADER_Y, h_center.size.x, HEADER_H), 0)
+		_draw_clipping(h_center.position.x + 8.0, note.position.x - 40.0 - h_center.position.x)
+	_draw_help_note(note)
 
-func _draw_forecast_tile(r: Rect2, i: int) -> void:
-	var ev: Dictionary = forecast[i]
+func _rot_xform(c: Vector2, angle: float) -> Transform2D:
+	return base_xform * Transform2D(angle, Vector2.ONE, 0.0, c) * Transform2D(0.0, -c)
+
+func _draw_calendar(r: Rect2) -> void:
+	var red := Color("c4553f")
+	_panel(Rect2(r.position + Vector2(4, 7), r.size), Color(0, 0, 0, 0.35), 8)
+	_panel(Rect2(r.position + Vector2(3, 3), r.size), Color("e8e2d4"), 8)
+	_panel(r, Color("fbf8f0"), 8)
+	var band := Rect2(r.position, Vector2(r.size.x, 40.0))
+	_panel_corners(band, red, 8, 8, 0, 0)
+	var year_end := _is_year_end(round_n)
+	var ht := "YEAR END" if year_end else "YEAR %d OF %d" % [_year_of(round_n), _total_years()]
+	_text_center(Rect2(band.position + Vector2(0, 8), band.size - Vector2(0, 8)), ht, T_SM, Color.WHITE, true)
+	for i in 4:
+		var rx := r.position.x + 30.0 + i * (r.size.x - 60.0) / 3.0
+		draw_circle(Vector2(rx, r.position.y + 8.0), 4.0, Color(0, 0, 0, 0.45))
+		draw_arc(Vector2(rx, r.position.y + 2.0), 6.0, PI * 1.05, PI * 1.95, 10, Color("8a8f98"), 3.0, true)
+		draw_line(Vector2(rx, r.position.y - 4.0), Vector2(rx, r.position.y + 8.0), Color("8a8f98"), 3.0, true)
+	var q := _quarter_in_year(round_n)
+	_heavy_center(Rect2(r.position.x, r.position.y + 42.0, r.size.x, 56.0), "Q%d" % q, T_HERO - 6, c_ink)
+	for i in D.QUARTERS_PER_YEAR:
+		var pc := Vector2(r.get_center().x - 33.0 + i * 22.0, r.end.y - 16.0)
+		if i < q - 1:
+			draw_circle(pc, 6.0, c_ink)
+		elif i == q - 1:
+			draw_circle(pc, 7.0, red)
+		else:
+			draw_arc(pc, 5.5, 0.0, TAU, 16, c_line, 2.0, true)
+	var lines: Array[String] = ["Year %d of %d, quarter %d of %d." % [_year_of(round_n), _total_years(), q, D.QUARTERS_PER_YEAR]]
+	for y in years:
+		lines.append("Year %d: %s (%d / %d Brand)" % [int(y["year"]), "target met" if bool(y["hit"]) else "missed", int(y["vp"]), int(y["target"])])
+	lines.append("Sheet: %s  ·  Best: %s" % [_sheet_name(), _quarters_text(int(sheet_best.get(sheet_id, 0)))])
+	_tip(r, "\n".join(lines))
+
+func _draw_brand_plaque(r: Rect2) -> void:
+	var wood := Color("6b4a32")
+	_panel(Rect2(r.position + Vector2(0, 6), r.size), Color(0, 0, 0, 0.35), 14)
+	_panel(r, wood, 14)
+	_panel(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.5)), Color(1, 1, 1, 0.07), 14)
+	for i in 3:
+		draw_line(Vector2(r.position.x + 18.0, r.position.y + 5.0 + i * 3.0), Vector2(r.end.x - 18.0, r.position.y + 5.0 + i * 3.0), Color(wood.darkened(0.25), 0.5), 1.0)
+		draw_line(Vector2(r.position.x + 18.0, r.end.y - 5.0 - i * 3.0), Vector2(r.end.x - 18.0, r.end.y - 5.0 - i * 3.0), Color(wood.darkened(0.25), 0.5), 1.0)
+	var p := r.grow(-12.0)
+	_grad_panel(p, 8.0, Color("efd27e"), Color("b98e3d"))
+	_panel(p, Color(0, 0, 0, 0), 8, Color("8a6a2a"), 2)
+	draw_line(p.position + Vector2(10, 3), Vector2(p.end.x - 10, p.position.y + 3), Color(1, 1, 1, 0.45), 2.0)
+	for sc: Vector2 in [p.position + Vector2(12, 12), Vector2(p.end.x - 12, p.position.y + 12), Vector2(p.position.x + 12, p.end.y - 12), p.end - Vector2(12, 12)]:
+		draw_circle(sc, 5.0, Color("9a7a35"))
+		draw_line(sc - Vector2(3, 3), sc + Vector2(3, 3), Color("6e5420"), 1.5)
+	var ink := Color("3e2b10")
+	var vp := _round_vp()
+	var target := _target_for(round_n)
+	var met := vp >= target
+	var year_end := _is_year_end(round_n)
+	var x := p.position.x + 26.0
+	_star(Vector2(x + 18.0, p.position.y + 46.0), 24.0, 11.0, Color("6e5420"))
+	_star(Vector2(x + 18.0, p.position.y + 44.0), 22.0, 10.0, Color("ffe08a"))
+	var vs := str(vp)
+	_heavy(Vector2(x + 48.0, p.position.y + 66.0), vs, T_HERO - 10, ink)
+	_heavy(Vector2(x + 56.0 + _heavy_w(vs, T_HERO - 10), p.position.y + 64.0), "/ %d" % target, T_LG, Color(ink, 0.65))
+	var head := "TARGET MET" if met else ("SHORT BY %d" % (target - vp) if year_end else "%d TO GO" % (target - vp))
+	_text_right(p.end.x - 22.0, p.position.y + 36.0, head, T_SM, Color("2f6b3c") if met else (Color("8a2f1f") if year_end else ink), true)
+	if miss_rule == MissRule.STRIKES:
+		for i in strikes_to_lose:
+			var pc := Vector2(p.end.x - 30.0 - (strikes_to_lose - 1 - i) * 22.0, p.position.y + 60.0)
+			draw_circle(pc, 8.0, Color("6e5420"))
+			draw_circle(pc, 6.0, c_bad if i < strikes else Color("d8bd73"))
+		_text_right(p.end.x - 44.0 - (strikes_to_lose - 1) * 22.0, p.position.y + 66.0, "STRIKES", T_XS, Color(ink, 0.8), true)
+	else:
+		_text_right(p.end.x - 22.0, p.position.y + 66.0, "DEBT %d" % debt, T_XS, ink, true)
+	var groove := Rect2(x, p.end.y - 26.0, p.size.x - 52.0, 10.0)
+	_panel(groove, Color(0, 0, 0, 0.3), 5)
+	var fill := clampf(float(vp) / maxf(1.0, target), 0.0, 1.0)
+	if fill > 0.0:
+		_panel(Rect2(groove.position + Vector2(1, 1), Vector2(maxf(8.0, (groove.size.x - 2.0) * fill), groove.size.y - 2.0)), Color("3e9b5a") if met else Color("e2762f"), 4)
+	var left := D.QUARTERS_PER_YEAR - _quarter_in_year(round_n)
+	_tip(r, "Brand this year: %d of %d (%d this quarter), earned by placing and operating businesses.\nThe yearly target is checked after quarter %d. %s\nMiss a yearly target and take a strike (%d and you're out). Unused dice become Cash at quarter end." % [vp, target, act_vp, D.QUARTERS_PER_YEAR, "This is the last quarter of the year." if left == 0 else "%d more quarter%s after this one." % [left, "" if left == 1 else "s"], strikes_to_lose])
+
+func _draw_clipping(x: float, max_w: float) -> void:
+	var ev: Dictionary = forecast[0]
 	var e: Dictionary = D.EVENTS[ev["id"]]
-	var known := i < forecast_visible or bool(ev.get("revealed", false))
 	var tier := String(e["tier"])
 	var tcol: Color = {"mild": c_good, "moderate": c_warn, "severe": c_bad}.get(tier, c_muted)
-	var today := i == 0
-	if today and known:
-		_shadow(r, 8, 4.0)
-		_paper(r, 8)
-		_draw_now_tile(r, ev, e, tier, tcol)
-		return
-	_tile(r)
-	var x := r.position.x + 22.0
-	var label: String = "NOW" if today else ("NEXT" if i == 1 else "Y%d Q%d" % [_year_of(round_n + i), _quarter_in_year(round_n + i)])
-	if round_n + i <= rounds_per_run and _is_year_end(round_n + i):
-		label += "  ·  YEAR END"
-	_text(Vector2(x, r.position.y + 38.0), label, T_XS, c_muted, true)
-	draw_circle(Vector2(x + 6.0, r.position.y + 64.0), 7.0, tcol)
-	if not known:
-		_heavy(Vector2(x + 22.0, r.position.y + 74.0), "%s event" % String(e["category"]).capitalize(), T_MD, c_muted)
-		_wrap(Vector2(x, r.position.y + 84.0), "Details revealed next quarter", r.size.x - 44.0, T_XS, c_muted, false, 2)
-		if debug_on:
-			_register(r, _debug_cycle_event.bind(i))
-		return
-	var title := String(e["name"]) + (" (weakened)" if bool(ev.get("weak", false)) else "")
-	_heavy(Vector2(x + 22.0, r.position.y + 74.0), title, _fit(title, r.size.x - 70.0, T_MD), c_ink)
-	_wrap(Vector2(x, r.position.y + 84.0), _event_text(ev), r.size.x - 44.0, T_XS, Color(c_ink, 0.7), false, 2)
+	var title := (String(e["name"]) + (" (weakened)" if bool(ev.get("weak", false)) else "")).to_upper()
+	var deck := _event_text(ev)
 	var cond := _event_condition(ev)
-	if today and not cond.is_empty():
+	var kick := _tier_kicker(tier)
+	var dateline := "%s  ·  Y%d Q%d" % [NEWSPAPER, _year_of(round_n), _quarter_in_year(round_n)]
+	var tsz := T_XL
+	var dsz := T_SM
+	var inner := maxf(_heavy_w(title, tsz), font_serif_italic.get_string_size(deck, HORIZONTAL_ALIGNMENT_LEFT, -1, dsz).x)
+	var stamp_w := (_text_w("GOAL OPEN", T_XS, true) + 24.0) if not cond.is_empty() else 0.0
+	inner = maxf(inner, _text_w(dateline, T_XS, true) + _text_w(kick, T_XS, true) + 40.0 + stamp_w)
+	var w := minf(inner + 56.0, max_w)
+	while tsz > T_MD and _heavy_w(title, tsz) > w - 56.0:
+		tsz -= 1
+	while dsz > 13 and font_serif_italic.get_string_size(deck, HORIZONTAL_ALIGNMENT_LEFT, -1, dsz).x > w - 56.0:
+		dsz -= 1
+	var r := Rect2(x, HEADER_Y + 8.0, w, HEADER_H - 14.0)
+	var c := r.get_center()
+	draw_set_transform_matrix(_rot_xform(c, -0.012))
+	var pts := PackedVector2Array()
+	var step := 14.0
+	var n := int(r.size.x / step)
+	for i in n + 1:
+		pts.append(Vector2(r.position.x + i * r.size.x / n, r.position.y + (3.0 if i % 2 == 0 else 0.0)))
+	for i in range(n, -1, -1):
+		pts.append(Vector2(r.position.x + i * r.size.x / n, r.end.y - (3.0 if i % 2 == 1 else 0.0)))
+	var sh := PackedVector2Array()
+	for pt in pts:
+		sh.append(pt + Vector2(5, 7))
+	draw_colored_polygon(sh, Color(0, 0, 0, 0.35))
+	draw_colored_polygon(pts, C_PAPER)
+	var rng2 := RandomNumberGenerator.new()
+	rng2.seed = 5
+	for i in int(r.size.x * r.size.y / 700.0):
+		draw_rect(Rect2(Vector2(rng2.randf_range(r.position.x + 4.0, r.end.x - 4.0), rng2.randf_range(r.position.y + 6.0, r.end.y - 6.0)), Vector2(1.5, 1.5)), Color(0.35, 0.28, 0.15, 0.07))
+	var tx := r.position.x + 28.0
+	var tw := r.size.x - 56.0
+	draw_string(font_bold, Vector2(tx, r.position.y + 30.0), dateline, HORIZONTAL_ALIGNMENT_LEFT, -1, T_XS, Color(C_NEWSINK, 0.75))
+	var kw := _text_w(kick, T_XS, true) + 16.0
+	var kr := Rect2(tx + tw - kw, r.position.y + 13.0, kw, 22.0)
+	_panel(kr, tcol.darkened(0.15) if tier != "mild" else C_NEWSINK, 3)
+	_text_center(kr, kick, T_XS, C_PAPER, true)
+	if not cond.is_empty():
 		var ok := _condition_met(cond)
-		var tag := "Goal met" if ok else "Goal open"
-		var tw := _text_w(tag, T_XS, true) + 20.0
-		var tr := Rect2(r.end.x - tw - 16.0, r.position.y + 16.0, tw, 28.0)
-		_panel(tr, Color(c_good if ok else c_warn, 0.15), 14)
-		_text_center(tr, tag, T_XS, c_good if ok else c_warn, true)
+		var tag := "GOAL MET" if ok else "GOAL OPEN"
+		var gw := _text_w(tag, T_XS, true) + 16.0
+		var gr := Rect2(kr.position.x - gw - 8.0, kr.position.y, gw, 22.0)
+		_panel(gr, Color(0, 0, 0, 0), 3, c_good if ok else c_warn.darkened(0.2), 2)
+		_text_center(gr, tag, T_XS, c_good if ok else c_warn.darkened(0.25), true)
+	_double_rule(tx, tx + tw, r.position.y + 42.0)
+	_heavy(Vector2(tx, r.position.y + 84.0), title, tsz, C_NEWSINK)
+	draw_string(font_serif_italic, Vector2(tx, r.position.y + 110.0), deck, HORIZONTAL_ALIGNMENT_LEFT, -1, dsz, Color(C_NEWSINK, 0.85))
+	for tp: Vector2 in [Vector2(r.position.x + 2.0, r.position.y + 2.0), Vector2(r.end.x - 2.0, r.position.y + 2.0)]:
+		draw_set_transform_matrix(_rot_xform(c, -0.012) * Transform2D(-0.78 if tp.x < c.x else 0.78, Vector2.ONE, 0.0, tp) * Transform2D(0.0, -tp))
+		draw_rect(Rect2(tp - Vector2(24, 8), Vector2(48, 16)), Color(0.96, 0.93, 0.8, 0.8))
+	draw_set_transform_matrix(base_xform)
 	if r.has_point(mouse) and ui_live:
-		hover_forecast = i
-	var lines: Array[String] = [String(e["name"]) + ": " + _event_text(ev)]
+		hover_forecast = 0
+	var lines: Array[String] = [String(e["name"]) + ": " + deck]
 	if not cond.is_empty():
 		lines.append("Goal: " + _condition_text(cond))
-	var tu := _event_target_uid(ev) if i > 0 else -1
-	if tu >= 0:
-		lines.append("Will hit: " + _inst_name(tu))
-	if today:
-		lines.append_array(round_notes)
+	lines.append_array(round_notes)
+	for j in range(1, forecast.size()):
+		if round_n + j > rounds_per_run:
+			break
+		var fe: Dictionary = forecast[j]
+		var when := "Next quarter" if j == 1 else "In %d quarters" % j
+		if j < forecast_visible or bool(fe.get("revealed", false)):
+			lines.append("%s: %s (%s)" % [when, _event_name(fe), _event_text(fe)])
+		else:
+			lines.append("%s: %s event, details revealed later" % [when, String(D.EVENTS[fe["id"]]["category"]).capitalize()])
 	_tip(r, "\n".join(lines))
-	if debug_on and i > 0:
-		_register(r, _debug_cycle_event.bind(i))
+
+func _draw_help_note(r: Rect2) -> void:
+	var c := r.get_center()
+	var hov := ui_live and r.has_point(mouse)
+	draw_set_transform_matrix(_rot_xform(c, 0.05 if not hov else 0.0))
+	_panel(Rect2(r.position + Vector2(5, 8), r.size), Color(0, 0, 0, 0.35), 3)
+	_grad_panel(r, 3.0, Color("fff3a0"), Color("f5d54a"))
+	draw_colored_polygon(PackedVector2Array([Vector2(r.end.x - 22.0, r.end.y), r.end, Vector2(r.end.x, r.end.y - 22.0)]), Color("d9b52c"))
+	_heavy_center(Rect2(r.position.x, r.position.y + 6.0, r.size.x, 60.0), "?", T_HERO - 12, Color("5a4a10"))
+	_text_center(Rect2(r.position.x, r.end.y - 34.0, r.size.x, 24.0), "HELP", T_XS, Color("5a4a10"), true)
+	draw_set_transform_matrix(base_xform)
+	_register(r, func() -> void: show_help = true)
+	_tip(r, "How to play (H)")
 
 func _tier_name(tier: String) -> String:
 	return {"mild": "MILD", "moderate": "MODERATE", "severe": "SEVERE"}.get(tier, tier.to_upper())
@@ -2688,49 +2907,6 @@ func _double_rule(x0: float, x1: float, y: float) -> void:
 
 func _tier_kicker(tier: String) -> String:
 	return {"mild": "MARKET NEWS", "moderate": "MARKETS SHAKEN", "severe": "BREAKING"}.get(tier, "MARKET NEWS")
-
-func _draw_now_tile(r: Rect2, ev: Dictionary, e: Dictionary, tier: String, tcol: Color) -> void:
-	var x := r.position.x + 24.0
-	var w := r.size.x - 48.0
-	var dateline := "%s  ·  YEAR %d, Q%d%s" % [NEWSPAPER, _year_of(round_n), _quarter_in_year(round_n), "  ·  YEAR END" if _is_year_end(round_n) else ""]
-	draw_string(font_bold, Vector2(x, r.position.y + 30.0), dateline, HORIZONTAL_ALIGNMENT_LEFT, -1, T_XS, Color(C_NEWSINK, 0.75))
-	var kick := _tier_kicker(tier)
-	var kw := _text_w(kick, T_XS, true) + 18.0
-	var kr := Rect2(r.end.x - 24.0 - kw, r.position.y + 13.0, kw, 24.0)
-	_panel(kr, tcol.darkened(0.15) if tier != "mild" else C_NEWSINK, 3)
-	_text_center(kr, kick, T_XS, C_PAPER, true)
-	var cond := _event_condition(ev)
-	if not cond.is_empty():
-		var ok := _condition_met(cond)
-		var tag := "GOAL MET" if ok else "GOAL OPEN"
-		var tw := _text_w(tag, T_XS, true) + 18.0
-		var tr := Rect2(kr.position.x - tw - 8.0, kr.position.y, tw, 24.0)
-		_panel(tr, Color(0, 0, 0, 0), 3, c_good if ok else c_warn.darkened(0.2), 2)
-		_text_center(tr, tag, T_XS, c_good if ok else c_warn.darkened(0.25), true)
-	_double_rule(x, x + w, r.position.y + 42.0)
-	var title := (String(e["name"]) + (" (weakened)" if bool(ev.get("weak", false)) else "")).to_upper()
-	_heavy(Vector2(x, r.position.y + 88.0), title, _fit(title, w, T_XL), C_NEWSINK)
-	var deck := _event_text(ev)
-	var dsz := T_SM
-	while dsz > 14 and font_serif_italic.get_string_size(deck, HORIZONTAL_ALIGNMENT_LEFT, -1, dsz).x > w:
-		dsz -= 1
-	draw_string(font_serif_italic, Vector2(x, r.position.y + 120.0), deck, HORIZONTAL_ALIGNMENT_LEFT, -1, dsz, Color(C_NEWSINK, 0.85))
-	if r.has_point(mouse) and ui_live:
-		hover_forecast = 0
-	var lines: Array[String] = [String(e["name"]) + ": " + _event_text(ev)]
-	if not cond.is_empty():
-		lines.append("Goal: " + _condition_text(cond))
-	lines.append_array(round_notes)
-	for j in range(1, forecast.size()):
-		if round_n + j > rounds_per_run:
-			break
-		var fe: Dictionary = forecast[j]
-		var when := "Next quarter" if j == 1 else "In %d quarters" % j
-		if j < forecast_visible or bool(fe.get("revealed", false)):
-			lines.append("%s: %s (%s)" % [when, _event_name(fe), _event_text(fe)])
-		else:
-			lines.append("%s: %s event, details revealed later" % [when, String(D.EVENTS[fe["id"]]["category"]).capitalize()])
-	_tip(r, "\n".join(lines))
 
 func _draw_event_intro() -> void:
 	var ev: Dictionary = forecast[0]
@@ -2828,7 +3004,7 @@ func _pile_label(r: Rect2, text: String) -> void:
 	_text_center(pr, text, T_SM, c_ink, true)
 
 func _draw_market() -> void:
-	_region(p_market, "Deal Flow", c_region)
+	_region(p_market, "Market", c_region)
 	var kind := String(choice.get("kind", ""))
 	var picking := kind == "replace_market" or (kind == "peek_swap" and int(choice["picked"]) >= 0)
 	var frozen := bool(mods.get("market_frozen", false))
@@ -2913,15 +3089,87 @@ func _cost_explain(id: String) -> String:
 		s += ", plus 1 %s" % D.RES_NAMES[D.GATE_RES]
 	return s + "."
 
-func _draw_sleeve_page() -> void:
+func _sheet_rect() -> Rect2:
 	var sheet := r_portfolio.grow(12.0)
+	sheet.position.x -= BIND_STRIP
+	sheet.size.x += BIND_STRIP
+	return sheet
+
+func _ring_ys() -> Array[float]:
+	var sheet := _sheet_rect()
+	var out: Array[float] = []
+	for k in 3:
+		out.append(sheet.position.y + sheet.size.y * (0.16 + k * 0.34))
+	return out
+
+func _draw_binder_cover() -> void:
+	var p := p_portfolio
+	var leather := Color("5a3826")
+	_panel(Rect2(p.position + Vector2(0, 10), p.size), Color(0, 0, 0, 0.45), 22)
+	_panel(Rect2(p.position + Vector2(0, 4), p.size), leather.darkened(0.45), 22)
+	_grad_panel(p, 22.0, leather.lightened(0.08), leather.darkened(0.12))
+	var rng2 := RandomNumberGenerator.new()
+	rng2.seed = 19
+	for i in int(p.size.x * p.size.y / 260.0):
+		var pt := Vector2(rng2.randf_range(p.position.x + 6.0, p.end.x - 6.0), rng2.randf_range(p.position.y + 6.0, p.end.y - 6.0))
+		draw_rect(Rect2(pt, Vector2(1.6, 1.6)), Color(0, 0, 0, 0.12) if i % 3 else Color(1, 1, 1, 0.05))
+	_panel(Rect2(p.position + Vector2(4, 3), Vector2(p.size.x - 8.0, 3.0)), Color(1, 1, 1, 0.12), 2)
+	var st := p.grow(-11.0)
+	var stitch := Color("d9b77e", 0.55)
+	var x := st.position.x + 18.0
+	while x < st.end.x - 18.0:
+		draw_line(Vector2(x, st.position.y), Vector2(x + 8.0, st.position.y), stitch, 2.0)
+		draw_line(Vector2(x, st.end.y), Vector2(x + 8.0, st.end.y), stitch, 2.0)
+		x += 14.0
+	var y := st.position.y + 18.0
+	while y < st.end.y - 18.0:
+		draw_line(Vector2(st.position.x, y), Vector2(st.position.x, y + 8.0), stitch, 2.0)
+		draw_line(Vector2(st.end.x, y), Vector2(st.end.x, y + 8.0), stitch, 2.0)
+		y += 14.0
+	var title := "PORTFOLIO"
+	var tx := p.position.x + PANEL_PAD + SPINE - 8.0
+	_heavy(Vector2(tx + 1.0, p.position.y + 39.0), title, T_MD, Color(0, 0, 0, 0.45))
+	_heavy(Vector2(tx, p.position.y + 37.0), title, T_MD, Color("e6c36a"))
+	var sheet := _sheet_rect()
+	_panel(sheet.grow(6.0), Color("2b221d"), 14)
+	_panel(Rect2(sheet.position.x - 6.0, sheet.position.y - 6.0, 10.0, sheet.size.y + 12.0), Color(0, 0, 0, 0.25), 4)
+	var bar := Rect2(p.position.x + 16.0, sheet.position.y + 20.0, 18.0, sheet.size.y - 40.0)
+	_panel(Rect2(bar.position + Vector2(2, 3), bar.size), Color(0, 0, 0, 0.4), 6)
+	_grad_panel(bar, 6.0, Color("d7dde3"), Color("8a939c"))
+	draw_line(bar.position + Vector2(4, 8), Vector2(bar.position.x + 4.0, bar.end.y - 8.0), Color(1, 1, 1, 0.55), 2.0)
+	for ry in [bar.position.y + 10.0, bar.end.y - 10.0]:
+		draw_circle(Vector2(bar.get_center().x, ry), 3.5, Color("6e767e"))
+
+func _draw_rings() -> void:
+	var sheet := _sheet_rect()
+	var bx := p_portfolio.position.x + 25.0
+	for hy in _ring_ys():
+		var hc := Vector2(sheet.position.x + 14.0, hy)
+		draw_circle(hc, 8.0, Color(0, 0, 0, 0.6))
+		var cx := (bx + hc.x + 12.0) * 0.5
+		var rx := (hc.x + 12.0 - bx) * 0.5
+		var pts := PackedVector2Array()
+		for i in 41:
+			var t := i / 40.0 * TAU
+			pts.append(Vector2(cx + cos(t) * rx, hy + sin(t) * 13.0))
+		var shadow := PackedVector2Array()
+		for pt in pts:
+			shadow.append(pt + Vector2(2, 4))
+		draw_polyline(shadow, Color(0, 0, 0, 0.45), 8.0, true)
+		draw_polyline(pts, Color("5f676f"), 8.0, true)
+		draw_polyline(pts, Color("c3cad1"), 5.0, true)
+		var hi := PackedVector2Array()
+		for i in range(22, 37):
+			var t := i / 40.0 * TAU
+			hi.append(Vector2(cx + cos(t) * rx, hy + sin(t) * 13.0 - 1.0))
+		draw_polyline(hi, Color(1, 1, 1, 0.75), 2.0, true)
+
+func _draw_sleeve_page() -> void:
+	var sheet := _sheet_rect()
 	_panel(Rect2(sheet.position + Vector2(0, 5), sheet.size), Color(0, 0, 0, 0.25), 16)
 	_panel(sheet, Color(Color("dfe7f1"), 0.09), 16, Color(1, 1, 1, 0.16), 2)
-	for k in 3:
-		var hc := Vector2(sheet.position.x + 1.0, sheet.position.y + sheet.size.y * (0.18 + k * 0.32))
-		draw_circle(hc, 10.0, Color(1, 1, 1, 0.14))
-		draw_circle(hc, 7.0, c_page)
-		draw_arc(hc, 7.0, 0.0, TAU, 24, Color(1, 1, 1, 0.3), 1.5, true)
+	draw_line(Vector2(sheet.position.x + BIND_STRIP + 2.0, sheet.position.y + 8.0), Vector2(sheet.position.x + BIND_STRIP + 2.0, sheet.end.y - 8.0), Color(1, 1, 1, 0.12), 2.0)
+	_draw_rings()
 	for i in board_slots:
 		var r := _board_rect(i)
 		var pocket := r.grow(CARD_GAP * 0.5 - 1.0)
@@ -3080,7 +3328,7 @@ func _draw_locked_slot(r: Rect2, slot: int) -> void:
 		_tip(r, "Locked lot. To open it: %s.\n%s" % [text.to_lower(), why])
 
 func _draw_portfolio() -> void:
-	_region(p_portfolio, "Portfolio", c_region_alt)
+	_draw_binder_cover()
 	var kind := String(choice.get("kind", ""))
 	var warned := {}
 	for j in range(1, forecast.size()):
@@ -3220,7 +3468,7 @@ func _draw_slot_rules() -> void:
 		_tip(chip, "This lot only accepts %s." % ("%s businesses" % D.TYPE_NAMES[rule["type"]] if String(rule["kind"]) == "sector" else "businesses with %s" % label.to_lower()))
 
 func _draw_supply() -> void:
-	_region(p_supply, "Treasury", c_region)
+	_region(p_supply, "Assets", c_region)
 	var exchanging := String(choice.get("kind", "")) == "exchange"
 	var give := String(choice.get("give", ""))
 	var roles := {
@@ -3276,48 +3524,32 @@ func _draw_supply() -> void:
 		elif pick:
 			_panel(col.grow(-3.0), Color(c_gold, 0.32 if col.has_point(mouse) and ui_live else 0.14), 14, Color(c_gold, 0.6), 2)
 		var face := _res_face(k)
-		var sock := Vector2(cx, col.position.y + 44.0)
+		var sock := Vector2(cx, col.position.y + 40.0)
 		var usable := not exchanging and _res_die_block(k) == ""
 		var lit := usable and _die_free(selected_die) and dice[selected_die].value == face
 		if lit:
-			_panel(Rect2(sock - Vector2(36, 36), Vector2(72, 72)), Color(c_gold, 0.4 + 0.2 * sin(clock * 6.0)), 14)
-		_panel(Rect2(sock - Vector2(31, 31), Vector2(62, 62)), Color(0, 0, 0, 0.22), 13, Color(1, 1, 1, 0.12), 2)
-		_die_body(sock, 52.0, face, Color.WHITE if usable else Color(1, 1, 1, 0.35), tc if usable else Color(c_ink, 0.3), Color(tc, 0.9) if usable else Color(0, 0, 0, 0))
+			_panel(Rect2(sock - Vector2(32, 32), Vector2(64, 64)), Color(c_gold, 0.4 + 0.2 * sin(clock * 6.0)), 14)
+		_panel(Rect2(sock - Vector2(27, 27), Vector2(54, 54)), Color(0, 0, 0, 0.22), 12, Color(1, 1, 1, 0.12), 2)
+		_die_body(sock, 44.0, face, Color.WHITE if usable else Color(1, 1, 1, 0.35), tc if usable else Color(c_ink, 0.3), Color(tc, 0.9) if usable else Color(0, 0, 0, 0))
 		if usable:
 			_register(Rect2(sock - Vector2(32, 32), Vector2(64, 64)), _res_die.bind(k))
 			_tip(Rect2(sock - Vector2(31, 31), Vector2(62, 62)), "Place a %d here: gain 1 %s." % [face, D.RES_NAMES[k]])
 		elif not exchanging:
 			_tip(Rect2(sock - Vector2(31, 31), Vector2(62, 62)), "Dice slot: place a die showing %d to gain 1 %s." % [face, D.RES_NAMES[k]])
-		var base_y := col.position.y + 290.0
-		var slots := maxi(storage_cap, 8)
-		var cw2 := minf(34.0, col.size.x * 0.4)
-		for j in slots:
-			var cy := base_y - j * 20.0
-			_ell(Vector2(cx, cy), cw2, 10.0, 0.0, Color(1, 1, 1, 0.07))
 		var have := _r(k)
-		for j in have:
-			var cy := base_y - j * 20.0
-			var red := storage_cap > 0 and j >= storage_cap
-			var cc := c_bad if red else tc
-			_ell(Vector2(cx, cy + 6.0), cw2, 10.0, 0.0, cc.darkened(0.35))
-			draw_rect(Rect2(cx - cw2, cy, cw2 * 2.0, 6.0), cc.darkened(0.35))
-			_ell(Vector2(cx, cy), cw2, 10.0, 0.0, cc.lightened(0.1))
-			_ell(Vector2(cx, cy), cw2 * 0.62, 6.0, 0.0, Color(1, 1, 1, 0.22))
-		var ic := Vector2(cx, base_y + 48.0)
-		draw_circle(ic, 23.0, Color.WHITE)
-		_res_icon(k, ic, 15.0)
-		_heavy_center(Rect2(col.position.x, base_y + 74.0, col.size.x, 50.0), str(have), T_HERO - 14, c_bad if over else c_light)
-		var nm := String(D.RES_NAMES[k])
-		var nsz := T_XS
-		while nsz > 11 and _text_w(nm, nsz, true) > col.size.x - 6.0:
-			nsz -= 1
-		_text_center(Rect2(col.position.x, base_y + 124.0, col.size.x, 24.0), nm, nsz, c_light_muted, true)
+		var row_y := col.position.y + 104.0
+		var cnt := str(have)
+		var gw := 32.0 + 6.0 + _heavy_w(cnt, T_XL)
+		var ic := Vector2(cx - gw * 0.5 + 16.0, row_y)
+		draw_circle(ic, 16.0, Color.WHITE)
+		_res_icon(k, ic, 11.0)
+		_heavy(Vector2(ic.x + 22.0, row_y + _vc(font_heavy, T_XL)), cnt, T_XL, c_bad if over else c_light)
 		if k == "intel" and _intel_locked():
-			_text_center(Rect2(col.position.x, base_y + 146.0, col.size.x, 22.0), "LOCKED", T_XS, c_bad, true)
+			_text_center(Rect2(col.position.x, row_y + 24.0, col.size.x, 22.0), "LOCKED", T_XS, c_bad, true)
 		var tip: String = "%s: %d. %s" % [D.RES_NAMES[k], have, roles[k]]
 		if over:
 			tip += "\nAbove the cap: %d will be lost at quarter end." % (have - storage_cap)
-		var stack_r := Rect2(col.position.x, col.position.y + 64.0, col.size.x, col.size.y - 64.0)
+		var stack_r := Rect2(col.position.x, col.position.y + 74.0, col.size.x, 64.0)
 		_tip(stack_r, tip)
 		if pick:
 			_register(stack_r, _on_chip.bind(k))
@@ -3333,44 +3565,9 @@ func _draw_supply() -> void:
 		notes.append("Businesses +%d %s" % [int(cp[k]), D.RES_NAMES[k]])
 	if not notes.is_empty():
 		_text_center(Rect2(felt.position.x, felt.end.y - 30.0, felt.size.x, 24.0), ", ".join(notes), T_SM, Color("ff9a8a"), true)
-	_tile(s_end)
-	var vp := _round_vp()
-	var target := _target_for(round_n)
-	var free := 0
-	for i in dice.size():
-		if _die_free(i):
-			free += 1
-	var met := vp >= target
 	var year_end := _is_year_end(round_n)
-	var x := s_end.position.x + 24.0
-	var top := s_end.position.y
-	var q := _quarter_in_year(round_n)
-	_text(Vector2(x, top + 38.0), "BRAND THIS YEAR  ·  Q%d OF %d" % [q, D.QUARTERS_PER_YEAR], T_XS, c_muted, true)
-	if miss_rule == MissRule.STRIKES:
-		for i in strikes_to_lose:
-			draw_circle(Vector2(s_end.end.x - 34.0 - (strikes_to_lose - 1 - i) * 28.0, top + 33.0), 10.0, c_bad if i < strikes else c_line)
-		_text_right(s_end.end.x - 30.0 - strikes_to_lose * 28.0, top + 38.0, "STRIKES", T_XS, c_muted, true)
-	else:
-		_text_right(s_end.end.x - 24.0, top + 38.0, "DEBT %d" % debt, T_XS, c_bad if debt > 0 else c_muted, true)
-	var vs := str(vp)
-	_icon("vp", Vector2(x + 26.0, top + 82.0), 28.0)
-	var nx := x + 64.0
-	_heavy(Vector2(nx, top + 104.0), vs, T_HERO, c_good if met else c_ink)
-	_text(Vector2(nx + _heavy_w(vs, T_HERO) + 10.0, top + 102.0), "/ %d" % target, T_LG, c_muted, true)
-	var head := "Target met" if met else ("Short by %d" % (target - vp) if year_end else "%d to go" % (target - vp))
-	_heavy_right(s_end.end.x - 24.0, top + 98.0, head, T_MD, c_good if met else (c_warn if year_end else c_ink))
-	var bar := Rect2(x, top + 122.0, s_end.size.x - 48.0, 8.0)
-	_panel(bar, c_line, 4)
-	var fill := clampf(float(vp) / maxf(1.0, target), 0.0, 1.0)
-	if fill > 0.0:
-		_panel(Rect2(bar.position, Vector2(maxf(8.0, bar.size.x * fill), bar.size.y)), c_good if met else c_warn, 4)
-	if free > 0:
-		_text_right(s_end.end.x - 24.0, top + 160.0, "Unused: %d %s → +%d Cash" % [free, "die" if free == 1 else "dice", free * trade_die_cash], T_XS, c_muted, true)
-	var left := D.QUARTERS_PER_YEAR - q
-	var tip := "Brand this year: %d (%d this quarter), earned by operating and placing businesses.\nThe yearly target is checked after quarter %d. %s\nBrand starts at 0 each year. Miss a yearly target and take a strike; extra Brand earns better Investor Meeting offers." % [vp, act_vp, D.QUARTERS_PER_YEAR, "This is the last quarter of the year." if left == 0 else "%d more quarter%s after this one." % [left, "" if left == 1 else "s"]]
-	_tip(Rect2(s_end.position, Vector2(s_end.size.x, 140.0)), tip)
-	var eb := Rect2(s_end.position.x + 24.0, s_end.end.y - 22.0 - 88.0, s_end.size.x - 48.0, 88.0)
-	_button(eb, "End Year" if year_end else "End Quarter", _end_round, phase == Phase.ACTION and choice.is_empty(), c_accent if met or not year_end else c_ink, T_XL)
+	var met := _round_vp() >= _target_for(round_n)
+	_button(s_end, "End Year" if year_end else "End Quarter", _end_round, phase == Phase.ACTION and choice.is_empty(), c_accent if met or not year_end else c_ink, T_XL)
 
 func _card_tip(id: String) -> String:
 	var c: Dictionary = D.CARDS[id]
@@ -3516,6 +3713,54 @@ func _material(r: Rect2, col: Color, radius: int) -> void:
 	_panel(Rect2(r.position + Vector2(0, 3), r.size), Color(c_shadow, 0.1), radius)
 	_panel(r, col, radius)
 
+func _award_icons(id: String) -> Array[String]:
+	var c: Dictionary = D.CARDS[id]
+	var found := {}
+	var lists: Array = [c.get("effects", [])]
+	var trig: Dictionary = c.get("triggers", {})
+	for h in trig:
+		lists.append(trig[h])
+	for list: Array in lists:
+		for e: Dictionary in list:
+			match String(e["kind"]):
+				"gain":
+					for r in (e["res"] as Dictionary):
+						found[r] = true
+				"gain_per", "gain_ctx":
+					found[String(e["res"])] = true
+				"vp", "vp_per", "vp_if", "convert":
+					found["vp"] = true
+	if c.get("passive", {}).has("prevent_distress"):
+		found["vp"] = true
+	var out: Array[String] = []
+	for r: String in D.TYPES:
+		if found.has(r):
+			out.append(r)
+	if found.has("vp"):
+		out.append("vp")
+	return out
+
+func _price_tag(anchor: Rect2, cost: Dictionary, k: float, check: bool) -> void:
+	var size := int(17.0 * k)
+	var rad := 8.0 * k
+	var th := 34.0 * k
+	var tw := _tokens_w(cost, rad, size) + 40.0 * k
+	var tag := Rect2(anchor.end.x - tw - 6.0 * k, anchor.position.y + 10.0 * k, tw, th)
+	var pt := 13.0 * k
+	var shape := PackedVector2Array([tag.position + Vector2(pt, 0), Vector2(tag.end.x, tag.position.y), tag.end, Vector2(tag.position.x + pt, tag.end.y), tag.position + Vector2(0, th * 0.5)])
+	var sh := PackedVector2Array()
+	for p in shape:
+		sh.append(p + Vector2(2.0, 4.0) * k)
+	draw_colored_polygon(sh, Color(0, 0, 0, 0.22))
+	draw_colored_polygon(shape, Color("fff3c9"))
+	var outline := shape.duplicate()
+	outline.append(shape[0])
+	draw_polyline(outline, Color("b08a3a"), maxf(1.5, 2.0 * k), true)
+	var hole := tag.position + Vector2(pt * 0.85, th * 0.5)
+	draw_circle(hole, 3.2 * k, Color("b08a3a"))
+	draw_circle(hole, 1.8 * k, Color("fff3c9"))
+	_tokens(tag.position.x + pt + 10.0 * k, tag.get_center().y, cost, rad, size, check)
+
 func _tokens_w(cost: Dictionary, rad: float, size: int) -> float:
 	var w := 0.0
 	for r: String in D.TYPES:
@@ -3595,7 +3840,14 @@ func _draw_card(r: Rect2, id: String, inst: CardInst, where: String, glow: Color
 		var gs := 7.0 * k
 		draw_colored_polygon(PackedVector2Array([gc + Vector2(0, -gs), gc + Vector2(gs, 0), gc + Vector2(0, gs), gc + Vector2(-gs, 0)]), Color(D.RARITY_COLORS[rarity]))
 	_heavy(Vector2(nx, bar.position.y + 30.0 * k), name, nsz, c_ink)
-	_tokens(nx, bar.position.y + 52.0 * k, _cost(id) if cost_override.is_empty() else cost_override, 9.0 * k, int(18.0 * k), where == "market")
+	var ax := nx
+	for icon in _award_icons(id):
+		var ac := Vector2(ax + 12.0 * k, bar.position.y + 52.0 * k)
+		draw_circle(ac, 13.0 * k, Color(_tcol(icon) if icon != "vp" else c_gold, 0.24))
+		_icon(icon, ac, 10.5 * k)
+		ax += 30.0 * k
+	if where != "board":
+		_price_tag(Rect2(inner.position.x, bar.end.y, inner.size.x, 0.0), _cost(id) if cost_override.is_empty() else cost_override, k, where == "market")
 	var desc := Rect2(inner.position.x + pad, strip.position.y, inner.size.x - pad * 2.0, inner.end.y - pad - strip.position.y)
 	match card_style:
 		0:
@@ -4175,7 +4427,7 @@ func _draw_gameover() -> void:
 	var won := game_result == "won"
 	var x := r.position.x + 70.0
 	_heavy(Vector2(x, r.position.y + 120.0), "Your portfolio thrived" if won else "The board voted you out", T_HERO, c_good if won else c_bad)
-	_text(Vector2(x, r.position.y + 172.0), "%s after %d years, %d quarters  ·  seed %d" % ["Survived" if won else "Eliminated", years.size(), history.size(), seed_used], T_MD, c_muted, true)
+	_text(Vector2(x, r.position.y + 172.0), "%s after %d years, %d quarters  ·  %s  ·  seed %d" % ["Survived" if won else "Eliminated", years.size(), history.size(), _sheet_name(), seed_used], T_MD, c_muted, true)
 	var sc := "Won" if won else "Reached year %d, Q%d" % [_year_of(history.size()), _quarter_in_year(history.size())]
 	_heavy(Vector2(x, r.position.y + 260.0), sc, T_HERO - 8, c_ink)
 	var best_txt := "New best" if history.size() >= best_quarters and history.size() > 0 else "Best: %s" % _best_text()
@@ -4197,7 +4449,7 @@ func _draw_gameover() -> void:
 		draw_line(Vector2(bx - 8.0, ty), Vector2(bx + bww + 8.0, ty), c_bad if not bool(h["hit"]) else c_ink, 3.0)
 		_text_center(Rect2(bx, base_y + 6.0, bww, 32.0), "Year %d" % (i + 1), T_SM, c_muted, true)
 	_text(Vector2(chart.position.x, chart.end.y + 70.0), "Gold: Brand earned each year   Line: yearly target", T_SM, c_muted, true)
-	_button(Rect2(r.end.x - 430.0, r.end.y - 116.0, 360.0, 80.0), "New run", func() -> void: _new_run(randi_range(1, 999999)), true, c_accent, T_LG)
+	_button(Rect2(r.end.x - 430.0, r.end.y - 116.0, 360.0, 80.0), "Choose sheet", func() -> void: phase = Phase.MENU, true, c_accent, T_LG)
 	_ghost(Rect2(r.end.x - 810.0, r.end.y - 116.0, 360.0, 80.0), "Replay seed", func() -> void: _new_run(seed_used), true)
 
 func _draw_help() -> void:
@@ -4210,7 +4462,7 @@ func _draw_help() -> void:
 		"1. This quarter's outlook event takes effect.",
 		"2. Roll %d dice (always %d-%d after modifiers)." % [base_dice, min_dice, max_dice],
 		"3. Click a die, then a business whose pattern it matches to operate it. Each business operates once per quarter. Two-die patterns operate once both dice are placed.",
-		"4. Dice have other uses: place a 1-5 on a resource's dice slot to gain 1 of it (1 Cash, 2 Labor, 3 Equipment, 4 Intelligence, 5 Advertising), or a 6 on Scout to see new deals. Buy businesses from deal flow, exchange %d:1, or reroll all dice for %d Intelligence." % [exchange_rate, reroll_cost],
+		"4. Dice have other uses: place a 1-5 on a resource's dice slot to gain 1 of it (1 Cash, 2 Labor, 3 Equipment, 4 Intelligence, 5 Advertising), or a 6 on Scout to see new deals. Buy businesses from the Market, exchange %d:1, or reroll all dice for %d Intelligence." % [exchange_rate, reroll_cost],
 		"5. End the quarter. Brand is earned by placing and operating businesses, and adds up over a year of %d quarters. After the last quarter of each year, meet the yearly target or take a strike (%d strikes and the board votes you out); Brand then resets. Survive %d years to win. After every quarter, the Investor Meeting offers rewards; pick 1." % [D.QUARTERS_PER_YEAR, strikes_to_lose, _total_years()],
 		"6. The outlook moves forward." if storage_cap <= 0 else "6. Resources above %d are lost. The outlook moves forward." % storage_cap,
 		"",
