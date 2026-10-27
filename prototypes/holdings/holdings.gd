@@ -29,7 +29,7 @@ enum MissRule { STRIKES, DEBT }
 
 @export_group("Economy")
 @export var exchange_rate: int = 3
-@export var storage_cap: int = 0
+@export var storage_cap: int = 8
 
 @export_group("Cards")
 @export_enum("Classic frame", "Modern gradient", "Foil rarity") var card_style: int = 0
@@ -148,6 +148,7 @@ var toast := ""
 var toast_t := -10.0
 var next_uid := 1
 var show_help := false
+var event_intro := false
 var debug_on := false
 var hover_forecast := -1
 var float_burst := 0
@@ -388,6 +389,7 @@ func _start_round() -> void:
 	var n := clampi(base_dice + extra + int(mods["dice_delta"]), min_dice, max_dice)
 	_roll(n)
 	phase = Phase.ACTION
+	event_intro = true
 
 func _event_name(ev: Dictionary) -> String:
 	return String(D.EVENTS[ev["id"]]["name"])
@@ -1623,6 +1625,9 @@ func _primary_action() -> void:
 	if show_help:
 		show_help = false
 		return
+	if event_intro and phase == Phase.ACTION:
+		event_intro = false
+		return
 	match phase:
 		Phase.ACTION:
 			_end_round()
@@ -1965,18 +1970,21 @@ func _draw() -> void:
 	base_xform = Transform2D(0.0, Vector2(ui_scale, ui_scale), 0.0, screen_origin)
 	draw_set_transform_matrix(base_xform)
 	var picker := _picker_active() and phase == Phase.ACTION
-	ui_live = phase == Phase.ACTION and not show_help and not picker
+	var intro := event_intro and phase == Phase.ACTION
+	ui_live = phase == Phase.ACTION and not show_help and not picker and not intro
 	_draw_header()
 	_draw_market()
 	_draw_portfolio()
 	_draw_supply()
 	_draw_floaters()
-	ui_live = phase == Phase.ACTION and not show_help
+	ui_live = phase == Phase.ACTION and not show_help and not intro
 	if picker:
 		_draw_picker()
 	else:
 		_draw_banner()
 	ui_live = true
+	if intro and not show_help:
+		_draw_event_intro()
 	if phase == Phase.REPORT:
 		_draw_report()
 	elif phase == Phase.GAMEOVER:
@@ -2014,9 +2022,13 @@ func _draw_header() -> void:
 			draw_circle(c, 7.0, c_line)
 	_text_right(l.end.x - 28.0, l.position.y + 110.0, "Equity %d  ·  Best %s" % [score, "-" if best_score < 0 else str(best_score)], T_SM, c_muted, true)
 	_tip(Rect2(l.end.x - 300.0, l.position.y, 300.0, 60.0), "Quarters so far: green met the target, red missed it.")
-	var tw := (h_center.size.x - 2 * 16.0) / 3.0
+	var now_w := (h_center.size.x - 2 * 16.0) * 0.46
+	var tw := (h_center.size.x - 2 * 16.0 - now_w) * 0.5
+	var fx := h_center.position.x
 	for i in mini(forecast.size(), 3):
-		_draw_forecast_tile(Rect2(h_center.position.x + i * (tw + 16.0), HEADER_Y, tw, HEADER_H), i)
+		var w := now_w if i == 0 else tw
+		_draw_forecast_tile(Rect2(fx, HEADER_Y, w, HEADER_H), i)
+		fx += w + 16.0
 	var r := h_right
 	_tile(r)
 	var x := r.position.x + 28.0
@@ -2056,7 +2068,12 @@ func _draw_forecast_tile(r: Rect2, i: int) -> void:
 	var tier := String(e["tier"])
 	var tcol: Color = {"mild": c_good, "moderate": c_warn, "severe": c_bad}.get(tier, c_muted)
 	var today := i == 0
-	_tile(r, Color(tcol, 0.8) if today else Color(0, 0, 0, 0))
+	if today and known:
+		_shadow(r, 20, 4.0)
+		_panel(r, tcol.lerp(Color.WHITE, 0.86), 20, tcol, 4)
+		_draw_now_tile(r, ev, e, tier, tcol)
+		return
+	_tile(r)
 	var x := r.position.x + 22.0
 	var label: String = "NOW" if today else ("NEXT" if i == 1 else "Q%d" % (round_n + i))
 	if round_n + i <= rounds_per_run:
@@ -2065,7 +2082,7 @@ func _draw_forecast_tile(r: Rect2, i: int) -> void:
 	draw_circle(Vector2(x + 6.0, r.position.y + 64.0), 7.0, tcol)
 	if not known:
 		_heavy(Vector2(x + 22.0, r.position.y + 74.0), "%s event" % String(e["category"]).capitalize(), T_MD, c_muted)
-		_text(Vector2(x, r.position.y + 106.0), "Details revealed next quarter", T_XS, c_muted)
+		_wrap(Vector2(x, r.position.y + 84.0), "Details revealed next quarter", r.size.x - 44.0, T_XS, c_muted, false, 2)
 		if debug_on:
 			_register(r, _debug_cycle_event.bind(i))
 		return
@@ -2093,6 +2110,68 @@ func _draw_forecast_tile(r: Rect2, i: int) -> void:
 	_tip(r, "\n".join(lines))
 	if debug_on and i > 0:
 		_register(r, _debug_cycle_event.bind(i))
+
+func _tier_name(tier: String) -> String:
+	return {"mild": "MILD", "moderate": "MODERATE", "severe": "SEVERE"}.get(tier, tier.to_upper())
+
+func _draw_now_tile(r: Rect2, ev: Dictionary, e: Dictionary, tier: String, tcol: Color) -> void:
+	var x := r.position.x + 22.0
+	var head := "NOW  ·  %d BRAND" % _target_for(round_n)
+	_text(Vector2(x, r.position.y + 36.0), head, T_XS, tcol.darkened(0.35), true)
+	var pill := _tier_name(tier)
+	var pw := _text_w(pill, T_XS, true) + 24.0
+	var pr := Rect2(r.end.x - pw - 16.0, r.position.y + 14.0, pw, 28.0)
+	_panel(pr, tcol, 14)
+	_text_center(pr, pill, T_XS, Color.WHITE, true)
+	var title := String(e["name"]) + (" (weakened)" if bool(ev.get("weak", false)) else "")
+	_heavy(Vector2(x, r.position.y + 76.0), title, _fit(title, r.size.x - 44.0, T_LG), c_ink)
+	_wrap(Vector2(x, r.position.y + 86.0), _event_text(ev), r.size.x - 44.0, T_SM, c_ink, true, 2)
+	var cond := _event_condition(ev)
+	if not cond.is_empty():
+		var ok := _condition_met(cond)
+		var tag := "Goal met" if ok else "Goal open"
+		var tw := _text_w(tag, T_XS, true) + 20.0
+		var tr := Rect2(pr.position.x - tw - 8.0, pr.position.y, tw, 28.0)
+		_panel(tr, Color(c_good if ok else c_warn, 0.18), 14)
+		_text_center(tr, tag, T_XS, c_good if ok else c_warn.darkened(0.2), true)
+	if r.has_point(mouse) and ui_live:
+		hover_forecast = 0
+	var lines: Array[String] = [String(e["name"]) + ": " + _event_text(ev)]
+	if not cond.is_empty():
+		lines.append("Goal: " + _condition_text(cond))
+	lines.append_array(round_notes)
+	_tip(r, "\n".join(lines))
+
+func _draw_event_intro() -> void:
+	var ev: Dictionary = forecast[0]
+	var e: Dictionary = D.EVENTS[ev["id"]]
+	var tier := String(e["tier"])
+	var tcol: Color = {"mild": c_good, "moderate": c_warn, "severe": c_bad}.get(tier, c_muted)
+	var cond := _event_condition(ev)
+	var r := _modal(980.0, 560.0 + (70.0 if not cond.is_empty() else 0.0))
+	_panel(Rect2(r.position, Vector2(r.size.x, 18.0)), tcol, 0)
+	_panel_corners(Rect2(r.position, Vector2(r.size.x, 18.0)), tcol, 28, 28, 0, 0)
+	var x := r.position.x + 64.0
+	var w := r.size.x - 128.0
+	_text(Vector2(x, r.position.y + 84.0), "QUARTER %d OF %d  ·  MARKET EVENT" % [round_n, rounds_per_run], T_SM, c_muted, true)
+	var pill := _tier_name(tier)
+	var pw := _text_w(pill, T_SM, true) + 32.0
+	var pr := Rect2(r.end.x - 64.0 - pw, r.position.y + 58.0, pw, 38.0)
+	_panel(pr, tcol, 19)
+	_text_center(pr, pill, T_SM, Color.WHITE, true)
+	var title := String(e["name"]) + (" (weakened)" if bool(ev.get("weak", false)) else "")
+	_heavy(Vector2(x, r.position.y + 170.0), title, _fit(title, w, T_HERO), c_ink)
+	_wrap(Vector2(x, r.position.y + 200.0), _event_text(ev), w, T_LG, c_ink, true, 3)
+	var y := r.position.y + 330.0
+	if not cond.is_empty():
+		var gr := Rect2(x, y - 6.0, w, 58.0)
+		_panel(gr, Color(c_warn, 0.12), 16)
+		_text(Vector2(x + 20.0, gr.get_center().y + _vc(font_bold, T_MD)), "Goal: " + _condition_text(cond), T_MD, c_warn.darkened(0.25), true)
+		y += 70.0
+	_text(Vector2(x, y + 30.0), "Target this quarter:", T_MD, c_muted, true)
+	_icon("vp", Vector2(x + _text_w("Target this quarter:", T_MD, true) + 30.0, y + 22.0), 16.0)
+	_heavy(Vector2(x + _text_w("Target this quarter:", T_MD, true) + 54.0, y + 34.0), "%d Brand" % _target_for(round_n), T_LG, c_ink)
+	_button(Rect2(r.get_center().x - 180.0, r.end.y - 116.0, 360.0, 80.0), "Start quarter", func() -> void: event_intro = false, true, c_accent, T_LG)
 
 func _pile_rect(i: int) -> Rect2:
 	return _market_slot(i)
