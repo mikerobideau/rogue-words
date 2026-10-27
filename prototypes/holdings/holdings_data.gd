@@ -6,7 +6,8 @@ const TYPE_NAMES := {"cash": "Finance", "labor": "Services", "equipment": "Indus
 const RES_NAMES := {"cash": "Cash", "labor": "Labor", "equipment": "Equipment", "intel": "Intelligence", "advertising": "Advertising"}
 const TYPE_COLORS := {"cash": "4f8a5b", "labor": "4a7fb0", "equipment": "8a6d4b", "intel": "7a63b8", "advertising": "d0607a"}
 
-const TARGETS := [3, 5, 8, 11, 14, 17, 21, 25, 30, 35, 41, 48]
+const QUARTERS_PER_YEAR := 4
+const YEAR_TARGETS := [20, 45, 80, 120, 165, 215, 270]
 
 const STARTING_RESOURCES := {"cash": 4, "labor": 2, "equipment": 2, "intel": 2, "advertising": 2}
 
@@ -21,8 +22,8 @@ const EXPAND_COSTS := [1, 1, 1, 2, 2, 2]
 const STARTING_BOARD: Array[String] = []
 
 const EVENT_TIERS := [
-	{"until": 4, "tiers": ["mild"]},
-	{"until": 8, "tiers": ["mild", "moderate"]},
+	{"until": 8, "tiers": ["mild"]},
+	{"until": 16, "tiers": ["mild", "moderate"]},
 	{"until": 999, "tiers": ["moderate", "severe"]},
 ]
 
@@ -263,6 +264,20 @@ const CARDS := {
 		"text": "Pay 2 Advertising: +2 Brand per adjacent business.",
 		"short": "Pay 2 Advertising: +2 Brand per adjacent business",
 		"effects": [{"kind": "pay", "res": {"advertising": 2}}, {"kind": "vp_per", "per": "adjacent", "amount": 2}]},
+}
+
+const MANDATES_PER_RUN := 3
+const MANDATES := {
+	"diversified": {"name": "Diversified", "text": "Own businesses from many different sectors", "metric": "sectors", "unit": "sectors", "tiers": [[3, 5], [4, 10], [5, 20]]},
+	"main_street": {"name": "Main Street", "text": "Full rows made of 3 different sectors", "metric": "mixed_rows", "unit": "rows", "tiers": [[1, 8], [2, 18], [3, 30]]},
+	"corner_offices": {"name": "Corner Offices", "text": "Finance businesses in the portfolio's corner lots", "metric": "corner_finance", "unit": "corners", "tiers": [[2, 6], [3, 12], [4, 20]]},
+	"industrial_park": {"name": "Industrial Park", "text": "Full rows or columns of Industry businesses", "metric": "industry_lines", "unit": "lines", "tiers": [[1, 12], [2, 25]]},
+	"blue_chips": {"name": "Blue Chips", "text": "Businesses worth 5 or more", "metric": "blue_chips", "unit": "businesses", "tiers": [[1, 5], [2, 12], [3, 20]]},
+	"startup_scene": {"name": "Startup Scene", "text": "Own Startup businesses", "metric": "startups", "unit": "Startups", "tiers": [[2, 8], [3, 16]]},
+	"lean_operation": {"name": "Lean Operation", "text": "Quarters ended with every die used", "metric": "lean", "unit": "quarters", "tiers": [[6, 6], [12, 15], [18, 25]]},
+	"full_house": {"name": "Full House", "text": "Lots filled with businesses", "metric": "filled", "unit": "lots", "tiers": [[6, 5], [8, 12], [9, 20]]},
+	"crisis_manager": {"name": "Crisis Manager", "text": "Market event goals met this run", "metric": "goals", "unit": "goals", "tiers": [[4, 6], [8, 14], [12, 24]]},
+	"value_builder": {"name": "Value Builder", "text": "Value added to businesses by growth or upgrades", "metric": "upgrades", "unit": "value", "tiers": [[5, 6], [10, 14], [16, 24]]},
 }
 
 const EVENTS := {
