@@ -211,6 +211,7 @@ var font_heavy: Font
 var font_title: Font
 var font_serif: Font
 var font_serif_italic: Font
+var font_marker: Font
 var style := StyleBoxFlat.new()
 var base_xform := Transform2D.IDENTITY
 var art_cache := {}
@@ -247,6 +248,9 @@ func _load_fonts() -> void:
 		var serif: Font = load(serif_path)
 		font_heavy = _variation(serif, {wght: 700, ts.name_to_tag("opsz"): 72, ts.name_to_tag("SOFT"): 50})
 	font_title = font_heavy
+	font_marker = font_heavy
+	if ResourceLoader.exists("res://assets/fonts/PermanentMarker-Regular.ttf"):
+		font_marker = load("res://assets/fonts/PermanentMarker-Regular.ttf")
 	font_serif = font_heavy
 	font_serif_italic = font_italic
 	if ResourceLoader.exists(serif_path):
@@ -2659,6 +2663,7 @@ func _draw() -> void:
 	var intro := event_intro and phase == Phase.ACTION
 	ui_live = phase == Phase.ACTION and not show_help and not picker and not intro and not in_meeting
 	_draw_header()
+	_draw_padfolio()
 	_draw_market()
 	_draw_portfolio()
 	_draw_supply()
@@ -2698,10 +2703,9 @@ func _tile(r: Rect2, border: Color = Color(0, 0, 0, 0)) -> void:
 func _draw_header() -> void:
 	var cal := Rect2(h_left.position.x, HEADER_Y + 4.0, 176.0, HEADER_H - 8.0)
 	_draw_calendar(cal)
-	_draw_brand_plaque(Rect2(cal.end.x + 20.0, HEADER_Y, h_left.end.x - cal.end.x - 20.0, HEADER_H))
 	var note := Rect2(h_center.end.x - 104.0, HEADER_Y + 14.0, 100.0, 100.0)
 	if not forecast.is_empty():
-		_draw_clipping(h_center.position.x + 8.0, note.position.x - 40.0 - h_center.position.x)
+		_draw_clipping(cal.end.x + 44.0, note.position.x - 40.0 - cal.end.x - 44.0)
 	_draw_help_note(note)
 
 func _rot_xform(c: Vector2, angle: float) -> Transform2D:
@@ -2738,47 +2742,79 @@ func _draw_calendar(r: Rect2) -> void:
 	lines.append("Sheet: %s  ·  Best: %s" % [_sheet_name(), _quarters_text(int(sheet_best.get(sheet_id, 0)))])
 	_tip(r, "\n".join(lines))
 
-func _draw_brand_plaque(r: Rect2) -> void:
-	var wood := Color("6b4a32")
-	_panel(Rect2(r.position + Vector2(0, 6), r.size), Color(0, 0, 0, 0.35), 14)
-	_panel(r, wood, 14)
-	_panel(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.5)), Color(1, 1, 1, 0.07), 14)
-	for i in 3:
-		draw_line(Vector2(r.position.x + 18.0, r.position.y + 5.0 + i * 3.0), Vector2(r.end.x - 18.0, r.position.y + 5.0 + i * 3.0), Color(wood.darkened(0.25), 0.5), 1.0)
-		draw_line(Vector2(r.position.x + 18.0, r.end.y - 5.0 - i * 3.0), Vector2(r.end.x - 18.0, r.end.y - 5.0 - i * 3.0), Color(wood.darkened(0.25), 0.5), 1.0)
-	var p := r.grow(-12.0)
-	_grad_panel(p, 8.0, Color("efd27e"), Color("b98e3d"))
-	_panel(p, Color(0, 0, 0, 0), 8, Color("8a6a2a"), 2)
-	draw_line(p.position + Vector2(10, 3), Vector2(p.end.x - 10, p.position.y + 3), Color(1, 1, 1, 0.45), 2.0)
-	for sc: Vector2 in [p.position + Vector2(12, 12), Vector2(p.end.x - 12, p.position.y + 12), Vector2(p.position.x + 12, p.end.y - 12), p.end - Vector2(12, 12)]:
-		draw_circle(sc, 5.0, Color("9a7a35"))
-		draw_line(sc - Vector2(3, 3), sc + Vector2(3, 3), Color("6e5420"), 1.5)
-	var ink := Color("3e2b10")
+func _jit(i: int, amp: float) -> float:
+	return sin(i * 12.9898 + 78.233) * amp
+
+func _marker_rect(r: Rect2, col: Color, w: float, seed: int) -> void:
+	var pts := PackedVector2Array([
+		r.position + Vector2(_jit(seed, 2.0), _jit(seed + 1, 2.0)),
+		Vector2(r.end.x + _jit(seed + 2, 2.0), r.position.y + _jit(seed + 3, 2.0)),
+		r.end + Vector2(_jit(seed + 4, 2.0), _jit(seed + 5, 2.0)),
+		Vector2(r.position.x + _jit(seed + 6, 2.0), r.end.y + _jit(seed + 7, 2.0)),
+		r.position + Vector2(3.0 + _jit(seed + 8, 1.5), _jit(seed + 9, 2.0)),
+	])
+	draw_polyline(pts, col, w, true)
+
+func _marker_star(c: Vector2, rad: float, col: Color, w: float) -> void:
+	var pts := PackedVector2Array()
+	for i in 11:
+		var a := -PI * 0.5 + i * TAU * 2.0 / 5.0
+		pts.append(c + Vector2(cos(a), sin(a)) * rad + Vector2(_jit(i, 1.5), _jit(i + 7, 1.5)))
+	draw_polyline(pts, col, w, true)
+
+func _draw_scorepad(r: Rect2) -> void:
+	var c := r.get_center()
+	draw_set_transform_matrix(_rot_xform(c, -0.025))
+	_panel(Rect2(r.position + Vector2(8, 12), r.size), Color(0, 0, 0, 0.4), 6)
+	_panel(Rect2(r.position + Vector2(4, 5), r.size), Color("e9d98a"), 6)
+	_grad_panel(r, 6.0, Color("fdf3ae"), Color("f3e290"))
+	var strip := Rect2(r.position, Vector2(r.size.x, 28.0))
+	_panel_corners(strip, Color("7a2a22"), 6, 6, 0, 0)
+	draw_line(strip.position + Vector2(6, 4), Vector2(strip.end.x - 6, strip.position.y + 4), Color(1, 1, 1, 0.18), 2.0)
+	draw_line(Vector2(strip.position.x, strip.end.y), Vector2(strip.end.x, strip.end.y), Color(0, 0, 0, 0.3), 2.0)
+	var y := strip.end.y + 44.0
+	while y < r.end.y - 6.0:
+		draw_line(Vector2(r.position.x + 4.0, y), Vector2(r.end.x - 4.0, y), Color("6aa0d8", 0.45), 1.5)
+		y += 40.0
+	var mx := r.position.x + 56.0
+	draw_line(Vector2(mx, strip.end.y), Vector2(mx, r.end.y), Color("d9534f", 0.55), 2.0)
+	var ink := Color("1f2430")
 	var vp := _round_vp()
 	var target := _target_for(round_n)
 	var met := vp >= target
 	var year_end := _is_year_end(round_n)
-	var x := p.position.x + 26.0
-	_star(Vector2(x + 18.0, p.position.y + 46.0), 24.0, 11.0, Color("6e5420"))
-	_star(Vector2(x + 18.0, p.position.y + 44.0), 22.0, 10.0, Color("ffe08a"))
-	var vs := str(vp)
-	_heavy(Vector2(x + 48.0, p.position.y + 66.0), vs, T_HERO - 10, ink)
-	_heavy(Vector2(x + 56.0 + _heavy_w(vs, T_HERO - 10), p.position.y + 64.0), "/ %d" % target, T_LG, Color(ink, 0.65))
-	var head := "TARGET MET" if met else ("SHORT BY %d" % (target - vp) if year_end else "%d TO GO" % (target - vp))
-	_text_right(p.end.x - 22.0, p.position.y + 36.0, head, T_SM, Color("2f6b3c") if met else (Color("8a2f1f") if year_end else ink), true)
-	if miss_rule == MissRule.STRIKES:
-		for i in strikes_to_lose:
-			var pc := Vector2(p.end.x - 30.0 - (strikes_to_lose - 1 - i) * 22.0, p.position.y + 60.0)
-			draw_circle(pc, 8.0, Color("6e5420"))
-			draw_circle(pc, 6.0, c_bad if i < strikes else Color("d8bd73"))
-		_text_right(p.end.x - 44.0 - (strikes_to_lose - 1) * 22.0, p.position.y + 66.0, "STRIKES", T_XS, Color(ink, 0.8), true)
-	else:
-		_text_right(p.end.x - 22.0, p.position.y + 66.0, "DEBT %d" % debt, T_XS, ink, true)
-	var groove := Rect2(x, p.end.y - 26.0, p.size.x - 52.0, 10.0)
-	_panel(groove, Color(0, 0, 0, 0.3), 5)
+	var tx := mx + 18.0
+	var lw := strip.end.y + 44.0
+	draw_string(font_marker, Vector2(tx, lw - 8.0), "Brand  ·  Year %d" % _year_of(round_n), HORIZONTAL_ALIGNMENT_LEFT, -1, T_MD, Color(ink, 0.8))
+	_marker_star(Vector2(tx + 26.0, lw + 58.0), 26.0, Color("e0a32a"), 5.0)
+	var big := "%d / %d" % [vp, target]
+	draw_string(font_marker, Vector2(tx + 66.0, lw + 82.0), big, HORIZONTAL_ALIGNMENT_LEFT, -1, T_HERO + 6, Color("2e7d32") if met else ink)
+	var head := "Target met!" if met else ("Short by %d!" % (target - vp) if year_end else "%d to go" % (target - vp))
+	draw_string(font_marker, Vector2(tx, lw + 148.0), head, HORIZONTAL_ALIGNMENT_LEFT, -1, T_LG, Color("2e7d32") if met else (Color("c62828") if year_end else Color(ink, 0.85)))
+	var bar := Rect2(tx, lw + 172.0, r.end.x - 28.0 - tx, 26.0)
 	var fill := clampf(float(vp) / maxf(1.0, target), 0.0, 1.0)
 	if fill > 0.0:
-		_panel(Rect2(groove.position + Vector2(1, 1), Vector2(maxf(8.0, (groove.size.x - 2.0) * fill), groove.size.y - 2.0)), Color("3e9b5a") if met else Color("e2762f"), 4)
+		var fc := Color("2e7d32", 0.8) if met else Color("e2762f", 0.85)
+		var hx := bar.position.x + 3.0
+		var i := 0
+		while hx < bar.position.x + bar.size.x * fill - 2.0:
+			draw_line(Vector2(hx, bar.end.y - 3.0), Vector2(hx + 9.0, bar.position.y + 3.0), fc, 4.0, true)
+			hx += 7.0
+			i += 1
+	_marker_rect(bar, ink, 3.0, 3)
+	if miss_rule == MissRule.STRIKES:
+		var sy := bar.end.y + 56.0
+		draw_string(font_marker, Vector2(tx, sy), "Strikes", HORIZONTAL_ALIGNMENT_LEFT, -1, T_MD, Color(ink, 0.85))
+		var bx := tx + 120.0
+		for k in strikes_to_lose:
+			var box := Rect2(bx + k * 46.0, sy - 30.0, 32.0, 32.0)
+			_marker_rect(box, ink, 3.0, 20 + k * 10)
+			if k < strikes:
+				draw_line(box.position + Vector2(-2, -2), box.end + Vector2(3, 2), Color("c62828"), 5.0, true)
+				draw_line(Vector2(box.end.x + 2, box.position.y - 3), Vector2(box.position.x - 2, box.end.y + 2), Color("c62828"), 5.0, true)
+	else:
+		draw_string(font_marker, Vector2(tx, bar.end.y + 56.0), "Debt: %d" % debt, HORIZONTAL_ALIGNMENT_LEFT, -1, T_MD, Color("c62828") if debt > 0 else ink)
+	draw_set_transform_matrix(base_xform)
 	var left := D.QUARTERS_PER_YEAR - _quarter_in_year(round_n)
 	_tip(r, "Brand this year: %d of %d (%d this quarter), earned by placing and operating businesses.\nThe yearly target is checked after quarter %d. %s\nMiss a yearly target and take a strike (%d and you're out). Unused dice become Cash at quarter end." % [vp, target, act_vp, D.QUARTERS_PER_YEAR, "This is the last quarter of the year." if left == 0 else "%d more quarter%s after this one." % [left, "" if left == 1 else "s"], strikes_to_lose])
 
@@ -3004,7 +3040,6 @@ func _pile_label(r: Rect2, text: String) -> void:
 	_text_center(pr, text, T_SM, c_ink, true)
 
 func _draw_market() -> void:
-	_region(p_market, "Market", c_region)
 	var kind := String(choice.get("kind", ""))
 	var picking := kind == "replace_market" or (kind == "peek_swap" and int(choice["picked"]) >= 0)
 	var frozen := bool(mods.get("market_frozen", false))
@@ -3026,6 +3061,7 @@ func _draw_market() -> void:
 		var med := _market_edition(i)
 		_draw_card(r, id, null, "market", glow, _market_cost(i))
 		_draw_edition(r, med)
+		_corner_pockets(r)
 		var k := r.size.y / 340.0
 		if frozen:
 			_panel(r, Color(c_ice, 0.7), int(16.0 * k))
@@ -3102,34 +3138,96 @@ func _ring_ys() -> Array[float]:
 		out.append(sheet.position.y + sheet.size.y * (0.16 + k * 0.34))
 	return out
 
-func _draw_binder_cover() -> void:
-	var p := p_portfolio
-	var leather := Color("5a3826")
-	_panel(Rect2(p.position + Vector2(0, 10), p.size), Color(0, 0, 0, 0.45), 22)
-	_panel(Rect2(p.position + Vector2(0, 4), p.size), leather.darkened(0.45), 22)
-	_grad_panel(p, 22.0, leather.lightened(0.08), leather.darkened(0.12))
-	var rng2 := RandomNumberGenerator.new()
-	rng2.seed = 19
-	for i in int(p.size.x * p.size.y / 260.0):
-		var pt := Vector2(rng2.randf_range(p.position.x + 6.0, p.end.x - 6.0), rng2.randf_range(p.position.y + 6.0, p.end.y - 6.0))
-		draw_rect(Rect2(pt, Vector2(1.6, 1.6)), Color(0, 0, 0, 0.12) if i % 3 else Color(1, 1, 1, 0.05))
-	_panel(Rect2(p.position + Vector2(4, 3), Vector2(p.size.x - 8.0, 3.0)), Color(1, 1, 1, 0.12), 2)
-	var st := p.grow(-11.0)
-	var stitch := Color("d9b77e", 0.55)
+const C_LEATHER := Color("5a3826")
+const C_FOIL := Color("e6c36a")
+
+func _foil(pos: Vector2, text: String, size: int) -> void:
+	_heavy(pos + Vector2(1, 2), text, size, Color(0, 0, 0, 0.45))
+	_heavy(pos, text, size, C_FOIL)
+
+func _stitch_rect(st: Rect2, col: Color) -> void:
 	var x := st.position.x + 18.0
 	while x < st.end.x - 18.0:
-		draw_line(Vector2(x, st.position.y), Vector2(x + 8.0, st.position.y), stitch, 2.0)
-		draw_line(Vector2(x, st.end.y), Vector2(x + 8.0, st.end.y), stitch, 2.0)
+		draw_line(Vector2(x, st.position.y), Vector2(x + 8.0, st.position.y), col, 2.0)
+		draw_line(Vector2(x, st.end.y), Vector2(x + 8.0, st.end.y), col, 2.0)
 		x += 14.0
 	var y := st.position.y + 18.0
 	while y < st.end.y - 18.0:
-		draw_line(Vector2(st.position.x, y), Vector2(st.position.x, y + 8.0), stitch, 2.0)
-		draw_line(Vector2(st.end.x, y), Vector2(st.end.x, y + 8.0), stitch, 2.0)
+		draw_line(Vector2(st.position.x, y), Vector2(st.position.x, y + 8.0), col, 2.0)
+		draw_line(Vector2(st.end.x, y), Vector2(st.end.x, y + 8.0), col, 2.0)
 		y += 14.0
-	var title := "PORTFOLIO"
-	var tx := p.position.x + PANEL_PAD + SPINE - 8.0
-	_heavy(Vector2(tx + 1.0, p.position.y + 39.0), title, T_MD, Color(0, 0, 0, 0.45))
-	_heavy(Vector2(tx, p.position.y + 37.0), title, T_MD, Color("e6c36a"))
+
+func _grain(r: Rect2, seed: int, density: float) -> void:
+	var rng2 := RandomNumberGenerator.new()
+	rng2.seed = seed
+	for i in int(r.size.x * r.size.y / density):
+		var pt := Vector2(rng2.randf_range(r.position.x + 6.0, r.end.x - 6.0), rng2.randf_range(r.position.y + 6.0, r.end.y - 6.0))
+		draw_rect(Rect2(pt, Vector2(1.6, 1.6)), Color(0, 0, 0, 0.12) if i % 3 else Color(1, 1, 1, 0.05))
+
+func _draw_padfolio() -> void:
+	var body := Rect2(p_market.position.x - 14.0, BODY_TOP - 8.0, p_supply.end.x - p_market.position.x + 28.0, p_market.size.y + 18.0)
+	_panel(Rect2(body.position + Vector2(0, 12), body.size), Color(0, 0, 0, 0.5), 24)
+	_panel(Rect2(body.position + Vector2(0, 5), body.size), C_LEATHER.darkened(0.5), 24)
+	_grad_panel(body, 24.0, C_LEATHER.lightened(0.08), C_LEATHER.darkened(0.12))
+	_grain(body, 19, 260.0)
+	_panel(Rect2(body.position + Vector2(6, 3), Vector2(body.size.x - 12.0, 3.0)), Color(1, 1, 1, 0.12), 2)
+	for flap: Rect2 in [p_market, p_supply]:
+		var inner := flap.grow(-4.0)
+		_panel(inner, C_LEATHER.darkened(0.22), 16)
+		_grain(inner, 23, 180.0)
+		_panel(inner, Color(0, 0, 0, 0), 16, Color(0, 0, 0, 0.3), 2)
+		_stitch_rect(inner.grow(-8.0), Color("d9b77e", 0.4))
+	for cx: float in [(p_market.end.x + p_portfolio.position.x) * 0.5, (p_portfolio.end.x + p_supply.position.x) * 0.5]:
+		for k in 6:
+			var w := 4.0 + k * 5.0
+			draw_rect(Rect2(cx - w * 0.5, body.position.y + 4.0, w, body.size.y - 8.0), Color(0, 0, 0, 0.05))
+		draw_line(Vector2(cx, body.position.y + 6.0), Vector2(cx, body.end.y - 6.0), Color(0, 0, 0, 0.55), 3.0)
+		draw_line(Vector2(cx + 3.0, body.position.y + 6.0), Vector2(cx + 3.0, body.end.y - 6.0), Color(1, 1, 1, 0.08), 2.0)
+	_stitch_rect(body.grow(-10.0), Color("d9b77e", 0.55))
+	_foil(Vector2(p_market.position.x + PANEL_PAD, p_market.position.y + 44.0), "MARKET", T_MD)
+	_foil(Vector2(p_portfolio.position.x + PANEL_PAD + SPINE - 8.0, p_portfolio.position.y + 44.0), "PORTFOLIO", T_MD)
+	_foil(Vector2(p_supply.position.x + PANEL_PAD, p_supply.position.y + 44.0), "ASSETS", T_MD)
+
+func _brass_button(r: Rect2, label: String, cb: Callable, enabled: bool, sub: String = "") -> void:
+	var hovered := enabled and ui_live and r.has_point(mouse)
+	var radius := int(minf(r.size.y * 0.5, 14.0))
+	_panel(Rect2(r.position + Vector2(0, 4), r.size), Color(0, 0, 0, 0.4), radius)
+	if enabled:
+		_grad_panel(r, radius, Color("f2d483") if hovered else Color("e8c66a"), Color("b28a3a"))
+	else:
+		_grad_panel(r, radius, Color("8f877a"), Color("6d675d"))
+	_panel(r, Color(0, 0, 0, 0), radius, Color("7a5a20") if enabled else Color("4f4a42"), 2)
+	draw_line(r.position + Vector2(radius, 3), Vector2(r.end.x - radius, r.position.y + 3), Color(1, 1, 1, 0.45 if enabled else 0.15), 2.0)
+	var ink := Color("3e2b10") if enabled else Color("3a362f")
+	if sub == "":
+		_text_center(r, label, T_MD, ink, true)
+	else:
+		_text_center(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.62)), label, T_MD, ink, true)
+		_text_center(Rect2(r.position + Vector2(0, r.size.y * 0.52), Vector2(r.size.x, r.size.y * 0.4)), sub, T_XS, Color(ink, 0.8), true)
+	if enabled:
+		_register(r, cb)
+
+func _corner_pockets(r: Rect2) -> void:
+	var sz := 54.0
+	for side in [0, 1]:
+		var c := Vector2(r.position.x - 3.0 if side == 0 else r.end.x + 3.0, r.end.y + 3.0)
+		var dx := sz if side == 0 else -sz
+		var tri := PackedVector2Array([c, c + Vector2(dx, 0), c + Vector2(0, -sz)])
+		var sh := PackedVector2Array()
+		for p in tri:
+			sh.append(p + Vector2(0, -3))
+		draw_colored_polygon(sh, Color(0, 0, 0, 0.35))
+		draw_colored_polygon(tri, C_LEATHER.darkened(0.08))
+		draw_line(c + Vector2(dx, 0), c + Vector2(0, -sz), Color(1, 1, 1, 0.18), 2.0, true)
+		var a := c + Vector2(dx * 0.82, -3.0)
+		var b := c + Vector2(dx * 0.1, -sz * 0.75)
+		var t := 0.0
+		while t < 1.0:
+			draw_line(a.lerp(b, t), a.lerp(b, minf(1.0, t + 0.08)), Color("d9b77e", 0.6), 1.5)
+			t += 0.16
+
+func _draw_binder_cover() -> void:
+	var p := p_portfolio
 	var sheet := _sheet_rect()
 	_panel(sheet.grow(6.0), Color("2b221d"), 14)
 	_panel(Rect2(sheet.position.x - 6.0, sheet.position.y - 6.0, 10.0, sheet.size.y + 12.0), Color(0, 0, 0, 0.25), 4)
@@ -3468,7 +3566,6 @@ func _draw_slot_rules() -> void:
 		_tip(chip, "This lot only accepts %s." % ("%s businesses" % D.TYPE_NAMES[rule["type"]] if String(rule["kind"]) == "sector" else "businesses with %s" % label.to_lower()))
 
 func _draw_supply() -> void:
-	_region(p_supply, "Assets", c_region)
 	var exchanging := String(choice.get("kind", "")) == "exchange"
 	var give := String(choice.get("give", ""))
 	var roles := {
@@ -3478,15 +3575,14 @@ func _draw_supply() -> void:
 		"intel": "Tech businesses cost mostly Intelligence. Also adds a die or rerolls.",
 		"advertising": "Consumer businesses cost mostly Advertising. Some businesses turn it into big Brand.",
 	}
-	_tile(s_mat)
 	var mx := s_mat.position.x + 24.0
-	_text(Vector2(mx, s_mat.position.y + 40.0), "YOURS TO SPEND", T_XS, c_muted, true)
+	_text(Vector2(mx, s_mat.position.y + 40.0), "YOURS TO SPEND", T_XS, Color("d8c091"), true)
 	var count := "%d DICE" % dice.size()
 	if extra_dice_next > 0:
 		count += "  ·  +%d NEXT" % extra_dice_next
 	if storage_cap > 0:
 		count += "  ·  CAP %d EACH" % storage_cap
-	_text_right(s_mat.end.x - 24.0, s_mat.position.y + 40.0, count, T_XS, c_accent if extra_dice_next > 0 else c_muted, true)
+	_text_right(s_mat.end.x - 24.0, s_mat.position.y + 40.0, count, T_XS, Color("9fe0b0") if extra_dice_next > 0 else Color("d8c091"), true)
 	var why_note := "%d base" % base_dice
 	if not dice_notes.is_empty():
 		why_note += ", " + ", ".join(dice_notes)
@@ -3555,10 +3651,15 @@ func _draw_supply() -> void:
 			_register(stack_r, _on_chip.bind(k))
 	var by := s_mat.end.y - 16.0 - 60.0
 	var half := (s_mat.size.x - 48.0 - 12.0) * 0.5
-	_ghost(Rect2(mx, by, half, 60.0), "Exchange %d:1" % _rate(), _start_exchange, choice.is_empty() and phase == Phase.ACTION)
+	_brass_button(Rect2(mx, by, half, 60.0), "Exchange %d:1" % _rate(), _start_exchange, choice.is_empty() and phase == Phase.ACTION)
 	var b3 := Rect2(mx + half + 12.0, by, half, 60.0)
-	_button(b3, "Reroll all", _reroll_all, _reroll_block() == "", _tcol("intel"), T_MD, "%d Intelligence" % reroll_cost)
+	_brass_button(b3, "Reroll all", _reroll_all, _reroll_block() == "", "%d Intelligence" % reroll_cost)
 	_tip(b3, _reroll_block() if _reroll_block() != "" else "Reroll every unused die.")
+	var top := s_mat.end.y + 28.0
+	var bottom := s_end.position.y - 30.0
+	var ph := minf(380.0, bottom - top)
+	var pw := minf(420.0, s_mat.size.x - 40.0)
+	_draw_scorepad(Rect2(s_mat.get_center().x - pw * 0.5, top + (bottom - top - ph) * 0.5, pw, ph))
 	var cp: Dictionary = mods.get("cost_plus", {})
 	var notes: Array[String] = []
 	for k: String in cp:
