@@ -186,6 +186,10 @@ var ui_live := true
 var hover_tip := ""
 var hover_card := {}
 var mouse := Vector2.ZERO
+var sfx: Dictionary = {}
+var music: AudioStreamPlayer
+var dice_sfx_left := 0.0
+var hover_rect := Rect2()
 var clock := 0.0
 var window_size := Vector2.ZERO
 var ui_scale := 1.0
@@ -226,7 +230,36 @@ func _ready() -> void:
 	_recompute_layout()
 	get_viewport().size_changed.connect(_recompute_layout)
 	_validate_data()
+	_load_sounds()
 	phase = Phase.MENU
+
+func _load_sounds() -> void:
+	for n: String in ["click", "mouseover", "dice", "page_turn"]:
+		var path := "res://prototypes/holdings/sound/%s.%s" % [n, "mp3" if n in ["dice", "page_turn"] else "wav"]
+		if not ResourceLoader.exists(path):
+			continue
+		var pl := AudioStreamPlayer.new()
+		pl.stream = load(path)
+		pl.volume_db = -10.0 if n == "mouseover" else -4.0
+		add_child(pl)
+		sfx[n] = pl
+	var mpath := "res://prototypes/holdings/sound/background_music.mp3"
+	if ResourceLoader.exists(mpath):
+		var stream: AudioStreamMP3 = load(mpath)
+		stream.loop = true
+		music = AudioStreamPlayer.new()
+		music.stream = stream
+		music.volume_db = -14.0
+		add_child(music)
+		music.play()
+
+func _sfx(n: String) -> void:
+	if not sfx.has(n):
+		return
+	var pl: AudioStreamPlayer = sfx[n]
+	pl.play(0.5 if n == "page_turn" else 0.0)
+	if n == "dice":
+		dice_sfx_left = 1.0
 
 func _load_fonts() -> void:
 	var ts := TextServerManager.get_primary_interface()
@@ -956,6 +989,7 @@ func _roll(n: int) -> void:
 		d.shown = d.value
 		d.roll_t = 0.35 + i * 0.08
 		dice.append(d)
+	_sfx("dice")
 	if bool(mods.get("odd_minus", false)):
 		for d in dice:
 			if d.value % 2 == 1 and d.value > 1:
@@ -1826,6 +1860,7 @@ func _reroll_all() -> void:
 		if _die_free(i):
 			dice[i].value = rng.randi_range(1, 6)
 			dice[i].roll_t = 0.35 + i * 0.05
+	_sfx("dice")
 	selected_die = -1
 
 func _condition_met(cond: Dictionary) -> bool:
@@ -2180,6 +2215,20 @@ func _ui_mouse() -> Vector2:
 
 func _process(delta: float) -> void:
 	clock += delta
+	if dice_sfx_left > 0.0:
+		dice_sfx_left -= delta
+		if dice_sfx_left <= 0.0 and sfx.has("dice"):
+			sfx["dice"].stop()
+	var over := Rect2()
+	var mp := _ui_mouse()
+	for i in range(buttons.size() - 1, -1, -1):
+		if buttons[i].rect.has_point(mp):
+			over = buttons[i].rect
+			break
+	if over != hover_rect:
+		hover_rect = over
+		if over.has_area():
+			_sfx("mouseover")
 	for d in dice:
 		if d.roll_t > 0.0:
 			d.roll_t = maxf(0.0, d.roll_t - delta)
@@ -2195,7 +2244,10 @@ func _process(delta: float) -> void:
 		if inst != null:
 			inst.flash = maxf(0.0, inst.flash - delta * 1.4)
 			inst.shake = maxf(0.0, inst.shake - delta * 3.0)
+			var was := inst.place_t
 			inst.place_t = minf(1.0, inst.place_t + delta / PLACE_TIME)
+			if was < 0.6 and inst.place_t >= 0.6:
+				_sfx("page_turn")
 	for i in range(floaters.size() - 1, -1, -1):
 		var f := floaters[i]
 		if f.delay > 0.0:
@@ -2219,6 +2271,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			for i in range(buttons.size() - 1, -1, -1):
 				if buttons[i].rect.has_point(p):
+					_sfx("click")
 					buttons[i].cb.call()
 					return
 			if phase == Phase.ACTION and choice.is_empty():
@@ -2247,6 +2300,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 					board_pick = -1
 			KEY_H:
 				show_help = not show_help
+			KEY_M:
+				if music != null:
+					music.stream_paused = not music.stream_paused
 			KEY_F1:
 				debug_on = not debug_on
 			_:
@@ -3062,6 +3118,7 @@ func _draw_market() -> void:
 		_draw_card(r, id, null, "market", glow, _market_cost(i))
 		_draw_edition(r, med)
 		_corner_pockets(r)
+		_price_tag(r, _market_cost(i), r.size.y / 340.0, true)
 		var k := r.size.y / 340.0
 		if frozen:
 			_panel(r, Color(c_ice, 0.7), int(16.0 * k))
@@ -3841,26 +3898,31 @@ func _award_icons(id: String) -> Array[String]:
 		out.append("vp")
 	return out
 
-func _price_tag(anchor: Rect2, cost: Dictionary, k: float, check: bool) -> void:
-	var size := int(17.0 * k)
-	var rad := 8.0 * k
-	var th := 34.0 * k
-	var tw := _tokens_w(cost, rad, size) + 40.0 * k
-	var tag := Rect2(anchor.end.x - tw - 6.0 * k, anchor.position.y + 10.0 * k, tw, th)
-	var pt := 13.0 * k
-	var shape := PackedVector2Array([tag.position + Vector2(pt, 0), Vector2(tag.end.x, tag.position.y), tag.end, Vector2(tag.position.x + pt, tag.end.y), tag.position + Vector2(0, th * 0.5)])
+func _price_tag(card: Rect2, cost: Dictionary, k: float, check: bool) -> void:
+	var size := int(21.0 * k)
+	var rad := 10.0 * k
+	var th := 38.0 * k
+	var pt := 18.0 * k
+	var tw := _tokens_w(cost, rad, size) + pt + 30.0 * k
+	var tag := Rect2(card.get_center().x - tw * 0.5 + pt * 0.3, card.end.y - 25.0 * k, tw, th)
+	var c := tag.get_center()
+	draw_set_transform_matrix(card_xform * Transform2D(-0.035, Vector2.ONE, 0.0, c) * Transform2D(0.0, -c))
+	var shape := PackedVector2Array([tag.position + Vector2(pt, 0), Vector2(tag.end.x - 3.0 * k, tag.position.y), Vector2(tag.end.x, tag.position.y + 3.0 * k), Vector2(tag.end.x, tag.end.y - 3.0 * k), Vector2(tag.end.x - 3.0 * k, tag.end.y), Vector2(tag.position.x + pt, tag.end.y), tag.position + Vector2(0, th * 0.5)])
 	var sh := PackedVector2Array()
 	for p in shape:
-		sh.append(p + Vector2(2.0, 4.0) * k)
-	draw_colored_polygon(sh, Color(0, 0, 0, 0.22))
-	draw_colored_polygon(shape, Color("fff3c9"))
+		sh.append(p + Vector2(2.0, 5.0) * k)
+	draw_colored_polygon(sh, Color(0, 0, 0, 0.3))
+	draw_colored_polygon(shape, Color("fbf6e4"))
 	var outline := shape.duplicate()
 	outline.append(shape[0])
-	draw_polyline(outline, Color("b08a3a"), maxf(1.5, 2.0 * k), true)
-	var hole := tag.position + Vector2(pt * 0.85, th * 0.5)
-	draw_circle(hole, 3.2 * k, Color("b08a3a"))
-	draw_circle(hole, 1.8 * k, Color("fff3c9"))
-	_tokens(tag.position.x + pt + 10.0 * k, tag.get_center().y, cost, rad, size, check)
+	draw_polyline(outline, Color("c9b98e"), maxf(1.0, 1.5 * k), true)
+	draw_line(Vector2(tag.position.x + pt + 4.0 * k, tag.position.y + 3.0 * k), Vector2(tag.end.x - 5.0 * k, tag.position.y + 3.0 * k), Color(1, 1, 1, 0.8), maxf(1.0, 1.5 * k))
+	var hole := tag.position + Vector2(pt * 0.8, th * 0.5)
+	draw_circle(hole, 5.0 * k, Color("b08a3a"))
+	draw_circle(hole, 3.6 * k, Color("e3c77a"))
+	draw_circle(hole, 2.2 * k, Color("6b5420"))
+	_tokens(tag.position.x + pt + 12.0 * k, c.y, cost, rad, size, check)
+	draw_set_transform_matrix(card_xform)
 
 func _tokens_w(cost: Dictionary, rad: float, size: int) -> float:
 	var w := 0.0
@@ -3947,8 +4009,6 @@ func _draw_card(r: Rect2, id: String, inst: CardInst, where: String, glow: Color
 		draw_circle(ac, 13.0 * k, Color(_tcol(icon) if icon != "vp" else c_gold, 0.24))
 		_icon(icon, ac, 10.5 * k)
 		ax += 30.0 * k
-	if where != "board":
-		_price_tag(Rect2(inner.position.x, bar.end.y, inner.size.x, 0.0), _cost(id) if cost_override.is_empty() else cost_override, k, where == "market")
 	var desc := Rect2(inner.position.x + pad, strip.position.y, inner.size.x - pad * 2.0, inner.end.y - pad - strip.position.y)
 	match card_style:
 		0:
@@ -3973,6 +4033,8 @@ func _draw_card(r: Rect2, id: String, inst: CardInst, where: String, glow: Color
 			ly += lh
 	var p := _effective_pattern(inst) if inst != null else _base_pattern(id)
 	var need := _dice_needed(p)
+	if where != "board" and where != "market":
+		_price_tag(r, _cost(id) if cost_override.is_empty() else cost_override, k, false)
 	var chip_h := 36.0 * k
 	var sock := 44.0 * k
 	var label := _pattern_short(p)
@@ -4588,7 +4650,7 @@ func _draw_help() -> void:
 		"Patterns: Odd, Even, Low (1-3), High (4-6), Exactly N, N+, N or less, Any, Pair, Sum N+, Sum = N, Run (two consecutive values).",
 		"",
 		"Hover anything for details.",
-		"Keys: Enter = end quarter / continue, Esc = cancel, H = help, F1 = debug.",
+		"Keys: Enter = end quarter / continue, Esc = cancel, H = help, M = music on/off, F1 = debug.",
 	])
 	_wrap(Vector2(rx, r.position.y + 140.0), right, col_w, T_MD, c_ink)
 	ui_live = true
