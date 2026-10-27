@@ -17,8 +17,8 @@ const GATE_RES := "equipment"
 const COST_FILLER := {"cash": "labor"}
 const DEFAULT_FILLER := "cash"
 
-const START_SLOTS := 3
-const EXPAND_COSTS := [1, 1, 1, 2, 2, 2]
+const LOCKED_LOTS := 3
+const LOCK_PAY := 3
 const STARTING_BOARD: Array[String] = []
 
 const EVENT_TIERS := [
@@ -266,18 +266,33 @@ const CARDS := {
 		"effects": [{"kind": "pay", "res": {"advertising": 2}}, {"kind": "vp_per", "per": "adjacent", "amount": 2}]},
 }
 
-const MANDATES_PER_RUN := 3
-const MANDATES := {
-	"diversified": {"name": "Diversified", "text": "Own businesses from many different sectors", "metric": "sectors", "unit": "sectors", "tiers": [[3, 5], [4, 10], [5, 20]]},
-	"main_street": {"name": "Main Street", "text": "Full rows made of 3 different sectors", "metric": "mixed_rows", "unit": "rows", "tiers": [[1, 8], [2, 18], [3, 30]]},
-	"corner_offices": {"name": "Corner Offices", "text": "Finance businesses in the portfolio's corner lots", "metric": "corner_finance", "unit": "corners", "tiers": [[2, 6], [3, 12], [4, 20]]},
-	"industrial_park": {"name": "Industrial Park", "text": "Full rows or columns of Industry businesses", "metric": "industry_lines", "unit": "lines", "tiers": [[1, 12], [2, 25]]},
-	"blue_chips": {"name": "Blue Chips", "text": "Businesses worth 5 or more", "metric": "blue_chips", "unit": "businesses", "tiers": [[1, 5], [2, 12], [3, 20]]},
-	"startup_scene": {"name": "Startup Scene", "text": "Own Startup businesses", "metric": "startups", "unit": "Startups", "tiers": [[2, 8], [3, 16]]},
-	"lean_operation": {"name": "Lean Operation", "text": "Quarters ended with every die used", "metric": "lean", "unit": "quarters", "tiers": [[6, 6], [12, 15], [18, 25]]},
-	"full_house": {"name": "Full House", "text": "Lots filled with businesses", "metric": "filled", "unit": "lots", "tiers": [[6, 5], [8, 12], [9, 20]]},
-	"crisis_manager": {"name": "Crisis Manager", "text": "Market event goals met this run", "metric": "goals", "unit": "goals", "tiers": [[4, 6], [8, 14], [12, 24]]},
-	"value_builder": {"name": "Value Builder", "text": "Value added to businesses by growth or upgrades", "metric": "upgrades", "unit": "value", "tiers": [[5, 6], [10, 14], [16, 24]]},
+const MEETING_OFFERS := {
+	"free_lot": {"name": "Expansion Capital", "text": "Choose a locked lot: it opens for free", "icon": "lock"},
+	"upgrade": {"name": "Growth Investment", "text": "Choose a business: it gains +2 value permanently", "icon": "wrench"},
+	"clear_strike": {"name": "Board Confidence", "text": "Remove one strike", "icon": "check"},
+	"capital": {"name": "Capital Injection", "text": "Gain 2 of every resource", "icon": "cash"},
+	"extra_die": {"name": "New Hire", "text": "Roll 1 more die every quarter from next quarter on", "icon": "die"},
+	"rare_deal": {"name": "Exclusive Deal", "text": "A rare business from the deck joins deal flow", "icon": "card"},
+	"gold": {"name": "Gold Pocket", "text": "Choose a lot: a business there earns double its value when it operates", "icon": "vp"},
+	"express": {"name": "Express Lane", "text": "Choose a lot: a business there can operate with any single die", "icon": "die"},
+	"open": {"name": "Open Charter", "text": "Choose a restricted lot: it accepts any business", "icon": "swap"},
+}
+const EDITIONS := {
+	"gold": {"name": "Gold", "text": "Earns double its value when it operates", "color": "d9a13b"},
+	"holo": {"name": "Holographic", "text": "Its ability triggers twice when it operates", "color": "9b6bd6"},
+	"bluechip": {"name": "Blue Chip", "text": "Never becomes distressed; events can't target it", "color": "8fa3b8"},
+	"franchise": {"name": "Franchise", "text": "Counts as 2 businesses of its sector", "color": "3e9b8a"},
+}
+const EDITION_OFFERS := {
+	"ed_gold": {"name": "Gold Edition", "text": "Choose a business: it becomes Gold (earns double its value when it operates)", "icon": "vp", "edition": "gold"},
+	"ed_holo": {"name": "Holographic Edition", "text": "Choose a business: it becomes Holographic (its ability triggers twice)", "icon": "swap", "edition": "holo"},
+	"ed_bluechip": {"name": "Blue Chip Edition", "text": "Choose a business: it becomes Blue Chip (never distressed, can't be targeted)", "icon": "check", "edition": "bluechip"},
+	"ed_franchise": {"name": "Franchise Edition", "text": "Choose a business: it becomes a Franchise (counts as 2 of its sector)", "icon": "card", "edition": "franchise"},
+}
+
+const POCKET_MODS := {
+	"gold": {"name": "Gold", "color": "d9a13b"},
+	"express": {"name": "Express", "color": "4a90d9"},
 }
 
 const EVENTS := {
