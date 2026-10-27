@@ -212,6 +212,9 @@ var base_xform := Transform2D.IDENTITY
 var art_cache := {}
 var card_xform := Transform2D.IDENTITY
 
+func _init() -> void:
+	D.load_tables()
+
 func _ready() -> void:
 	_load_fonts()
 	_load_best()

@@ -1,0 +1,51 @@
+id,name,sector,value,rarity,pattern,pattern_param,chain_left,copy_left,text
+check_cashing,Check Cashing,Finance,1,common,any,,,,Gain 1 Cash per Finance business you own.
+pawn_shop,Pawn Shop,Finance,1,common,odd,,,,"Gain 1 Equipment from pawned tools. Whenever you sell or absorb a business, gain Cash equal to its value."
+savings_bank,Savings Bank,Finance,2,common,low,,,,Pay 2 Cash: +2 Brand per Finance business you own. Passive: gain 1 Cash at the end of each quarter (interest).
+penny_stock,Penny Stock,Finance,1,common,any,,,,"+2 Brand per pip on the die. If the die is a 1, Penny Stock becomes distressed."
+insurance_co,Insurance Co.,Finance,2,uncommon,even,,,,"Gain 1 Cash. Once per quarter, the first business that would become distressed doesn't, and you gain 3 Brand."
+accountant,Accountant,Finance,1,uncommon,,,,,"Needs no die. At quarter end, +1 Brand per 2 unspent Cash (max 5)."
+investment_bank,Investment Bank,Finance,4,uncommon,sum_exactly,7,,,Interest: gain Cash equal to half the Cash you hold (max 4).
+venture_fund,Venture Fund,Finance,3,uncommon,at_most,2,,,Pay 3 Cash: acquire a random Tech business from the deal deck.
+hostile_takeover,Hostile Takeover,Finance,2,rare,sum_at_least,9,,,"When bought, absorb an adjacent business: remove it and permanently add its value to this one (counts as a sale). Operate: +1 Brand per adjacent Finance business."
+holding_company,Holding Company,Finance,3,rare,pair,,,,Run the abilities of every adjacent Finance business that already operated this quarter again.
+temp_agency,Temp Agency,Services,1,common,any,,,,Gain 1 Labor per Services business you own.
+staffing_firm,Staffing Firm,Services,2,common,low,,,,Gain 2 Labor. Passive: gain 1 Labor at the end of each quarter (contract staff).
+lemonade_stand,Lemonade Stand,Services,1,common,any,,,,"Gain 1 Cash. At the end of each quarter it operated, it permanently gains +1 value."
+cleaning_service,Cleaning Service,Services,2,common,odd,,,,Gain 1 Labor. +1 Brand per adjacent Services business.
+call_center,Call Center,Services,3,common,even,,,,Pay 2 Labor: +2 Brand per Services business you own.
+food_truck,Food Truck,Services,2,uncommon,any,,,,A rolling advert: gain 1 Advertising. Feeds the workers: +2 Brand per adjacent Services business that operated this quarter.
+night_shift_diner,Night Shift Diner,Services,2,uncommon,low,,,,Can operate a second time this quarter with a die of the same value. +3 Brand on the second operation.
+union_hall,Union Hall,Services,3,uncommon,any,,,,"Gain 1 Labor. Whenever an adjacent Services business operates, gain 1 Labor."
+consulting_firm,Consulting Firm,Services,3,uncommon,at_least,5,,,Gain 1 Intelligence. +1 Brand per Labor your businesses have spent this quarter.
+logistics_firm,Logistics Firm,Services,5,rare,sum_at_least,8,,,Pay 3 Labor: +2 Brand per business that has operated this quarter.
+steel_mill,Steel Mill,Industry,3,common,sum_at_least,8,,,Gain 1 Equipment per Industry business you own.
+machine_shop,Machine Shop,Industry,2,common,even,,,,Gain 1 Equipment. +1 Brand per adjacent Industry business.
+hardware_store,Hardware Store,Industry,1,common,odd,,,,Pay 1 Equipment: +1 Brand per Industry business you own. Passive: gain 1 Equipment at the end of each quarter (restocking).
+repair_shop,Repair Shop,Industry,3,common,pair,,,,Turn around one distressed business. +1 Brand per 2 Equipment you hold (max 3).
+construction_co,Construction Co.,Industry,2,uncommon,at_least,4,,,Pay 2 Equipment: choose an adjacent business. It permanently gains +1 value.
+assembly_line,Assembly Line,Industry,2,uncommon,run,,,,+1 Brand per Industry business that has operated this quarter.
+recycling_plant,Recycling Plant,Industry,2,uncommon,odd,,,,"Gain 1 Equipment. Whenever you sell or absorb a business, gain 2 Equipment."
+supply_chain,Supply Chain Co.,Industry,4,uncommon,any,,,,Gain 1 Equipment per adjacent business from another sector.
+conveyor_works,Conveyor Works,Industry,3,rare,any,,yes,,Also operates (without a die) whenever the business to its left operates. +1 Brand per other Industry business in its row.
+power_plant,Power Plant,Industry,5,rare,high,,,,Gain 1 Equipment and 1 Cash from selling power. Adjacent businesses can be operated with any single die.
+data_broker,Data Broker,Tech,2,common,pair,,,,Gain 1 Intelligence per Tech business you own. Passive: gain 1 Intelligence at the end of each quarter (data feeds).
+analytics_startup,Analytics Startup,Tech,1,common,exact,1,,,Startup. Gain 1 Intelligence; +1 die next quarter.
+game_studio,Game Studio,Tech,3,common,odd,,,,Pay 1 Intelligence: +1 Brand per pip on the die.
+software_co,Software Co.,Tech,2,common,even,,,,Pay 2 Intelligence: +2 Brand per Tech business you own.
+market_research,Market Research,Tech,3,uncommon,low,,,,Gain 1 Advertising from customer insights. Look at the top 3 deals in the deck and swap one into deal flow.
+cloud_provider,Cloud Provider,Tech,3,uncommon,high,,,,Gain 1 Intelligence. +1 Brand per Tech business you own.
+incubator,Incubator,Tech,2,uncommon,any,,,,Pay 1 Intelligence: every adjacent Startup permanently gains +1 value.
+garage_startup,Garage Startup,Tech,1,uncommon,,,,,Startup. Needs no die. After 4 quarters it becomes a random business worth 5 or more. Each adjacent Tech business makes it mature 1 quarter faster.
+copycat_startup,Copycat Startup,Tech,1,rare,any,,,yes,Startup. Copies the ability of the business to its left (paying any costs it has).
+ai_lab,AI Lab,Tech,5,rare,sum_at_least,10,,,+1 Brand per Intelligence you hold (max 8).
+ad_agency,Ad Agency,Consumer,1,common,any,,,,Gain 1 Advertising per Consumer business you own.
+boutique,Boutique,Consumer,2,common,odd,,,,Draws in shoppers: gain 1 Advertising per adjacent Consumer business.
+coffee_chain,Coffee Chain,Consumer,2,common,even,,,,Gain 1 Advertising. +2 Brand per other Coffee Chain you own.
+flagship_store,Flagship Store,Consumer,5,common,high,,,,Pay 2 Advertising: +2 Brand per Consumer business you own.
+trend_shop,Trend Shop,Consumer,3,uncommon,run,,,,Pay 1 Advertising: +1 Brand per different die value used this quarter.
+pr_firm,PR Firm,Consumer,3,uncommon,at_least,5,,,Pay 2 Advertising: weaken the event in outlook slot 2 (full becomes partial).
+billboard_co,Billboard Co.,Consumer,2,uncommon,any,,,,"Gain 1 Advertising. Whenever an adjacent Consumer business operates, gain 1 Advertising and 1 Brand."
+department_store,Department Store,Consumer,5,uncommon,,,,,Needs no die. Anchor tenant: adjacent Consumer businesses are worth +1 value. Passive: gain 1 Advertising at the end of each quarter (foot traffic).
+influencer,Influencer,Consumer,1,rare,exact,6,,,Gain 2 Advertising per Consumer business you own.
+theme_park,Theme Park,Consumer,6,rare,sum_at_least,8,,,Pay 2 Advertising: +2 Brand per adjacent business.

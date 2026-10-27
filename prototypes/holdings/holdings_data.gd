@@ -45,311 +45,165 @@ const PATTERNS := {
 const RARITY_COPIES := {"common": 3, "uncommon": 2, "rare": 1}
 const RARITY_COLORS := {"uncommon": "4a7fb0", "rare": "d9a13b"}
 
-const CARDS := {
-	"check_cashing": {"name": "Check Cashing", "type": "cash", "value": 1, "rarity": "common", "pattern": {"kind": "any"}, "art": {"form": "shop", "accent": "4f8a5b", "body": "e6e0d2", "width": 88, "height": 82},
-		"text": "Gain 1 Cash per Finance business you own.",
-		"short": "+1 Cash per Finance business",
-		"effects": [{"kind": "gain_per", "res": "cash", "per": "board_type", "type": "cash", "amount": 1}]},
-	"pawn_shop": {"name": "Pawn Shop", "type": "cash", "value": 1, "rarity": "common", "pattern": {"kind": "odd"}, "art": {"form": "shop", "accent": "8a6d4b", "body": "e2dccf", "width": 84, "height": 80},
-		"text": "Gain 1 Equipment from pawned tools. Whenever you sell or absorb a business, gain Cash equal to its value.",
-		"short": "+1 Equipment. When you sell or absorb a business, gain Cash equal to its value",
-		"effects": [{"kind": "gain", "res": {"equipment": 1}}],
-		"triggers": {"sell": [{"kind": "gain_ctx", "res": "cash", "key": "value"}]}},
-	"savings_bank": {"name": "Savings Bank", "type": "cash", "value": 2, "rarity": "common", "pattern": {"kind": "low"}, "art": {"form": "bank", "body": "e8e2d2", "accent": "4f8a5b"},
-		"text": "Pay 2 Cash: +2 Brand per Finance business you own. Passive: gain 1 Cash at the end of each quarter (interest).",
-		"short": "Pay 2 Cash: +2 Brand per Finance business. Quarter end: +1 Cash",
-		"effects": [{"kind": "pay", "res": {"cash": 2}}, {"kind": "vp_per", "per": "board_type", "type": "cash", "amount": 2}],
-		"triggers": {"quarter_end": [{"kind": "gain", "res": {"cash": 1}}]}},
-	"penny_stock": {"name": "Penny Stock", "type": "cash", "value": 1, "rarity": "common", "pattern": {"kind": "any"}, "art": {"form": "tower", "body": "c9b9a6"},
-		"text": "+2 Brand per pip on the die. If the die is a 1, Penny Stock becomes distressed.",
-		"short": "+2 Brand per pip. On a 1, it becomes distressed",
-		"effects": [{"kind": "vp_per", "per": "die_value", "amount": 2}, {"kind": "distress_self", "on_die": 1}]},
-	"insurance_co": {"name": "Insurance Co.", "type": "cash", "value": 2, "rarity": "uncommon", "pattern": {"kind": "even"}, "art": {"form": "bank", "body": "e1e6ea", "accent": "4a7fb0"},
-		"text": "Gain 1 Cash. Once per quarter, the first business that would become distressed doesn't, and you gain 3 Brand.",
-		"short": "+1 Cash. Once a quarter, stops a business becoming distressed: +3 Brand",
-		"effects": [{"kind": "gain", "res": {"cash": 1}}],
-		"passive": {"prevent_distress": {"vp": 3}}},
-	"accountant": {"name": "Accountant", "type": "cash", "value": 1, "rarity": "uncommon", "pattern": {}, "art": {"form": "office", "body": "e4e0d4", "width": 64, "height": 84, "cols": 2},
-		"text": "Needs no die. At quarter end, +1 Brand per 2 unspent Cash (max 5).",
-		"short": "No die. Quarter end: +1 Brand per 2 unspent Cash (max 5)",
-		"effects": [],
-		"triggers": {"quarter_end": [{"kind": "vp_per", "per": "resource", "res": "cash", "div": 2, "max": 5, "amount": 1}]}},
-	"investment_bank": {"name": "Investment Bank", "type": "cash", "value": 4, "rarity": "uncommon", "pattern": {"kind": "sum_exactly", "param": 7}, "art": {"form": "bank", "body": "ebe5d6", "accent": "d9a13b"},
-		"text": "Interest: gain Cash equal to half the Cash you hold (max 4).",
-		"short": "Interest: gain Cash equal to half your Cash (max 4)",
-		"effects": [{"kind": "gain_per", "res": "cash", "per": "resource", "div": 2, "max": 4, "amount": 1}]},
-	"venture_fund": {"name": "Venture Fund", "type": "cash", "value": 3, "rarity": "uncommon", "pattern": {"kind": "at_most", "param": 2}, "art": {"form": "tower", "body": "9fb8c9"},
-		"text": "Pay 3 Cash: acquire a random Tech business from the deal deck.",
-		"short": "Pay 3 Cash: acquire a random Tech business",
-		"effects": [{"kind": "pay", "res": {"cash": 3}}, {"kind": "gain_random_card", "type": "intel"}]},
-	"hostile_takeover": {"name": "Hostile Takeover", "type": "cash", "value": 2, "rarity": "rare", "pattern": {"kind": "sum_at_least", "param": 9}, "art": {"form": "office", "body": "b8a3a3", "width": 80, "height": 120, "cols": 3},
-		"text": "When bought, absorb an adjacent business: remove it and permanently add its value to this one (counts as a sale). Operate: +1 Brand per adjacent Finance business.",
-		"short": "On buy: absorb an adjacent business, keeping its value. +1 Brand per adjacent Finance",
-		"effects": [{"kind": "vp_per", "per": "adjacent_type", "type": "cash", "amount": 1}],
-		"triggers": {"buy": [{"kind": "absorb"}]}},
-	"holding_company": {"name": "Holding Company", "type": "cash", "value": 3, "rarity": "rare", "pattern": {"kind": "pair"}, "art": {"form": "tower", "body": "8fa3b3"},
-		"text": "Run the abilities of every adjacent Finance business that already operated this quarter again.",
-		"short": "Re-runs adjacent Finance businesses that already operated",
-		"effects": [{"kind": "retrigger_adjacent", "type": "cash"}]},
+static var CARDS := {}
 
-	"temp_agency": {"name": "Temp Agency", "type": "labor", "value": 1, "rarity": "common", "pattern": {"kind": "any"}, "art": {"form": "office", "body": "d8cfc0", "width": 70, "height": 90, "cols": 2},
-		"text": "Gain 1 Labor per Services business you own.",
-		"short": "+1 Labor per Services business",
-		"effects": [{"kind": "gain_per", "res": "labor", "per": "board_type", "type": "labor", "amount": 1}]},
-	"staffing_firm": {"name": "Staffing Firm", "type": "labor", "value": 2, "rarity": "common", "pattern": {"kind": "low"}, "art": {"form": "office", "body": "c9d3dc", "width": 84, "height": 124, "cols": 3},
-		"text": "Gain 2 Labor. Passive: gain 1 Labor at the end of each quarter (contract staff).",
-		"short": "+2 Labor. Quarter end: +1 Labor",
-		"effects": [{"kind": "gain", "res": {"labor": 2}}],
-		"triggers": {"quarter_end": [{"kind": "gain", "res": {"labor": 1}}]}},
-	"lemonade_stand": {"name": "Lemonade Stand", "type": "labor", "value": 1, "rarity": "common", "pattern": {"kind": "any"}, "art": {"form": "stand", "accent": "f2c230"},
-		"text": "Gain 1 Cash. At the end of each quarter it operated, it permanently gains +1 value.",
-		"short": "+1 Cash. Grows +1 value each quarter it operates",
-		"effects": [{"kind": "gain", "res": {"cash": 1}}],
-		"triggers": {"after_quarter": [{"kind": "grow", "amount": 1, "if_operated": true}]}},
-	"cleaning_service": {"name": "Cleaning Service", "type": "labor", "value": 2, "rarity": "common", "pattern": {"kind": "odd"}, "art": {"form": "van", "accent": "4a7fb0"},
-		"text": "Gain 1 Labor. +1 Brand per adjacent Services business.",
-		"short": "+1 Labor. +1 Brand per adjacent Services business",
-		"effects": [{"kind": "gain", "res": {"labor": 1}}, {"kind": "vp_per", "per": "adjacent_type", "type": "labor", "amount": 1}]},
-	"call_center": {"name": "Call Center", "type": "labor", "value": 3, "rarity": "common", "pattern": {"kind": "even"}, "art": {"form": "office", "body": "e2d6c4", "width": 124, "height": 88, "cols": 5},
-		"text": "Pay 2 Labor: +2 Brand per Services business you own.",
-		"short": "Pay 2 Labor: +2 Brand per Services business",
-		"effects": [{"kind": "pay", "res": {"labor": 2}}, {"kind": "vp_per", "per": "board_type", "type": "labor", "amount": 2}]},
-	"food_truck": {"name": "Food Truck", "type": "labor", "value": 2, "rarity": "uncommon", "pattern": {"kind": "any"}, "art": {"form": "van", "accent": "e8892b"},
-		"text": "A rolling advert: gain 1 Advertising. Feeds the workers: +2 Brand per adjacent Services business that operated this quarter.",
-		"short": "+1 Advertising. +2 Brand per adjacent Services business that operated",
-		"effects": [{"kind": "gain", "res": {"advertising": 1}}, {"kind": "vp_per", "per": "adjacent_type_operated", "type": "labor", "amount": 2}]},
-	"night_shift_diner": {"name": "Night Shift Diner", "type": "labor", "value": 2, "rarity": "uncommon", "pattern": {"kind": "low"}, "art": {"form": "shop", "accent": "2f8f8a", "body": "e3e6e8", "width": 100, "height": 84},
-		"text": "Can operate a second time this quarter with a die of the same value. +3 Brand on the second operation.",
-		"short": "Can operate again with a die of the same value. +3 Brand the second time",
-		"effects": [{"kind": "vp_if", "cond": {"kind": "ops_at_least", "amount": 2}, "amount": 3}],
-		"passive": {"repeat_same_die": true}},
-	"union_hall": {"name": "Union Hall", "type": "labor", "value": 3, "rarity": "uncommon", "pattern": {"kind": "any"}, "art": {"form": "garage", "accent": "c4553f", "body": "d9d2c4"},
-		"text": "Gain 1 Labor. Whenever an adjacent Services business operates, gain 1 Labor.",
-		"short": "+1 Labor. +1 Labor whenever an adjacent Services business operates",
-		"effects": [{"kind": "gain", "res": {"labor": 1}}],
-		"triggers": {"neighbor_operate": [{"kind": "gain", "res": {"labor": 1}, "if_source_type": "labor"}]}},
-	"consulting_firm": {"name": "Consulting Firm", "type": "labor", "value": 3, "rarity": "uncommon", "pattern": {"kind": "at_least", "param": 5}, "art": {"form": "office", "body": "dcd6e4", "width": 90, "height": 112, "cols": 3},
-		"text": "Gain 1 Intelligence. +1 Brand per Labor your businesses have spent this quarter.",
-		"short": "+1 Intelligence. +1 Brand per Labor spent by businesses this quarter",
-		"effects": [{"kind": "gain", "res": {"intel": 1}}, {"kind": "vp_per", "per": "spent", "res": "labor", "amount": 1}]},
-	"logistics_firm": {"name": "Logistics Firm", "type": "labor", "value": 5, "rarity": "rare", "pattern": {"kind": "sum_at_least", "param": 8}, "art": {"form": "warehouse", "body": "c7ccd1", "truck": true, "accent": "4a7fb0"},
-		"text": "Pay 3 Labor: +2 Brand per business that has operated this quarter.",
-		"short": "Pay 3 Labor: +2 Brand per business operated this quarter",
-		"effects": [{"kind": "pay", "res": {"labor": 3}}, {"kind": "vp_per", "per": "operated", "amount": 2}]},
-
-	"steel_mill": {"name": "Steel Mill", "type": "equipment", "value": 3, "rarity": "common", "pattern": {"kind": "sum_at_least", "param": 8}, "art": {"form": "factory", "body": "8f939a"},
-		"text": "Gain 1 Equipment per Industry business you own.",
-		"short": "+1 Equipment per Industry business",
-		"effects": [{"kind": "gain_per", "res": "equipment", "per": "board_type", "type": "equipment", "amount": 1}]},
-	"machine_shop": {"name": "Machine Shop", "type": "equipment", "value": 2, "rarity": "common", "pattern": {"kind": "even"}, "art": {"form": "factory", "body": "b9a48c", "small": true},
-		"text": "Gain 1 Equipment. +1 Brand per adjacent Industry business.",
-		"short": "+1 Equipment. +1 Brand per adjacent Industry business",
-		"effects": [{"kind": "gain", "res": {"equipment": 1}}, {"kind": "vp_per", "per": "adjacent_type", "type": "equipment", "amount": 1}]},
-	"hardware_store": {"name": "Hardware Store", "type": "equipment", "value": 1, "rarity": "common", "pattern": {"kind": "odd"}, "art": {"form": "shop", "accent": "8a6d4b", "body": "e6dccd", "width": 92, "height": 76},
-		"text": "Pay 1 Equipment: +1 Brand per Industry business you own. Passive: gain 1 Equipment at the end of each quarter (restocking).",
-		"short": "Pay 1 Equipment: +1 Brand per Industry business. Quarter end: +1 Equipment",
-		"effects": [{"kind": "pay", "res": {"equipment": 1}}, {"kind": "vp_per", "per": "board_type", "type": "equipment", "amount": 1}],
-		"triggers": {"quarter_end": [{"kind": "gain", "res": {"equipment": 1}}]}},
-	"repair_shop": {"name": "Repair Shop", "type": "equipment", "value": 3, "rarity": "common", "pattern": {"kind": "pair"}, "art": {"form": "garage", "accent": "c8862f", "body": "d6d0c4"},
-		"text": "Turn around one distressed business. +1 Brand per 2 Equipment you hold (max 3).",
-		"short": "Turn around a distressed business. +1 Brand per 2 Equipment held (max 3)",
-		"effects": [{"kind": "restore_dormant"}, {"kind": "vp_per", "per": "resource", "res": "equipment", "div": 2, "max": 3, "amount": 1}]},
-	"construction_co": {"name": "Construction Co.", "type": "equipment", "value": 2, "rarity": "uncommon", "pattern": {"kind": "at_least", "param": 4}, "art": {"form": "garage", "accent": "e9b949", "body": "d9cfbf"},
-		"text": "Pay 2 Equipment: choose an adjacent business. It permanently gains +1 value.",
-		"short": "Pay 2 Equipment: an adjacent business gains +1 value permanently",
-		"effects": [{"kind": "pay", "res": {"equipment": 2}}, {"kind": "upgrade_adjacent", "amount": 1}]},
-	"assembly_line": {"name": "Assembly Line", "type": "equipment", "value": 2, "rarity": "uncommon", "pattern": {"kind": "run"}, "art": {"form": "factory", "body": "a9b0a0"},
-		"text": "+1 Brand per Industry business that has operated this quarter.",
-		"short": "+1 Brand per Industry business operated this quarter",
-		"effects": [{"kind": "vp_per", "per": "type_operated", "type": "equipment", "amount": 1}]},
-	"recycling_plant": {"name": "Recycling Plant", "type": "equipment", "value": 2, "rarity": "uncommon", "pattern": {"kind": "odd"}, "art": {"form": "factory", "body": "9fb59a", "small": true},
-		"text": "Gain 1 Equipment. Whenever you sell or absorb a business, gain 2 Equipment.",
-		"short": "+1 Equipment. When you sell a business, gain 2 Equipment",
-		"effects": [{"kind": "gain", "res": {"equipment": 1}}],
-		"triggers": {"sell": [{"kind": "gain", "res": {"equipment": 2}}]}},
-	"supply_chain": {"name": "Supply Chain Co.", "type": "equipment", "value": 4, "rarity": "uncommon", "pattern": {"kind": "any"}, "art": {"form": "warehouse", "body": "c9b79c"},
-		"text": "Gain 1 Equipment per adjacent business from another sector.",
-		"short": "+1 Equipment per adjacent business from another sector",
-		"effects": [{"kind": "gain_per", "res": "equipment", "per": "adjacent_other_type", "amount": 1}]},
-	"conveyor_works": {"name": "Conveyor Works", "type": "equipment", "value": 3, "rarity": "rare", "pattern": {"kind": "any"}, "art": {"form": "warehouse", "body": "b5b9a8"},
-		"text": "Also operates (without a die) whenever the business to its left operates. +1 Brand per other Industry business in its row.",
-		"short": "Runs when its left neighbour does. +1 Brand per other Industry in its row",
-		"effects": [{"kind": "vp_per", "per": "row_type", "type": "equipment", "amount": 1}],
-		"chain_left": true},
-	"power_plant": {"name": "Power Plant", "type": "equipment", "value": 5, "rarity": "rare", "pattern": {"kind": "high"}, "art": {"form": "factory", "body": "a7a29a"},
-		"text": "Gain 1 Equipment and 1 Cash from selling power. Adjacent businesses can be operated with any single die.",
-		"short": "+1 Equipment, +1 Cash. Adjacent businesses accept any single die",
-		"effects": [{"kind": "gain", "res": {"equipment": 1, "cash": 1}}],
-		"passive": {"adjacent_any_die": true}},
-
-	"data_broker": {"name": "Data Broker", "type": "intel", "value": 2, "rarity": "common", "pattern": {"kind": "pair"}, "art": {"form": "server", "accent": "7a63b8"},
-		"text": "Gain 1 Intelligence per Tech business you own. Passive: gain 1 Intelligence at the end of each quarter (data feeds).",
-		"short": "+1 Intelligence per Tech business. Quarter end: +1 Intelligence",
-		"effects": [{"kind": "gain_per", "res": "intel", "per": "board_type", "type": "intel", "amount": 1}],
-		"triggers": {"quarter_end": [{"kind": "gain", "res": {"intel": 1}}]}},
-	"analytics_startup": {"name": "Analytics Startup", "type": "intel", "value": 1, "rarity": "common", "pattern": {"kind": "exact", "param": 1}, "art": {"form": "startup", "body": "e4dccf", "accent": "7a63b8"}, "tags": ["startup"],
-		"text": "Startup. Gain 1 Intelligence; +1 die next quarter.",
-		"short": "Startup. +1 Intelligence, +1 die next quarter",
-		"effects": [{"kind": "gain", "res": {"intel": 1}}, {"kind": "extra_die", "amount": 1}]},
-	"game_studio": {"name": "Game Studio", "type": "intel", "value": 3, "rarity": "common", "pattern": {"kind": "odd"}, "art": {"form": "startup", "body": "dfe4d6", "accent": "4a7fb0"},
-		"text": "Pay 1 Intelligence: +1 Brand per pip on the die.",
-		"short": "Pay 1 Intelligence: +1 Brand per pip",
-		"effects": [{"kind": "pay", "res": {"intel": 1}}, {"kind": "vp_per", "per": "die_value", "amount": 1}]},
-	"software_co": {"name": "Software Co.", "type": "intel", "value": 2, "rarity": "common", "pattern": {"kind": "even"}, "art": {"form": "office", "body": "d6d2e2", "width": 96, "height": 96, "cols": 3},
-		"text": "Pay 2 Intelligence: +2 Brand per Tech business you own.",
-		"short": "Pay 2 Intelligence: +2 Brand per Tech business",
-		"effects": [{"kind": "pay", "res": {"intel": 2}}, {"kind": "vp_per", "per": "board_type", "type": "intel", "amount": 2}]},
-	"market_research": {"name": "Market Research", "type": "intel", "value": 3, "rarity": "uncommon", "pattern": {"kind": "low"}, "art": {"form": "dish", "body": "dcd8e6", "accent": "7a63b8"},
-		"text": "Gain 1 Advertising from customer insights. Look at the top 3 deals in the deck and swap one into deal flow.",
-		"short": "+1 Advertising. Peek at 3 deals, swap one into deal flow",
-		"effects": [{"kind": "gain", "res": {"advertising": 1}}, {"kind": "peek_swap", "count": 3}]},
-	"cloud_provider": {"name": "Cloud Provider", "type": "intel", "value": 3, "rarity": "uncommon", "pattern": {"kind": "high"}, "art": {"form": "server", "accent": "4a7fb0"},
-		"text": "Gain 1 Intelligence. +1 Brand per Tech business you own.",
-		"short": "+1 Intelligence. +1 Brand per Tech business",
-		"effects": [{"kind": "gain", "res": {"intel": 1}}, {"kind": "vp_per", "per": "board_type", "type": "intel", "amount": 1}]},
-	"incubator": {"name": "Incubator", "type": "intel", "value": 2, "rarity": "uncommon", "pattern": {"kind": "any"}, "art": {"form": "startup", "body": "e6dff0", "accent": "3e7b4f"},
-		"text": "Pay 1 Intelligence: every adjacent Startup permanently gains +1 value.",
-		"short": "Pay 1 Intelligence: adjacent Startups gain +1 value permanently",
-		"effects": [{"kind": "pay", "res": {"intel": 1}}, {"kind": "grow_adjacent", "tag": "startup", "amount": 1}]},
-	"garage_startup": {"name": "Garage Startup", "type": "intel", "value": 1, "rarity": "uncommon", "pattern": {}, "art": {"form": "startup", "body": "d9cfbf", "accent": "e8892b"}, "tags": ["startup"],
-		"text": "Startup. Needs no die. After 4 quarters it becomes a random business worth 5 or more. Each adjacent Tech business makes it mature 1 quarter faster.",
-		"short": "Startup. No die. Becomes a 5+ value business. Adjacent Tech speeds it up",
-		"effects": [],
-		"triggers": {"after_quarter": [{"kind": "mature", "quarters": 4, "min_value": 5, "speed_per": "adjacent_type", "type": "intel"}]}},
-	"copycat_startup": {"name": "Copycat Startup", "type": "intel", "value": 1, "rarity": "rare", "pattern": {"kind": "any"}, "art": {"form": "startup", "body": "e6e0ea", "accent": "d0607a"}, "tags": ["startup"],
-		"text": "Startup. Copies the ability of the business to its left (paying any costs it has).",
-		"short": "Startup. Copies the ability of the business to its left",
-		"effects": [],
-		"copy_left": true},
-	"ai_lab": {"name": "AI Lab", "type": "intel", "value": 5, "rarity": "rare", "pattern": {"kind": "sum_at_least", "param": 10}, "art": {"form": "server", "accent": "d9a13b"},
-		"text": "+1 Brand per Intelligence you hold (max 8).",
-		"short": "+1 Brand per Intelligence you hold (max 8)",
-		"effects": [{"kind": "vp_per", "per": "resource", "res": "intel", "max": 8, "amount": 1}]},
-
-	"ad_agency": {"name": "Ad Agency", "type": "advertising", "value": 1, "rarity": "common", "pattern": {"kind": "any"}, "art": {"form": "billboard", "accent": "e8892b"},
-		"text": "Gain 1 Advertising per Consumer business you own.",
-		"short": "+1 Advertising per Consumer business",
-		"effects": [{"kind": "gain_per", "res": "advertising", "per": "board_type", "type": "advertising", "amount": 1}]},
-	"boutique": {"name": "Boutique", "type": "advertising", "value": 2, "rarity": "common", "pattern": {"kind": "odd"}, "art": {"form": "shop", "accent": "e58fae", "body": "f3e9e2"},
-		"text": "Draws in shoppers: gain 1 Advertising per adjacent Consumer business.",
-		"short": "+1 Advertising per adjacent Consumer business",
-		"effects": [{"kind": "gain_per", "res": "advertising", "per": "adjacent_type", "type": "advertising", "amount": 1}]},
-	"coffee_chain": {"name": "Coffee Chain", "type": "advertising", "value": 2, "rarity": "common", "pattern": {"kind": "even"}, "art": {"form": "shop", "accent": "6b4423", "body": "efe4d4", "width": 90, "height": 80},
-		"text": "Gain 1 Advertising. +2 Brand per other Coffee Chain you own.",
-		"short": "+1 Advertising. +2 Brand per other Coffee Chain",
-		"effects": [{"kind": "gain", "res": {"advertising": 1}}, {"kind": "vp_per", "per": "copies", "amount": 2}]},
-	"flagship_store": {"name": "Flagship Store", "type": "advertising", "value": 5, "rarity": "common", "pattern": {"kind": "high"}, "art": {"form": "shop", "accent": "d9a13b", "body": "efe6d6", "width": 132, "height": 112},
-		"text": "Pay 2 Advertising: +2 Brand per Consumer business you own.",
-		"short": "Pay 2 Advertising: +2 Brand per Consumer business",
-		"effects": [{"kind": "pay", "res": {"advertising": 2}}, {"kind": "vp_per", "per": "board_type", "type": "advertising", "amount": 2}]},
-	"trend_shop": {"name": "Trend Shop", "type": "advertising", "value": 3, "rarity": "uncommon", "pattern": {"kind": "run"}, "art": {"form": "shop", "accent": "7a63b8", "body": "ece6f2", "width": 96, "height": 88},
-		"text": "Pay 1 Advertising: +1 Brand per different die value used this quarter.",
-		"short": "Pay 1 Advertising: +1 Brand per different die value used",
-		"effects": [{"kind": "pay", "res": {"advertising": 1}}, {"kind": "vp_per", "per": "distinct_dice", "amount": 1}]},
-	"pr_firm": {"name": "PR Firm", "type": "advertising", "value": 3, "rarity": "uncommon", "pattern": {"kind": "at_least", "param": 5}, "art": {"form": "billboard", "accent": "d0607a"},
-		"text": "Pay 2 Advertising: weaken the event in outlook slot 2 (full becomes partial).",
-		"short": "Pay 2 Advertising: weaken the next event",
-		"effects": [{"kind": "pay", "res": {"advertising": 2}}, {"kind": "forecast_weaken", "slot": 1}]},
-	"billboard_co": {"name": "Billboard Co.", "type": "advertising", "value": 2, "rarity": "uncommon", "pattern": {"kind": "any"}, "art": {"form": "billboard", "accent": "4a7fb0"},
-		"text": "Gain 1 Advertising. Whenever an adjacent Consumer business operates, gain 1 Advertising and 1 Brand.",
-		"short": "+1 Advertising. When an adjacent Consumer business operates: +1 Advertising, +1 Brand",
-		"effects": [{"kind": "gain", "res": {"advertising": 1}}],
-		"triggers": {"neighbor_operate": [{"kind": "gain", "res": {"advertising": 1}, "if_source_type": "advertising"}, {"kind": "vp", "amount": 1, "if_source_type": "advertising"}]}},
-	"department_store": {"name": "Department Store", "type": "advertising", "value": 5, "rarity": "uncommon", "pattern": {}, "art": {"form": "mall", "accent": "c4553f", "body": "ece4d8"},
-		"text": "Needs no die. Anchor tenant: adjacent Consumer businesses are worth +1 value. Passive: gain 1 Advertising at the end of each quarter (foot traffic).",
-		"short": "No die. Adjacent Consumer worth +1 value. Quarter end: +1 Advertising",
-		"effects": [],
-		"passive": {"adjacent_value": {"type": "advertising", "amount": 1}},
-		"triggers": {"quarter_end": [{"kind": "gain", "res": {"advertising": 1}}]}},
-	"influencer": {"name": "Influencer", "type": "advertising", "value": 1, "rarity": "rare", "pattern": {"kind": "exact", "param": 6}, "art": {"form": "startup", "body": "f3e4ea", "accent": "d0607a"},
-		"text": "Gain 2 Advertising per Consumer business you own.",
-		"short": "+2 Advertising per Consumer business",
-		"effects": [{"kind": "gain_per", "res": "advertising", "per": "board_type", "type": "advertising", "amount": 2}]},
-	"theme_park": {"name": "Theme Park", "type": "advertising", "value": 6, "rarity": "rare", "pattern": {"kind": "sum_at_least", "param": 8}, "art": {"form": "mall", "accent": "e8892b", "body": "f0e6d0"},
-		"text": "Pay 2 Advertising: +2 Brand per adjacent business.",
-		"short": "Pay 2 Advertising: +2 Brand per adjacent business",
-		"effects": [{"kind": "pay", "res": {"advertising": 2}}, {"kind": "vp_per", "per": "adjacent", "amount": 2}]},
-}
-
-const MEETING_OFFERS := {
-	"free_lot": {"name": "Expansion Capital", "text": "Choose a locked lot: it opens for free", "icon": "lock"},
-	"upgrade": {"name": "Growth Investment", "text": "Choose a business: it gains +2 value permanently", "icon": "wrench"},
-	"clear_strike": {"name": "Board Confidence", "text": "Remove one strike", "icon": "check"},
-	"capital": {"name": "Capital Injection", "text": "Gain 2 of every resource", "icon": "cash"},
-	"extra_die": {"name": "New Hire", "text": "Roll 1 more die every quarter from next quarter on", "icon": "die"},
-	"rare_deal": {"name": "Exclusive Deal", "text": "A rare business from the deck joins deal flow", "icon": "card"},
-	"gold": {"name": "Gold Pocket", "text": "Choose a lot: a business there earns double its value when it operates", "icon": "vp"},
-	"express": {"name": "Express Lane", "text": "Choose a lot: a business there can operate with any single die", "icon": "die"},
-	"open": {"name": "Open Charter", "text": "Choose a restricted lot: it accepts any business", "icon": "swap"},
-}
-const EDITIONS := {
-	"gold": {"name": "Gold", "text": "Earns double its value when it operates", "color": "d9a13b"},
-	"holo": {"name": "Holographic", "text": "Its ability triggers twice when it operates", "color": "9b6bd6"},
-	"bluechip": {"name": "Blue Chip", "text": "Never becomes distressed; events can't target it", "color": "8fa3b8"},
-	"franchise": {"name": "Franchise", "text": "Counts as 2 businesses of its sector", "color": "3e9b8a"},
-}
-const EDITION_OFFERS := {
-	"ed_gold": {"name": "Gold Edition", "text": "Choose a business: it becomes Gold (earns double its value when it operates)", "icon": "vp", "edition": "gold"},
-	"ed_holo": {"name": "Holographic Edition", "text": "Choose a business: it becomes Holographic (its ability triggers twice)", "icon": "swap", "edition": "holo"},
-	"ed_bluechip": {"name": "Blue Chip Edition", "text": "Choose a business: it becomes Blue Chip (never distressed, can't be targeted)", "icon": "check", "edition": "bluechip"},
-	"ed_franchise": {"name": "Franchise Edition", "text": "Choose a business: it becomes a Franchise (counts as 2 of its sector)", "icon": "card", "edition": "franchise"},
-}
+static var MEETING_OFFERS := {}
+static var EDITIONS := {}
+static var EDITION_OFFERS := {}
 
 const POCKET_MODS := {
 	"gold": {"name": "Gold", "color": "d9a13b"},
 	"express": {"name": "Express", "color": "4a90d9"},
 }
 
-const EVENTS := {
-	"supply_hiccup": {"name": "Supply Hiccup", "tier": "mild", "category": "dice", "full": false,
-		"text": "-1 to all odd dice (a 1 stays 1)",
-		"mods": [{"kind": "odd_minus"}]},
-	"wage_inflation": {"name": "Wage Inflation", "tier": "mild", "category": "economy", "full": false,
-		"text": "Businesses cost +1 Labor",
-		"mods": [{"kind": "cost_plus", "res": "labor", "amount": 1}]},
-	"hot_market": {"name": "Hot Market", "tier": "mild", "category": "market", "full": false,
-		"text": "Scouting deals costs +1 Cash",
-		"mods": [{"kind": "refresh_plus", "amount": 1}]},
-	"labor_shortage": {"name": "Labor Shortage", "tier": "mild", "category": "conditional", "full": false,
-		"text": "If no Services business operates, -1 die next quarter",
-		"condition": {"kind": "type_activated", "type": "labor"},
-		"penalty": [{"kind": "dice_minus", "amount": 1}]},
-	"activist_investor": {"name": "Activist Investor", "tier": "moderate", "category": "business", "full": false,
-		"text": "Your highest-value business with an ability gives half its output (round down)",
-		"mods": [{"kind": "halve_output", "target": "highest_value_ability"}]},
-	"rate_hike": {"name": "Rate Hike", "tier": "moderate", "category": "dice", "full": false,
-		"text": "Your highest rolled die is capped at 4",
-		"mods": [{"kind": "cap_highest", "cap": 4}]},
-	"breakdowns": {"name": "Breakdowns", "tier": "moderate", "category": "economy", "full": false,
-		"text": "Lose half your Equipment (round down)",
-		"mods": [{"kind": "lose_half", "res": "equipment"}]},
-	"credit_freeze": {"name": "Credit Freeze", "tier": "moderate", "category": "market", "full": true,
-		"text": "Deals frozen: no buying or scouting",
-		"mods": [{"kind": "market_frozen"}],
-		"weak_text": "Deals can't be scouted (buying still allowed)",
-		"weak": [{"kind": "refresh_frozen"}]},
-	"neglect": {"name": "Neglect", "tier": "moderate", "category": "conditional", "full": false,
-		"text": "If fewer than 3 businesses operate, your lowest-value business becomes distressed",
-		"condition": {"kind": "activations_at_least", "amount": 3},
-		"penalty": [{"kind": "dormant", "target": "lowest_value"}]},
-	"info_leak": {"name": "Information Leak", "tier": "moderate", "category": "conditional", "full": false,
-		"text": "If no Tech business operates, Intelligence cannot be spent next quarter",
-		"condition": {"kind": "type_activated", "type": "intel"},
-		"penalty": [{"kind": "intel_locked"}]},
-	"antitrust_probe": {"name": "Antitrust Probe", "tier": "severe", "category": "business", "full": true,
-		"text": "Your highest-value business becomes distressed",
-		"mods": [{"kind": "dormant", "target": "highest_value"}],
-		"weak_text": "Your highest-value business adds half its Brand this quarter",
-		"weak": [{"kind": "halve_value", "target": "highest_value"}]},
-	"recession": {"name": "Recession", "tier": "severe", "category": "dice", "full": true,
-		"text": "-1 die",
-		"mods": [{"kind": "dice_minus", "amount": 1}],
-		"weak_text": "Your highest rolled die is capped at 3",
-		"weak": [{"kind": "cap_highest", "cap": 3}]},
-	"bureaucracy": {"name": "Bureaucracy", "tier": "severe", "category": "dice", "full": false,
-		"text": "-1 die per 5 businesses in your portfolio (round down)",
-		"mods": [{"kind": "dice_minus_per_cards", "per": 5}]},
-	"steady_market": {"name": "Steady Market", "tier": "none", "category": "none", "full": false,
-		"text": "No effect",
-		"mods": []},
-}
+static var EVENTS := {}
+
+const DATA_DIR := "res://prototypes/holdings/data/"
+static var loaded := false
+
+static func load_tables() -> void:
+	if loaded:
+		return
+	loaded = true
+	_load_cards()
+	_load_events()
+	_load_offers()
+	var elog := _logic("editions", "text")
+	for row: Dictionary in _rows("editions.csv"):
+		var lg: Dictionary = elog.get(row["id"], {})
+		EDITIONS[row["id"]] = {"name": row["name"], "text": row["text"], "color": String(lg.get("color", "888888"))}
+
+static func _rows(file: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var f := FileAccess.open(DATA_DIR + file, FileAccess.READ)
+	if f == null:
+		push_error("Holdings: can't open %s" % (DATA_DIR + file))
+		return out
+	var header := f.get_csv_line()
+	var line_no := 1
+	while not f.eof_reached():
+		var cells := f.get_csv_line()
+		line_no += 1
+		if cells.size() == 0 or (cells.size() == 1 and cells[0].strip_edges() == ""):
+			continue
+		if cells[0].strip_edges().begins_with("#"):
+			continue
+		var row := {"_line": line_no}
+		for i in header.size():
+			row[header[i].strip_edges()] = cells[i].strip_edges() if i < cells.size() else ""
+		out.append(row)
+	return out
+
+static func _logic(table: String, text_col: String) -> Dictionary:
+	var out := {}
+	for row: Dictionary in _rows(table + "_logic.csv"):
+		out[row["id"]] = row
+	var src := {}
+	for row: Dictionary in _rows(table + ".csv"):
+		var text := String(row.get(text_col, ""))
+		if table == "events" and String(row.get("weak_text", "")) != "":
+			text += " | " + String(row["weak_text"])
+		if not out.has(row["id"]):
+			push_warning("Holdings: %s has no generated logic for '%s' (%s.csv line %d). Ask Claude to generate it." % [table, row["id"], table, int(row["_line"])])
+		elif String(out[row["id"]]["source_text"]) != text:
+			push_warning("Holdings: text of '%s' in %s.csv changed since its logic was generated. Ask Claude to regenerate %s_logic.csv." % [row["id"], table, table])
+	return out
+
+static func _ints(v: Variant) -> Variant:
+	if v is float and v == floorf(v):
+		return int(v)
+	if v is Array:
+		var a: Array = []
+		for x in v:
+			a.append(_ints(x))
+		return a
+	if v is Dictionary:
+		var d := {}
+		for k in v:
+			d[k] = _ints(v[k])
+		return d
+	return v
+
+static func _json(row: Dictionary, col: String, file: String, empty: Variant) -> Variant:
+	var text := String(row.get(col, ""))
+	if text == "":
+		return empty
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed == null:
+		push_error("Holdings: bad JSON in %s line %d, column '%s': %s" % [file, int(row["_line"]), col, text])
+		return empty
+	return _ints(parsed)
+
+static func _yes(row: Dictionary, col: String) -> bool:
+	return ["yes", "true", "1", "y", "x"].has(String(row.get(col, "")).to_lower())
+
+static func _sector_key(name: String) -> String:
+	for k: String in TYPE_NAMES:
+		if TYPE_NAMES[k].to_lower() == name.to_lower() or k == name.to_lower():
+			return k
+	return name
+
+static func _load_cards() -> void:
+	var logic := _logic("cards", "text")
+	for row: Dictionary in _rows("cards.csv"):
+		var lg: Dictionary = logic.get(row["id"], {"_line": 0})
+		var c := {
+			"name": row["name"],
+			"type": _sector_key(row["sector"]),
+			"value": int(row["value"]),
+			"rarity": row["rarity"] if row["rarity"] != "" else "common",
+			"text": row["text"],
+		}
+		var p := {}
+		if row["pattern"] != "":
+			p["kind"] = row["pattern"]
+			if row["pattern_param"] != "":
+				p["param"] = int(row["pattern_param"])
+		c["pattern"] = p
+		if String(lg.get("short", "")) != "":
+			c["short"] = lg["short"]
+		if String(lg.get("tags", "")) != "":
+			var tags: Array = []
+			for t in String(lg["tags"]).split(";", false):
+				tags.append(t.strip_edges())
+			c["tags"] = tags
+		if _yes(row, "chain_left"):
+			c["chain_left"] = true
+		if _yes(row, "copy_left"):
+			c["copy_left"] = true
+		c["effects"] = _json(lg, "effects", "cards_logic.csv", [])
+		var trig: Dictionary = _json(lg, "triggers", "cards_logic.csv", {})
+		if not trig.is_empty():
+			c["triggers"] = trig
+		var pas: Dictionary = _json(lg, "passive", "cards_logic.csv", {})
+		if not pas.is_empty():
+			c["passive"] = pas
+		c["art"] = _json(lg, "art", "cards_logic.csv", {})
+		CARDS[row["id"]] = c
+
+static func _load_events() -> void:
+	var logic := _logic("events", "text")
+	for row: Dictionary in _rows("events.csv"):
+		var lg: Dictionary = logic.get(row["id"], {"_line": 0})
+		var e := {"name": row["name"], "tier": row["tier"], "category": row["category"], "full": row["weak_text"] != "", "text": row["text"]}
+		if row["weak_text"] != "":
+			e["weak_text"] = row["weak_text"]
+		for col in ["mods", "weak", "penalty"]:
+			var v: Array = _json(lg, col, "events_logic.csv", [])
+			if not v.is_empty():
+				e[col] = v
+		var cond: Dictionary = _json(lg, "condition", "events_logic.csv", {})
+		if not cond.is_empty():
+			e["condition"] = cond
+		EVENTS[row["id"]] = e
+
+static func _load_offers() -> void:
+	var logic := _logic("offers", "text")
+	for row: Dictionary in _rows("offers.csv"):
+		var lg: Dictionary = logic.get(row["id"], {})
+		var o := {"name": row["name"], "text": row["text"], "icon": String(lg.get("icon", "card"))}
+		if String(lg.get("edition", "")) != "":
+			o["edition"] = lg["edition"]
+			EDITION_OFFERS[row["id"]] = o
+		else:
+			MEETING_OFFERS[row["id"]] = o

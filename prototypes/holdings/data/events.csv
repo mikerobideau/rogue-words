@@ -1,0 +1,15 @@
+id,name,tier,category,text,weak_text
+supply_hiccup,Supply Hiccup,mild,dice,-1 to all odd dice (a 1 stays 1),
+wage_inflation,Wage Inflation,mild,economy,Businesses cost +1 Labor,
+hot_market,Hot Market,mild,market,Scouting deals costs +1 Cash,
+labor_shortage,Labor Shortage,mild,conditional,"If no Services business operates, -1 die next quarter",
+activist_investor,Activist Investor,moderate,business,Your highest-value business with an ability gives half its output (round down),
+rate_hike,Rate Hike,moderate,dice,Your highest rolled die is capped at 4,
+breakdowns,Breakdowns,moderate,economy,Lose half your Equipment (round down),
+credit_freeze,Credit Freeze,moderate,market,Deals frozen: no buying or scouting,Deals can't be scouted (buying still allowed)
+neglect,Neglect,moderate,conditional,"If fewer than 3 businesses operate, your lowest-value business becomes distressed",
+info_leak,Information Leak,moderate,conditional,"If no Tech business operates, Intelligence cannot be spent next quarter",
+antitrust_probe,Antitrust Probe,severe,business,Your highest-value business becomes distressed,Your highest-value business adds half its Brand this quarter
+recession,Recession,severe,dice,-1 die,Your highest rolled die is capped at 3
+bureaucracy,Bureaucracy,severe,dice,-1 die per 5 businesses in your portfolio (round down),
+steady_market,Steady Market,none,none,No effect,
