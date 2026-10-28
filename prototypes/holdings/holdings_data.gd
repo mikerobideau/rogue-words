@@ -21,6 +21,13 @@ const LOCKED_LOTS := 3
 const LOCK_PAY := 3
 const STARTING_BOARD: Array[String] = []
 
+const TUTORIAL_SHEET := "blank_ledger"
+const TUTORIAL_SEED := 20261027
+const TUTORIAL_EVENT := "steady_market"
+const TUTORIAL_MARKET: Array[String] = ["lemonade_stand", "consulting_firm", "cloud_provider", "temp_agency"]
+const TUTORIAL_DICE: Array[int] = [5, 2, 6, 1]
+const TUTORIAL_LOT := 4
+
 const EVENT_TIERS := [
 	{"until": 8, "tiers": ["mild"]},
 	{"until": 16, "tiers": ["mild", "moderate"]},
@@ -58,6 +65,7 @@ const POCKET_MODS := {
 
 static var EVENTS := {}
 static var SHEETS := {}
+static var TUTORIAL: Array[Dictionary] = []
 
 const DATA_DIR := "res://prototypes/holdings/data/"
 static var loaded := false
@@ -84,6 +92,8 @@ static func load_tables() -> void:
 	sheets.sort_custom(func(x, y): return int(x[0]["order"]) < int(y[0]["order"]))
 	for pair in sheets:
 		SHEETS[pair[1]] = pair[0]
+	for r in _resources("tutorial"):
+		TUTORIAL.append(r.to_dict())
 
 static func _id(r: Resource) -> String:
 	var id := String(r.get("id"))

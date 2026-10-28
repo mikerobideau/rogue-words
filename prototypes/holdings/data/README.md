@@ -55,3 +55,12 @@ The resource scripts live in `../types/`.
 
 ## HoldingsOffer / HoldingsEdition
 Offers: `name`, `text`, `icon`, and `edition` for edition offers. Editions: `name`, `text`, `color`. Their effects are wired in game code by `id`, so a brand-new offer or edition id needs code; renaming, rewording and recolouring are safe.
+
+## HoldingsTutorialStep (`tutorial/`)
+One file per lesson, played in file-name order (`01_welcome`, `02_news`, ...). Fields:
+- `title` and `body`: the lesson text. A line break starts a new paragraph. Resource names and "Brand" show as icons, as on cards.
+- **Live values** so text never goes stale: `{card:id}` (card name), `{cost:id}` (current price), `{value:id}`, `{years}`, `{quarters}`, `{target}`, `{strikes}`, `{dice}`, `{cap}`, `{rate}`, `{reroll}`, `{scout}`.
+- `targets`: what to spotlight; the player can only click these until the lesson moves on. `market:0`-`3`, `board:0`-`8`, `die:0`-`3`, `res:cash`/`labor`/`equipment`/`intel`/`advertising`, `buy`, `scout`, `deck`, `end`, `exchange`, `reroll`, `assets`, `market_panel`, `portfolio`, `calendar`, `clipping`, `scorepad`, `help`. Use `modal` while a popup is open, `*` to free everything, or leave empty for a centred message.
+- `wait`: `next` shows a Next button; anything else waits for the player to do that action (`intro_closed`, `market_pick`, `buy`, `placed`, `operated`, `resource`, `scout`, `end_quarter`, `next_quarter`, `meeting`).
+
+The scripted opening (sheet, seed, first headline, the four Market cards and the dice) is in `TUTORIAL_*` in `holdings_data.gd`. Bad card ids or targets are reported as warnings when the game starts.

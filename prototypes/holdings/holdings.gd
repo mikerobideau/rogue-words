@@ -190,6 +190,10 @@ var sfx: Dictionary = {}
 var music: AudioStreamPlayer
 var dice_sfx_left := 0.0
 var hover_rect := Rect2()
+var tut_on := false
+var tut_step := 0
+var tut_rects: Dictionary = {}
+var tut_panel := Rect2()
 var clock := 0.0
 var window_size := Vector2.ZERO
 var ui_scale := 1.0
@@ -331,6 +335,8 @@ func _validate_data() -> void:
 			push_warning("Card %s has unknown pattern %s" % [id, p["kind"]])
 		if int(c["value"]) < 1 or int(c["value"]) > 7:
 			push_warning("Card %s value out of range" % id)
+	for msg in _tutorial_problems():
+		push_warning("Tutorial: " + msg)
 
 func _load_best() -> void:
 	var cfg := ConfigFile.new()
@@ -1139,6 +1145,7 @@ func _activate(inst: CardInst, vals: Array[int]) -> void:
 	inst.ops += 1
 	inst.flash = 1.0
 	_operate(inst, {"dice": vals}, 0, true)
+	_tut_event("operated")
 
 func _operate(inst: CardInst, ctx: Dictionary, depth: int, chain: bool) -> void:
 	activations += 1
@@ -1567,6 +1574,8 @@ func _on_market(i: int) -> void:
 		return
 	market_pick = -1 if market_pick == i else i
 	board_pick = -1
+	if market_pick == i:
+		_tut_event("market_pick")
 
 func _buy_pick() -> void:
 	var i := market_pick
@@ -1579,8 +1588,10 @@ func _buy_pick() -> void:
 		return
 	if _free_slot_for(market[i]) < 0:
 		choice = {"kind": "discard_for", "market": i, "prompt": "No empty lot fits %s: choose a business to sell and replace" % _card_name(market[i])}
+		_tut_event("buy")
 		return
 	choice = {"kind": "place", "market": i, "prompt": "Choose an open lot for %s" % _card_name(market[i])}
+	_tut_event("buy")
 
 func _complete_buy(i: int, slot: int) -> void:
 	var id := market[i]
@@ -1597,6 +1608,7 @@ func _complete_buy(i: int, slot: int) -> void:
 	market[i] = _deal_card()
 	_say("Acquired %s" % _card_name(id))
 	_fire(inst, "buy")
+	_tut_event("placed")
 	_next_choice()
 
 func _remove_from_board(slot: int) -> void:
@@ -1766,6 +1778,7 @@ func _cash_refresh() -> void:
 	res["cash"] = _r("cash") - _refresh_price()
 	_refresh_market()
 	_say("New deals scouted")
+	_tut_event("scout")
 
 func _res_face(r: String) -> int:
 	return D.TYPES.find(r) + 1
@@ -1787,6 +1800,7 @@ func _res_die(r: String) -> void:
 	selected_die = -1
 	res[r] = _r(r) + 1
 	_float(_die_home(di), "+1 %s" % D.RES_NAMES[r], _tcol(r))
+	_tut_event("resource")
 
 func _refresh_market() -> void:
 	for i in market.size():
@@ -1950,6 +1964,7 @@ func _end_round() -> void:
 	report = rep
 	selected_die = -1
 	phase = Phase.REPORT
+	_tut_event("end_quarter")
 
 func year_vp_at_check(rep: Dictionary) -> int:
 	return int(rep["year_vp"])
@@ -2002,6 +2017,7 @@ func _make_offers(n: int) -> Array[String]:
 
 func _take_offer(id: String) -> void:
 	meeting.clear()
+	_tut_event("meeting")
 	var o: Dictionary = _offer_data(id)
 	match id:
 		"ed_gold", "ed_holo", "ed_bluechip", "ed_franchise":
@@ -2079,8 +2095,266 @@ func _sheet_name() -> String:
 	return String(D.SHEETS.get(sheet_id, {}).get("name", "Random Sheet"))
 
 func _start_sheet(id: String) -> void:
+	tut_on = false
 	sheet_id = id
 	_new_run(randi_range(1, 999999))
+
+func _close_intro() -> void:
+	event_intro = false
+	_tut_event("intro_closed")
+
+func _start_tutorial() -> void:
+	sheet_id = D.TUTORIAL_SHEET
+	_new_run(D.TUTORIAL_SEED)
+	var lot := D.TUTORIAL_LOT
+	slot_rules[lot] = {"kind": "any"}
+	slot_locks[lot] = {}
+	slot_mods[lot] = ""
+	for i in mini(market.size(), D.TUTORIAL_MARKET.size()):
+		market[i] = D.TUTORIAL_MARKET[i]
+		market_eds[i] = {"id": market[i], "ed": ""}
+	forecast[0] = {"id": D.TUTORIAL_EVENT, "weak": false, "revealed": true}
+	_start_round()
+	for i in mini(dice.size(), D.TUTORIAL_DICE.size()):
+		dice[i].value = D.TUTORIAL_DICE[i]
+	tut_on = true
+	tut_step = 0
+
+func _tut() -> Dictionary:
+	if not tut_on or tut_step >= D.TUTORIAL.size():
+		return {}
+	return D.TUTORIAL[tut_step]
+
+func _tut_event(ev: String) -> void:
+	var st := _tut()
+	if not st.is_empty() and String(st["wait"]) == ev:
+		_tut_advance()
+
+func _tut_advance() -> void:
+	tut_step += 1
+	if tut_step >= D.TUTORIAL.size():
+		tut_on = false
+
+func _tut_end() -> void:
+	tut_on = false
+
+func _tut_free() -> bool:
+	var t: Array = _tut().get("targets", [])
+	return t.has("*") or t.has("modal")
+
+func _tut_allows(p: Vector2, left: bool) -> bool:
+	if tut_panel.has_point(p):
+		return left
+	if _tut_free():
+		return true
+	if not left:
+		return false
+	for t: String in _tut().get("targets", []):
+		if _tut_rect(t).has_point(p):
+			return true
+	return false
+
+func _tut_key_ok(key: Key) -> bool:
+	if key == KEY_F1 or key == KEY_M:
+		return true
+	if key == KEY_ESCAPE:
+		_tut_end()
+		return false
+	return _tut_free()
+
+func _tut_rect(t: String) -> Rect2:
+	var parts := t.split(":")
+	var arg := parts[1] if parts.size() > 1 else ""
+	match parts[0]:
+		"market":
+			return _market_rect(int(arg)) if int(arg) < market.size() else Rect2()
+		"board":
+			return _board_rect(int(arg)) if int(arg) < board_slots else Rect2()
+		"die":
+			if int(arg) >= dice.size() or not _die_free(int(arg)):
+				return Rect2()
+			return Rect2(_die_home(int(arg)) - Vector2(DIE_SIZE, DIE_SIZE) * 0.5, Vector2(DIE_SIZE, DIE_SIZE)).grow(6.0)
+		"res":
+			var i := D.TYPES.find(arg)
+			if i < 0:
+				return Rect2()
+			var col := _res_col_rect(i)
+			return Rect2(Vector2(col.get_center().x, col.position.y + 40.0) - Vector2(32, 32), Vector2(64, 64))
+		"scout":
+			return _pile_rect(1)
+		"deck":
+			return _pile_rect(0)
+		"end":
+			return s_end
+		"assets":
+			return s_mat
+		"market_panel":
+			return p_market
+		"portfolio":
+			return p_portfolio
+		"calendar":
+			return Rect2(h_left.position.x, HEADER_Y + 4.0, 176.0, HEADER_H - 8.0)
+		"help":
+			return Rect2(h_center.end.x - 104.0, HEADER_Y + 14.0, 100.0, 100.0)
+	return tut_rects.get(t, Rect2())
+
+func _tut_text(s: String) -> String:
+	var vals := {
+		"years": str(_total_years()), "quarters": str(rounds_per_run), "target": str(_target_for(round_n)),
+		"strikes": str(strikes_to_lose), "dice": str(base_dice), "cap": str(storage_cap),
+		"rate": str(_rate()), "reroll": str(reroll_cost), "scout": str(SCOUT_FACE),
+	}
+	for k: String in vals:
+		s = s.replace("{%s}" % k, vals[k])
+	var rx := RegEx.create_from_string("\\{(card|cost|value):([a-z0-9_]+)\\}")
+	for m in rx.search_all(s):
+		var id := m.get_string(2)
+		var rep := id
+		if D.CARDS.has(id):
+			match m.get_string(1):
+				"card":
+					rep = _card_name(id)
+				"value":
+					rep = str(int(D.CARDS[id]["value"]))
+				"cost":
+					var parts: Array[String] = []
+					var cost := _cost(id)
+					for r: String in D.TYPES:
+						if cost.has(r):
+							parts.append("%d %s" % [int(cost[r]), D.RES_NAMES[r]])
+					rep = " and ".join(parts)
+		s = s.replace(m.get_string(), rep)
+	return s
+
+func _tutorial_problems() -> Array[String]:
+	var out: Array[String] = []
+	var known := ["market", "board", "die", "res", "scout", "deck", "end", "assets", "market_panel", "portfolio", "calendar", "help", "clipping", "scorepad", "exchange", "reroll", "buy", "modal", "*"]
+	if not D.SHEETS.has(D.TUTORIAL_SHEET):
+		out.append("unknown sheet %s" % D.TUTORIAL_SHEET)
+	if not D.EVENTS.has(D.TUTORIAL_EVENT):
+		out.append("unknown event %s" % D.TUTORIAL_EVENT)
+	for id in D.TUTORIAL_MARKET:
+		if not D.CARDS.has(id):
+			out.append("unknown market card %s" % id)
+	var rx := RegEx.create_from_string("\\{(card|cost|value):([a-z0-9_]+)\\}")
+	for i in D.TUTORIAL.size():
+		var st: Dictionary = D.TUTORIAL[i]
+		for t: String in st["targets"]:
+			var head := t.split(":")[0]
+			if not known.has(head):
+				out.append("step %d has unknown target %s" % [i + 1, t])
+			elif head == "res" and not D.TYPES.has(t.split(":")[1] if t.contains(":") else ""):
+				out.append("step %d has unknown resource %s" % [i + 1, t])
+		for m in rx.search_all(String(st["title"]) + " " + String(st["body"])):
+			if not D.CARDS.has(m.get_string(2)):
+				out.append("step %d mentions unknown card %s" % [i + 1, m.get_string(2)])
+	return out
+
+func _dim_except(holes: Array[Rect2], col: Color) -> void:
+	var ys: Array[float] = [0.0, UI_H]
+	for h in holes:
+		ys.append(clampf(h.position.y, 0.0, UI_H))
+		ys.append(clampf(h.end.y, 0.0, UI_H))
+	ys.sort()
+	for i in ys.size() - 1:
+		var y0 := ys[i]
+		var y1 := ys[i + 1]
+		if y1 - y0 < 0.5:
+			continue
+		var spans: Array = []
+		for h in holes:
+			if h.position.y <= y0 and h.end.y >= y1:
+				spans.append([h.position.x, h.end.x])
+		spans.sort_custom(func(a, b): return a[0] < b[0])
+		var x := 0.0
+		for sp in spans:
+			if sp[0] > x:
+				draw_rect(Rect2(x, y0, sp[0] - x, y1 - y0), col)
+			x = maxf(x, sp[1])
+		if x < UI_W:
+			draw_rect(Rect2(x, y0, UI_W - x, y1 - y0), col)
+
+func _draw_tutorial() -> void:
+	var st := _tut()
+	tut_panel = Rect2()
+	if st.is_empty():
+		return
+	var targets: Array = st["targets"]
+	var free := targets.has("*") or targets.has("modal")
+	var holes: Array[Rect2] = []
+	for t: String in targets:
+		var tr := _tut_rect(t)
+		if tr.has_area():
+			holes.append(tr.grow(10.0))
+	if not free:
+		_dim_except(holes, Color(0.03, 0.04, 0.06, 0.62))
+		var pulse := 0.6 + 0.4 * sin(clock * 5.0)
+		for h in holes:
+			_panel(h, Color(0, 0, 0, 0), 18, Color(c_gold, pulse), 4)
+		if not holes.is_empty():
+			var h := holes[0]
+			var bob := sin(clock * 6.0) * 8.0
+			var up := h.position.y < 260.0
+			var tip := Vector2(h.get_center().x, (h.end.y + 14.0 - bob) if up else (h.position.y - 14.0 + bob))
+			var d := -1.0 if up else 1.0
+			var tri := PackedVector2Array([tip, tip + Vector2(-22.0, -30.0 * d), tip + Vector2(22.0, -30.0 * d)])
+			var sh := PackedVector2Array()
+			for p in tri:
+				sh.append(p + Vector2(3, 4))
+			draw_colored_polygon(sh, Color(0, 0, 0, 0.4))
+			draw_colored_polygon(tri, c_gold)
+			draw_rect(Rect2(tip.x - 8.0, tip.y - 58.0 * d if not up else tip.y + 28.0, 16.0, 30.0), c_gold)
+	var pw := 640.0
+	var pad := 34.0
+	var title := _tut_text(String(st["title"]))
+	var paras := _tut_text(String(st["body"])).split("\n", false)
+	var body_h := 0.0
+	for para in paras:
+		body_h += _rich_wrap(Vector2.ZERO, para, pw - pad * 2.0, T_SM, -1, false) + 10.0
+	var waits := String(st["wait"]) != "next"
+	var ph := 96.0 + body_h + 92.0
+	var cands: Array[Rect2] = [
+		Rect2(p_portfolio.get_center().x - pw * 0.5, UI_H - ph - 40.0, pw, ph),
+		Rect2(p_market.position.x + 10.0, UI_H - ph - 40.0, pw, ph),
+		Rect2(p_supply.end.x - pw - 10.0, UI_H - ph - 40.0, pw, ph),
+		Rect2(p_market.position.x + 10.0, BODY_TOP + 20.0, pw, ph),
+		Rect2(p_supply.end.x - pw - 10.0, BODY_TOP + 20.0, pw, ph),
+		Rect2(UI_W * 0.5 - pw * 0.5, BODY_TOP + 20.0, pw, ph),
+	]
+	if targets.is_empty():
+		cands.push_front(Rect2(Vector2(UI_W - pw, UI_H - ph) * 0.5, Vector2(pw, ph)))
+	var avoid: Array[Rect2] = holes.duplicate()
+	if targets.has("modal") and tut_rects.has("modal"):
+		avoid.append(tut_rects["modal"])
+	var pr := cands[0]
+	for c in cands:
+		var ok := true
+		for a in avoid:
+			if c.grow(12.0).intersects(a):
+				ok = false
+				break
+		if ok:
+			pr = c
+			break
+	tut_panel = pr
+	_panel(Rect2(pr.position + Vector2(8, 14), pr.size), Color(0, 0, 0, 0.45), 10)
+	_grad_panel(pr, 10.0, Color("fbf7ec"), Color("f1e9d4"))
+	_panel(pr, Color(0, 0, 0, 0), 10, Color("cbb98c"), 2)
+	_panel_corners(Rect2(pr.position, Vector2(pr.size.x, 10.0)), c_accent, 10, 10, 0, 0)
+	var x := pr.position.x + pad
+	var step_txt := "LESSON %d OF %d" % [tut_step + 1, D.TUTORIAL.size()]
+	_text(Vector2(x, pr.position.y + 46.0), step_txt, T_XS, c_muted, true)
+	_heavy(Vector2(x, pr.position.y + 84.0), title, _fit(title, pw - pad * 2.0, T_LG), c_ink)
+	var y := pr.position.y + 104.0
+	for para in paras:
+		y += _rich_wrap(Vector2(x, y), para, pw - pad * 2.0, T_SM) + 10.0
+	var by := pr.end.y - 72.0
+	_ghost(Rect2(x - 8.0, by, 190.0, 50.0), "Skip tutorial", _tut_end, true, c_muted)
+	if waits:
+		_text_right(pr.end.x - pad, by + 34.0, "Do it to continue", T_SM, c_accent, true)
+	else:
+		var last := tut_step == D.TUTORIAL.size() - 1
+		_button(Rect2(pr.end.x - pad - 200.0, by, 200.0, 56.0), "Let's play" if last else "Next", _tut_advance, true, c_accent, T_MD)
 
 func _quarters_text(q: int) -> String:
 	if q <= 0:
@@ -2125,6 +2399,9 @@ func _draw_menu() -> void:
 		_text(Vector2(tx, r.end.y - 24.0), "Best: %s" % best, T_SM, c_muted, true)
 		_text_right(r.end.x - 22.0, r.end.y - 24.0, "Play →", T_SM, c_accent if hov else c_muted, true)
 		_register(r, _start_sheet.bind(id))
+	if not D.TUTORIAL.is_empty():
+		var tb := Rect2(UI_W * 0.5 - 230.0, y0 + 3.0 * (th + gap) + 4.0, 460.0, 76.0)
+		_button(tb, "Learn to play", _start_tutorial, true, c_accent, T_LG, "Guided first quarter")
 
 func _draw_sheet_thumb(r: Rect2, sh: Dictionary) -> void:
 	_panel(r.grow(8.0), Color("dfe7f1"), 12)
@@ -2177,6 +2454,7 @@ func _continue() -> void:
 		meeting_info = pending_meeting
 		pending_meeting = {}
 		meeting = _make_offers(int(meeting_info["count"]))
+	_tut_event("next_quarter")
 
 func _primary_action() -> void:
 	if show_help:
@@ -2185,7 +2463,7 @@ func _primary_action() -> void:
 	if not meeting.is_empty() and phase == Phase.ACTION:
 		return
 	if event_intro and phase == Phase.ACTION:
-		event_intro = false
+		_close_intro()
 		return
 	match phase:
 		Phase.ACTION:
@@ -2268,6 +2546,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton and ev.pressed:
 		var mb := ev as InputEventMouseButton
 		var p := _ui_mouse()
+		if tut_on and not _tut_allows(p, mb.button_index == MOUSE_BUTTON_LEFT):
+			return
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			for i in range(buttons.size() - 1, -1, -1):
 				if buttons[i].rect.has_point(p):
@@ -2286,6 +2566,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 			selected_die = -1
 	elif ev is InputEventKey and ev.pressed and not ev.echo:
 		var key := (ev as InputEventKey).keycode
+		if tut_on and not _tut_key_ok(key):
+			return
 		match key:
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				_primary_action()
@@ -2699,6 +2981,7 @@ func _picker_active() -> bool:
 
 func _draw() -> void:
 	buttons.clear()
+	tut_rects.clear()
 	hover_tip = ""
 	hover_card = {}
 	hover_forecast = -1
@@ -2738,6 +3021,8 @@ func _draw() -> void:
 		_draw_report()
 	elif phase == Phase.GAMEOVER:
 		_draw_gameover()
+	if tut_on and not show_help:
+		_draw_tutorial()
 	if show_help:
 		_draw_help()
 	if debug_on:
@@ -2895,6 +3180,7 @@ func _draw_clipping(x: float, max_w: float) -> void:
 	while dsz > 13 and font_serif_italic.get_string_size(deck, HORIZONTAL_ALIGNMENT_LEFT, -1, dsz).x > w - 56.0:
 		dsz -= 1
 	var r := Rect2(x, HEADER_Y + 8.0, w, HEADER_H - 14.0)
+	tut_rects["clipping"] = r
 	var c := r.get_center()
 	draw_set_transform_matrix(_rot_xform(c, -0.012))
 	var pts := PackedVector2Array()
@@ -3008,6 +3294,7 @@ func _draw_event_intro() -> void:
 	var cond := _event_condition(ev)
 	_dim()
 	var r := Rect2(Vector2(UI_W - 1040.0, UI_H - 700.0) * 0.5, Vector2(1040.0, 700.0))
+	tut_rects["modal"] = r
 	_panel(Rect2(r.position + Vector2(10, 14), r.size), Color(0, 0, 0, 0.35), 6)
 	_paper(r, 6)
 	var x := r.position.x + 56.0
@@ -3064,7 +3351,7 @@ func _draw_event_intro() -> void:
 		for line in _news_lines(font_bold, gl, col_w, T_XS):
 			draw_string(font_bold, Vector2(bx, by), line, HORIZONTAL_ALIGNMENT_LEFT, -1, T_XS, c_warn.darkened(0.35))
 			by += 22.0
-	_button(Rect2(r.get_center().x - 170.0, r.end.y - 98.0, 340.0, 70.0), "Start quarter", func() -> void: event_intro = false, true, C_NEWSINK, T_LG)
+	_button(Rect2(r.get_center().x - 170.0, r.end.y - 98.0, 340.0, 70.0), "Start quarter", _close_intro, true, C_NEWSINK, T_LG)
 
 func _pile_rect(i: int) -> Rect2:
 	return _market_slot(i)
@@ -3129,6 +3416,7 @@ func _draw_market() -> void:
 			var why := _buy_block(i)
 			if why == "":
 				var br := Rect2(r.get_center() - Vector2(84.0, 30.0) * k, Vector2(168.0, 60.0) * k)
+				tut_rects["buy"] = br
 				_button(br, "Buy", _buy_pick, true, c_accent, T_LG)
 			else:
 				var msg := why.replace(" this quarter", "")
@@ -3710,13 +3998,16 @@ func _draw_supply() -> void:
 	var half := (s_mat.size.x - 48.0 - 12.0) * 0.5
 	_brass_button(Rect2(mx, by, half, 60.0), "Exchange %d:1" % _rate(), _start_exchange, choice.is_empty() and phase == Phase.ACTION)
 	var b3 := Rect2(mx + half + 12.0, by, half, 60.0)
+	tut_rects["exchange"] = Rect2(mx, by, half, 60.0)
+	tut_rects["reroll"] = b3
 	_brass_button(b3, "Reroll all", _reroll_all, _reroll_block() == "", "%d Intelligence" % reroll_cost)
 	_tip(b3, _reroll_block() if _reroll_block() != "" else "Reroll every unused die.")
 	var top := s_mat.end.y + 28.0
 	var bottom := s_end.position.y - 30.0
 	var ph := minf(380.0, bottom - top)
 	var pw := minf(420.0, s_mat.size.x - 40.0)
-	_draw_scorepad(Rect2(s_mat.get_center().x - pw * 0.5, top + (bottom - top - ph) * 0.5, pw, ph))
+	tut_rects["scorepad"] = Rect2(s_mat.get_center().x - pw * 0.5, top + (bottom - top - ph) * 0.5, pw, ph)
+	_draw_scorepad(tut_rects["scorepad"])
 	var cp: Dictionary = mods.get("cost_plus", {})
 	var notes: Array[String] = []
 	for k: String in cp:
@@ -4521,6 +4812,7 @@ func _dim() -> void:
 func _modal(w: float, h: float) -> Rect2:
 	_dim()
 	var r := Rect2(Vector2(UI_W - w, UI_H - h) * 0.5, Vector2(w, h))
+	tut_rects["modal"] = r
 	_panel(r, c_card, 28)
 	return r
 
