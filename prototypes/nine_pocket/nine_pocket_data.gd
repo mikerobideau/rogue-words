@@ -15,23 +15,62 @@ const LABELS := [
 
 const SOUND_COLOR := "3fae5a"
 const ENERGY_COLOR := "8a63d2"
+const HYPE_COLOR := "e9b949"
+const FLOW_COLOR := "4ab3d9"
 
 const COLLECTION := 20
 const HAND := 8
 const SETLIST := 5
 const DIGS := 2
 const DIG_MAX := 3
-const BASE_SOUND := [2, 5]
-const ABILITY_CHANCE := 0.65
+const BASE_SOUND := [2, 6]
+const ABILITY_CHANCE := 0.4
+
+const FLOW_MAX := 4
+const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 11]
+const TARGET_GROWTH := 0.15
+const START_BASIC := 10
+const START_CDRS := 2
+const START_GENRES := 3
+const START_ERAS := 3
+const BASIC_POINTS := [2, 3]
+const CDR_POINTS := 1
+const LIKE := 2
+const DISLIKE := -2
+const REQUEST := 4
+const REQUEST_FLOW_CHANCE := 0.3
+const BAN := -3
+const CALL_CHANCE := 0.55
+const REQUEST_SONGS := 2
+const BAN_SONGS := 3
+
+const ENERGY_START := 50
+const ENERGY_MAX := 100
+const APPLAUSE := 50
+const ENCORE := 80
+const DIG_COST := 3
+
+const VENUES := [
+	{"name": "Basement Show", "likes": [["genre", "Punk"], ["era", "90s"]], "dislikes": [["genre", "Blues"]]},
+	{"name": "Wedding Reception", "likes": [["genre", "Classic Rock"], ["era", "80s"]], "dislikes": [["genre", "Metal"]]},
+	{"name": "Coffeehouse", "likes": [["genre", "Indie"], ["genre", "Alternative"]], "dislikes": [["genre", "Metal"], ["genre", "Punk"]]},
+	{"name": "Biker Bar", "likes": [["genre", "Blues"], ["genre", "Classic Rock"]], "dislikes": [["genre", "Indie"]]},
+	{"name": "Festival Tent", "likes": [["genre", "Psychedelic"], ["era", "10s"]], "dislikes": [["era", "60s"]]},
+	{"name": "Record Store Day", "likes": [["genre", "Alternative"], ["era", "70s"]], "dislikes": [["era", "10s"]]},
+]
 
 const GIGS := 8
 const TARGETS: Array[int] = [90, 120, 160, 210, 270, 350, 450, 580]
 const START_CASH := 0
 const REWARD_BASE := 5
+const PAY_BOOED := 2
+const PAY_BASE := 5
+const PAY_APPLAUSE := 8
+const PAY_ENCORE := 11
 const BONUS_STEP := 0.25
 const BONUS_MAX := 3
 const RACK_SLOTS := 4
-const START_RACK: Array[String] = ["eq", "xfade"]
+const START_RACK: Array[String] = []
 
 const SHOP_ALBUMS := 2
 const SHOP_GEAR := 2
@@ -47,27 +86,25 @@ const GEAR_PACKS := [
 ]
 
 const SORT_KEYS: Array[String] = ["genre", "era", "sound", "ability", "band"]
-const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Sound", "ability": "Ability", "band": "Band"}
+const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "ability": "Ability", "band": "Band"}
 
 const ABILITIES := {
-	"doubleshot": {"name": "Doubleshot", "text": "×2 Sound if it's the same decade as the previous song.", "gain": "sound", "chip": "×2"},
-	"one_hit": {"name": "One Hit Wonder", "text": "×1.1 Sound for every earlier play. Resets when another song by this band plays.", "gain": "sound", "chip": "×1.1"},
-	"opener": {"name": "Opener", "text": "+2 Energy if it's the first song.", "gain": "energy", "chip": "+2"},
-	"closer": {"name": "Closer", "text": "×2 Sound if it's the last song.", "gain": "sound", "chip": "×2"},
-	"crowd": {"name": "Crowd-Pleaser", "text": "+1 Energy.", "gain": "energy", "chip": "+1"},
-	"segue": {"name": "Segue", "text": "+4 Sound if the next song is the same genre.", "gain": "sound", "chip": "+4"},
-	"slow_jam": {"name": "Slow Jam", "text": "+8 Sound, then −1 Energy.", "gain": "sound", "chip": "+8"},
-	"deep_cut": {"name": "Deep Cut", "text": "+6 Sound if Energy is 2 or less.", "gain": "sound", "chip": "+6"},
-	"bandmates": {"name": "Bandmates", "text": "+1 Energy if another song by this band is in the set.", "gain": "energy", "chip": "+1"},
+	"opener": {"name": "Opener", "text": "+3 points in slot 1.", "chip": "+3"},
+	"closer": {"name": "Closer", "text": "+3 points in slot 5.", "chip": "+3"},
+	"crowd": {"name": "Crowd-Pleaser", "text": "+2 points.", "chip": "+2"},
+	"bandmates": {"name": "Bandmates", "text": "+3 points if another song by this band already played tonight.", "chip": "+3"},
+	"segue": {"name": "Segue", "text": "Always keeps the flow going, whatever played before it.", "chip": "FLOW"},
 }
 
 const GEAR := {
-	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting is added to that genre's Sound.", "price": 6, "n": [0], "look": "faders"},
-	"xfade": {"name": "Crossfader", "text": "+%d Energy when a song shares a genre or decade with the one before.", "price": 7, "n": [1, 2], "look": "xfader"},
-	"gain": {"name": "Gain Stage", "text": "×%d Sound for songs in the genre on the dial.", "price": 7, "n": [2, 3], "look": "genre_knob"},
-	"comp": {"name": "Compressor", "text": "+%d Sound for every song.", "price": 5, "n": [1, 2, 3], "look": "knobs"},
-	"exciter": {"name": "Exciter", "text": "+%d Energy for songs from the decade on the dial.", "price": 6, "n": [1, 2], "look": "era_knob"},
-	"tube": {"name": "Tube Preamp", "text": "+%d Sound for songs without an ability.", "price": 5, "n": [3, 5, 7], "look": "tube"},
+	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting is added to that genre's points.", "price": 6, "n": [0], "look": "faders"},
+	"xfade": {"name": "Crossfader", "text": "When the flow breaks, it drops by 1 instead of resetting.", "price": 7, "n": [0], "look": "xfader"},
+	"gain": {"name": "Gain Stage", "text": "+%d points for songs in the genre on the dial.", "price": 7, "n": [2, 3], "look": "genre_knob"},
+	"comp": {"name": "Compressor", "text": "Songs from the same record label also keep the flow going.", "price": 5, "n": [0], "look": "knobs"},
+	"exciter": {"name": "Exciter", "text": "+%d points for songs from the decade on the dial.", "price": 6, "n": [1, 2], "look": "era_knob"},
+	"tube": {"name": "Tube Preamp", "text": "+%d points for songs without an ability.", "price": 5, "n": [2, 3, 4], "look": "tube"},
+	"fog": {"name": "Fog Machine", "text": "Fire before a song: +%d flow. Twice a show.", "price": 6, "n": [1, 2], "look": "fog", "uses": 2},
+	"mic": {"name": "Make Some Noise", "text": "Fire between songs: +%d crowd. Twice a show.", "price": 6, "n": [8, 12], "look": "mic", "uses": 2},
 }
 const EQ_MIN := -1
 const EQ_MAX := 3
@@ -76,11 +113,11 @@ const LEVEL_NAMES: Array[String] = ["", "MK II", "MK III"]
 
 const EDITION_CHANCE := 0.08
 const EDITIONS := {
-	"holo": {"name": "Holographic", "short": "HOLO", "text": "+1 Energy.", "gain": "energy", "n": 1, "price": 6, "color": "a678f0"},
-	"signed": {"name": "Signed", "short": "SIGNED", "text": "+4 Sound.", "gain": "sound", "n": 4, "price": 5, "color": "c9a227"},
-	"limited": {"name": "Limited Edition", "short": "LTD", "text": "×2 Sound.", "gain": "sound", "n": 2, "price": 8, "color": "d4508f"},
-	"remaster": {"name": "Remaster", "short": "REMASTER", "text": "Its ability triggers twice.", "gain": "sound", "n": 2, "price": 6, "color": "4a90d9"},
-	"mint": {"name": "Mint Condition", "short": "MINT", "text": "+$1 each time it's played.", "gain": "cash", "n": 1, "price": 4, "color": "3fae5a"},
+	"holo": {"name": "Holographic", "short": "HOLO", "text": "+2 points.", "n": 2, "price": 6, "color": "a678f0"},
+	"signed": {"name": "Signed", "short": "SIGNED", "text": "+3 points.", "n": 3, "price": 5, "color": "c9a227"},
+	"limited": {"name": "Limited Edition", "short": "LTD", "text": "Doubles this song's points.", "n": 2, "price": 8, "color": "d4508f"},
+	"remaster": {"name": "Remaster", "short": "REMASTER", "text": "Its ability triggers twice.", "n": 2, "price": 6, "color": "4a90d9"},
+	"mint": {"name": "Mint Condition", "short": "MINT", "text": "+$1 each time it's played.", "n": 1, "price": 4, "color": "3fae5a"},
 }
 
 const SERVICES_MAX := 2

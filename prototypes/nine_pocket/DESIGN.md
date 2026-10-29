@@ -1,69 +1,89 @@
 # Disc Engine
 
-A tour of 8 gigs. At each gig you load albums from your CD wallet into a 5-disc changer, press **PLAY**, and the set plays through your stereo rack. Each song adds Sound or Energy, and the set scores **total Sound × total Energy**. Beat the gig's target to get paid, then spend it at the record shop on albums and rack gear.
+You're a DJ playing shows against the crowd. Hold a hand of CDs, play them one slot at a time, and chain them so the **flow** builds. Each song's score has to beat that slot's target score to win the crowd over.
 
-**Prototype:** run `nine_pocket.tscn` (F6). Tuning numbers, abilities, gear, packs and targets are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd` (scoring in `_score`; run flow in `_new_run` / `_start_gig` / `_finish_set` / `_next_gig`; shop in `_make_shop` / `_buy` / `_take_pack` / `_install`). Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions (roguelike, logic puzzle) are in git history.
+**Prototype:** run `nine_pocket.tscn` (F6). Venues, points, flow, targets, abilities, gear and editions are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd`: show flow in `_start_show` / `_on_pocket` / `_play` / `_finish_song` / `_confirm_dig` / `_fire` / `_end_show`, scoring in `_react` and `_links`, call-outs in `_new_call`. Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions are in git history.
 
-## Run
-- Start: 20 random albums in your **binder**, $0, and a 4-bay rack with a Graphic EQ and a Crossfader.
-- 8 gigs with fixed targets: 90, 120, 160, 210, 270, 350, 450, 580. Miss one and the tour ends.
-- Clearing a gig pays $5 + (gig − 1), plus a crowd bonus of $1 per 25% over the target (max $3). Then the record shop, then the next gig.
-
-## A gig (one set)
-- The **CD wallet** (4×2 sleeves) is your hand: 8 albums drawn at random from your binder.
-- Move up to 5 into the changer's slots (click or drag; dropping on a full slot swaps), then press PLAY.
-- **Sort wallet**: sort by Genre, Decade, Sound, Ability or Band (click again to turn off).
-- **Dig** (2 per gig, amber LEDs): pick up to 3 wallet albums to swap for others from your binder.
-- Genre and decade chips show under every disc. A gold outline means your rack boosts that genre or decade.
-
-## View binder
-The **View binder (N)** button sits at the bottom left on every screen (also the B key), including over the result, pack and end screens. It opens your whole collection as a leather binder of 9-pocket pages, 18 albums per spread, in the wallet's sort order (or the order you got them). Flip with the Prev/Next buttons, the arrow keys or the mouse wheel; Esc, right-click or Close shuts it. During a gig, discs are tagged IN WALLET, IN CHANGER or DUG. Hover any disc for its tooltip. The summary card shows totals by genre, decade, base Sound, ability, and band (bands with 2+ albums in bold, for Bandmates and One Hit Wonder).
+Loop: venue → show → pay → **record shop** → next venue, endlessly. *New binder* on the result screen starts over. No tour length or game over yet.
 
 ## Scoring
-Songs play left to right. The set keeps two running totals: **Sound** (starts at 0) and **Energy** (starts at 1). For each song:
-1. Base Sound (the green number on the disc, 2–5).
-2. The disc's ability, if it triggers (×2 and +N apply to this song's Sound; Energy effects change the set's Energy).
-3. Rack gear, top bay to bottom bay.
-4. The song's Sound is added to the set's Sound.
+**Score = points × flow.** That's the whole formula.
 
-After the last song: **set score = total Sound × total Energy**. The rack display shows SOUND × ENERGY = SET live; each changer slot's readout shows what that song added.
+- **Points:** every album has a number (green token, 2–6). Added on top:
+  - liked tag +2, hated tag −2 (the venue's likes and hates),
+  - a matching request +4,
+  - abilities, editions and gear.
+- **Flow (×1 to ×4):** play an album that shares a **genre or decade** with the previous one and flow goes up by 1. Anything else resets it to ×1. Some gear and requests give flow instead of points.
+- If points are negative, flow doesn't multiply them.
 
-**Disc abilities**: Doubleshot (×2 Sound if same decade as previous song), One Hit Wonder (×1.1 Sound per earlier play this tour, resets when another song by the band plays), Opener (+2 Energy if first), Closer (×2 Sound if last), Crowd-Pleaser (+1 Energy), Segue (+4 Sound if the next song is the same genre), Slow Jam (+8 Sound, then −1 Energy), Deep Cut (+6 Sound if Energy ≤ 2), Bandmates (+1 Energy if another song by the band is in the set). Discs with an ability have 1 less base Sound.
+**Target score:** each of the 5 changer slots has one: **3 · 5 · 7 · 9 · 11** at the first show, growing 15% each show after (show 5 is 5 · 8 · 11 · 14 · 18). After a song, the crowd meter moves by **score − target score**.
 
-**Editions** (8% of new albums; one per album; shown as a colored tag at the top right of the disc plus a look on the disc):
-| Edition | Effect | Look |
-|---|---|---|
-| Holographic | +1 Energy | rainbow sheen |
-| Signed | +4 Sound | marker signature |
-| Limited Edition | ×2 Sound | gold rim |
-| Remaster | its ability triggers twice | blue inner ring |
-| Mint Condition | +$1 each time it's played (paid with the gig) | sparkles |
-Editions apply after the disc's ability and before the rack.
+**Crowd meter (0–100):** starts at 50. At 0 you're booed off. At the end, 80+ is an **Encore**, 50+ is **Big applause**, and below that is polite clapping.
 
-**Rack gear** (4 bays; order matters, e.g. EQ's boost above a Gain Stage gets doubled). You can't own two of the same unit: the shop and gear boxes never offer one you have.
-| Gear | Effect by level | Price |
-|---|---|---|
-| Graphic EQ | each genre's fader (−1 to +3) is added to that genre's Sound; starts as a shuffled +2, +1, +1, −1, −1, 0, 0 | $6 |
-| Crossfader | +1 / +2 Energy when a song shares a genre or decade with the one before | $7 |
-| Gain Stage | ×2 / ×3 Sound for the genre on the dial | $7 |
-| Compressor | +1 / +2 / +3 Sound for every song | $5 |
-| Exciter | +1 / +2 Energy for the decade on the dial | $6 |
-| Tube Preamp | +3 / +5 / +7 Sound for songs without an ability | $5 |
-Levels show as MK II / MK III on the faceplate. Dials favor genres and decades you own 3+ of. EQ cuts show as red faders, and wallet chips for a cut genre get a red outline (gold for a boost).
+## The show
+- Your binder is shuffled at the start of each show. You hold a **hand of 8** in the CD wallet (4×2).
+- The changer's 5 slots are played in order. Only the open slot takes a CD:
+  - Click a CD in your hand to load it (clicking another swaps them). Click the loaded CD to send it back, until you press **PLAY**.
+  - Slots show only their target score. There's no exact preview, but CDs in your hand that would raise flow carry a blue **FLOW +1** tag.
+  - PLAY: the points float up one by one, then the flow, then the score against the target. The slot locks showing "18 vs 14 · +4", and the next slot opens.
+- After each song you **draw 1** from your binder.
+- **Discard** (2 per show): swap 1–3 CDs in your hand for new ones. Costs 3 crowd each time.
+- The show ends after slot 5, or when the crowd hits 0.
+- After a song, 55% of the time (when no call is active) the crowd shouts:
+  - **Request** ("Play some 90s!"): +4 points, or 30% of the time +1 flow, if one of the next 2 songs matches.
+  - **Complaint** ("No more Metal!"): −3 points for each matching song in the next 3.
+- The clipboard holds a taped note with the venue's likes and hates, and the yellow slip with the current call.
+- **Console strip** (bottom, brushed metal like the rack units): *View binder* button, Discard section (two amber lights for discards left, *Discard and draw* button), and **Sort** as five amp-style toggle switches (Genre, Decade, Points, Ability, Band). Only one is on at a time; its jewel lamp lights and the lever flips up. Flip it again to turn sorting off.
 
-## Record shop
-Six offers, rolled fresh each visit:
-- **CD browser bin** (crate): 2 albums in jewel cases ($3, +$1 with an ability, +$1 if base Sound ≥ 4) and 1 shrink-wrapped album pack: Sampler ($4, pick 1 of 3) or Box Set ($7, pick 2 of 4).
-- **Pegboard gear wall**: 2 rack units on shelves with hang tags, and 1 cardboard gear box: Grab Box ($6, keep 1 of 3) or Studio Bundle ($11, keep 2 of 3).
-- **Counter**: cash register (cash, binder size, next target) and the Next gig button.
-- **Work orders** (pinned to the counter, up to 2, each appears sometimes): *Edition* ($4–8, 45%): pick an album without an edition in the binder overlay to give it that edition. *Bench tweak* ($3, 50%, needs an EQ, Gain Stage or Exciter): raise one EQ fader by 1, or set a dial to any genre/decade. *Unit upgrade* ($6, 45%): take one non-EQ unit to its next level. Pay on use; right-click or Esc cancels without charge.
-Buying gear (single or from a box) puts it in your hand: click a rack bay to install it. Installing over a unit replaces it. Right-click cancels (single gear isn't charged until installed; gear from a box is left behind).
+## Starting binder
+12 discs, and nothing in the rack:
+- **10 basic albums:** 2–3 points each, no abilities or editions, drawn from 3 random genres (mostly 3 random decades), so short flow chains happen but aren't guaranteed. The venue may like genres you don't own yet.
+- **2 blank CD-Rs** ("MIX"): 1 point, no genre or decade of their own. A CD-R counts as the genre and decade of the song before it, so it **always keeps the flow going**, and the song after it links to that same song. Played first, anything links after it. Never liked, hated, requested or boosted by EQ.
 
-## Balance notes
-Gig 1 with the starting binder and rack (300 simulated runs, best of 40 / 300 random setlists after digging weak albums): median 108 / 130, 10th percentile 80 / 100, against a target of 90. Later targets assume shop upgrades and haven't been simulated.
+Better albums, abilities, editions and all gear come from the shop.
+
+## Abilities, editions
+**Abilities** (40% of albums): Opener (+3 points in slot 1), Closer (+3 in slot 5), Crowd-Pleaser (+2), Bandmates (+3 if the band already played tonight), Segue (always keeps the flow going).
+
+**Editions** (8% of albums): Holographic +2 points, Signed +3, Limited Edition doubles the song's points, Remaster triggers its ability twice, Mint Condition +$1 per play.
+
+## Rack
+All 4 bays start empty; every unit is bought in the shop.
+- **Points:** Graphic EQ adds each genre's fader (−1 to +3); Gain Stage +2/+3 for the dial's genre; Exciter +1/+2 for the dial's decade; Tube Preamp +2/+3/+4 for songs without an ability.
+- **Flow:** Crossfader (a break drops flow by 1 instead of resetting it); Compressor (same record label also keeps the flow).
+- **Triggered** (button on the unit, 2 uses per show): Fog Machine, fired before a song, gives +1 flow (MK II +2). Make Some Noise, fired between songs, gives +8 crowd (MK II +12).
+
+## Pay and the shop
+After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus Mint Condition money.
+
+**The B-Side**, restocked at random each visit:
+- **Record bin:** 2 albums in jewel cases ($3–5) plus an album pack (Sampler: pick 1 of 3 for $4, or Box Set: pick 2 of 4 for $7).
+- **Gear wall:** 2 units you don't own plus a gear box (Grab Box: pick 1 of 3 for $6, or Studio Bundle: pick 2 of 3 for $11).
+- **Work orders** (sometimes): bench tweak ($3), upgrade a unit ($6), or give an album an edition.
+- *View binder* works in the shop too.
+
+## View binder
+The binder's pages (discs tagged IN HAND / IN CHANGER / PLAYED / DUG during a show) sit next to a tag count panel: one tile per genre, decade, ability, CD-R and edition. During a show the big number is how many are still left in your binder to draw (worth discarding for?) and the small one is how many you own. In the shop it's just the total.
+
+## Screen
+Changer (5 slots, each with its target score) top left, with a TARGET readout and PLAY on its panel. Your hand in the CD wallet is below it, with the console strip underneath. The venue clipboard is in the middle and the rack on the right, topped by a display showing CROWD, FLOW and TARGET, the crowd meter, the flow lamps (×1–×4) and the NEXT LINK tags (the last song's genre and decade, plus its label with a Compressor).
+
+## Balance
+500 simulated first shows with the starting binder: a greedy bot (plays the best-scoring CD, discards losing ones when nothing beats the target) vs. random play.
+
+| Venue | Bot median crowd | Bot applause / encore | Random median |
+|---|---|---|---|
+| Basement Show | 59 | 68% / 16% | 38 |
+| Biker Bar | 60 | 70% / 12% | 35 |
+| Coffeehouse | 55 | 58% / 11% | 33 |
+| Festival Tent | 61 | 61% / 24% | 36 |
+| Record Store Day | 54 | 54% / 10% | 34 |
+| Wedding Reception | 50 | 52% / 5% | 35 |
+
+Random play isn't booed off at the first show; that pressure is meant to come from rising targets over later shows. Later shows aren't simulated yet (it needs a shopping bot). Tuning knobs: `SLOT_TARGETS`, `TARGET_GROWTH`, `BASIC_POINTS`, `START_BASIC`, `START_CDRS`, `CDR_POINTS`, `LIKE`/`DISLIKE`, `REQUEST`, `FLOW_MAX`, `ENERGY_START`, `DIG_COST`.
 
 ## Art
-Everything is drawn in code in a physical style (gradients, bevels, gloss, screws, LEDs, LCDs). Optional textures in `art/textures/` replace flat fills when present: `metal_brushed`, `metal_dark`, `rubber`, `leather`, `fabric`, `wood` (gig) and `crate_wood`, `pegboard`, `cardboard` (shop). png/jpg/webp; seamless, evenly lit, fairly neutral color.
+Drawn in code in a physical style. Optional textures in `art/textures/`: `metal_brushed`, `metal_dark`, `rubber`, `leather`, `fabric`, `wood`, `crate_wood`, `pegboard`, `cardboard`.
 
 ## Next
-A run-level simulation with a shopping bot to tune targets 2–8 and prices; selling or removing albums; more gear (repeat, tape deck, shuffle switch).
+A tour with a length and a game over; a tour map where you pick the next venue to suit your binder; more flow gear and call-out types.
