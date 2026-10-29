@@ -1,48 +1,42 @@
 # Nine Pocket — CD binder roguelike
 
-Collect CDs into a binder of 3×3 sleeve sheets. Each round a judge scores the current sheet; miss the target and the run ends.
+Collect CDs into one 3×3 binder sheet that you keep all run. Each round a judge scores it as **Sound × Mult**; miss the target and the run ends. Where a disc sits matters as much as what it is.
 
-**Prototype:** run `nine_pocket.tscn` (F6). Tuning numbers, ability weights, sleeves, bundles and name lists are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd` (abilities in `_make_ability` / `_fire`). Shared drawing helpers are in `nine_pocket_ui.gd`. Right-click or Esc cancels a selection, sleeve placement or trade.
+**Prototype:** run `nine_pocket.tscn` (F6). Tuning numbers, judge rules, ability weights, jobs, editions, sleeves and bundles are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd` (scoring in `_score` / `_fire`, judges in `_make_judge`, abilities in `_make_ability`, workshop in `_make_orders` / `_apply_job`). Shared drawing helpers are in `nine_pocket_ui.gd`. Right-click or Esc cancels a selection, sleeve or job.
 
 ## Run
-- 7 rounds, 7 judges drawn from 28 (one per pair of the 8 categories). Start with $30 and an empty binder.
-- Each round gets a fresh sheet and three screens in order: **Store → Trade → Judge**. You can't go back to an earlier screen. Pass to get the clear reward and a new sheet; fail and the run ends.
-- **Preview judge & trader** (on the Store and Trade screens) shows this round's judge (categories, target, which of your discs feed it), the next judge, and the trader's wants and offers.
+- 7 rounds. Start with $30 and an empty sheet. Each round has three screens in order: **Store → Pressing plant → Judge**. Pass to get the clear reward; fail and the run ends.
+- Every screen is a place seen from the front. Your binder stands upright on the right. Minor UI sits in the corners: the wallet (cash + round pips) top left, flyers for tonight's judge and the next judge top right (hover for the rules, click for details), and the next-step button bottom right of the scene.
 
-## Store screen
-- 5 new arrivals (buy price = sell price × 2, +$2 if the disc has an ability), 2 bundles, 2 sleeves. Reroll the arrivals for $2, +$1 each time.
-- Bought discs go straight into the first open slot on the current sheet.
-- **Bundles** (Bargain Bin $6, Estate Sale $12, Box Set $20) give 4–5 discs plus a cash bonus. Keep what fits; the rest sell automatically (and fire their "Sold" abilities).
-- **Sleeves** go on one slot of the current sheet and last for that sheet only: Echo (activates twice), Amplifier (+2 to the ability's numbers), Polish (counts as Mint), Grader (one rarity higher), Wildcard (every genre), Gold Sleeve ($2 per activation).
+## Discs and tags
+- Each disc is a real album from `art/album_photos` (Genre > Band > Album, files named `Band - Album - original.jpg`). Run `godot --headless --path <repo> -s res://prototypes/nine_pocket/tools/make_covers.gd` after changing photos; it center-crops 384px covers into `art/covers/` and writes `catalog.json`.
+- Tags: genre (7), decade (60s–10s), label (4), rarity (Common/Uncommon/Rare), condition (Worn/Good/Mint), runtime. Genre, band, title and cover come from the art; each band has a fixed decade and label until the pressing plant changes them.
+- Tags are printed in a strip under every binder pocket and store slot. Tags that match tonight's judge are outlined green (Sound rule) or purple (Mult rule).
+- Hover any disc for a sectioned tooltip: title and band, tags, its ability (with a colored Sound/Mult chip), edition, which of tonight's rules it matches and where it needs to sit, and label/runtime/sell price.
 
-## Trade screen
-- 7 offers. Each costs discs that meet 1–2 conditions taken from the trader's two "wants" (genre, decade, label, Good+/Mint, Uncommon+/Rare). One disc that meets both conditions pays for both.
-- Pay with discs from any sheet; discs taken from locked sheets leave permanent holes. The new disc needs an open slot on the current sheet.
+## Scoring
+- Discs activate in slot order 1 to 9. Each activation adds, in order: base Sound by rarity (2/4/6), its edition, the judge's rules, any row/column boosts from other discs, then its own ability. Mult starts at 1. Score = Sound × Mult (each at least 1).
+- **Judges** have one Sound rule and one Mult rule. Each rule names a tag and a place: anywhere, corners, edges, center, a row or column, or "next to another album with this tag". The name comes from the rules' tags (e.g. "The Picky Millennial": Uncommon+ for Sound, 00s for Mult).
+- **Abilities** are mostly about placement: same genre/decade/label in its row, column, neighbors or diagonals; neighbors with a tag; corner/center/edge slot; neighbors one decade apart; different genres in its row; whole row or column matching; ×2 Mult if all neighbors match; boosting the rest of its row or column; retriggering the disc to its left, above it, or all neighbors. A few give cash, a free bundle when placed, or extra cash / a Rare album when sold. Retriggered discs don't retrigger anything themselves.
+- Neighbors are rows and columns only (diagonals only where an ability says so).
 
-## Judge screen
-- Shows the judge, the current sheet and the scoreboard. Nothing is scored until you click **Judge!**
-- Every disc activates in slot order, 1 to 9, and its ability adds to (or doubles) a category, Balatro-joker style. Each step is animated on the sheet. Score = judge's category A × category B (each at least 1). There are no built-in category rules: categories only grow through abilities.
+## Store
+- A 4×3 display bin: 8 single albums in jewel cases (buy price = sell price × 2, +$2 if it has an ability), and 4 box sets (one of each tier plus a random fourth). Restock the singles for $2, +$1 each time. Organize the bin by price, genre, decade, label, rarity or condition.
+- Bought discs go into the first open pocket. If the sheet is full, sell a disc first (select it, then its Sell tag).
+- Box sets (Bargain Bin $6, Estate Sale $12, Box Set $20) give 4–5 discs plus cash; keep what fits, the rest sell automatically.
+- 2 sleeves hang beside the bin. A sleeve goes on one pocket for this round only: Echo (activates twice), Amplifier (+2 to its ability's number), Polish (counts as Mint), Grader (one rarity higher), Wildcard (every genre), Gold ($2 per activation).
+
+## Pressing plant
+- 5 work orders per round, each usable once. Pick an order, then a disc in your binder (discs that can take it glow green).
+- Remix (change genre to X, $4), Remaster (±1 decade, $3), Relabel (move to label X, $3), Re-press (+1 condition, $4).
+- Editions are permanent and one per disc: Signed (+6 Sound, $8), Picture Disc (+2 Mult, $9), Platinum (×2 Mult, $14). An edition adds $2 to the sell price.
 
 ## Binder
-- Move discs freely on the current sheet (click a disc, then a slot) on the Store and Trade screens. Use < > to view locked sheets.
-- Sell any disc at any time for a fixed price: $1 / $3 / $6 by rarity, + condition (Worn 0, Good 1, Mint 2).
-
-## Discs
-Each disc is a real album from `art/album_photos` (Genre > Band > Album, files named `Band - Album - original.jpg`). The genre (7), band, title and cover come from the art; each band has a fixed decade (60s–10s) and label (4). Rarity, condition (Worn/Good/Mint) and runtime (28–79 min) are rolled for each copy. Every disc has one ability; rarer discs roll stronger kinds and bigger numbers.
-
-After adding or changing photos, run `godot --headless --path <repo> -s res://prototypes/nine_pocket/tools/make_covers.gd`. It center-crops each photo to a 384px square in `art/covers/` and rewrites `art/covers/catalog.json`.
-
-| When | Kinds |
-|---|---|
-| Activated | +N category · +N per matching disc in its row/column/neighbors/sheet/binder · +N per distinct decade/genre/label on the sheet · +N per neighbor with the same decade/genre/label · +N per neighbor one decade apart · +N per 20 min of runtime · +N in a corner/center/edge slot · +N if Mint · +1 per Mint in binder, −1 per Worn · retrigger the disc to the left · retrigger all neighbors · double a category · gain $N |
-| Placed | gain $N · get a free Bargain Bin bundle |
-| Sold | gain $N extra · create a random Rare album |
-
-Retriggered discs don't retrigger anything themselves.
+- One 3×3 sheet for the whole run. Move discs freely in the Store and Pressing plant (click a disc, then a pocket). Sell any disc for $1/$3/$6 by rarity + condition (0/1/2) + edition.
 
 ## Targets and economy
-- Targets self-calibrate at the start of each run: for each drawn judge, the median score of 200 random full sheets where 25% of discs are re-aimed at that judge's categories, × the round factor (0.4, 0.6, 0.85, 1.1, 1.4, 1.7, 2.0), minimum 4.
-- Cash: disc abilities, bundle bonuses, selling, and the clear reward ($6 + $1 per round).
+- Targets self-calibrate at run start: median score of 200 random, unarranged full sheets under that judge × the round factor (0.5, 0.8, 1.1, 1.4, 1.8, 2.2, 2.7), minimum 4.
+- Cash: clear reward ($6 + $1 per round), selling, box set cash, cash abilities, Gold sleeves.
 
 ## Open for tuning
-Store and trader offer counts, refreshes, starting cash, round factors, ability weights and numbers, disc prices vs. income.
+Round factors vs. a persistent, arranged sheet; job prices and order mix; ability numbers; whether the pressing plant should also post a side request (bonus goal) each round.

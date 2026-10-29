@@ -2,7 +2,7 @@ extends "res://prototypes/nine_pocket/nine_pocket_ui.gd"
 
 const D := preload("res://prototypes/nine_pocket/nine_pocket_data.gd")
 
-enum Phase { SHOP, TRADER, JUDGE, RESULT, GAMEOVER, WIN }
+enum Phase { SHOP, WORKSHOP, JUDGE, RESULT, GAMEOVER, WIN }
 
 class Disc:
 	var uid := 0
@@ -17,6 +17,7 @@ class Disc:
 	var cond := 0
 	var runtime := 40
 	var ability := {}
+	var edition := ""
 
 var rng := RandomNumberGenerator.new()
 var phase := Phase.SHOP
@@ -32,16 +33,18 @@ var shop_discs: Array[Dictionary] = []
 var shop_packs: Array[Dictionary] = []
 var shop_sleeves: Array[Dictionary] = []
 var reroll_cost := 2
-var trader := {}
+var orders: Array[Dictionary] = []
 var sel := Vector2i(-1, -1)
 var mode := ""
 var mode_i := -1
-var paid: Array[Disc] = []
 var pack_items: Array[Disc] = []
 var pack_keep: Array[bool] = []
 var pack_cash := 0
 var pack_title := ""
-var show_trader := false
+var preview := ""
+var sort_key := ""
+var preview_j := 0
+var phase_t := 0.0
 var result := {}
 var message := ""
 var message_t := 0.0
@@ -65,6 +68,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	message_t = maxf(0.0, message_t - delta)
+	phase_t += delta
 	for i in 9:
 		slot_flash[i] = maxf(0.0, slot_flash[i] - delta * 3.0)
 	if judging:
@@ -89,13 +93,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 		elif mb.button_index == MOUSE_BUTTON_RIGHT:
 			_cancel()
 	elif ev is InputEventKey and ev.pressed and not ev.echo and (ev as InputEventKey).keycode == KEY_ESCAPE:
-		show_trader = false
+		preview = ""
 		_cancel()
 
 func _cancel() -> void:
 	sel = Vector2i(-1, -1)
 	mode = ""
-	paid.clear()
 
 func _say(msg: String) -> void:
 	message = msg
@@ -122,28 +125,26 @@ func _weighted(w: Array) -> int:
 func _new_run() -> void:
 	rng.randomize()
 	next_uid = 1
-	var pairs: Array = []
-	for i in D.CATEGORIES.size():
-		for j in range(i + 1, D.CATEGORIES.size()):
-			pairs.append([D.CATEGORIES[i], D.CATEGORIES[j]])
-	_shuffle(pairs)
 	judges.clear()
-	for k in D.ROUNDS:
-		var a: String = pairs[k][0]
-		var b: String = pairs[k][1]
-		if rng.randf() < 0.5:
-			var t := a
-			a = b
-			b = t
-		judges.append({"a": a, "b": b, "name": "The %s %s" % [D.CAT[a]["adj"], D.CAT[b]["noun"]], "target": 0})
+	var names := {}
+	while judges.size() < D.ROUNDS:
+		var j := _make_judge()
+		if names.has(j["name"]):
+			continue
+		names[j["name"]] = true
+		judges.append(j)
 	_calibrate()
 	cash = D.START_CASH
 	round_n = 1
 	sheets.clear()
+	var sheet: Array = []
+	sheet.resize(9)
+	sheets.append(sheet)
+	view = 0
 	result = {}
 	pack_items.clear()
 	pack_queue.clear()
-	show_trader = false
+	preview = ""
 	judging = false
 	_begin_round()
 
@@ -157,38 +158,35 @@ func _calibrate() -> void:
 		for t in D.CALIBRATION_SHEETS:
 			var sheet: Array = []
 			for i in 9:
-				var d := _make_disc()
-				if d.ability.has("cat") and rng.randf() < D.CALIBRATION_FOCUS:
-					d.ability["cat"] = j["a"] if rng.randf() < 0.5 else j["b"]
-				sheet.append(d)
-			var c: Dictionary = _score(sheet, blank, [sheet])["cats"]
-			totals.append(maxi(1, int(c[j["a"]])) * maxi(1, int(c[j["b"]])))
+				sheet.append(_make_disc())
+			totals.append(_total(_score(sheet, blank, j)))
 		totals.sort()
 		j["target"] = maxi(D.MIN_TARGET, int(round(float(totals[totals.size() / 2]) * D.ROUND_FACTOR[k])))
 
 func _begin_round() -> void:
-	var sheet: Array = []
-	sheet.resize(9)
-	sheets.append(sheet)
-	view = sheets.size() - 1
+	view = 0
 	sleeves.resize(9)
 	sleeves.fill("")
 	_cancel()
 	reroll_cost = D.REROLL_BASE
 	_roll_shop_discs()
 	shop_packs.clear()
-	var pk: Array = D.PACKS.keys()
-	_shuffle(pk)
-	for i in mini(D.SHOP_PACKS, pk.size()):
-		shop_packs.append({"id": pk[i], "sold": false})
+	var keys: Array = D.PACKS.keys()
+	var pk: Array = keys.duplicate()
+	while pk.size() < D.SHOP_PACKS:
+		pk.append(keys[rng.randi_range(0, keys.size() - 1)])
+	pk.sort_custom(func(x, y): return int(D.PACKS[x]["price"]) < int(D.PACKS[y]["price"]))
+	for id in pk:
+		shop_packs.append({"id": id, "sold": false})
 	shop_sleeves.clear()
 	var sk: Array = D.SLEEVES.keys()
 	_shuffle(sk)
 	for i in mini(D.SHOP_SLEEVES, sk.size()):
 		shop_sleeves.append({"id": sk[i], "sold": false})
-	_make_trader()
+	_make_orders()
 	slot_flash.fill(0.0)
 	phase = Phase.SHOP
+	phase_t = 0.0
 
 func _cur() -> Array:
 	return sheets[sheets.size() - 1]
@@ -248,34 +246,46 @@ func _make_ability(r: int) -> Dictionary:
 	for k in keys:
 		w.append(D.ABILITY_WEIGHTS[k][r])
 	var kind: String = keys[_weighted(w)]
-	var a := {"kind": kind, "when": String(D.ABILITY_WHEN.get(kind, "activated")), "cat": D.CATEGORIES[rng.randi_range(0, D.CATEGORIES.size() - 1)], "n": 0}
-	var attrs := ["era", "genre", "label"]
+	var mult := rng.randf() < 0.35
+	var big := 2 if r == 2 else 1
+	var a := {"kind": kind, "when": String(D.ABILITY_WHEN.get(kind, "activated")), "gain": "mult" if mult else "sound", "n": 0}
+	var attr: String = D.MATCH_ATTRS[rng.randi_range(0, D.MATCH_ATTRS.size() - 1)]
 	match kind:
 		"flat":
-			a["n"] = 2 + 2 * r
-		"per_attr":
-			a["scope"] = D.SCOPES[rng.randi_range(0, D.SCOPES.size() - (1 if r > 0 else 2))]
+			a["n"] = (1 + r) if mult else (3 + 3 * r)
+		"row_match", "col_match":
+			a["attr"] = attr
+			a["n"] = big if mult else (3 + 2 * r)
+		"nbr_match", "diag_match":
+			a["attr"] = attr
+			a["n"] = 1 if mult else (2 + r)
+		"nbr_filter":
 			a["f"] = _rand_cond()
-			a["n"] = 2 if r == 2 and a["scope"] != "binder" else 1
-		"distinct":
-			a["attr"] = attrs[rng.randi_range(0, 2)]
-			a["n"] = 1 + mini(r, 1)
-		"neighbor_match":
-			a["attr"] = attrs[rng.randi_range(0, 2)]
-			a["n"] = 2 + r
-		"era_step":
-			a["n"] = 2 + r
-		"runtime":
-			a["n"] = 1
-		"slot_bonus":
+			a["n"] = 1 if mult else (2 + r)
+		"slot":
 			a["slot"] = ["corner", "center", "edge"][rng.randi_range(0, 2)]
-			a["n"] = (6 if a["slot"] == "center" else 3) + 2 * r
-		"self_mint":
-			a["n"] = 4 + 2 * r
-		"cond_balance":
+			var c: bool = a["slot"] == "center"
+			a["n"] = ((3 if c else 1) + r) if mult else ((10 if c else 5) + 2 * r)
+		"era_step", "row_distinct":
+			a["n"] = 1 if mult else (3 + r)
+		"line_all":
+			a["attr"] = attr
+			a["line"] = "row" if rng.randf() < 0.5 else "column"
+			if r == 2 and rng.randf() < 0.5:
+				a["gain"] = "xmult"
+				a["n"] = 2
+			else:
+				a["gain"] = "mult"
+				a["n"] = 3 + 2 * r
+		"x_nbrs":
+			a["attr"] = attr
+			a["gain"] = "xmult"
+			a["n"] = 2
+		"boost_row", "boost_col":
+			a["n"] = big if mult else (2 + r)
+		"runtime":
+			a["gain"] = "sound"
 			a["n"] = 1
-			if rng.randf() < 0.5:
-				a["cat"] = "condition"
 		"cash":
 			a["n"] = 1 + 2 * r
 		"gen_cash":
@@ -291,34 +301,45 @@ func _ability_text(a: Dictionary) -> String:
 	if a.is_empty():
 		return ""
 	var pre: String = {"activated": "Activated: ", "placed": "Placed: ", "sold": "Sold: "}[a["when"]]
-	var cn := String(D.CAT[a["cat"]]["name"])
+	var g := _gain_text(a)
 	var n := int(a["n"])
+	var at := String(D.ATTR_TEXT.get(String(a.get("attr", "")), ""))
 	var t := ""
 	match String(a["kind"]):
 		"flat":
-			t = "+%d %s." % [n, cn]
-		"per_attr":
-			t = "+%d %s per %s disc in %s." % [n, cn, _filter_text(a["f"]), D.SCOPE_TEXT[a["scope"]]]
-		"distinct":
-			t = "+%d %s per distinct %s on this sheet." % [n, cn, D.ATTR_TEXT[a["attr"]]]
-		"neighbor_match":
-			t = "+%d %s per neighbor with the same %s." % [n, cn, D.ATTR_TEXT[a["attr"]]]
+			t = "%s." % g
+		"row_match":
+			t = "%s per other disc in its row with the same %s." % [g, at]
+		"col_match":
+			t = "%s per other disc in its column with the same %s." % [g, at]
+		"nbr_match":
+			t = "%s per neighbor with the same %s." % [g, at]
+		"diag_match":
+			t = "%s per diagonal neighbor with the same %s." % [g, at]
+		"nbr_filter":
+			t = "%s per neighboring %s album." % [g, _filter_text(a["f"])]
+		"slot":
+			t = "%s if in %s." % [g, {"corner": "a corner", "center": "the center", "edge": "an edge slot"}[a["slot"]]]
 		"era_step":
-			t = "+%d %s per neighbor one decade apart." % [n, cn]
-		"runtime":
-			t = "+%d %s per %d min of its runtime." % [n, cn, D.RUNTIME_STEP]
-		"slot_bonus":
-			t = "+%d %s if in a %s slot." % [n, cn, a["slot"]]
-		"self_mint":
-			t = "+%d %s if this disc is Mint." % [n, cn]
-		"cond_balance":
-			t = "+%d %s per Mint disc in your binder, -%d per Worn." % [n, cn, n]
+			t = "%s per neighbor one decade apart." % g
+		"row_distinct":
+			t = "%s per different genre in its row." % g
+		"line_all":
+			t = "%s if its whole %s shares its %s." % [g, a["line"], at]
+		"x_nbrs":
+			t = "%s if all its neighbors (at least 2) share its %s." % [g, at]
+		"boost_row":
+			t = "Other discs in its row get %s when they activate." % g
+		"boost_col":
+			t = "Other discs in its column get %s when they activate." % g
 		"retrigger_left":
 			t = "Retrigger the disc to its left."
+		"retrigger_above":
+			t = "Retrigger the disc above it."
 		"retrigger_nbrs":
 			t = "Retrigger all neighboring discs."
-		"double":
-			t = "Double the current %s." % cn
+		"runtime":
+			t = "+%d Sound per %d min of its runtime." % [n, D.RUNTIME_STEP]
 		"cash", "gen_cash":
 			t = "Gain $%d." % n
 		"gen_pack":
@@ -330,7 +351,7 @@ func _ability_text(a: Dictionary) -> String:
 	return pre + t
 
 func _sell_price(d: Disc) -> int:
-	return D.SELL_BASE[d.rarity] + d.cond
+	return D.SELL_BASE[d.rarity] + d.cond + (D.EDITION_SELL if d.edition != "" else 0)
 
 func _buy_price(d: Disc) -> int:
 	return _sell_price(d) * D.BUY_MULT + (D.ABILITY_PREMIUM if not d.ability.is_empty() else 0)
@@ -387,109 +408,134 @@ func _slot_is(i: int, slot: String) -> bool:
 			return i == 4
 	return i in [1, 3, 5, 7]
 
-func _score(sheet: Array, sl: Array, binder: Array) -> Dictionary:
-	var ctx := {"cats": {}, "cash": 0, "steps": [], "sheet": sheet, "sl": sl, "binder": binder}
-	for k in D.CATEGORIES:
-		ctx["cats"][k] = 0
+func _score(sheet: Array, sl: Array, j: Dictionary) -> Dictionary:
+	var ctx := {"sound": 0, "mult": 1, "cash": 0, "steps": [], "sheet": sheet, "sl": sl, "j": j}
 	for i in 9:
 		if sheet[i] != null:
 			_activate(ctx, i, false)
 	return ctx
 
-func _push(ctx: Dictionary, slot: int, kind: String, cat: String, n: int) -> void:
+func _push(ctx: Dictionary, slot: int, kind: String, n: int) -> void:
 	if n == 0 and kind != "again":
 		return
 	match kind:
-		"add":
-			ctx["cats"][cat] += n
-		"mul":
-			ctx["cats"][cat] *= n
+		"sound":
+			ctx["sound"] += n
+		"mult":
+			ctx["mult"] += n
+		"xmult":
+			ctx["mult"] *= n
 		"cash":
 			ctx["cash"] += n
-	ctx["steps"].append({"slot": slot, "kind": kind, "cat": cat, "n": n, "cats": ctx["cats"].duplicate(), "cash": ctx["cash"]})
+	ctx["steps"].append({"slot": slot, "kind": kind, "n": n, "sound": ctx["sound"], "mult": ctx["mult"], "cash": ctx["cash"]})
 
 func _activate(ctx: Dictionary, i: int, again: bool) -> void:
 	var s := _sl(ctx["sl"], i)
 	var times := 2 if s == "echo" and not again else 1
 	for t in times:
 		if again or t > 0:
-			_push(ctx, i, "again", "", 0)
+			_push(ctx, i, "again", 0)
 		_fire(ctx, i, again)
 		if s == "gold":
-			_push(ctx, i, "cash", "", 2)
+			_push(ctx, i, "cash", 2)
 
 func _fire(ctx: Dictionary, i: int, again: bool) -> void:
 	var sheet: Array = ctx["sheet"]
 	var sl: Array = ctx["sl"]
 	var d: Disc = sheet[i]
+	var s := _sl(sl, i)
+	_push(ctx, i, "sound", D.BASE_SOUND[_rar(d, s)])
+	if d.edition != "":
+		var ed: Dictionary = D.EDITIONS[d.edition]
+		_push(ctx, i, String(ed["kind"]), int(ed["n"]))
+	var j: Dictionary = ctx["j"]
+	for gk in ["sound", "mult"]:
+		var r: Dictionary = j[gk]
+		_push(ctx, i, gk, int(r["n"]) * _rule_hits(sheet, sl, i, r))
+	for k in 9:
+		var e: Disc = sheet[k]
+		if k == i or e == null or e.ability.is_empty():
+			continue
+		var b := e.ability
+		if (b["kind"] == "boost_row" and k / 3 == i / 3) or (b["kind"] == "boost_col" and k % 3 == i % 3):
+			_push(ctx, i, String(b["gain"]), int(b["n"]) + (D.AMP_BONUS if _sl(sl, k) == "amp" else 0))
 	var a := d.ability
 	if a.is_empty() or String(a["when"]) != "activated":
 		return
-	var s := _sl(sl, i)
-	var n := int(a["n"]) + (D.AMP_BONUS if s == "amp" else 0)
-	var cat := String(a["cat"])
-	match String(a["kind"]):
+	var g := String(a.get("gain", "sound"))
+	var n := int(a["n"]) + (D.AMP_BONUS if s == "amp" and g != "xmult" else 0)
+	var attr := String(a.get("attr", ""))
+	var kind := String(a["kind"])
+	match kind:
 		"flat":
-			_push(ctx, i, "add", cat, n)
-		"per_attr":
+			_push(ctx, i, g, n)
+		"row_match", "col_match", "nbr_match", "diag_match":
+			var slots: Array[int] = _diags(i)
+			if kind == "row_match":
+				slots = _scope_slots(i, "row")
+			elif kind == "col_match":
+				slots = _scope_slots(i, "column")
+			elif kind == "nbr_match":
+				slots = _nbrs(i)
 			var m := 0
-			if a["scope"] == "binder":
-				for sh: Array in ctx["binder"]:
-					for j in 9:
-						if sh[j] != null and _meets_s(sh[j], _sl(sl, j) if is_same(sh, sheet) else "", a["f"]):
-							m += 1
-			else:
-				for j in _scope_slots(i, String(a["scope"])):
-					if sheet[j] != null and _meets_s(sheet[j], _sl(sl, j), a["f"]):
-						m += 1
-			_push(ctx, i, "add", cat, n * m)
-		"distinct":
-			var seen := {}
-			for j in 9:
-				if sheet[j] != null:
-					seen[-1 if a["attr"] == "genre" and _sl(sl, j) == "wild" else _attr(sheet[j], a["attr"])] = true
-			_push(ctx, i, "add", cat, n * seen.size())
-		"neighbor_match":
-			var m := 0
-			for j in _nbrs(i):
-				var e: Disc = sheet[j]
-				if e != null and (_attr(e, a["attr"]) == _attr(d, a["attr"]) or (a["attr"] == "genre" and (s == "wild" or _sl(sl, j) == "wild"))):
+			for k in slots:
+				if k != i and sheet[k] != null and _same(sheet, sl, i, k, attr):
 					m += 1
-			_push(ctx, i, "add", cat, n * m)
+			_push(ctx, i, g, n * m)
+		"nbr_filter":
+			var m := 0
+			for k in _nbrs(i):
+				if sheet[k] != null and _meets_s(sheet[k], _sl(sl, k), a["f"]):
+					m += 1
+			_push(ctx, i, g, n * m)
+		"slot":
+			if _slot_is(i, String(a["slot"])):
+				_push(ctx, i, g, n)
 		"era_step":
 			var m := 0
-			for j in _nbrs(i):
-				if sheet[j] != null and absi(sheet[j].era - d.era) == 1:
+			for k in _nbrs(i):
+				if sheet[k] != null and absi(sheet[k].era - d.era) == 1:
 					m += 1
-			_push(ctx, i, "add", cat, n * m)
-		"runtime":
-			_push(ctx, i, "add", cat, n * (d.runtime / D.RUNTIME_STEP))
-		"slot_bonus":
-			if _slot_is(i, String(a["slot"])):
-				_push(ctx, i, "add", cat, n)
-		"self_mint":
-			if (2 if s == "polish" else d.cond) == 2:
-				_push(ctx, i, "add", cat, n)
-		"cond_balance":
-			var m := 0
-			for sh: Array in ctx["binder"]:
-				for j in 9:
-					if sh[j] != null:
-						var c: int = 2 if is_same(sh, sheet) and _sl(sl, j) == "polish" else sh[j].cond
-						m += 1 if c == 2 else (-1 if c == 0 else 0)
-			_push(ctx, i, "add", cat, n * m)
+			_push(ctx, i, g, n * m)
+		"row_distinct":
+			var seen := {}
+			for k in _scope_slots(i, "row"):
+				if sheet[k] != null:
+					seen[-1 - k if _sl(sl, k) == "wild" else sheet[k].genre] = true
+			_push(ctx, i, g, n * seen.size())
+		"line_all":
+			var ok := true
+			for k in _scope_slots(i, "row" if a["line"] == "row" else "column"):
+				if sheet[k] == null or not _same(sheet, sl, i, k, attr):
+					ok = false
+			if ok:
+				_push(ctx, i, g, n)
+		"x_nbrs":
+			var cnt := 0
+			var ok := true
+			for k in _nbrs(i):
+				if sheet[k] == null:
+					continue
+				cnt += 1
+				if not _same(sheet, sl, i, k, attr):
+					ok = false
+			if ok and cnt >= 2:
+				_push(ctx, i, g, n)
 		"retrigger_left":
 			if not again and i % 3 > 0 and sheet[i - 1] != null:
 				_activate(ctx, i - 1, true)
+		"retrigger_above":
+			if not again and i >= 3 and sheet[i - 3] != null:
+				_activate(ctx, i - 3, true)
 		"retrigger_nbrs":
 			if not again:
-				for j in _nbrs(i):
-					if sheet[j] != null:
-						_activate(ctx, j, true)
-		"double":
-			_push(ctx, i, "mul", cat, 2)
+				for k in _nbrs(i):
+					if sheet[k] != null:
+						_activate(ctx, k, true)
+		"runtime":
+			_push(ctx, i, "sound", n * (d.runtime / D.RUNTIME_STEP))
 		"cash":
-			_push(ctx, i, "cash", "", n)
+			_push(ctx, i, "cash", n)
 
 func _roll_shop_discs() -> void:
 	shop_discs.clear()
@@ -673,79 +719,6 @@ func _cond_text(c: Dictionary) -> String:
 			return "1 Rare" if v == 2 else "1 Uncommon+"
 	return ""
 
-func _cost_text(cost: Array) -> String:
-	var parts: Array[String] = []
-	for c in cost:
-		parts.append(_cond_text(c))
-	return " + ".join(parts)
-
-func _make_trader() -> void:
-	var l1 := _rand_cond()
-	var l2 := _rand_cond(String(l1["attr"]))
-	var offers: Array = []
-	for i in D.TRADER_OFFERS:
-		var r := _weighted(D.TRADER_RARITY)
-		var cost: Array = []
-		if r == 2 or (r == 1 and rng.randf() < 0.5):
-			cost = [l1, l2]
-		else:
-			cost = [l1 if rng.randf() < 0.5 else l2]
-		offers.append({"disc": _make_disc(r), "cost": cost, "done": false})
-	trader = {"name": D.TRADERS[rng.randi_range(0, D.TRADERS.size() - 1)], "likes": [l1, l2], "offers": offers}
-
-func _unmet() -> Array:
-	var out: Array = []
-	if mode != "pay":
-		return out
-	for c in trader["offers"][mode_i]["cost"]:
-		var ok := false
-		for d in paid:
-			if _meets(d, c):
-				ok = true
-		if not ok:
-			out.append(c)
-	return out
-
-func _useful(d: Disc) -> bool:
-	if d in paid:
-		return false
-	for c in _unmet():
-		if _meets(d, c):
-			return true
-	return false
-
-func _start_trade(i: int) -> void:
-	_cancel()
-	mode = "pay"
-	mode_i = i
-
-func _pay_with(d: Disc) -> void:
-	if not _useful(d):
-		_say("That disc doesn't meet the trader's terms.")
-		return
-	paid.append(d)
-	if _unmet().is_empty():
-		_finish_trade()
-
-func _finish_trade() -> void:
-	var cur := _cur()
-	var freed := 0
-	for d in paid:
-		if d in cur:
-			freed += 1
-	if _open_slots().size() + freed == 0:
-		_say("The new disc needs an open slot on this sheet.")
-		_cancel()
-		return
-	for sh: Array in sheets:
-		for i in 9:
-			if sh[i] != null and sh[i] in paid:
-				sh[i] = null
-	var o: Dictionary = trader["offers"][mode_i]
-	_place(o["disc"])
-	o["done"] = true
-	_cancel()
-
 func _on_slot(si: int, slot: int) -> void:
 	var d: Disc = sheets[si][slot]
 	var current := si == sheets.size() - 1
@@ -762,9 +735,9 @@ func _on_slot(si: int, slot: int) -> void:
 			o["sold"] = true
 			_cancel()
 			return
-		"pay":
+		"job":
 			if d != null:
-				_pay_with(d)
+				_apply_job(slot)
 			return
 	if sel.x == si and sel.y == slot:
 		sel = Vector2i(-1, -1)
@@ -778,15 +751,11 @@ func _on_slot(si: int, slot: int) -> void:
 		return
 	sel = Vector2i(si, slot) if d != null else Vector2i(-1, -1)
 
-func _go_trader() -> void:
-	_cancel()
-	view = sheets.size() - 1
-	phase = Phase.TRADER
-
 func _go_judge() -> void:
 	_cancel()
 	view = sheets.size() - 1
 	phase = Phase.JUDGE
+	phase_t = 0.0
 	shown = {}
 	shown_cash = 0
 
@@ -794,8 +763,7 @@ func _start_judging() -> void:
 	if judging or phase != Phase.JUDGE:
 		return
 	_cancel()
-	view = sheets.size() - 1
-	pending = _score(_cur(), sleeves, sheets)
+	pending = _score(_cur(), sleeves, judges[round_n - 1])
 	steps.assign(pending["steps"])
 	shown = {}
 	shown_cash = 0
@@ -804,37 +772,34 @@ func _start_judging() -> void:
 	judging = true
 
 func _play_step(st: Dictionary) -> void:
-	shown = st["cats"]
+	shown = {"sound": int(st["sound"]), "mult": int(st["mult"])}
 	shown_cash = int(st["cash"])
 	var slot := int(st["slot"])
 	slot_flash[slot] = 1.0
-	var j := judges[round_n - 1]
-	var cat := String(st["cat"])
 	var n := int(st["n"])
-	var cn := String(D.CAT[cat]["name"]) if cat != "" else ""
-	var col := Color(0.75, 0.78, 0.82)
-	if cat == j["a"]:
-		col = Color("8fc1ff")
-	elif cat == j["b"]:
-		col = Color("ff9a86")
 	var text := "Again!"
+	var col := Color(0.8, 0.82, 0.86)
 	match String(st["kind"]):
-		"add":
-			text = "%+d %s" % [n, cn]
-		"mul":
-			text = "x%d %s" % [n, cn]
+		"sound":
+			text = "+%d Sound" % n
+			col = Color(D.SOUND_COLOR).lightened(0.25)
+		"mult":
+			text = "+%d Mult" % n
+			col = Color(D.MULT_COLOR).lightened(0.3)
+		"xmult":
+			text = "×%d Mult" % n
+			col = Color(D.MULT_COLOR).lightened(0.3)
 		"cash":
 			text = "+$%d" % n
 			col = c_gold
-	_float(_slot_rect(slot), text, col)
+	_float(_cd_rect(slot), text, col)
 	_sfx("mouseover")
 
 func _finish_judging() -> void:
 	judging = false
 	var j := judges[round_n - 1]
-	var c: Dictionary = pending["cats"]
-	var a := maxi(1, int(c[j["a"]]))
-	var b := maxi(1, int(c[j["b"]]))
+	var a := maxi(1, int(pending["sound"]))
+	var b := maxi(1, int(pending["mult"]))
 	var hit := a * b >= int(j["target"])
 	var reward := D.CLEAR_REWARD[round_n - 1] if hit else 0
 	cash += int(pending["cash"]) + reward
@@ -850,10 +815,6 @@ func _result_next() -> void:
 		round_n += 1
 		_begin_round()
 
-func _view_step(dir: int) -> void:
-	view = clampi(view + dir, 0, sheets.size() - 1)
-	sel = Vector2i(-1, -1)
-
 func _slot_rect(i: int) -> Rect2:
 	return Rect2(r_grid.position.x + (i % 3) * (CARD_W + GAP), r_grid.position.y + (i / 3) * (CARD_H + GAP), CARD_W, CARD_H)
 
@@ -865,39 +826,28 @@ func _disc_count() -> int:
 				n += 1
 	return n
 
-func _disc_tip(d: Disc) -> String:
-	var t := "%s\nby %s\n%s · %s · %s\n%s · %s · %d min" % [d.title, d.band, D.GENRES[d.genre], D.ERAS[d.era], D.LABELS[d.label]["name"], D.RARITIES[d.rarity], D.CONDITIONS[d.cond], d.runtime]
-	if not d.ability.is_empty():
-		t += "\n" + _ability_text(d.ability)
-	return t + "\nSells for $%d" % _sell_price(d)
-
 func _draw() -> void:
 	_begin_draw()
-	var modal := not pack_items.is_empty() or show_trader or phase in [Phase.RESULT, Phase.GAMEOVER, Phase.WIN]
+	var modal := not pack_items.is_empty() or preview != "" or phase in [Phase.RESULT, Phase.GAMEOVER, Phase.WIN]
 	ui_live = not modal and not judging
-	_draw_header()
-	var old := view < sheets.size() - 1
-	var shopping := phase == Phase.SHOP or phase == Phase.TRADER
-	var left := "RECORD STORE" if phase == Phase.SHOP else ("TRADER" if phase == Phase.TRADER else "JUDGE")
-	_draw_padfolio(left, "SHEET %d%s" % [view + 1, "  ·  LOCKED" if old else ""], "COUNTER" if shopping else "SCOREBOARD")
 	match phase:
 		Phase.SHOP:
-			_draw_shop()
-		Phase.TRADER:
-			_draw_trader()
+			_draw_store()
+		Phase.WORKSHOP:
+			_draw_workshop()
 		_:
-			_draw_judge_panel()
+			_draw_office()
 	_draw_binder()
-	if shopping:
-		_draw_counter()
-	else:
-		_draw_scoreboard()
+	_draw_wallet()
+	_draw_flyers()
+	_draw_next_button()
+	_draw_toast()
 	_draw_floaters()
 	ui_live = true
 	if not pack_items.is_empty():
 		_draw_pack()
-	elif show_trader:
-		_draw_preview()
+	elif preview == "judge":
+		_draw_judge_preview()
 	match phase:
 		Phase.RESULT:
 			_draw_result()
@@ -907,33 +857,356 @@ func _draw() -> void:
 			_draw_end("Collection complete!", "All %d judges were impressed." % D.ROUNDS, c_good)
 	_end_draw()
 
-func _draw_header() -> void:
-	_foil(Vector2(p_left.position.x + 6.0, HEADER_Y + 80.0), "NINE POCKET", T_HERO)
-	_text(Vector2(p_left.position.x + 8.0, HEADER_Y + 120.0), "Now: %s" % ["Store", "Trade", "Judge", "Judge", "Judge", "Judge"][phase], T_SM, Color("98a4b6"), true)
-	var x0 := p_binder.position.x
-	var w := (p_right.end.x - x0 - 80.0) / 5.0
-	var y := HEADER_Y + 12.0
+func _draw_wallet() -> void:
+	var r := Rect2(40.0, 34.0, 470.0, 104.0)
+	_shadow(r, 52, 5.0)
+	_panel(r, Color(Color("173404"), 0.94), 52, Color("3b6d11"), 3)
+	_heavy(Vector2(r.position.x + 34.0, r.position.y + 76.0), "$%d" % cash, T_HERO, c_gold)
+	for k in D.ROUNDS:
+		var c := Vector2(r.end.x - 42.0 - (D.ROUNDS - 1 - k) * 32.0, r.get_center().y)
+		var col := Color("97c459") if k < round_n - 1 else (c_gold if k == round_n - 1 else Color(1, 1, 1, 0.18))
+		draw_circle(c, 11.0 if k == round_n - 1 else 9.0, col)
+	_tip(r, "Cash: $%d\nRound %d of %d" % [cash, round_n, D.ROUNDS])
+
+func _judge_chips(j: Dictionary) -> Array:
+	return [[_filter_text(j["sound"]["f"]), Color(D.SOUND_COLOR)], [_filter_text(j["mult"]["f"]), Color(D.MULT_COLOR)]]
+
+func _flyer(r: Rect2, ang: float, head: String, title: String, chips: Array, tip: String, cb: Callable) -> void:
+	var hovered := ui_live and r.has_point(mouse)
+	_rotated(r.get_center() + Vector2(0, -6.0 if hovered else 0.0), ang)
+	var lr := Rect2(-r.size * 0.5, r.size)
+	_panel(Rect2(lr.position + Vector2(4, 8), lr.size), Color(0, 0, 0, 0.35), 6)
+	_panel(lr, Color("f4efe4"), 6)
+	draw_circle(Vector2(0, lr.position.y + 14.0), 9.0, Color("c0392b"))
+	_text(Vector2(lr.position.x + 18.0, lr.position.y + 44.0), head, T_XS, c_muted, true)
+	_heavy(Vector2(lr.position.x + 18.0, lr.position.y + 86.0), title, mini(T_MD, _fit(title, lr.size.x - 36.0, T_MD)), c_ink)
+	var x := lr.position.x + 18.0
+	for ch: Array in chips:
+		var t := String(ch[0])
+		var col: Color = ch[1]
+		var w := _text_w(t, T_XS, true) + 20.0
+		var cr := Rect2(x, lr.end.y - 48.0, w, 30.0)
+		_panel(cr, col, 15)
+		_text_center(cr, t, T_XS, _ink_on(col), true)
+		x += w + 8.0
+	_unrotated()
+	_tip(r, tip)
+	_register(r, cb)
+
+func _draw_flyers() -> void:
+	var right := Rect2(p_binder.end.x - 300.0, 30.0, 300.0, 160.0)
+	var left := Rect2(right.position.x - 330.0, 30.0, 300.0, 160.0)
+	if phase == Phase.SHOP or phase == Phase.WORKSHOP:
+		var j := judges[round_n - 1]
+		_flyer(left, -0.03, "TONIGHT'S JUDGE", String(j["name"]), _judge_chips(j), _judge_tip(j) + "\nClick for details.", _open_preview.bind("judge", round_n - 1))
+	if round_n < judges.size():
+		var nj := judges[round_n]
+		_flyer(right, 0.025, "NEXT JUDGE", String(nj["name"]), _judge_chips(nj), "Round %d: %s\nClick for details." % [round_n + 1, _judge_tip(nj)], _open_preview.bind("judge", round_n))
+
+func _draw_next_button() -> void:
+	var r := Rect2(p_binder.position.x - 40.0 - 460.0, UI_H - 150.0, 460.0, 110.0)
+	match phase:
+		Phase.SHOP:
+			_brass_button(r, "Leave shop", _go_workshop, true, "Head to the pressing plant", T_LG)
+		Phase.WORKSHOP:
+			_brass_button(r, "To the judge", _go_judge, true, "No more jobs this round", T_LG)
+
+func _draw_toast() -> void:
+	var t := ""
+	if message_t > 0.0:
+		t = message
+	elif mode == "job":
+		t = "%s: click a disc in your binder. Right-click to cancel." % _order_title(orders[mode_i])
+	elif mode == "sleeve":
+		t = "Click a pocket for the %s sleeve. Right-click to cancel." % D.SLEEVES[shop_sleeves[mode_i]["id"]]["name"]
+	if t == "":
+		return
+	var maxw := p_binder.position.x - 40.0 - 460.0 - 30.0 - 60.0
+	var fs := mini(T_SM, _fit(t, maxw - 50.0, T_SM))
+	var r := Rect2(60.0, UI_H - 134.0, minf(maxw, _text_w(t, fs, true) + 50.0), 76.0)
+	_panel(r, Color(0.06, 0.07, 0.09, 0.88), 38, Color(1, 1, 1, 0.12), 2)
+	_text_center(r, t, fs, Color("ffd9a0") if message_t > 0.0 else c_light, true)
+
+func _backdrop(wall: Color, floor_y: float, floor_col: Color) -> void:
+	draw_rect(Rect2(-800, -800, UI_W + 1600, UI_H + 1600), wall)
+	var x := -40.0
+	while x < UI_W:
+		draw_line(Vector2(x, 0), Vector2(x, floor_y), Color(0, 0, 0, 0.12), 3.0)
+		x += 120.0
+	draw_rect(Rect2(-800, floor_y, UI_W + 1600, UI_H - floor_y + 800), floor_col)
+	draw_rect(Rect2(-800, floor_y, UI_W + 1600, 8), floor_col.lightened(0.15))
+
+func _draw_store() -> void:
+	_backdrop(Color("3d3833"), 1250.0, Color("2a2420"))
+	var bin := Rect2(60.0, 270.0, 1132.0, 844.0)
+	var sign := Rect2(bin.get_center().x - 380.0, 150.0, 760.0, 96.0)
+	for sx: float in [sign.position.x + 90.0, sign.end.x - 90.0]:
+		draw_line(Vector2(sx, -40.0), Vector2(sx, sign.position.y), Color("5f5e5a"), 4.0)
+	_panel(sign, Color("1d1a17"), 12, c_gold, 3)
+	_panel(sign.grow(-10.0), Color(c_gold, 0.08), 8)
+	_heavy_center(sign, "NEW ARRIVALS", T_XL, c_gold)
+	_shadow(bin, 12, 10.0)
+	_panel(bin, Color("15171a"), 12)
+	var discs: Array = []
+	var prices: Array = []
+	for o in shop_discs:
+		discs.append(o["disc"])
+		prices.append(int(o["price"]))
+	var order := _sort_order(discs, prices)
 	var j := judges[round_n - 1]
-	var boxes := [["ROUND", "%d / %d" % [round_n, D.ROUNDS], c_light], ["CASH", "$%d" % cash, c_gold], ["DISCS", str(_disc_count()), c_light], ["JUDGE", String(j["name"]), c_light], ["TARGET", "%s × %s ≥ %d" % [D.CAT[j["a"]]["name"], D.CAT[j["b"]]["name"], int(j["target"])], c_light]]
-	for i in boxes.size():
-		_stat_box(Rect2(x0 + i * (w + 20.0), y, w, 112.0), boxes[i][0], boxes[i][1], boxes[i][2])
+	for i in 12:
+		var row := i / 4
+		var col := i % 4
+		var cell := Rect2(bin.position.x + 12.0 + col * 280.0, bin.position.y + 12.0 + row * 275.0, 268.0, 263.0 if row < 2 else 270.0)
+		_panel(cell, Color("262a30"), 6)
+		draw_rect(Rect2(cell.position, Vector2(cell.size.x, 18.0)), Color(0, 0, 0, 0.35))
+		if row < 2:
+			var lip := Rect2(cell.position.x - 4.0, cell.end.y - 66.0, cell.size.x + 8.0, 70.0)
+			_panel(lip, Color("0e1012"), 4)
+			var k := row * 4 + col
+			if k < order.size():
+				_store_disc(int(order[k]), cell, lip, j)
+		else:
+			_store_box(col, cell)
+			_panel(Rect2(cell.position.x - 4.0, cell.end.y - 26.0, cell.size.x + 8.0, 30.0), Color("0e1012"), 4)
+	var rt := Rect2(60.0, 1132.0, 270.0, 76.0)
+	var ok := cash >= reroll_cost
+	_panel(rt, Color("f4efe4") if ok else Color("8f8a80"), 8, Color("8a6a45"), 2)
+	if ok and ui_live and rt.has_point(mouse):
+		_panel(rt, Color(1, 1, 1, 0.25), 8)
+	_text_center(rt, "Restock  $%d" % reroll_cost, T_MD, c_ink, true)
+	_tip(rt, "Replace the 8 new arrivals. The price goes up by $1 each time.")
+	if ok:
+		_register(rt, _reroll)
+	_draw_sort_bar(Rect2(350.0, 1132.0, bin.end.x - 350.0, 76.0), 6, "Price")
+	_draw_sleeve_rack(Rect2(bin.end.x + 22.0, 300.0, r_scene.end.x - bin.end.x - 22.0, 640.0))
+
+func _store_disc(i: int, cell: Rect2, lip: Rect2, j: Dictionary) -> void:
+	var o := shop_discs[i]
+	if bool(o["sold"]):
+		_heavy_center(Rect2(cell.position, Vector2(cell.size.x, cell.size.y - 66.0)), "SOLD", T_LG, Color(1, 1, 1, 0.12))
+		return
+	var d: Disc = o["disc"]
+	var price := int(o["price"])
+	var lift := 10.0 if ui_live and cell.has_point(mouse) else 0.0
+	var r := Rect2(cell.position.x + 29.0, cell.position.y + 10.0 - lift, 210.0, 185.0)
+	_draw_case(r, d, price)
+	if cash < price:
+		_panel(r, Color(0, 0, 0, 0.45), 6)
+	_chip_rows(lip.grow(-6.0), _disc_rows(d, "", j, 2), sort_key)
+	_tip_disc(cell, d, "Click to buy for $%d" % price)
+	_register(cell, _buy_disc.bind(i))
+
+func _store_box(i: int, cell: Rect2) -> void:
+	if i >= shop_packs.size():
+		return
+	var o := shop_packs[i]
+	if bool(o["sold"]):
+		_heavy_center(cell, "SOLD", T_LG, Color(1, 1, 1, 0.12))
+		return
+	var id := String(o["id"])
+	var price := int(D.PACKS[id]["price"])
+	var lift := 10.0 if ui_live and cell.has_point(mouse) else 0.0
+	var r := Rect2(cell.position.x + 24.0, cell.end.y - 20.0 - 230.0 - lift, 220.0, 230.0)
+	_draw_box_set(r, id, price)
+	if cash < price:
+		_panel(r, Color(0, 0, 0, 0.45), 6)
+	_tip(cell, _pack_tip(id) + "\nClick to buy for $%d" % price)
+	_register(cell, _buy_pack.bind(i))
+
+func _draw_box_set(r: Rect2, id: String, price: int) -> void:
+	var p: Dictionary = D.PACKS[id]
+	var col := Color(p["color"])
+	var trim := Color(p["trim"])
+	_shadow(r, 6, 6.0)
+	_grad_panel(r, 6.0, col.lightened(0.12), col.darkened(0.2))
+	draw_rect(Rect2(r.position + Vector2(3, 3), Vector2(r.size.x - 6.0, 10.0)), col.lightened(0.3))
+	_text(Vector2(r.position.x + 14.0, r.position.y + 44.0), "%d CDs + CASH" % int(p["discs"]), T_XS, Color(1, 1, 1, 0.85), true)
+	var band := Rect2(r.position.x, r.position.y + 62.0, r.size.x, 62.0)
+	draw_rect(band, trim)
+	var nm := String(p["name"]).to_upper()
+	_heavy_center(band, nm, mini(T_MD, _fit(nm, band.size.x - 20.0, T_MD)), col.darkened(0.3) if trim.get_luminance() > 0.5 else Color.WHITE)
+	var n := int(p["discs"])
+	var sw := (r.size.x - 40.0) / n
+	for j in n:
+		var sp := Rect2(r.position.x + 20.0 + j * sw + 4.0, band.end.y + 22.0, sw - 8.0, r.end.y - band.end.y - 40.0)
+		_panel(sp, col.darkened(0.45), 3)
+		draw_line(sp.position + Vector2(3, 3), Vector2(sp.end.x - 3.0, sp.position.y + 3.0), Color(1, 1, 1, 0.25), 2.0)
+	draw_colored_polygon(PackedVector2Array([r.position + Vector2(r.size.x * 0.45, 0), r.position + Vector2(r.size.x * 0.7, 0), r.position + Vector2(r.size.x * 0.25, r.size.y), r.position + Vector2(0, r.size.y)]), Color(1, 1, 1, 0.1))
+	_price_sticker(Vector2(r.end.x - 34.0, r.position.y + 26.0), "$%d" % price, 1.1)
+
+func _draw_sleeve_rack(rack: Rect2) -> void:
+	_panel(rack, Color("c9a77a"), 6, Color("8a6a45"), 3)
+	var y := rack.position.y + 60.0
+	while y < rack.end.y - 10.0:
+		var x := rack.position.x + 18.0
+		while x < rack.end.x - 10.0:
+			draw_circle(Vector2(x, y), 3.0, Color("8a6a45"))
+			x += 28.0
+		y += 28.0
+	_text_center(Rect2(rack.position.x, rack.position.y + 10.0, rack.size.x, 36.0), "SLEEVES", T_SM, Color("4a3520"), true)
+	for i in shop_sleeves.size():
+		var o := shop_sleeves[i]
+		var hook := Vector2(rack.get_center().x, rack.position.y + 70.0 + i * 290.0)
+		draw_line(hook, hook + Vector2(0, 24), Color("5f5e5a"), 4.0)
+		if bool(o["sold"]):
+			continue
+		var s: Dictionary = D.SLEEVES[o["id"]]
+		var price := int(s["price"])
+		var pr := Rect2(hook.x - 66.0, hook.y + 18.0, 132.0, 240.0)
+		if ui_live and pr.has_point(mouse):
+			pr.position.y -= 8.0
+		_draw_sleeve_pack(pr, s, mode == "sleeve" and mode_i == i)
+		if cash < price:
+			_panel(pr, Color(0, 0, 0, 0.45), 6)
+		_tip(pr, "%s sleeve: %s This sheet only.\nClick to buy for $%d, then click a pocket." % [s["name"], s["text"], price])
+		_register(pr, _start_sleeve.bind(i))
+
+func _draw_sleeve_pack(r: Rect2, s: Dictionary, selected: bool) -> void:
+	var col := Color(s["color"])
+	_shadow(r, 6, 5.0)
+	_panel(r, Color(col, 0.35), 6, Color(1, 1, 1, 0.5), 2)
+	var head := Rect2(r.position, Vector2(r.size.x, 70.0))
+	_panel(head, Color("f4efe4"), 6)
+	draw_circle(Vector2(head.get_center().x, head.position.y + 14.0), 7.0, Color("8a6a45"))
+	var nm := String(s["name"])
+	_heavy_center(Rect2(head.position + Vector2(0, 24), Vector2(head.size.x, 44.0)), nm, mini(T_SM, _fit(nm, head.size.x - 16.0, T_SM)), c_ink)
+	var inner := Rect2(r.position.x + 14.0, head.end.y + 14.0, r.size.x - 28.0, r.end.y - head.end.y - 28.0)
+	_panel(inner, Color(col, 0.6), 4)
+	draw_circle(inner.get_center(), 40.0, Color(1, 1, 1, 0.22))
+	draw_circle(inner.get_center(), 8.0, Color(col, 0.6))
+	_price_sticker(Vector2(r.end.x - 28.0, head.end.y + 26.0), "$%d" % int(s["price"]), 1.0)
+	if selected:
+		_panel(r.grow(5.0), Color(0, 0, 0, 0), 10, c_gold, 5)
+
+func _draw_office() -> void:
+	_backdrop(Color("161a24"), 1250.0, Color("0f1219"))
+	var j := judges[round_n - 1]
+	var cx := r_scene.get_center().x
+	var sign := Rect2(cx - 400.0, 166.0, 800.0, 136.0)
+	var on := 1.0
+	if phase_t < 0.6 and fmod(phase_t * 11.0, 1.0) < 0.45:
+		on = 0.25
+	var neon := Color("ff6ad5")
+	for g in 3:
+		_panel(sign.grow(8.0 + g * 8.0), Color(0, 0, 0, 0), 30, Color(neon, 0.07 * on), 8)
+	_panel(sign, Color(neon, 0.05 * on), 24, Color(neon, 0.9 * on), 5)
+	var jn := String(j["name"])
+	var fs := mini(T_HERO, _fit(jn, sign.size.x - 80.0, T_HERO))
+	for off: Vector2 in [Vector2(-3, 0), Vector2(3, 0), Vector2(0, -3), Vector2(0, 3)]:
+		_heavy_center(Rect2(sign.position + off, sign.size), jn, fs, Color(neon, 0.22 * on))
+	_heavy_center(sign, jn, fs, Color(Color("ffd6f3"), maxf(0.35, on)))
+	var sil := Color("07090d")
+	draw_circle(Vector2(cx, 420.0), 70.0, sil)
+	_panel(Rect2(cx - 150.0, 490.0, 300.0, 330.0), sil, 90)
+	var top := 770.0
+	var desk := Rect2(40.0, top, r_scene.end.x - 20.0, 22.0)
+	draw_rect(desk, Color("6f4a2c"))
+	draw_rect(Rect2(desk.position.x, top + 22.0, desk.size.x, 1250.0 - top - 22.0), Color("3a2618"))
+	for k in 4:
+		var px := desk.position.x + desk.size.x * (k + 0.5) / 4.0
+		draw_line(Vector2(px, top + 40.0), Vector2(px, 1230.0), Color(0, 0, 0, 0.18), 3.0)
+	for side in 2:
+		var gk := "sound" if side == 0 else "mult"
+		var col := Color(D.SOUND_COLOR if side == 0 else D.MULT_COLOR)
+		var r := Rect2(cx - 330.0 + side * 400.0, top - 230.0, 260.0, 230.0)
+		_shadow(r, 12, 6.0)
+		_grad_panel(r, 12.0, col.lightened(0.15), col.darkened(0.1))
+		_text_center(Rect2(r.position.x, r.position.y + 14.0, r.size.x, 34.0), "SOUND" if side == 0 else "MULT", T_SM, Color.WHITE, true)
+		var v := "–" if shown.is_empty() else str(int(shown.get(gk, 0)))
+		_heavy_center(Rect2(r.position.x, r.position.y + 50.0, r.size.x, r.size.y - 60.0), v, mini(T_HERO + 20, _fit(v, r.size.x - 20.0, T_HERO + 20)), Color.WHITE)
+		_tip(r, _rule_text(j[gk]))
+	_heavy_center(Rect2(cx - 70.0, top - 160.0, 140.0, 90.0), "×", T_HERO, Color("e9d9c4"))
+	var rules := Rect2(cx - 450.0, top + 44.0, 900.0, 130.0)
+	_panel(rules, Color("e9e2d2"), 8)
+	_text(Vector2(rules.position.x + 24.0, rules.position.y + 32.0), "JUDGING CRITERIA", T_XS, c_muted, true)
+	for side in 2:
+		var gk := "sound" if side == 0 else "mult"
+		var col := Color(D.SOUND_COLOR if side == 0 else D.MULT_COLOR)
+		var ly := rules.position.y + 66.0 + side * 40.0
+		draw_circle(Vector2(rules.position.x + 34.0, ly - 7.0), 9.0, col)
+		_text(Vector2(rules.position.x + 54.0, ly), _rule_text(j[gk]), T_SM, col.darkened(0.35), true)
+	_draw_scorecard(Rect2(cx - 380.0, top + 196.0, 760.0, 200.0), j)
+	_draw_bell(Vector2(r_scene.end.x - 100.0, top))
+
+func _draw_scorecard(sc: Rect2, j: Dictionary) -> void:
+	_shadow(sc, 8, 6.0)
+	_panel(sc, Color("f4efe4"), 8)
+	draw_circle(Vector2(sc.get_center().x, sc.position.y + 14.0), 8.0, Color("888780"))
+	var known := not shown.is_empty()
+	var a := maxi(1, int(shown.get("sound", 0)))
+	var b := maxi(1, int(shown.get("mult", 0)))
+	var total := a * b
+	var target := int(j["target"])
+	var line := "%d × %d = %s" % [a, b, _fmt(total)] if known else "? × ? = ?"
+	_heavy(Vector2(sc.position.x + 30.0, sc.position.y + 84.0), line, T_XL, c_ink)
+	_text_right(sc.end.x - 30.0, sc.position.y + 78.0, "Target %s" % _fmt(target), T_LG, c_good if known and total >= target else c_body, true)
+	var bar := Rect2(sc.position.x + 30.0, sc.position.y + 112.0, sc.size.x - 60.0, 24.0)
+	_panel(bar, Color(0, 0, 0, 0.12), 12)
+	var ratio := clampf(float(total) / maxf(1.0, target), 0.0, 1.0) if known else 0.0
+	if ratio > 0.0:
+		_panel(Rect2(bar.position, Vector2(maxf(24.0, bar.size.x * ratio), bar.size.y)), c_good if ratio >= 1.0 else c_gold, 12)
+	_text(Vector2(sc.position.x + 30.0, sc.position.y + 176.0), "Cash from discs: +$%d" % shown_cash, T_SM, c_body, true)
+	if phase in [Phase.RESULT, Phase.GAMEOVER, Phase.WIN]:
+		var hit := bool(result.get("hit", false))
+		var col := c_good if hit else c_bad
+		_rotated(sc.get_center() + Vector2(20, 10), -0.18)
+		var st := Rect2(-170.0, -46.0, 340.0, 92.0)
+		_panel(st, Color(0, 0, 0, 0), 10, Color(col, 0.85), 6)
+		_heavy_center(st, "PASSED" if hit else "REJECTED", T_XL, Color(col, 0.85))
+		_unrotated()
+
+func _draw_bell(base: Vector2) -> void:
+	var r := Rect2(base.x - 100.0, base.y - 150.0, 200.0, 150.0)
+	var ok := phase == Phase.JUDGE and not judging
+	var hovered := ok and ui_live and r.has_point(mouse)
+	var dome := Color("e3e8ee") if hovered else Color("c9d2db")
+	_panel(Rect2(base.x - 90.0, base.y - 26.0, 180.0, 26.0), Color("2b2f35"), 6)
+	var pts := PackedVector2Array()
+	for k in 21:
+		var a := PI + PI * k / 20.0
+		pts.append(Vector2(base.x + cos(a) * 72.0, base.y - 26.0 + sin(a) * 72.0))
+	draw_colored_polygon(pts, dome)
+	draw_arc(Vector2(base.x, base.y - 26.0), 56.0, PI + 0.5, PI + 1.2, 12, Color(1, 1, 1, 0.6), 5.0, true)
+	draw_rect(Rect2(base.x - 6.0, base.y - 118.0, 12.0, 22.0), Color("888780"))
+	draw_circle(Vector2(base.x, base.y - 122.0), 13.0, Color("888780"))
+	var label := "Judging..." if judging else ("Ring to judge" if ok else "")
+	_text_center(Rect2(r.position.x, base.y + 30.0, r.size.x, 40.0), label, T_MD, Color("e9d9c4"), true)
+	if ok:
+		_tip(r, "Every disc on this sheet activates in order, slot 1 to 9.")
+		_register(r, _start_judging)
 
 func _draw_binder() -> void:
-	var sheet: Array = sheets[view]
-	var current := view == sheets.size() - 1
-	var sr := _sheet_rect()
-	_panel(sr.grow(6.0), Color("2b221d"), 14)
-	var bar := Rect2(p_binder.position.x + 16.0, sr.position.y + 20.0, 18.0, sr.size.y - 40.0)
-	_grad_panel(bar, 6.0, Color("d7dde3"), Color("8a939c"))
-	_panel(sr, Color(Color("dfe7f1"), 0.09), 16, Color(1, 1, 1, 0.16), 2)
-	_draw_rings()
-	_ghost(Rect2(p_binder.end.x - 196.0, p_binder.position.y + 12.0, 80.0, 44.0), "<", _view_step.bind(-1), view > 0 and mode != "sleeve", c_light)
-	_ghost(Rect2(p_binder.end.x - 108.0, p_binder.position.y + 12.0, 80.0, 44.0), ">", _view_step.bind(1), view < sheets.size() - 1, c_light)
-	var live := phase == Phase.SHOP or phase == Phase.TRADER
+	var b := p_binder
+	var sheet: Array = _cur()
+	var live := phase == Phase.SHOP or phase == Phase.WORKSHOP
+	var j := judges[round_n - 1]
+	_shadow(b, 20, 10.0)
+	_grad_panel(b, 20.0, C_LEATHER.lightened(0.1), C_LEATHER.darkened(0.15))
+	_grain(b, 19, 260.0)
+	_stitch_rect(b.grow(-14.0), Color("aab3bf", 0.45))
+	_text_center(Rect2(b.position.x, b.position.y + 2.0, b.size.x, BINDER_BORDER), "YOUR BINDER", T_XS, Color("c9ced6"), true)
+	var strip := Rect2(b.position.x + BINDER_BORDER, b.position.y + BINDER_BORDER, BINDER_RINGS - 14.0, b.size.y - BINDER_BORDER * 2.0)
+	_grad_panel(strip, 6.0, Color("2a2e34"), Color("1f2227"))
+	var page := Rect2(r_grid.position.x - 22.0, r_grid.position.y - 12.0, r_grid.size.x + 34.0, r_grid.size.y + 24.0)
+	_panel(page, Color(Color("dfe7f1"), 0.12), 8, Color(1, 1, 1, 0.18), 2)
+	for k in 3:
+		var hy := r_grid.position.y + r_grid.size.y * (0.17 + k * 0.33)
+		var hx := page.position.x + 11.0
+		draw_circle(Vector2(hx, hy), 7.0, Color(0, 0, 0, 0.6))
+		var sx := strip.get_center().x
+		var ecx := (sx + hx) * 0.5
+		var rx := (hx - sx) * 0.5 + 4.0
+		var pts := PackedVector2Array()
+		for i in 41:
+			var a := i / 40.0 * TAU
+			pts.append(Vector2(ecx + cos(a) * rx, hy + sin(a) * 16.0))
+		draw_polyline(pts, Color("5f676f"), 8.0, true)
+		draw_polyline(pts, Color("c3cad1"), 5.0, true)
 	for i in 9:
-		var r := _slot_rect(i)
+		var r := _cd_rect(i)
 		var pocket := r.grow(GAP * 0.5 - 1.0)
-		var sl := sleeves[i] if current else ""
+		var sl := sleeves[i]
 		if sl != "":
 			_panel(pocket, Color(Color(D.SLEEVES[sl]["color"]), 0.22), 8, Color(D.SLEEVES[sl]["color"]), 4)
 		else:
@@ -941,38 +1214,48 @@ func _draw_binder() -> void:
 		_pocket_lip(pocket)
 		var d: Disc = sheet[i]
 		if d == null:
-			var label := str(i + 1) if current else "HOLE"
-			_heavy_center(r, label, 72 if current else T_XL, Color(1, 1, 1, 0.12))
+			_heavy_center(r, str(i + 1), 72, Color(1, 1, 1, 0.12))
 		else:
-			_draw_cd(r, d, not current)
-			_tip(r, _disc_tip(d))
-		if current and slot_flash[i] > 0.0:
+			_draw_cd(r, d, false)
+			_tip_disc(r, d, "", sl)
+			var tags := Rect2(r.position.x, r.end.y + 12.0, r.size.x, CARD_H - CARD_W - 12.0)
+			_chip_rows(tags, _disc_rows(d, sl, j, 2))
+			_tip_disc(tags, d, "", sl)
+		if slot_flash[i] > 0.0:
 			_panel(r.grow(5.0), Color(0, 0, 0, 0), 16, Color(c_gold, slot_flash[i]), 6)
-		if mode == "sleeve" and current:
+		if mode == "sleeve":
 			_panel(r, Color(c_accent, 0.25 + 0.1 * sin(clock * 5.0)), 12, Color(c_accent.lightened(0.35), 0.9), 3)
-		elif mode == "pay" and d != null and _useful(d):
+		elif mode == "job" and d != null and _can_job(orders[mode_i], d):
 			_panel(r.grow(4.0), Color(0, 0, 0, 0), 14, Color("7fe0a0", 0.8 + 0.2 * sin(clock * 5.0)), 6)
-		elif mode == "pay" and d != null and d in paid:
+		elif mode == "job" and d != null:
+			draw_circle(r.get_center(), r.size.x * 0.5 - 8.0, Color(0, 0, 0, 0.45))
+		elif sel == Vector2i(0, i):
 			_panel(r.grow(4.0), Color(0, 0, 0, 0), 14, c_gold, 6)
-		elif sel == Vector2i(view, i):
-			_panel(r.grow(4.0), Color(0, 0, 0, 0), 14, c_gold, 6)
-		elif sel.x == view and current and mode == "":
+		elif sel.x >= 0 and mode == "":
 			_panel(r, Color(c_accent, 0.12), 12)
 		if sl != "":
 			var tag := String(D.SLEEVES[sl]["name"]).to_upper()
 			var tw := _text_w(tag, T_XS, true) + 20.0
-			var tr := Rect2(r.get_center().x - tw * 0.5, r.end.y - 6.0, tw, 24.0)
+			var tr := Rect2(r.get_center().x - tw * 0.5, r.position.y - 14.0, tw, 24.0)
 			_panel(tr, Color(D.SLEEVES[sl]["color"]).darkened(0.2), 12)
 			_text_center(tr, tag, T_XS, Color.WHITE, true)
 			_tip(tr, "%s sleeve: %s" % [D.SLEEVES[sl]["name"], D.SLEEVES[sl]["text"]])
 		_sleeve_gloss(r)
 		if live:
-			_register(r, _on_slot.bind(view, i))
+			_register(r, _on_slot.bind(0, i))
+	if live and mode == "" and sel.x >= 0:
+		var d: Disc = sheet[sel.y]
+		if d != null:
+			var sr := _cd_rect(sel.y)
+			_brass_button(Rect2(sr.get_center().x - 110.0, sr.end.y - 64.0, 220.0, 56.0), "Sell $%d" % _sell_price(d), _sell_selected, true)
 
 func _draw_cd(r: Rect2, d: Disc, dim: bool) -> void:
 	var c := r.get_center()
 	var rad := minf(r.size.x, r.size.y) * 0.5 - 8.0
 	_cd_art(c, rad, _cover_tex(d.cover))
+	if d.edition != "":
+		_edition_overlay(c, rad, d.edition)
+	_ability_badge(Rect2(r.position.x + 28.0, r.end.y - 70.0, r.size.x - 56.0, 46.0), d.ability)
 	if dim:
 		draw_circle(c, rad, Color(0, 0, 0, 0.35))
 
@@ -1002,315 +1285,73 @@ func _draw_case(r: Rect2, d: Disc, price: int = -1) -> void:
 	var gloss := PackedVector2Array([r.position + Vector2(r.size.x * 0.35, 0), r.position + Vector2(r.size.x * 0.62, 0), r.position + Vector2(r.size.x * 0.3, r.size.y), r.position + Vector2(r.size.x * 0.03, r.size.y)])
 	draw_colored_polygon(gloss, Color(1, 1, 1, 0.07))
 	draw_line(r.position + Vector2(4.0 * k, 2.0 * k), Vector2(r.end.x - 4.0 * k, r.position.y + 2.0 * k), Color(1, 1, 1, 0.6), maxf(1.0, 1.5 * k))
-	var era: String = D.ERAS[d.era]
-	var ec := cover.position + Vector2(20.0, 20.0) * k
-	draw_circle(ec + Vector2(1, 2) * k, 16.0 * k, Color(0, 0, 0, 0.3))
-	draw_circle(ec, 16.0 * k, Color("fbfaf5"))
-	draw_arc(ec, 13.0 * k, 0, TAU, 24, Color("c0392b"), maxf(1.0, 1.5 * k), true)
-	_heavy_center(Rect2(ec - Vector2(16, 16) * k, Vector2(32, 32) * k), era, _fs(13.0, k), c_ink)
-	if price >= 0:
-		var pt := "$%d" % price
-		var pfs := _fs(22.0, k)
-		var pw := _heavy_w(pt, pfs) + 20.0 * k
-		_rotated(Vector2(cover.end.x - pw * 0.5 - 2.0 * k, cover.position.y + 14.0 * k), 0.12)
-		var pr := Rect2(-pw * 0.5, -15.0 * k, pw, 30.0 * k)
-		_panel(Rect2(pr.position + Vector2(1, 2) * k, pr.size), Color(0, 0, 0, 0.3), int(3.0 * k))
-		_panel(pr, Color("ffd23f"), int(3.0 * k))
-		draw_line(Vector2(pr.position.x + 5.0 * k, pr.end.y - 5.0 * k), Vector2(pr.end.x - 5.0 * k, pr.end.y - 5.0 * k), Color(0, 0, 0, 0.2), maxf(1.0, k))
-		_heavy_center(pr, pt, pfs, Color("8a1c12"))
-		_unrotated()
-	var g: String = D.GENRES[d.genre].to_upper()
-	var gfs := _fs(12.0, k)
-	var gw := _text_w(g, gfs, true) + 16.0 * k
-	_rotated(Vector2(cover.position.x + gw * 0.5 + 6.0 * k, cover.end.y - 16.0 * k), -0.05)
-	var gr := Rect2(-gw * 0.5, -11.0 * k, gw, 22.0 * k)
-	_panel(Rect2(gr.position + Vector2(1, 2) * k, gr.size), Color(0, 0, 0, 0.3), int(11.0 * k))
-	_panel(gr, Color(D.GENRE_COLORS[d.genre]), int(11.0 * k), Color(1, 1, 1, 0.85), maxi(1, int(1.5 * k)))
-	_text_center(gr, g, gfs, Color.WHITE, true)
-	_unrotated()
 	if d.rarity > 0:
-		_sticker_burst(Vector2(cover.end.x - 22.0 * k, cover.end.y - 22.0 * k), 21.0 * k, Color(D.RARITY_COLORS[d.rarity]).darkened(0.1), "RARE" if d.rarity == 2 else "UNC", _fs(11.0, k))
-
-func _draw_pack_art(r: Rect2, id: String) -> void:
-	var p: Dictionary = D.PACKS[id]
-	var col := Color(p["color"])
-	_panel(Rect2(r.position + Vector2(0, 6), r.size), Color(0, 0, 0, 0.35), 6)
-	_grad_panel(r, 4.0, col.lightened(0.18), col.darkened(0.25))
-	draw_rect(Rect2(r.position, Vector2(r.size.x, 12.0)), col.darkened(0.35))
-	draw_rect(Rect2(r.position.x, r.end.y - 12.0, r.size.x, 12.0), col.darkened(0.35))
-	_disc(Vector2(r.get_center().x, r.position.y + 104.0), 40.0)
-	var pname := String(p["name"]).to_upper()
-	_heavy_center(Rect2(r.position.x, r.position.y + 18.0, r.size.x, 40.0), pname, _fit(pname, r.size.x - 20.0, T_MD), Color(p["trim"]))
-	_text_center(Rect2(r.position.x, r.end.y - 56.0, r.size.x, 30.0), "%d DISCS + CASH" % int(p["discs"]), T_XS, Color.WHITE, true)
+		_sticker_burst(cover.position + Vector2(22.0, 22.0) * k, 21.0 * k, Color(D.RARITY_COLORS[d.rarity]).darkened(0.1), "RARE" if d.rarity == 2 else "UNC", _fs(11.0, k))
+	if price >= 0:
+		_price_sticker(Vector2(cover.end.x - 30.0 * k, cover.position.y + 14.0 * k), "$%d" % price, k)
+	_ability_badge(Rect2(cover.position.x + 5.0 * k, cover.end.y - 38.0 * k, cover.size.x - 10.0 * k, 32.0 * k), d.ability)
 
 func _pack_tip(id: String) -> String:
 	var p: Dictionary = D.PACKS[id]
 	var w: Array = p["rarity"]
 	return "%s: %d discs (%d%% common, %d%% uncommon, %d%% rare) plus $%d–%d cash.\nKeep what fits on this sheet; the rest sell automatically." % [p["name"], int(p["discs"]), int(w[0]), int(w[1]), int(w[2]), int(p["cash"][0]), int(p["cash"][1])]
 
-func _draw_shop() -> void:
-	var x := r_left.position.x
-	var w := r_left.size.x
-	var y := r_left.position.y - 8.0
-	_section(x, y, w - 190.0, "NEW ARRIVALS")
-	_ghost(Rect2(x + w - 170.0, y - 6.0, 170.0, 44.0), "Reroll $%d" % reroll_cost, _reroll, cash >= reroll_cost, c_light)
-	y += 48.0
-	var cw := 230.0
-	var ch := cw * CASE_RATIO
-	var gx := (w - 3.0 * cw) / 2.0
-	var open := _open_slots().size()
-	for i in shop_discs.size():
-		var r := Rect2(x + (i % 3) * (cw + gx), y + (i / 3) * (ch + 80.0), cw, ch)
-		var o := shop_discs[i]
-		if bool(o["sold"]):
-			_panel(r, Color(0, 0, 0, 0.2), 14, Color(1, 1, 1, 0.08), 2)
-			_heavy_center(r, "SOLD", T_LG, Color(1, 1, 1, 0.2))
-			continue
-		var d: Disc = o["disc"]
-		var price := int(o["price"])
-		_draw_case(r, d, price)
-		_tip(r, _disc_tip(d))
-		_brass_button(Rect2(r.position.x, r.end.y + 12.0, cw, 48.0), "Buy", _buy_disc.bind(i), cash >= price and open > 0)
-	var info := Rect2(x + 2.0 * (cw + gx), y + ch + 80.0, cw, ch)
-	_panel(info, Color(0, 0, 0, 0.18), 14)
-	_wrap(info.position + Vector2(16, 16), "Open slots: %d\n\nDiscs you buy go straight onto this sheet. Click a disc on the sheet, then another slot, to move it." % open, cw - 32.0, T_XS, c_light_muted, true)
-	y += 2.0 * (ch + 80.0) + 10.0
-	_section(x, y, w, "BUNDLES & SLEEVES")
-	y += 48.0
-	var tw := (w - 3.0 * GAP) / 4.0
-	var th := 200.0
-	for i in shop_packs.size():
-		var r := Rect2(x + i * (tw + GAP), y, tw, th)
-		var o := shop_packs[i]
-		if bool(o["sold"]):
-			_panel(r, Color(0, 0, 0, 0.2), 8)
-			_heavy_center(r, "SOLD", T_LG, Color(1, 1, 1, 0.2))
-			continue
-		_draw_pack_art(r, String(o["id"]))
-		_tip(r, _pack_tip(String(o["id"])))
-		var price := int(D.PACKS[o["id"]]["price"])
-		_brass_button(Rect2(r.position.x, r.end.y + 12.0, tw, 48.0), "Buy  $%d" % price, _buy_pack.bind(i), cash >= price)
-	for i in shop_sleeves.size():
-		var r := Rect2(x + (i + 2) * (tw + GAP), y, tw, th)
-		var o := shop_sleeves[i]
-		var s: Dictionary = D.SLEEVES[o["id"]]
-		_panel(Rect2(r.position + Vector2(0, 5), r.size), Color(0, 0, 0, 0.3), 14)
-		_panel(r, Color("f4efe4"), 14)
-		_panel(Rect2(r.position, Vector2(r.size.x, 12.0)), Color(s["color"]), 6)
-		_heavy(r.position + Vector2(14, 50), String(s["name"]), _fit(String(s["name"]), r.size.x - 28.0, T_MD), c_ink)
-		_wrap(r.position + Vector2(14, 64), String(s["text"]) + " This sheet only.", r.size.x - 28.0, T_XS, c_body, true, 5)
-		if bool(o["sold"]):
-			_heavy_center(Rect2(r.position.x, r.end.y + 12.0, tw, 48.0), "SOLD", T_MD, Color(1, 1, 1, 0.3))
-		else:
-			var price := int(s["price"])
-			_brass_button(Rect2(r.position.x, r.end.y + 12.0, tw, 48.0), "Sleeve  $%d" % price, _start_sleeve.bind(i), cash >= price)
-
-func _draw_offer_grid(area: Rect2, interactive: bool) -> void:
-	var cw := 183.0
-	var ch := cw * CASE_RATIO
-	var gx := (area.size.x - 4.0 * cw) / 3.0
-	var offers: Array = trader["offers"]
-	for i in offers.size():
-		var o: Dictionary = offers[i]
-		var r := Rect2(area.position.x + (i % 4) * (cw + gx), area.position.y + (i / 4) * (ch + 96.0), cw, ch)
-		if bool(o["done"]):
-			_panel(r, Color(0, 0, 0, 0.2), 14, Color(1, 1, 1, 0.08), 2)
-			_heavy_center(r, "TRADED", T_LG, Color(1, 1, 1, 0.25))
-			continue
-		var d: Disc = o["disc"]
-		_draw_case(r, d)
-		_tip(r, _disc_tip(d))
-		if mode == "pay" and mode_i == i:
-			_panel(r.grow(5.0), Color(0, 0, 0, 0), 16, Color("7fe0a0"), 5)
-		var br := Rect2(r.position.x, r.end.y + 10.0, cw, 64.0)
-		if interactive:
-			_brass_button(br, "Trade", _start_trade.bind(i), true, _cost_text(o["cost"]))
-		else:
-			_panel(br, Color(0, 0, 0, 0.25), 12)
-			_wrap(br.position + Vector2(10, 8), "Costs " + _cost_text(o["cost"]), cw - 20.0, T_XS, c_light, true, 2)
-
-func _likes_text() -> String:
-	var parts: Array[String] = []
-	for c in trader["likes"]:
-		parts.append(_cond_text(c).trim_prefix("1 "))
-	return " and ".join(parts)
-
-func _draw_trader() -> void:
-	var x := r_left.position.x
-	var y := r_left.position.y
-	_heavy(Vector2(x, y + 30.0), String(trader["name"]), T_XL, c_light)
-	_text(Vector2(x, y + 66.0), "Wants: %s albums. Pay with discs from any sheet." % _likes_text(), T_SM, c_light_muted, true)
-	_draw_offer_grid(Rect2(x, y + 100.0, r_left.size.x, r_left.size.y - 100.0), phase == Phase.TRADER)
-
 func _close_preview() -> void:
-	show_trader = false
+	preview = ""
 
-func _open_preview() -> void:
-	show_trader = true
+func _open_preview(kind: String = "judge", k: int = -1) -> void:
+	preview = kind
+	preview_j = round_n - 1 if k < 0 else k
 
 func _judge_card(r: Rect2, j: Dictionary, k: int) -> void:
 	_panel(Rect2(r.position + Vector2(0, 6), r.size), Color(0, 0, 0, 0.35), 18)
-	_panel(r, C_BOARD, 18, Color("0d1f16"), 4)
+	_panel(r, Color("161a24"), 18, Color("ff6ad5", 0.7), 4)
 	var x := r.position.x
 	var w := r.size.x
-	_text_center(Rect2(x, r.position.y + 14.0, w, 36.0), "JUDGE %d OF %d" % [k + 1, D.ROUNDS], T_SM, Color("cfe3d4"), true)
-	var c := Vector2(r.get_center().x, r.position.y + 120.0)
-	var hue := float(absi(String(j["name"]).hash()) % 360) / 360.0
-	draw_circle(c, 58.0, Color.from_hsv(hue, 0.35, 0.85))
-	draw_arc(c, 58.0, 0, TAU, 40, Color.WHITE, 4.0, true)
-	var words := String(j["name"]).split(" ")
-	_heavy_center(Rect2(c - Vector2(58, 58), Vector2(116, 116)), words[1].left(1) + words[2].left(1), T_HERO, Color.WHITE)
+	_text_center(Rect2(x, r.position.y + 14.0, w, 36.0), "JUDGE %d OF %d" % [k + 1, D.ROUNDS], T_SM, Color("ffb3ec"), true)
 	var jn := String(j["name"])
-	_heavy_center(Rect2(x, r.position.y + 190.0, w, 56.0), jn, _fit(jn, w - 40.0, T_XL), c_light)
-	var bw := (w - 48.0 - 56.0) * 0.5
-	for side in 2:
-		var cat := String(j["a"] if side == 0 else j["b"])
-		var br := Rect2(x + 24.0 + side * (bw + 56.0), r.position.y + 262.0, bw, 70.0)
-		_panel(br, C_VALUE if side == 0 else C_MULT, 14, Color(1, 1, 1, 0.2), 2)
-		_heavy_center(br, String(D.CAT[cat]["name"]), _fit(String(D.CAT[cat]["name"]), bw - 16.0, T_LG), Color.WHITE)
-	_heavy_center(Rect2(x + 24.0 + bw, r.position.y + 262.0, 56.0, 70.0), "×", T_XL, c_light)
-	_text(Vector2(x + 28.0, r.position.y + 386.0), "TARGET", T_SM, Color("9fbfa9"), true)
-	_heavy_right(x + w - 28.0, r.position.y + 392.0, _fmt(int(j["target"])), T_XL, c_gold)
+	_heavy_center(Rect2(x, r.position.y + 56.0, w, 70.0), jn, mini(T_XL, _fit(jn, w - 40.0, T_XL)), Color("ffd6f3"))
+	var y := r.position.y + 150.0
+	for gk in ["sound", "mult"]:
+		var col := Color(D.SOUND_COLOR if gk == "sound" else D.MULT_COLOR)
+		var br := Rect2(x + 24.0, y, w - 48.0, 56.0)
+		_panel(br, col, 12)
+		var t := _rule_text(j[gk])
+		_text_center(br, t, mini(T_SM, _fit(t, br.size.x - 20.0, T_SM)), Color.WHITE, true)
+		y += 70.0
+	_text(Vector2(x + 28.0, r.end.y - 30.0), "TARGET  (SOUND × MULT)", T_SM, Color("b4b2a9"), true)
+	_heavy_right(x + w - 28.0, r.end.y - 24.0, _fmt(int(j["target"])), T_XL, c_gold)
 
 func _relevant(d: Disc, j: Dictionary) -> bool:
-	var a := d.ability
-	if a.is_empty() or String(a["when"]) != "activated":
-		return false
-	var k := String(a["kind"])
-	return k.begins_with("retrigger") or k == "cash" or a["cat"] == j["a"] or a["cat"] == j["b"]
+	return _meets(d, j["sound"]["f"]) or _meets(d, j["mult"]["f"])
 
-func _draw_preview() -> void:
-	var r := _modal(2200.0, 1120.0)
-	var j := judges[round_n - 1]
-	_heavy_center(Rect2(r.position.x, r.position.y + 20.0, r.size.x, 60.0), "Round %d preview" % round_n, T_XL, c_ink)
-	_judge_card(Rect2(r.position.x + 60.0, r.position.y + 110.0, 520.0, 430.0), j, round_n - 1)
-	var y := r.position.y + 580.0
-	_text(Vector2(r.position.x + 60.0, y), "On your current sheet, these discs feed this judge:", T_SM, c_body, true)
-	y += 34.0
-	var n := 0
-	for d in _cur():
-		if d != null and _relevant(d, j):
-			_text(Vector2(r.position.x + 60.0, y), "• %s" % d.title, T_SM, c_ink, true)
-			y += 30.0
-			n += 1
-	if n == 0:
-		_text(Vector2(r.position.x + 60.0, y), "None yet.", T_SM, c_muted, true)
-	if round_n < judges.size():
-		_text(Vector2(r.position.x + 60.0, r.end.y - 120.0), "Next round: %s (%s × %s)" % [judges[round_n]["name"], D.CAT[judges[round_n]["a"]]["name"], D.CAT[judges[round_n]["b"]]["name"]], T_SM, c_muted, true)
-	var tx := r.position.x + 660.0
-	_heavy(Vector2(tx, r.position.y + 150.0), String(trader["name"]), T_XL, c_ink)
-	_text(Vector2(tx, r.position.y + 186.0), "Trader · wants %s albums" % _likes_text(), T_MD, c_muted, true)
-	var c_save := c_light
-	c_light = c_ink
-	_draw_offer_grid(Rect2(tx, r.position.y + 220.0, r.end.x - tx - 60.0, 760.0), false)
-	c_light = c_save
-	_ghost(Rect2(r.get_center().x - 120.0, r.end.y - 84.0, 240.0, 60.0), "Close", _close_preview, true, c_ink)
-
-func _draw_judge_panel() -> void:
-	var j := judges[round_n - 1]
-	_judge_card(Rect2(r_left.position.x, r_left.position.y, r_left.size.x, 430.0), j, round_n - 1)
-	var x := r_left.position.x
-	var y := r_left.position.y + 480.0
-	_wrap(Vector2(x, y), "When you click Judge, each disc on this sheet activates in order, slot 1 to 9. Abilities that build %s and %s count; everything else is wasted. Each category counts as at least 1." % [D.CAT[j["a"]]["name"], D.CAT[j["b"]]["name"]], r_left.size.x, T_SM, c_light_muted, true)
-	y += 130.0
-	_foil(Vector2(x, y), "FEEDING THIS JUDGE", T_SM)
-	y += 20.0
-	for d in _cur():
-		if d != null and _relevant(d, j):
-			_wrap(Vector2(x, y), "%s — %s" % [d.title, _ability_text(d.ability)], r_left.size.x, T_XS, c_light, true, 2)
-			y += 50.0
-
-func _draw_counter() -> void:
-	var x := r_right.position.x
-	var w := r_right.size.x
-	var y := r_right.position.y
-	var card := Rect2(x, y, w, 200.0)
-	_panel(Rect2(card.position + Vector2(0, 6), card.size), Color(0, 0, 0, 0.35), 18)
-	_panel(card, C_BOARD, 18, Color("0d1f16"), 4)
-	_text(Vector2(x + 28.0, y + 48.0), "WALLET", T_SM, Color("9fbfa9"), true)
-	_heavy(Vector2(x + 28.0, y + 150.0), "$%d" % cash, 100, c_gold)
-	y = card.end.y + 30.0
-	var j := judges[round_n - 1]
-	_text(Vector2(x, y + 20.0), "THIS ROUND'S JUDGE", T_XS, c_light_muted, true)
-	_heavy(Vector2(x, y + 60.0), String(j["name"]), _fit(String(j["name"]), w, T_LG), c_light)
-	_text(Vector2(x, y + 92.0), "%s × %s  ·  target %d" % [D.CAT[j["a"]]["name"], D.CAT[j["b"]]["name"], int(j["target"])], T_SM, c_light, true)
-	y += 130.0
-	if mode == "pay":
-		var o: Dictionary = trader["offers"][mode_i]
-		_wrap(Vector2(x, y), "Trading for %s. Still need: %s. Click matching discs on any sheet (use < > to flip sheets)." % [o["disc"].title, _cost_text(_unmet())], w, T_SM, c_light, true)
-		y += 120.0
-		_ghost(Rect2(x, y, w, 56.0), "Cancel trade", _cancel, true, c_light)
-		y += 80.0
-	elif mode == "sleeve":
-		_wrap(Vector2(x, y), "Click a slot on this sheet for the %s sleeve." % D.SLEEVES[shop_sleeves[mode_i]["id"]]["name"], w, T_SM, c_light, true)
-		y += 70.0
-		_ghost(Rect2(x, y, w, 56.0), "Cancel", _cancel, true, c_light)
-		y += 80.0
-	elif sel.x >= 0:
-		var d: Disc = sheets[sel.x][sel.y]
-		if d != null:
-			_heavy(Vector2(x, y + 30.0), d.title, _fit(d.title, w, T_LG), c_light)
-			var hint := "Click another slot to move it." if sel.x == sheets.size() - 1 else "Locked sheet: sell or trade only. Selling leaves a hole."
-			_wrap(Vector2(x, y + 44.0), hint, w, T_XS, c_light_muted, true)
-			_brass_button(Rect2(x, y + 92.0, w, 60.0), "Sell for $%d" % _sell_price(d), _sell_selected, true)
-			y += 180.0
-	else:
-		_wrap(Vector2(x, y), "Click a disc to move or sell it. Hover any disc to read it.", w, T_SM, c_light_muted, true)
-		y += 70.0
-	if message_t > 0.0:
-		_wrap(Vector2(x, y), message, w, T_SM, Color("ff9a86"), true)
-	_ghost(Rect2(x, r_right.end.y - 200.0, w, 60.0), "Preview judge & trader", _open_preview, true, c_light)
-	if phase == Phase.SHOP:
-		_brass_button(Rect2(x, r_right.end.y - 120.0, w, 110.0), "Go to the trader", _go_trader, true, "No coming back to the store this round", T_LG)
-	else:
-		_brass_button(Rect2(x, r_right.end.y - 120.0, w, 110.0), "Go to the judge", _go_judge, mode == "", "No more trading this round", T_LG)
-
-func _draw_scoreboard() -> void:
-	var x := r_right.position.x
-	var w := r_right.size.x
-	var y := r_right.position.y
-	var j := judges[round_n - 1]
-	var board := Rect2(x, y, w, 470.0)
-	_panel(Rect2(board.position + Vector2(0, 6), board.size), Color(0, 0, 0, 0.35), 18)
-	_panel(board, C_BOARD, 18, Color("0d1f16"), 4)
-	_text_center(Rect2(x, y + 14.0, w, 36.0), "SCORE", T_SM, Color("cfe3d4"), true)
-	var bw := (w - 48.0 - 56.0) * 0.5
-	var vals := [maxi(1, int(shown.get(j["a"], 0))), maxi(1, int(shown.get(j["b"], 0)))]
-	for side in 2:
-		var cat := String(j["a"] if side == 0 else j["b"])
-		var br := Rect2(x + 24.0 + side * (bw + 56.0), y + 60.0, bw, 160.0)
-		_panel(br, C_VALUE if side == 0 else C_MULT, 14, Color(1, 1, 1, 0.2), 2)
-		_text_center(Rect2(br.position.x, br.position.y + 10.0, br.size.x, 30.0), String(D.CAT[cat]["name"]).to_upper(), T_SM, Color(1, 1, 1, 0.85), true)
-		var v := str(vals[side]) if not shown.is_empty() else "?"
-		_heavy_center(Rect2(br.position.x, br.position.y + 50.0, br.size.x, 100.0), v, _fit(v, bw - 20.0, T_HERO), Color.WHITE)
-	_heavy_center(Rect2(x + 24.0 + bw, y + 60.0, 56.0, 160.0), "×", T_XL, c_light)
-	var total: int = vals[0] * vals[1]
-	var target := int(j["target"])
-	_text(Vector2(x + 28.0, y + 290.0), "TOTAL", T_SM, Color("9fbfa9"), true)
-	_heavy_right(x + w - 28.0, y + 298.0, "%s / %s" % [_fmt(total) if not shown.is_empty() else "?", _fmt(target)], T_XL, Color("7fe0a0") if total >= target and not shown.is_empty() else c_gold)
-	var bar := Rect2(x + 28.0, y + 326.0, w - 56.0, 22.0)
-	_panel(bar, Color(0, 0, 0, 0.35), 11)
-	var ratio := clampf(float(total) / maxf(1.0, target), 0.0, 1.0) if not shown.is_empty() else 0.0
-	if ratio > 0.0:
-		_panel(Rect2(bar.position, Vector2(maxf(22.0, bar.size.x * ratio), bar.size.y)), Color("7fe0a0") if ratio >= 1.0 else c_gold, 11)
-	_text(Vector2(x + 28.0, y + 400.0), "Cash from discs: +$%d" % shown_cash, T_SM, Color("9fbfa9"), true)
-	y = board.end.y + 30.0
-	_foil(Vector2(x, y + 20.0), "OTHER CATEGORIES", T_SM)
-	y += 44.0
-	for cat in D.CATEGORIES:
-		if cat == j["a"] or cat == j["b"]:
-			continue
-		_text(Vector2(x, y + 20.0), String(D.CAT[cat]["name"]), T_SM, c_light_muted, true)
-		_text_right(x + w, y + 20.0, str(int(shown.get(cat, 0))), T_SM, c_light_muted, true)
-		y += 34.0
-	_brass_button(Rect2(x, r_right.end.y - 120.0, w, 110.0), "Judging..." if judging else "Judge!", _start_judging, phase == Phase.JUDGE and not judging, "Activate every disc, slot 1 to 9", T_LG)
+func _draw_judge_preview() -> void:
+	var r := _modal(1400.0, 760.0)
+	var j := judges[preview_j]
+	_judge_card(Rect2(r.position.x + 60.0, r.position.y + 60.0, 640.0, 400.0), j, preview_j)
+	var x := r.position.x + 760.0
+	var y := r.position.y + 90.0
+	var w := r.end.x - x - 60.0
+	_wrap(Vector2(x, y), "Every disc on your sheet activates in order, slot 1 to 9. Each adds its base Sound, then this judge's rules, then its own ability. Score = Sound × Mult.", w, T_SM, c_body, true)
+	y += 170.0
+	for gk in ["sound", "mult"]:
+		var f: Dictionary = j[gk]["f"]
+		var n := 0
+		for d in _cur():
+			if d != null and _meets(d, f):
+				n += 1
+		var col := Color(D.SOUND_COLOR if gk == "sound" else D.MULT_COLOR)
+		_text(Vector2(x, y), "%s rule: %d of your discs are %s" % ["Sound" if gk == "sound" else "Mult", n, _filter_text(f)], T_SM, col.darkened(0.2), true)
+		y += 40.0
+	_wrap(Vector2(x, y + 10.0), "Matching tags are outlined in green and purple on your binder. Where a disc sits can matter as much as what it is.", w, T_XS, c_muted, true)
+	_ghost(Rect2(r.get_center().x - 120.0, r.end.y - 90.0, 240.0, 60.0), "Close", _close_preview, true, c_ink)
 
 func _draw_pack() -> void:
 	var n := pack_items.size()
 	var cw := minf(CARD_W, (2000.0 - (n - 1) * 24.0) / n)
 	var ch := cw * CASE_RATIO
 	var total_w := n * cw + (n - 1) * 24.0
-	var r := _modal(maxf(1100.0, total_w + 140.0), ch + 380.0)
+	var r := _modal(maxf(1100.0, total_w + 140.0), ch + 450.0)
 	var open := _open_slots().size()
 	_heavy_center(Rect2(r.position.x, r.position.y + 26.0, r.size.x, 60.0), pack_title, T_XL, c_ink)
 	_text_center(Rect2(r.position.x, r.position.y + 84.0, r.size.x, 30.0), "Click to keep or sell. Keeping %d of %d open slots. Bonus cash: +$%d" % [_kept(), open, pack_cash], T_MD, c_bad if _kept() > open else c_muted, true)
@@ -1319,8 +1360,9 @@ func _draw_pack() -> void:
 		var cr := Rect2(x + i * (cw + 24.0), r.position.y + 140.0, cw, ch)
 		var d := pack_items[i]
 		_draw_case(cr, d)
-		_tip(cr, _disc_tip(d))
-		var tag := Rect2(cr.position.x, cr.end.y + 12.0, cw, 44.0)
+		_tip_disc(cr, d, "Keep it, or sell it for $%d." % _sell_price(d))
+		_chip_rows(Rect2(cr.position.x, cr.end.y + 8.0, cw, 56.0), _disc_rows(d, "", judges[round_n - 1], 2))
+		var tag := Rect2(cr.position.x, cr.end.y + 76.0, cw, 44.0)
 		if pack_keep[i]:
 			_panel(cr.grow(5.0), Color(0, 0, 0, 0), 16, c_good, 5)
 			_panel(tag, c_good, 12)
@@ -1334,28 +1376,24 @@ func _draw_pack() -> void:
 	_brass_button(Rect2(r.get_center().x - 170.0, r.end.y - 104.0, 340.0, 76.0), "Done", _close_pack, _kept() <= open, "", T_LG)
 
 func _draw_result() -> void:
-	var r := _modal(900.0, 640.0)
+	var r := Rect2(p_binder.position.x + 90.0, 470.0, p_binder.size.x - 180.0, 560.0)
+	_panel(Rect2(r.position + Vector2(0, 10), r.size), Color(0, 0, 0, 0.5), 28)
+	_panel(r, Color("f4efe4"), 28)
 	var j := judges[round_n - 1]
 	var hit := bool(result["hit"])
-	var x := r.position.x + 70.0
-	var w := r.size.x - 140.0
-	_heavy_center(Rect2(r.position.x, r.position.y + 30.0, r.size.x, 60.0), String(j["name"]), T_XL, c_ink)
-	_text_center(Rect2(r.position.x, r.position.y + 92.0, r.size.x, 40.0), "Impressed!" if hit else "Not impressed.", T_LG, c_good if hit else c_bad, true)
-	var y := r.position.y + 190.0
-	_row(x, w, y, String(D.CAT[j["a"]]["name"]), str(result["a"]))
-	y += 46.0
-	_row(x, w, y, String(D.CAT[j["b"]]["name"]), "× %d" % int(result["b"]))
-	y += 46.0
-	_row(x, w, y, "Score", _fmt(int(result["total"])), c_good if hit else c_bad)
-	y += 46.0
-	_row(x, w, y, "Target", _fmt(int(result["target"])))
-	y += 30.0
-	draw_line(Vector2(x, y), Vector2(x + w, y), c_line, 2.0)
-	y += 50.0
+	var x := r.position.x + 60.0
+	var w := r.size.x - 120.0
+	_heavy_center(Rect2(r.position.x, r.position.y + 24.0, r.size.x, 60.0), "Impressed!" if hit else "Not impressed.", T_XL, c_good if hit else c_bad)
+	var y := r.position.y + 140.0
+	_row(x, w, y, "Score", "%s / %s" % [_fmt(int(result["total"])), _fmt(int(result["target"]))], c_good if hit else c_bad)
+	y += 56.0
 	_row(x, w, y, "Disc cash", "+$%d" % int(result["cash"]))
-	y += 46.0
+	y += 56.0
 	_row(x, w, y, "Clear reward", "+$%d" % int(result["reward"]), Color("b28a3a"))
-	var label := "Start a new sheet"
+	y += 40.0
+	draw_line(Vector2(x, y), Vector2(x + w, y), c_line, 2.0)
+	_text_center(Rect2(r.position.x, y + 20.0, r.size.x, 40.0), String(j["name"]), T_SM, c_muted, true)
+	var label := "Back to the shop"
 	if not hit:
 		label = "Run over"
 	elif round_n >= D.ROUNDS:
@@ -1367,3 +1405,646 @@ func _draw_end(title: String, sub: String, col: Color) -> void:
 	_heavy_center(Rect2(r.position.x, r.position.y + 50.0, r.size.x, 70.0), title, T_HERO, col)
 	_text_center(Rect2(r.position.x, r.position.y + 150.0, r.size.x, 40.0), sub, T_LG, c_body, true)
 	_brass_button(Rect2(r.get_center().x - 180.0, r.end.y - 120.0, 360.0, 80.0), "New run", _new_run, true, "", T_LG)
+
+func _total(c: Dictionary) -> int:
+	return maxi(1, int(c["sound"])) * maxi(1, int(c["mult"]))
+
+func _tag_key(c: Dictionary) -> String:
+	return "%s:%d" % [c["attr"], int(c["v"])]
+
+func _make_rule(gain: String) -> Dictionary:
+	var f := _rand_cond()
+	var where: String = D.ZONES[_weighted(D.ZONE_WEIGHTS)]
+	var group := where.left(3) if where.begins_with("row") or where.begins_with("col") else where
+	return {"gain": gain, "f": f, "where": where, "n": int(D.RULE_N[gain][group])}
+
+func _make_judge() -> Dictionary:
+	var s := _make_rule("sound")
+	var m := _make_rule("mult")
+	return {"sound": s, "mult": m, "name": "The %s %s" % [D.JUDGE_ADJ[_tag_key(s["f"])], D.JUDGE_NOUN[_tag_key(m["f"])]], "target": 0}
+
+func _rule_text(r: Dictionary) -> String:
+	var g := "Sound" if r["gain"] == "sound" else "Mult"
+	var f := _filter_text(r["f"])
+	if r["where"] == "pair":
+		return "+%d %s per %s album next to another %s album" % [int(r["n"]), g, f, f]
+	return "+%d %s per %s album%s" % [int(r["n"]), g, f, D.ZONE_TEXT[r["where"]]]
+
+func _zone_has(where: String, i: int) -> bool:
+	match where:
+		"any":
+			return true
+		"corner", "center", "edge":
+			return _slot_is(i, where)
+	if where.begins_with("row"):
+		return i / 3 == int(where.right(1))
+	return i % 3 == int(where.right(1))
+
+func _rule_hits(sheet: Array, sl: Array, i: int, r: Dictionary) -> int:
+	if not _meets_s(sheet[i], _sl(sl, i), r["f"]):
+		return 0
+	if r["where"] == "pair":
+		for k in _nbrs(i):
+			if sheet[k] != null and _meets_s(sheet[k], _sl(sl, k), r["f"]):
+				return 1
+		return 0
+	return 1 if _zone_has(String(r["where"]), i) else 0
+
+func _gain_text(a: Dictionary) -> String:
+	match String(a.get("gain", "sound")):
+		"mult":
+			return "+%d Mult" % int(a["n"])
+		"xmult":
+			return "×%d Mult" % int(a["n"])
+	return "+%d Sound" % int(a["n"])
+
+func _rar(d: Disc, s: String) -> int:
+	return mini(2, d.rarity + (1 if s == "grade" else 0))
+
+func _attr_s(d: Disc, s: String, attr: String) -> int:
+	match attr:
+		"cond":
+			return 2 if s == "polish" else d.cond
+		"rarity":
+			return _rar(d, s)
+	return _attr(d, attr)
+
+func _same(sheet: Array, sl: Array, i: int, k: int, attr: String) -> bool:
+	if attr == "genre" and (_sl(sl, i) == "wild" or _sl(sl, k) == "wild"):
+		return true
+	return _attr_s(sheet[i], _sl(sl, i), attr) == _attr_s(sheet[k], _sl(sl, k), attr)
+
+func _diags(i: int) -> Array[int]:
+	var out: Array[int] = []
+	for dy in [-1, 1]:
+		for dx in [-1, 1]:
+			var x: int = i % 3 + dx
+			var y: int = i / 3 + dy
+			if x >= 0 and x < 3 and y >= 0 and y < 3:
+				out.append(y * 3 + x)
+	return out
+
+func _cd_rect(i: int) -> Rect2:
+	var r := _slot_rect(i)
+	return Rect2(r.position, Vector2(CARD_W, CARD_W))
+
+func _set_sort(k: String) -> void:
+	sort_key = "" if sort_key == k else k
+
+func _sort_val(d: Disc, price: int) -> int:
+	match sort_key:
+		"price":
+			return price
+		"genre":
+			return d.genre
+		"era":
+			return d.era
+		"label":
+			return d.label
+		"rarity":
+			return -d.rarity
+		"cond":
+			return -d.cond
+	return 0
+
+func _sort_order(discs: Array, prices: Array) -> Array:
+	var idx: Array = range(discs.size())
+	if sort_key == "":
+		return idx
+	idx.sort_custom(func(x, y):
+		var va := _sort_val(discs[x], int(prices[x]))
+		var vb := _sort_val(discs[y], int(prices[y]))
+		return va < vb if va != vb else x < y)
+	return idx
+
+func _draw_sort_bar(r: Rect2, cols: int, price_text: String) -> void:
+	_panel(r, Color(0.06, 0.07, 0.09, 0.78), 14, Color(1, 1, 1, 0.1), 2)
+	var keys := D.SORT_KEYS
+	var rows := int(ceil(keys.size() / float(cols)))
+	var head := 150.0 if rows == 1 else 0.0
+	var top := 0.0 if rows == 1 else 40.0
+	_text(Vector2(r.position.x + 18.0, r.position.y + (r.size.y * 0.5 + 6.0 if rows == 1 else 30.0)), "ORGANIZE BY", T_XS, Color("c9ced6"), true)
+	var area := Rect2(r.position.x + 12.0 + head, r.position.y + 10.0 + top, r.size.x - 24.0 - head, r.size.y - 20.0 - top)
+	var cw := (area.size.x - (cols - 1) * 8.0) / cols
+	var ch := (area.size.y - (rows - 1) * 8.0) / rows
+	for k in keys.size():
+		var key: String = keys[k]
+		var cr := Rect2(area.position.x + (k % cols) * (cw + 8.0), area.position.y + (k / cols) * (ch + 8.0), cw, ch)
+		var on := sort_key == key
+		var hovered := ui_live and cr.has_point(mouse)
+		_panel(cr, c_gold if on else Color(1, 1, 1, 0.16 if hovered else 0.08), 10)
+		var label: String = price_text if key == "price" else String(D.SORT_TEXT[key])
+		_text_center(cr, label, mini(T_XS, _fit(label, cw - 10.0, T_XS)), c_ink if on else c_light, true)
+		_register(cr, _set_sort.bind(key))
+
+func _chip_rows(r: Rect2, rows: Array, emph: String = "", left: bool = false) -> void:
+	var rh := r.size.y / rows.size()
+	for ri in rows.size():
+		var row: Array = rows[ri]
+		var fs := T_XS
+		var total := -5.0
+		for c in row:
+			total += _text_w(String(c[1]), fs, true) + 19.0
+		if total > r.size.x:
+			fs = maxi(10, int(fs * r.size.x / total))
+		total = -5.0
+		for c in row:
+			total += _text_w(String(c[1]), fs, true) + 19.0
+		var x := r.position.x + (0.0 if left else (r.size.x - total) * 0.5)
+		for c in row:
+			var t := String(c[1])
+			var w := _text_w(t, fs, true) + 14.0
+			var cr := Rect2(x, r.position.y + ri * rh + 2.0, w, rh - 4.0)
+			var rings: Array = c[4]
+			for k in rings.size():
+				_panel(cr.grow(2.0 + k * 3.0), Color(0, 0, 0, 0), 12, rings[k], 3)
+			var em: bool = emph != "" and c[0] == emph
+			_panel(cr, c[2], 10, c_gold if em else Color(0, 0, 0, 0.25), 3 if em else 1)
+			_text_center(cr, t, fs, c[3], true)
+			x += w + 5.0
+
+func _disc_rows(d: Disc, s: String, j: Dictionary, layout: int) -> Array:
+	var rings := {}
+	for gk in ["sound", "mult"]:
+		var f: Dictionary = j[gk]["f"]
+		if _meets_s(d, s, f):
+			var key := String(f["attr"])
+			if not rings.has(key):
+				rings[key] = []
+			rings[key].append(Color(D.SOUND_COLOR if gk == "sound" else D.MULT_COLOR))
+	var era := ["era", D.ERAS[d.era], Color("fbfaf5"), c_ink, rings.get("era", [])]
+	var genre := ["genre", D.GENRES[d.genre].to_upper(), Color("fbfaf5"), Color(D.GENRE_COLORS[d.genre]).darkened(0.15), rings.get("genre", [])]
+	var label := ["label", String(D.LABELS[d.label]["short"]).to_upper(), Color("e6e1d6"), c_ink, rings.get("label", [])]
+	var rar := ["rarity", D.RARITY_SHORT[d.rarity], Color(D.RARITY_COLORS[d.rarity]), c_ink, rings.get("rarity", [])]
+	var cond := ["cond", D.CONDITIONS[d.cond].to_upper(), Color(D.CONDITION_COLORS[d.cond]), c_ink, rings.get("cond", [])]
+	var low: Array = [rar, cond]
+	if d.edition != "":
+		var ec := Color(D.EDITIONS[d.edition]["color"])
+		low.append(["edition", String(D.EDITIONS[d.edition]["name"]).to_upper(), ec, _ink_on(ec), []])
+	return [[era, genre, label], low]
+
+func _judge_tip(j: Dictionary) -> String:
+	return "%s\n%s\n%s\nTarget: %s" % [j["name"], _rule_text(j["sound"]), _rule_text(j["mult"]), _fmt(int(j["target"]))]
+
+func _tip_disc(r: Rect2, d: Disc, extra: String = "", sleeve: String = "") -> void:
+	if ui_live and r.has_point(mouse):
+		hover_obj = d
+		hover_extra = extra
+		hover_sleeve = sleeve
+		hover_tip = ""
+
+func _when_label(a: Dictionary) -> String:
+	return {"activated": "WHEN JUDGED", "placed": "WHEN PLACED", "sold": "WHEN SOLD"}[a["when"]]
+
+func _ability_chip(a: Dictionary) -> Array:
+	var n := int(a["n"])
+	match String(a["kind"]):
+		"retrigger_left", "retrigger_above", "retrigger_nbrs":
+			return ["RETRIGGER", Color("3fa7a0")]
+		"cash", "gen_cash", "sold_cash":
+			return ["+$%d" % n, c_gold]
+		"gen_pack":
+			return ["FREE BUNDLE", c_gold]
+		"sold_rare":
+			return ["RARE ALBUM", Color(D.RARITY_COLORS[2])]
+	var g := String(a.get("gain", "sound"))
+	return [_gain_text(a), Color(D.SOUND_COLOR if g == "sound" else D.MULT_COLOR)]
+
+func _ability_body(a: Dictionary) -> String:
+	match String(a["kind"]):
+		"cash":
+			return "Every time it activates."
+		"gen_cash":
+			return "When you put it in your binder."
+		"sold_cash":
+			return "Extra cash when you sell it."
+		"gen_pack":
+			return "Opens a free Bargain Bin bundle when you put it in your binder."
+		"sold_rare":
+			return "Creates a random Rare album when you sell it."
+	var pre: String = {"activated": "Activated: ", "placed": "Placed: ", "sold": "Sold: "}[a["when"]]
+	var t := _ability_text(a).trim_prefix(pre)
+	var g := _gain_text(a)
+	if t == g + ".":
+		return "Always."
+	if t.begins_with(g + " "):
+		t = t.substr(g.length() + 1)
+		t = t.left(1).to_upper() + t.substr(1)
+	return t
+
+func _rule_hint(r: Dictionary) -> String:
+	if r["where"] == "pair":
+		return "next to another %s album" % _filter_text(r["f"])
+	if r["where"] == "any":
+		return "anywhere on the sheet"
+	return String(D.ZONE_TEXT[r["where"]]).strip_edges()
+
+func _draw_rich_tip() -> bool:
+	if hover_obj == null:
+		return false
+	var d: Disc = hover_obj
+	var w := 620.0
+	var h := _disc_tip_body(d, Vector2.ZERO, w, false)
+	var box := Rect2(mouse + Vector2(28.0, 28.0), Vector2(w, h))
+	if box.end.x > UI_W - 12.0:
+		box.position.x = mouse.x - w - 20.0
+	if box.end.y > UI_H - 12.0:
+		box.position.y = maxf(12.0, UI_H - 12.0 - h)
+	_panel(Rect2(box.position + Vector2(0, 8), box.size), Color(0, 0, 0, 0.4), 18)
+	_panel(box, Color("161b24"), 18, Color(1, 1, 1, 0.14), 2)
+	_disc_tip_body(d, box.position, w, true)
+	return true
+
+func _disc_tip_body(d: Disc, o: Vector2, w: float, paint: bool) -> float:
+	var pad := 24.0
+	var x := o.x + pad
+	var iw := w - pad * 2.0
+	var y := o.y + pad
+	var j := judges[round_n - 1]
+	var tfs := mini(T_LG, _fit(d.title, iw, T_LG))
+	if paint:
+		_heavy(Vector2(x, y + 30.0), d.title, tfs, Color.WHITE)
+		_text_i(Vector2(x, y + 66.0), "by %s" % d.band, T_SM, Color("b8c0cc"))
+	y += 84.0
+	if paint:
+		_chip_rows(Rect2(x, y, iw, 64.0), _disc_rows(d, hover_sleeve, j, 2), "", true)
+	y += 78.0
+	var a := d.ability
+	if not a.is_empty():
+		if paint:
+			draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+			_text(Vector2(x, y + 34.0), _when_label(a), T_XS, c_gold, true)
+		y += 48.0
+		var chip := _ability_chip(a)
+		var ct := String(chip[0])
+		var ccol: Color = chip[1]
+		var cw := _text_w(ct, T_SM, true) + 28.0
+		var body := _ability_body(a)
+		var bw := iw - cw - 16.0
+		var bh := font.get_multiline_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, bw, T_SM).y
+		if paint:
+			var cr := Rect2(x, y, cw, 38.0)
+			_panel(cr, ccol, 19)
+			_text_center(cr, ct, T_SM, _ink_on(ccol), true)
+			_wrap(Vector2(x + cw + 16.0, y + 4.0), body, bw, T_SM, Color("e8ecf2"))
+		y += maxf(38.0, bh + 4.0) + 18.0
+	if d.edition != "":
+		var ed: Dictionary = D.EDITIONS[d.edition]
+		var ecol := Color(ed["color"])
+		if paint:
+			draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+			_text(Vector2(x, y + 34.0), "%s EDITION" % String(ed["name"]).to_upper(), T_XS, ecol.lightened(0.3), true)
+			_text(Vector2(x, y + 72.0), String(ed["text"]), T_SM, Color("e8ecf2"))
+		y += 92.0
+	if paint:
+		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+		_text(Vector2(x, y + 34.0), "TONIGHT'S JUDGE", T_XS, Color("ffb3ec"), true)
+	y += 48.0
+	var any := false
+	for gk in ["sound", "mult"]:
+		var r: Dictionary = j[gk]
+		if not _meets_s(d, hover_sleeve, r["f"]):
+			continue
+		any = true
+		var col := Color(D.SOUND_COLOR if gk == "sound" else D.MULT_COLOR)
+		if paint:
+			draw_circle(Vector2(x + 9.0, y + 12.0), 8.0, col)
+			var head := "+%d %s" % [int(r["n"]), "Sound" if gk == "sound" else "Mult"]
+			_text(Vector2(x + 28.0, y + 20.0), head, T_SM, col.lightened(0.35), true)
+			_text_i(Vector2(x + 34.0 + _text_w(head, T_SM, true), y + 20.0), _rule_hint(r), T_SM, Color("c9ced6"))
+		y += 34.0
+	if not any:
+		if paint:
+			_text_i(Vector2(x, y + 20.0), "No tags this judge rewards.", T_SM, Color("8a93a0"))
+		y += 34.0
+	y += 8.0
+	if hover_sleeve != "":
+		var s: Dictionary = D.SLEEVES[hover_sleeve]
+		if paint:
+			draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+			_text(Vector2(x, y + 34.0), "%s SLEEVE" % String(s["name"]).to_upper(), T_XS, Color(s["color"]).lightened(0.3), true)
+			_wrap(Vector2(x, y + 46.0), String(s["text"]) + " This round only.", iw, T_SM, Color("e8ecf2"))
+		y += 46.0 + font.get_multiline_string_size(String(s["text"]) + " This round only.", HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y + 10.0
+	if paint:
+		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+		_text_i(Vector2(x, y + 32.0), "%s  ·  %d min" % [D.LABELS[d.label]["name"], d.runtime], T_XS, Color("8a93a0"))
+		_text_right(x + iw, y + 32.0, "Sells for $%d" % _sell_price(d), T_XS, Color("8a93a0"), true)
+	y += 44.0
+	if hover_extra != "":
+		var eh := font_bold.get_multiline_string_size(hover_extra, HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y
+		if paint:
+			_wrap(Vector2(x, y + 2.0), hover_extra, iw, T_SM, c_gold, true)
+		y += eh + 10.0
+	return y - o.y + pad - 8.0
+
+func _make_orders() -> void:
+	orders.clear()
+	var keys: Array = D.JOBS.keys()
+	var w: Array = []
+	for k in keys:
+		w.append(int(D.JOBS[k]["weight"]))
+	for i in D.WORKSHOP_ORDERS:
+		var id: String = keys[_weighted(w)]
+		var o := {"id": id, "done": false, "v": 0}
+		match id:
+			"remix":
+				o["v"] = rng.randi_range(0, D.GENRES.size() - 1)
+			"remaster":
+				o["v"] = 1 if rng.randf() < 0.5 else -1
+			"relabel":
+				o["v"] = rng.randi_range(0, D.LABELS.size() - 1)
+		orders.append(o)
+
+func _order_title(o: Dictionary) -> String:
+	var v := int(o["v"])
+	match String(o["id"]):
+		"remix":
+			return "→ %s" % D.GENRES[v]
+		"remaster":
+			return "%+d decade" % v
+		"relabel":
+			return "→ %s" % D.LABELS[v]["short"]
+		"repress":
+			return "+1 condition"
+	var ed: Dictionary = D.EDITIONS[o["id"]]
+	return ("×%d Mult" if ed["kind"] == "xmult" else ("+%d Mult" if ed["kind"] == "mult" else "+%d Sound")) % int(ed["n"])
+
+func _order_text(o: Dictionary) -> String:
+	var v := int(o["v"])
+	match String(o["id"]):
+		"remix":
+			return "Change a disc's genre to %s." % D.GENRES[v]
+		"remaster":
+			return "Make a disc one decade %s." % ("newer" if v > 0 else "older")
+		"relabel":
+			return "Move a disc to %s." % D.LABELS[v]["name"]
+		"repress":
+			return "Raise a disc's condition one step: Worn → Good → Mint."
+	return "%s Permanent; replaces any edition it already has." % D.EDITIONS[o["id"]]["text"]
+
+func _can_job(o: Dictionary, d: Disc) -> bool:
+	var v := int(o["v"])
+	match String(o["id"]):
+		"remix":
+			return d.genre != v
+		"remaster":
+			return d.era + v >= 0 and d.era + v < D.ERAS.size()
+		"relabel":
+			return d.label != v
+		"repress":
+			return d.cond < 2
+	return d.edition != String(o["id"])
+
+func _start_job(i: int) -> void:
+	var o: Dictionary = orders[i]
+	if bool(o["done"]):
+		return
+	if cash < int(D.JOBS[o["id"]]["price"]):
+		_say("Not enough cash for that job.")
+		return
+	_cancel()
+	mode = "job"
+	mode_i = i
+
+func _apply_job(slot: int) -> void:
+	var d: Disc = _cur()[slot]
+	var o: Dictionary = orders[mode_i]
+	if not _can_job(o, d):
+		_say("That disc can't take this job.")
+		return
+	var v := int(o["v"])
+	var id := String(o["id"])
+	match id:
+		"remix":
+			d.genre = v
+		"remaster":
+			d.era += v
+		"relabel":
+			d.label = v
+		"repress":
+			d.cond += 1
+		_:
+			d.edition = id
+	cash -= int(D.JOBS[id]["price"])
+	o["done"] = true
+	_float(_cd_rect(slot), String(D.JOBS[id]["name"]) if D.EDITIONS.has(id) else _order_title(o), c_gold)
+	_sfx("page_turn")
+	_cancel()
+
+func _go_workshop() -> void:
+	_cancel()
+	view = 0
+	phase = Phase.WORKSHOP
+	phase_t = 0.0
+
+func _draw_workshop() -> void:
+	_backdrop(Color("454a50"), 1250.0, Color("2b2e33"))
+	var y := 60.0
+	while y < 1250.0:
+		draw_line(Vector2(-40, y), Vector2(UI_W, y), Color(0, 0, 0, 0.1), 2.0)
+		y += 64.0
+	var sign := Rect2(r_scene.get_center().x - 380.0, 150.0, 760.0, 96.0)
+	_panel(sign, Color("1d1f22"), 8, Color("f2c14e"), 4)
+	_heavy_center(sign, "PRESSING PLANT", T_XL, Color("f2c14e"))
+	_draw_press(Rect2(70.0, 300.0, 380.0, 820.0))
+	var board := Rect2(480.0, 280.0, r_scene.end.x - 480.0, 840.0)
+	_shadow(board, 10, 8.0)
+	_panel(board, Color("b08850"), 10, Color("6f4a2c"), 8)
+	_grain(board, 7, 300.0)
+	_text(Vector2(board.position.x + 28.0, board.position.y + 48.0), "WORK ORDERS", T_SM, Color("3a2412"), true)
+	_text_right(board.end.x - 28.0, board.position.y + 48.0, "Pick a job, then a disc in your binder", T_XS, Color("4a3520"), true)
+	var cw := (board.size.x - 56.0 - 48.0) / 3.0
+	var ch := 340.0
+	for i in orders.size():
+		var row := i / 3
+		var in_row := mini(3, orders.size() - row * 3)
+		var x0 := board.position.x + 28.0 + (3 - in_row) * (cw + 24.0) * 0.5
+		var r := Rect2(x0 + (i % 3) * (cw + 24.0), board.position.y + 80.0 + row * (ch + 30.0), cw, ch)
+		_draw_order(r, orders[i], i)
+
+func _draw_press(r: Rect2) -> void:
+	_shadow(r, 10, 8.0)
+	_grad_panel(r, 10.0, Color("8a939c"), Color("5f676f"))
+	var head := Rect2(r.position.x + 20.0, r.position.y + 20.0, r.size.x - 40.0, 160.0)
+	_panel(head, Color("3a3f46"), 8)
+	_panel(Rect2(head.position.x + 24.0, head.position.y + 24.0, 150.0, 50.0), Color("0f1a12"), 6)
+	_text(Vector2(head.position.x + 38.0, head.position.y + 58.0), "PRESS 01", T_SM, Color("7fe0a0"), true)
+	draw_circle(Vector2(head.end.x - 50.0, head.position.y + 50.0), 18.0, Color("c0392b") if mode == "job" else Color("5a2a24"))
+	var ram := Rect2(r.get_center().x - 50.0, head.end.y, 100.0, 120.0 + (20.0 * sin(clock * 6.0) if mode == "job" else 0.0))
+	_grad_panel(ram, 4.0, Color("c3cad1"), Color("8a939c"))
+	var platter := Vector2(r.get_center().x, r.position.y + 470.0)
+	draw_circle(platter, 150.0, Color("2b2f35"))
+	_disc(platter, 120.0)
+	var base := Rect2(r.position.x, r.end.y - 120.0, r.size.x, 120.0)
+	draw_rect(base, Color("1d1f22"))
+	var sx := base.position.x + 10.0
+	while sx + 100.0 < base.end.x:
+		draw_colored_polygon(PackedVector2Array([Vector2(sx, base.end.y - 10.0), Vector2(sx + 40.0, base.end.y - 10.0), Vector2(sx + 100.0, base.position.y + 10.0), Vector2(sx + 60.0, base.position.y + 10.0)]), Color("f2c14e"))
+		sx += 80.0
+
+func _draw_order(r: Rect2, o: Dictionary, i: int) -> void:
+	var job: Dictionary = D.JOBS[o["id"]]
+	var col := Color(job["color"])
+	var price := int(job["price"])
+	var done := bool(o["done"])
+	var active := mode == "job" and mode_i == i
+	var rr := r
+	if not done and (active or (ui_live and r.has_point(mouse))):
+		rr.position.y -= 8.0
+	_shadow(rr, 6, 5.0)
+	_panel(rr, Color("f4efe4"), 6)
+	draw_circle(Vector2(rr.get_center().x, rr.position.y + 14.0), 9.0, Color("c0392b"))
+	var band := Rect2(rr.position.x, rr.position.y + 30.0, rr.size.x, 52.0)
+	draw_rect(band, col)
+	var nm := String(job["name"]).to_upper()
+	_heavy_center(band, nm, mini(T_MD, _fit(nm, band.size.x - 20.0, T_MD)), _ink_on(col))
+	var title := _order_title(o)
+	_heavy_center(Rect2(rr.position.x, band.end.y + 10.0, rr.size.x, 70.0), title, mini(T_XL, _fit(title, rr.size.x - 24.0, T_XL)), c_ink)
+	_wrap(Vector2(rr.position.x + 20.0, band.end.y + 92.0), _order_text(o), rr.size.x - 40.0, T_XS, c_body, true, 5)
+	var n := 0
+	for d in _cur():
+		if d != null and _can_job(o, d):
+			n += 1
+	_text(Vector2(rr.position.x + 20.0, rr.end.y - 26.0), "%d disc%s can take it" % [n, "" if n == 1 else "s"], T_XS, c_muted, true)
+	_price_sticker(Vector2(rr.end.x - 46.0, rr.end.y - 64.0), "$%d" % price, 1.4)
+	if done:
+		_panel(rr, Color(0, 0, 0, 0.35), 6)
+		_rotated(rr.get_center(), -0.2)
+		var st := Rect2(-110.0, -40.0, 220.0, 80.0)
+		_panel(st, Color(0, 0, 0, 0), 8, Color(c_bad, 0.9), 6)
+		_heavy_center(st, "DONE", T_XL, Color(c_bad, 0.9))
+		_unrotated()
+		return
+	if cash < price:
+		_panel(rr, Color(0, 0, 0, 0.3), 6)
+	if active:
+		_panel(rr.grow(5.0), Color(0, 0, 0, 0), 10, c_gold, 5)
+	_tip(r, "%s: %s\nCosts $%d. Click it, then click a disc in your binder." % [job["name"], _order_text(o), price])
+	_register(r, _start_job.bind(i))
+
+func _edition_overlay(c: Vector2, rad: float, ed: String) -> void:
+	match ed:
+		"signed":
+			var pts := PackedVector2Array()
+			for k in 25:
+				var t := k / 24.0
+				pts.append(c + Vector2(-rad * 0.6 + t * rad * 1.2, rad * 0.5 + sin(t * TAU * 2.0) * rad * 0.08 - t * rad * 0.15))
+			draw_polyline(pts, Color(1, 1, 1, 0.9), maxf(2.0, rad * 0.035), true)
+		"picture":
+			var hues := [Color("ff9ec4"), Color("ffe08a"), Color("9effa8"), Color("8fe9ff"), Color("c3a8ff")]
+			for k in hues.size():
+				draw_arc(c, rad * (0.4 + k * 0.12), 0, TAU, 48, Color(hues[k], 0.28), maxf(2.0, rad * 0.06), true)
+		"platinum":
+			draw_circle(c, rad, Color(0.85, 0.9, 0.95, 0.25))
+			draw_arc(c, rad - 4.0, 0, TAU, 72, Color("e8eef4"), maxf(3.0, rad * 0.06), true)
+
+func _badge_spec(a: Dictionary) -> Dictionary:
+	var g := String(a.get("gain", "sound"))
+	var n := int(a["n"])
+	var at := String(D.ATTR_TEXT.get(String(a.get("attr", "")), "")).capitalize()
+	var nb: Array = [1, 3, 5, 7]
+	var sp := {"grid": true, "self": 4, "cells": [], "token": at, "gain": ("×%d" if g == "xmult" else "+%d") % n, "gcol": Color(D.SOUND_COLOR if g == "sound" else D.MULT_COLOR)}
+	match String(a["kind"]):
+		"flat":
+			sp["grid"] = false
+			sp["token"] = "Always"
+		"row_match":
+			sp["cells"] = [3, 5]
+		"col_match":
+			sp["cells"] = [1, 7]
+		"nbr_match":
+			sp["cells"] = nb
+		"diag_match":
+			sp["cells"] = [0, 2, 6, 8]
+		"nbr_filter":
+			sp["cells"] = nb
+			sp["token"] = _filter_text(a["f"])
+		"slot":
+			sp["self"] = -1
+			sp["cells"] = {"corner": [0, 2, 6, 8], "center": [4], "edge": nb}[a["slot"]]
+			sp["token"] = String(a["slot"]).capitalize()
+		"era_step":
+			sp["cells"] = nb
+			sp["token"] = "±1 decade"
+		"row_distinct":
+			sp["cells"] = [3, 5]
+			sp["token"] = "Mixed genre"
+		"line_all":
+			sp["cells"] = [3, 5] if a["line"] == "row" else [1, 7]
+			sp["token"] = "All " + at
+		"x_nbrs":
+			sp["cells"] = nb
+			sp["token"] = "All " + at
+		"boost_row":
+			sp["cells"] = [3, 5]
+			sp["token"] = "Boost"
+		"boost_col":
+			sp["cells"] = [1, 7]
+			sp["token"] = "Boost"
+		"retrigger_left", "retrigger_above", "retrigger_nbrs":
+			sp["cells"] = {"retrigger_left": [3], "retrigger_above": [1], "retrigger_nbrs": nb}[a["kind"]]
+			sp["token"] = "Retrigger"
+			sp["gain"] = "AGAIN"
+			sp["gcol"] = Color("3fa7a0")
+		"runtime":
+			sp["grid"] = false
+			sp["token"] = "Per 20 min"
+		"cash", "gen_cash", "sold_cash":
+			sp["grid"] = false
+			sp["token"] = {"cash": "Each time", "gen_cash": "On place", "sold_cash": "On sell"}[a["kind"]]
+			sp["gain"] = "$%d" % n
+			sp["gcol"] = c_gold
+		"gen_pack":
+			sp["grid"] = false
+			sp["token"] = "On place"
+			sp["gain"] = "BUNDLE"
+			sp["gcol"] = c_gold
+		"sold_rare":
+			sp["grid"] = false
+			sp["token"] = "On sell"
+			sp["gain"] = "RARE"
+			sp["gcol"] = Color(D.RARITY_COLORS[2])
+	return sp
+
+func _mini_grid(r: Rect2, sp: Dictionary) -> void:
+	var c := r.size.x / 3.0
+	var cells: Array = sp["cells"]
+	for k in 9:
+		var cell := Rect2(r.position.x + (k % 3) * c + 1.0, r.position.y + (k / 3) * c + 1.0, c - 2.0, c - 2.0)
+		var col := Color(1, 1, 1, 0.16)
+		if k in cells:
+			col = sp["gcol"]
+		elif k == int(sp["self"]):
+			col = Color.WHITE
+		draw_rect(cell, col)
+
+func _ability_badge(area: Rect2, a: Dictionary) -> void:
+	if a.is_empty():
+		return
+	var sp := _badge_spec(a)
+	var h := area.size.y
+	var pad := h * 0.2
+	var gw := h * 0.74 if bool(sp["grid"]) else 0.0
+	var token := String(sp["token"])
+	var gain := String(sp["gain"])
+	var fs := maxi(10, int(h * 0.44))
+	var total := 0.0
+	while true:
+		var tw := _text_w(token, fs, true) if token != "" else 0.0
+		total = pad + (gw + pad * 0.7 if gw > 0.0 else 0.0) + (tw + pad * 0.7 if tw > 0.0 else 0.0) + _text_w(gain, fs, true) + h * 0.5 + pad * 0.6
+		if total <= area.size.x or fs <= 9:
+			break
+		fs -= 1
+	var r := Rect2(area.get_center().x - total * 0.5, area.position.y, total, h)
+	_panel(r, Color(0.06, 0.07, 0.09, 0.88), int(h * 0.5), Color(1, 1, 1, 0.35), 1)
+	var x := r.position.x + pad
+	if gw > 0.0:
+		_mini_grid(Rect2(x, r.position.y + (h - gw) * 0.5, gw, gw), sp)
+		x += gw + pad * 0.7
+	if token != "":
+		_text(Vector2(x, r.get_center().y + _vc(font_bold, fs)), token, fs, Color.WHITE, true)
+		x += _text_w(token, fs, true) + pad * 0.7
+	var gcol: Color = sp["gcol"]
+	var cr := Rect2(x, r.position.y + h * 0.14, _text_w(gain, fs, true) + h * 0.5, h * 0.72)
+	_panel(cr, gcol, int(h * 0.36))
+	_text_center(cr, gain, fs, _ink_on(gcol), true)

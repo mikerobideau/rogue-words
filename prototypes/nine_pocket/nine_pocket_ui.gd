@@ -14,19 +14,13 @@ class FloatText:
 
 const UI_W := 2560.0
 const UI_H := 1440.0
-const CARD_W := 254.0
-const CARD_H := 300.0
+const CARD_W := 290.0
+const CARD_H := 352.0
 const CASE_RATIO := 125.0 / 142.0
 const GAP := 20.0
-const PANEL_PAD := 28.0
-const PANEL_HEAD := 64.0
-const SPINE := 60.0
-const BIND_STRIP := 26.0
-const COL_GAP := 28.0
-const HEADER_Y := 28.0
-const HEADER_H := 140.0
-const BODY_TOP := 196.0
-const RIGHT_W := 560.0
+const BINDER_BORDER := 36.0
+const BINDER_RINGS := 70.0
+const BINDER_TOP := 214.0
 const SLEEVE_GLOSS := 0.1
 const PLACE_TIME := 0.3
 
@@ -39,9 +33,6 @@ const T_HERO := 64
 
 const C_LEATHER := Color("33373e")
 const C_FOIL := Color("e6c36a")
-const C_VALUE := Color("2f6fb0")
-const C_MULT := Color("c4553f")
-const C_BOARD := Color("1d3b2c")
 
 var c_page := Color("141a24")
 var c_card := Color("ffffff")
@@ -59,20 +50,21 @@ var c_light_muted := Color("b8a58a")
 var window_size := Vector2.ZERO
 var ui_scale := 1.0
 var screen_origin := Vector2.ZERO
-var p_left := Rect2()
 var p_binder := Rect2()
-var p_right := Rect2()
-var r_left := Rect2()
 var r_grid := Rect2()
-var r_right := Rect2()
+var r_scene := Rect2()
 
 var font: Font
 var font_bold: Font
 var font_heavy: Font
+var font_italic: Font
 var style := StyleBoxFlat.new()
 var buttons: Array[UiButton] = []
 var ui_live := true
 var hover_tip := ""
+var hover_obj = null
+var hover_extra := ""
+var hover_sleeve := ""
 var hover_rect := Rect2()
 var mouse := Vector2.ZERO
 var clock := 0.0
@@ -116,12 +108,13 @@ func _ui_click(p: Vector2) -> bool:
 func _begin_draw() -> void:
 	buttons.clear()
 	hover_tip = ""
+	hover_obj = null
 	draw_rect(Rect2(Vector2.ZERO, window_size), c_page)
 	mouse = _ui_mouse()
 	draw_set_transform(screen_origin, 0.0, Vector2(ui_scale, ui_scale))
 
 func _end_draw() -> void:
-	if hover_tip != "":
+	if not _draw_rich_tip() and hover_tip != "":
 		_draw_tooltip(hover_tip)
 	draw_set_transform(Vector2.ZERO)
 
@@ -133,10 +126,14 @@ func _load_fonts() -> void:
 	font = ThemeDB.fallback_font
 	font_bold = ThemeDB.fallback_font
 	font_heavy = ThemeDB.fallback_font
+	font_italic = ThemeDB.fallback_font
 	if ResourceLoader.exists(sans_path):
 		var sans: Font = load(sans_path)
 		font = _variation(sans, {wght: 450})
 		font_bold = _variation(sans, {wght: 700})
+		var it := _variation(sans, {wght: 450})
+		it.variation_transform = Transform2D(Vector2(1.0, 0.0), Vector2(0.22, 1.0), Vector2.ZERO)
+		font_italic = it
 	if ResourceLoader.exists(serif_path):
 		var serif: Font = load(serif_path)
 		font_heavy = _variation(serif, {wght: 700, ts.name_to_tag("opsz"): 72, ts.name_to_tag("SOFT"): 50})
@@ -170,17 +167,10 @@ func _recompute_layout() -> void:
 	screen_origin = (window_size - Vector2(UI_W, UI_H) * ui_scale) * 0.5
 	var gw := 3.0 * CARD_W + 2.0 * GAP
 	var gh := 3.0 * CARD_H + 2.0 * GAP
-	var ph := PANEL_HEAD + gh + PANEL_PAD
-	var left_w := gw + PANEL_PAD * 2.0
-	var binder_w := gw + PANEL_PAD * 2.0 + SPINE
-	var x0 := (UI_W - left_w - binder_w - RIGHT_W - COL_GAP * 2.0) * 0.5
-	p_left = Rect2(x0, BODY_TOP, left_w, ph)
-	p_binder = Rect2(p_left.end.x + COL_GAP, BODY_TOP, binder_w, ph)
-	p_right = Rect2(p_binder.end.x + COL_GAP, BODY_TOP, RIGHT_W, ph)
-	r_left = Rect2(p_left.position.x + PANEL_PAD, BODY_TOP + PANEL_HEAD, gw, gh)
-	r_grid = Rect2(p_binder.position.x + PANEL_PAD + SPINE, BODY_TOP + PANEL_HEAD, gw, gh)
-	r_right = Rect2(p_right.position.x + PANEL_PAD, BODY_TOP + PANEL_HEAD, RIGHT_W - PANEL_PAD * 2.0, gh)
-	screen_origin.y += maxf(0.0, UI_H - p_left.end.y - HEADER_Y) * 0.5 * ui_scale
+	var bw := gw + BINDER_RINGS + BINDER_BORDER * 2.0
+	p_binder = Rect2(UI_W - 56.0 - bw, BINDER_TOP, bw, gh + BINDER_BORDER * 2.0)
+	r_grid = Rect2(p_binder.position.x + BINDER_BORDER + BINDER_RINGS, p_binder.position.y + BINDER_BORDER, gw, gh)
+	r_scene = Rect2(60.0, 0.0, p_binder.position.x - 100.0, UI_H)
 
 func _ui_mouse() -> Vector2:
 	return (get_local_mouse_position() - screen_origin) / maxf(ui_scale, 0.0001)
@@ -282,6 +272,13 @@ func _register(r: Rect2, cb: Callable) -> void:
 func _tip(r: Rect2, text: String) -> void:
 	if ui_live and text != "" and r.has_point(mouse):
 		hover_tip = text
+		hover_obj = null
+
+func _draw_rich_tip() -> bool:
+	return false
+
+func _text_i(pos: Vector2, s: String, size: int, col: Color) -> void:
+	draw_string(font_italic, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 func _brass_button(r: Rect2, label: String, cb: Callable, enabled: bool, sub: String = "", size: int = T_MD) -> void:
 	var hovered := enabled and ui_live and r.has_point(mouse)
@@ -344,56 +341,6 @@ func _disc(c: Vector2, rad: float) -> void:
 	draw_arc(c, rad * 0.34, 0, TAU, 24, Color(0, 0, 0, 0.12), maxf(1.0, rad * 0.03), true)
 	draw_circle(c, rad * 0.13, Color("30343b"))
 
-func _stat_box(r: Rect2, label: String, value: String, col: Color) -> void:
-	_panel(r, Color("1f2735"), 18)
-	_text(r.position + Vector2(22, 36), label, T_XS, Color("98a4b6"), true)
-	_heavy(r.position + Vector2(22, 88), value, _fit(value, r.size.x - 44.0, T_XL), col)
-
-func _draw_padfolio(l1: String, l2: String, l3: String) -> void:
-	var body := Rect2(p_left.position.x - 14.0, BODY_TOP - 8.0, p_right.end.x - p_left.position.x + 28.0, p_left.size.y + 18.0)
-	_panel(Rect2(body.position + Vector2(0, 12), body.size), Color(0, 0, 0, 0.5), 24)
-	_panel(Rect2(body.position + Vector2(0, 5), body.size), C_LEATHER.darkened(0.5), 24)
-	_grad_panel(body, 24.0, C_LEATHER.lightened(0.08), C_LEATHER.darkened(0.12))
-	_grain(body, 19, 260.0)
-	_panel(Rect2(body.position + Vector2(6, 3), Vector2(body.size.x - 12.0, 3.0)), Color(1, 1, 1, 0.12), 2)
-	for flap: Rect2 in [p_left, p_right]:
-		var inner := flap.grow(-4.0)
-		_panel(inner, C_LEATHER.darkened(0.22), 16)
-		_grain(inner, 23, 180.0)
-		_panel(inner, Color(0, 0, 0, 0), 16, Color(0, 0, 0, 0.3), 2)
-		_stitch_rect(inner.grow(-8.0), Color("aab3bf", 0.35))
-	for cx: float in [(p_left.end.x + p_binder.position.x) * 0.5, (p_binder.end.x + p_right.position.x) * 0.5]:
-		for k in 6:
-			var w := 4.0 + k * 5.0
-			draw_rect(Rect2(cx - w * 0.5, body.position.y + 4.0, w, body.size.y - 8.0), Color(0, 0, 0, 0.05))
-		draw_line(Vector2(cx, body.position.y + 6.0), Vector2(cx, body.end.y - 6.0), Color(0, 0, 0, 0.55), 3.0)
-	_stitch_rect(body.grow(-10.0), Color("aab3bf", 0.5))
-	_foil(Vector2(p_left.position.x + PANEL_PAD, p_left.position.y + 44.0), l1, T_MD)
-	_foil(Vector2(p_binder.position.x + PANEL_PAD + SPINE - 8.0, p_binder.position.y + 44.0), l2, T_MD)
-	_foil(Vector2(p_right.position.x + PANEL_PAD, p_right.position.y + 44.0), l3, T_MD)
-
-func _sheet_rect() -> Rect2:
-	var sheet := r_grid.grow(12.0)
-	sheet.position.x -= BIND_STRIP
-	sheet.size.x += BIND_STRIP
-	return sheet
-
-func _draw_rings() -> void:
-	var sheet := _sheet_rect()
-	var bx := p_binder.position.x + 25.0
-	for k in 3:
-		var hy := sheet.position.y + sheet.size.y * (0.16 + k * 0.34)
-		var hc := Vector2(sheet.position.x + 14.0, hy)
-		draw_circle(hc, 8.0, Color(0, 0, 0, 0.6))
-		var cx := (bx + hc.x + 12.0) * 0.5
-		var rx := (hc.x + 12.0 - bx) * 0.5
-		var pts := PackedVector2Array()
-		for i in 41:
-			var a := i / 40.0 * TAU
-			pts.append(Vector2(cx + cos(a) * rx, hy + sin(a) * 13.0))
-		draw_polyline(pts, Color("5f676f"), 8.0, true)
-		draw_polyline(pts, Color("c3cad1"), 5.0, true)
-
 func _pocket_lip(pocket: Rect2) -> void:
 	_panel(Rect2(pocket.position + Vector2(4.0, 3.0), Vector2(pocket.size.x - 8.0, 7.0)), Color(0, 0, 0, 0.22), 3)
 	var notch := Vector2(pocket.get_center().x, pocket.position.y + 4.0)
@@ -407,10 +354,6 @@ func _sleeve_gloss(r: Rect2) -> void:
 	var a := r.grow(-6.0)
 	draw_colored_polygon(PackedVector2Array([a.position, a.position + Vector2(a.size.x * 0.62, 0), a.position + Vector2(0, a.size.y * 0.42)]), Color(1, 1, 1, SLEEVE_GLOSS))
 	draw_colored_polygon(PackedVector2Array([a.position + Vector2(a.size.x * 0.8, 0), a.position + Vector2(a.size.x * 0.9, 0), a.position + Vector2(0, a.size.y * 0.66), a.position + Vector2(0, a.size.y * 0.58)]), Color(1, 1, 1, SLEEVE_GLOSS * 0.6))
-
-func _section(x: float, y: float, w: float, label: String) -> void:
-	_foil(Vector2(x, y + 26.0), label, T_SM)
-	draw_line(Vector2(x + _heavy_w(label, T_SM) + 16.0, y + 18.0), Vector2(x + w, y + 18.0), Color("aab3bf", 0.3), 2.0)
 
 func _fill_piece(piece: PackedVector2Array, col: Color) -> void:
 	if Geometry2D.triangulate_polygon(piece).is_empty():
@@ -504,6 +447,20 @@ func _sticker_burst(c: Vector2, rad: float, col: Color, text: String, fs: int) -
 	draw_colored_polygon(pts, col)
 	draw_polyline(pts + PackedVector2Array([pts[0]]), Color(1, 1, 1, 0.8), 1.5, true)
 	_heavy_center(Rect2(c - Vector2(rad, rad), Vector2(rad, rad) * 2.0), text, mini(fs, _fit(text, rad * 1.4, fs)), Color.WHITE)
+
+func _price_sticker(c: Vector2, text: String, k: float, ang: float = 0.12) -> void:
+	var pfs := _fs(22.0, k)
+	var pw := _heavy_w(text, pfs) + 20.0 * k
+	_rotated(c, ang)
+	var pr := Rect2(-pw * 0.5, -15.0 * k, pw, 30.0 * k)
+	_panel(Rect2(pr.position + Vector2(1, 2) * k, pr.size), Color(0, 0, 0, 0.3), int(3.0 * k))
+	_panel(pr, Color("ffd23f"), int(3.0 * k))
+	draw_line(Vector2(pr.position.x + 5.0 * k, pr.end.y - 5.0 * k), Vector2(pr.end.x - 5.0 * k, pr.end.y - 5.0 * k), Color(0, 0, 0, 0.2), maxf(1.0, k))
+	_heavy_center(pr, text, pfs, Color("8a1c12"))
+	_unrotated()
+
+func _ink_on(col: Color) -> Color:
+	return c_ink if col.get_luminance() > 0.6 else Color.WHITE
 
 func _fs(size: float, k: float) -> int:
 	return maxi(8, int(round(size * k)))
