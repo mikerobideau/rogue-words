@@ -6,23 +6,15 @@ class UiButton:
 	var rect: Rect2
 	var cb: Callable
 
-class FloatText:
-	var pos := Vector2.ZERO
-	var life := 1.1
-	var text := ""
-	var color := Color.WHITE
-
 const UI_W := 2560.0
 const UI_H := 1440.0
 const CARD_W := 290.0
 const CARD_H := 352.0
-const CASE_RATIO := 125.0 / 142.0
 const GAP := 20.0
 const BINDER_BORDER := 36.0
 const BINDER_RINGS := 70.0
 const BINDER_TOP := 214.0
 const SLEEVE_GLOSS := 0.1
-const PLACE_TIME := 0.3
 
 const T_XS := 16
 const T_SM := 20
@@ -32,7 +24,6 @@ const T_XL := 40
 const T_HERO := 64
 
 const C_LEATHER := Color("33373e")
-const C_FOIL := Color("e6c36a")
 
 var c_page := Color("141a24")
 var c_card := Color("ffffff")
@@ -43,16 +34,12 @@ var c_line := Color("d4dae0")
 var c_good := Color("3e7b4f")
 var c_bad := Color("c4553f")
 var c_gold := Color("e9b949")
-var c_accent := Color("3e7b4f")
-var c_light := Color("eef2f7")
-var c_light_muted := Color("b8a58a")
 
 var window_size := Vector2.ZERO
 var ui_scale := 1.0
 var screen_origin := Vector2.ZERO
 var p_binder := Rect2()
 var r_grid := Rect2()
-var r_scene := Rect2()
 
 var font: Font
 var font_bold: Font
@@ -62,13 +49,9 @@ var style := StyleBoxFlat.new()
 var buttons: Array[UiButton] = []
 var ui_live := true
 var hover_tip := ""
-var hover_obj = null
-var hover_extra := ""
-var hover_sleeve := ""
 var hover_rect := Rect2()
 var mouse := Vector2.ZERO
 var clock := 0.0
-var floaters: Array[FloatText] = []
 var sfx := {}
 
 func _ui_ready() -> void:
@@ -89,12 +72,6 @@ func _ui_process(delta: float) -> void:
 		hover_rect = over
 		if over.has_area():
 			_sfx("mouseover")
-	for i in range(floaters.size() - 1, -1, -1):
-		var f := floaters[i]
-		f.life -= delta
-		f.pos.y -= 40.0 * delta
-		if f.life <= 0.0:
-			floaters.remove_at(i)
 	queue_redraw()
 
 func _ui_click(p: Vector2) -> bool:
@@ -108,13 +85,12 @@ func _ui_click(p: Vector2) -> bool:
 func _begin_draw() -> void:
 	buttons.clear()
 	hover_tip = ""
-	hover_obj = null
 	draw_rect(Rect2(Vector2.ZERO, window_size), c_page)
 	mouse = _ui_mouse()
 	draw_set_transform(screen_origin, 0.0, Vector2(ui_scale, ui_scale))
 
 func _end_draw() -> void:
-	if not _draw_rich_tip() and hover_tip != "":
+	if hover_tip != "":
 		_draw_tooltip(hover_tip)
 	draw_set_transform(Vector2.ZERO)
 
@@ -170,23 +146,9 @@ func _recompute_layout() -> void:
 	var bw := gw + BINDER_RINGS + BINDER_BORDER * 2.0
 	p_binder = Rect2(UI_W - 56.0 - bw, BINDER_TOP, bw, gh + BINDER_BORDER * 2.0)
 	r_grid = Rect2(p_binder.position.x + BINDER_BORDER + BINDER_RINGS, p_binder.position.y + BINDER_BORDER, gw, gh)
-	r_scene = Rect2(60.0, 0.0, p_binder.position.x - 100.0, UI_H)
 
 func _ui_mouse() -> Vector2:
 	return (get_local_mouse_position() - screen_origin) / maxf(ui_scale, 0.0001)
-
-func _fmt(n: int) -> String:
-	var s := str(absi(n))
-	var out := ""
-	while s.length() > 3:
-		out = "," + s.right(3) + out
-		s = s.left(s.length() - 3)
-	return ("-" if n < 0 else "") + s + out
-
-func _fmt_m(m: float) -> String:
-	if is_equal_approx(m, roundf(m)):
-		return _fmt(int(roundf(m)))
-	return String.num(m, 2)
 
 func _panel(r: Rect2, col: Color, radius: int = 18, border: Color = Color(0, 0, 0, 0), border_w: int = 0) -> void:
 	style.bg_color = col
@@ -248,18 +210,8 @@ func _heavy_center(r: Rect2, s: String, size: int, col: Color) -> void:
 func _heavy_right(right_x: float, y: float, s: String, size: int, col: Color) -> void:
 	_heavy(Vector2(right_x - _heavy_w(s, size), y), s, size, col)
 
-func _fit(s: String, max_w: float, size: int) -> int:
-	var sz := size
-	while sz > 8 and _heavy_w(s, sz) > max_w:
-		sz -= 1
-	return sz
-
 func _wrap(pos: Vector2, s: String, width: float, size: int, col: Color, bold: bool = false, max_lines: int = -1) -> void:
 	draw_multiline_string(_f(bold), pos + Vector2(0.0, _f(bold).get_ascent(size)), s, HORIZONTAL_ALIGNMENT_LEFT, width, size, max_lines, col)
-
-func _foil(pos: Vector2, text: String, size: int) -> void:
-	_heavy(pos + Vector2(1, 2), text, size, Color(0, 0, 0, 0.45))
-	_heavy(pos, text, size, C_FOIL)
 
 func _register(r: Rect2, cb: Callable) -> void:
 	if not ui_live:
@@ -272,32 +224,9 @@ func _register(r: Rect2, cb: Callable) -> void:
 func _tip(r: Rect2, text: String) -> void:
 	if ui_live and text != "" and r.has_point(mouse):
 		hover_tip = text
-		hover_obj = null
-
-func _draw_rich_tip() -> bool:
-	return false
 
 func _text_i(pos: Vector2, s: String, size: int, col: Color) -> void:
 	draw_string(font_italic, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
-
-func _brass_button(r: Rect2, label: String, cb: Callable, enabled: bool, sub: String = "", size: int = T_MD) -> void:
-	var hovered := enabled and ui_live and r.has_point(mouse)
-	var radius := int(minf(r.size.y * 0.5, 14.0))
-	_panel(Rect2(r.position + Vector2(0, 4), r.size), Color(0, 0, 0, 0.4), radius)
-	if enabled:
-		_grad_panel(r, radius, Color("f2d483") if hovered else Color("e8c66a"), Color("b28a3a"))
-	else:
-		_grad_panel(r, radius, Color("8f877a"), Color("6d675d"))
-	_panel(r, Color(0, 0, 0, 0), radius, Color("7a5a20") if enabled else Color("4f4a42"), 2)
-	draw_line(r.position + Vector2(radius, 3), Vector2(r.end.x - radius, r.position.y + 3), Color(1, 1, 1, 0.45 if enabled else 0.15), 2.0)
-	var ink := Color("3e2b10") if enabled else Color("3a362f")
-	if sub == "":
-		_text_center(r, label, size, ink, true)
-	else:
-		_text_center(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.62)), label, size, ink, true)
-		_text_center(Rect2(r.position + Vector2(0, r.size.y * 0.52), Vector2(r.size.x, r.size.y * 0.4)), sub, T_XS, Color(ink, 0.8), true)
-	if enabled:
-		_register(r, cb)
 
 func _ghost(r: Rect2, label: String, cb: Callable, enabled: bool, ink: Color) -> void:
 	var hovered := enabled and ui_live and r.has_point(mouse)
@@ -406,13 +335,7 @@ func _draw_art(r: Rect2, seed_n: int, title: String, tc: Color, trim: Color) -> 
 			_heavy(Vector2(r.position.x + r.size.x * 0.18, r.end.y - 14.0 * k), letter, _fs(130.0, k), Color(accent, 0.9))
 			draw_line(Vector2(r.position.x + 10.0 * k, r.position.y + 40.0 * k), Vector2(r.end.x - 10.0 * k, r.position.y + 40.0 * k), Color(1, 1, 1, 0.7), 2.0 * k)
 
-func _rotated(pos: Vector2, ang: float) -> void:
-	draw_set_transform_matrix(Transform2D(0.0, Vector2(ui_scale, ui_scale), 0.0, screen_origin) * Transform2D(ang, pos))
-
-func _unrotated() -> void:
-	draw_set_transform(screen_origin, 0.0, Vector2(ui_scale, ui_scale))
-
-func _cd_art(c: Vector2, rad: float, tex: Texture2D) -> void:
+func _cd_art(c: Vector2, rad: float, tex: Texture2D, spin: float = 0.0) -> void:
 	if tex == null:
 		_disc(c, rad)
 		return
@@ -426,7 +349,9 @@ func _cd_art(c: Vector2, rad: float, tex: Texture2D) -> void:
 		var d0 := Vector2.from_angle(TAU * i / n)
 		var d1 := Vector2.from_angle(TAU * (i + 1) / n)
 		var pts := PackedVector2Array([c + d0 * hole, c + d0 * rad, c + d1 * rad, c + d1 * hole])
-		var uvs := PackedVector2Array([mid + d0 * uv_hole, mid + d0 * 0.5, mid + d1 * 0.5, mid + d1 * uv_hole])
+		var u0 := d0.rotated(-spin)
+		var u1 := d1.rotated(-spin)
+		var uvs := PackedVector2Array([mid + u0 * uv_hole, mid + u0 * 0.5, mid + u1 * 0.5, mid + u1 * uv_hole])
 		draw_primitive(pts, white, uvs, tex)
 	draw_arc(c, (hole + rad * 0.33) * 0.5, 0, TAU, 48, Color(1, 1, 1, 0.22), rad * 0.33 - hole, true)
 	draw_arc(c, rad * 0.33, 0, TAU, 48, Color(1, 1, 1, 0.35), maxf(1.0, rad * 0.012), true)
@@ -440,38 +365,8 @@ func _cd_art(c: Vector2, rad: float, tex: Texture2D) -> void:
 		draw_arc(c, rr, a0 + PI, a0 + PI + 0.9, 16, Color(hues[i], 0.12), maxf(1.0, rad * 0.06), true)
 	draw_arc(c, rad - 1.0, 0, TAU, 72, Color(1, 1, 1, 0.55), maxf(1.0, rad * 0.018), true)
 
-func _sticker_burst(c: Vector2, rad: float, col: Color, text: String, fs: int) -> void:
-	var pts := PackedVector2Array()
-	for i in 24:
-		pts.append(c + Vector2.from_angle(TAU * i / 24.0 - PI * 0.5) * (rad if i % 2 == 0 else rad * 0.8))
-	draw_colored_polygon(pts, col)
-	draw_polyline(pts + PackedVector2Array([pts[0]]), Color(1, 1, 1, 0.8), 1.5, true)
-	_heavy_center(Rect2(c - Vector2(rad, rad), Vector2(rad, rad) * 2.0), text, mini(fs, _fit(text, rad * 1.4, fs)), Color.WHITE)
-
-func _price_sticker(c: Vector2, text: String, k: float, ang: float = 0.12) -> void:
-	var pfs := _fs(22.0, k)
-	var pw := _heavy_w(text, pfs) + 20.0 * k
-	_rotated(c, ang)
-	var pr := Rect2(-pw * 0.5, -15.0 * k, pw, 30.0 * k)
-	_panel(Rect2(pr.position + Vector2(1, 2) * k, pr.size), Color(0, 0, 0, 0.3), int(3.0 * k))
-	_panel(pr, Color("ffd23f"), int(3.0 * k))
-	draw_line(Vector2(pr.position.x + 5.0 * k, pr.end.y - 5.0 * k), Vector2(pr.end.x - 5.0 * k, pr.end.y - 5.0 * k), Color(0, 0, 0, 0.2), maxf(1.0, k))
-	_heavy_center(pr, text, pfs, Color("8a1c12"))
-	_unrotated()
-
-func _ink_on(col: Color) -> Color:
-	return c_ink if col.get_luminance() > 0.6 else Color.WHITE
-
 func _fs(size: float, k: float) -> int:
 	return maxi(8, int(round(size * k)))
-
-func _draw_floaters() -> void:
-	for f in floaters:
-		var a := clampf(f.life / 0.4, 0.0, 1.0)
-		var w := _heavy_w(f.text, T_LG)
-		var p := Vector2(f.pos.x - w * 0.5, f.pos.y)
-		_panel(Rect2(p + Vector2(-14, -36), Vector2(w + 28, 48)), Color(0.08, 0.1, 0.14, 0.8 * a), 24)
-		_heavy(p, f.text, T_LG, Color(f.color, a))
 
 func _draw_tooltip(text: String) -> void:
 	var w := 520.0
@@ -483,29 +378,4 @@ func _draw_tooltip(text: String) -> void:
 		box.position.y = mouse.y - box.size.y - 16.0
 	_panel(box, c_ink, 14, Color(1, 1, 1, 0.15), 2)
 	_wrap(box.position + Vector2(18.0, 13.0), text, w, T_SM, Color.WHITE, true)
-
-func _dim() -> void:
-	draw_rect(Rect2(Vector2(-800, -800), Vector2(UI_W, UI_H) + Vector2(1600, 1600)), Color(0.05, 0.06, 0.08, 0.72))
-
-func _modal(w: float, h: float) -> Rect2:
-	_dim()
-	var r := Rect2(Vector2(UI_W - w, UI_H - h) * 0.5, Vector2(w, h))
-	_panel(Rect2(r.position + Vector2(0, 10), r.size), Color(0, 0, 0, 0.4), 28)
-	_panel(r, Color("f4efe4"), 28)
-	return r
-
-func _row(x: float, w: float, y: float, label: String, value: String, col: Color = c_ink) -> void:
-	_text(Vector2(x, y), label, T_MD, c_muted, true)
-	_heavy_right(x + w, y, value, T_LG, col)
-
-func _float(r: Rect2, text: String, col: Color) -> void:
-	var f := FloatText.new()
-	var stack := 0
-	for o in floaters:
-		if o.life > 0.45 and absf(o.pos.x - r.get_center().x) < 2.0:
-			stack += 1
-	f.pos = Vector2(r.get_center().x, r.position.y + 70.0 + stack * 52.0)
-	f.text = text
-	f.color = col
-	floaters.append(f)
 

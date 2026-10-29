@@ -1,108 +1,89 @@
 extends RefCounted
 
-const ROUNDS := 7
-const START_CASH := 30
-const SHOP_DISCS := 8
-const SHOP_PACKS := 4
-const SHOP_SLEEVES := 2
-const REROLL_BASE := 2
-const WORKSHOP_ORDERS := 5
-const CLEAR_REWARD: Array[int] = [6, 7, 8, 9, 10, 11, 12]
-const ROUND_FACTOR: Array[float] = [0.5, 0.8, 1.1, 1.4, 1.8, 2.2, 2.7]
-const CALIBRATION_SHEETS := 200
-const MIN_TARGET := 4
-
-const SOUND_COLOR := "3fae5a"
-const MULT_COLOR := "8a63d2"
-const BASE_SOUND: Array[int] = [2, 4, 6]
-
-const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
-const GENRE_COLORS: Array[String] = ["6a4bb5", "1f4e79", "b4532a", "2f6b4f", "3a3d42", "d4508f", "c0392b"]
 const CATALOG := "res://prototypes/nine_pocket/art/covers/catalog.json"
+const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
+const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
+const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
+const GENRE_COLORS: Array[String] = ["6a4bb5", "1f4e79", "b4532a", "2f6b4f", "3a3d42", "d4508f", "c0392b"]
 const ERAS: Array[String] = ["60s", "70s", "80s", "90s", "00s", "10s"]
 const LABELS := [
-	{"name": "Rust Belt Records", "short": "Rust Belt", "color": "b4532a", "trim": "2b2b2b"},
-	{"name": "Lighthouse Sound", "short": "Lighthouse", "color": "1f4e79", "trim": "f2c14e"},
-	{"name": "Comet Tapes", "short": "Comet", "color": "d9821c", "trim": "5b2a86"},
-	{"name": "Night Owl", "short": "Night Owl", "color": "2f6b4f", "trim": "efe6c8"},
+	{"name": "Rust Belt Records", "short": "Rust Belt", "color": "b4532a"},
+	{"name": "Lighthouse Sound", "short": "Lighthouse", "color": "1f4e79"},
+	{"name": "Comet Tapes", "short": "Comet", "color": "d9821c"},
+	{"name": "Night Owl", "short": "Night Owl", "color": "2f6b4f"},
 ]
-const RARITIES: Array[String] = ["Common", "Uncommon", "Rare"]
-const RARITY_SHORT: Array[String] = ["COM", "UNC", "RARE"]
-const RARITY_COLORS: Array[String] = ["9aa3ad", "4a90d9", "e9b949"]
-const RARITY_WEIGHTS: Array[int] = [70, 25, 5]
-const CONDITIONS: Array[String] = ["Worn", "Good", "Mint"]
-const CONDITION_COLORS: Array[String] = ["8a8f98", "7fa7c9", "e9b949"]
-const CONDITION_WEIGHTS: Array[int] = [30, 50, 20]
-const RUNTIME_MIN := 28
-const RUNTIME_MAX := 79
 
-const SELL_BASE: Array[int] = [1, 3, 6]
-const BUY_MULT := 2
-const ABILITY_PREMIUM := 2
+const SOUND_COLOR := "3fae5a"
+const ENERGY_COLOR := "8a63d2"
 
-const ZONES: Array[String] = ["any", "corner", "edge", "center", "row0", "row1", "row2", "col0", "col1", "col2", "pair"]
-const ZONE_WEIGHTS: Array[int] = [6, 3, 3, 1, 1, 1, 1, 1, 1, 1, 3]
-const ZONE_TEXT := {"any": "", "corner": " in a corner", "edge": " on an edge", "center": " in the center", "row0": " in the top row", "row1": " in the middle row", "row2": " in the bottom row", "col0": " in the left column", "col1": " in the middle column", "col2": " in the right column"}
-const RULE_N := {
-	"sound": {"any": 3, "corner": 6, "edge": 6, "center": 14, "row": 7, "col": 7, "pair": 5},
-	"mult": {"any": 1, "corner": 2, "edge": 2, "center": 5, "row": 2, "col": 2, "pair": 2},
+const COLLECTION := 20
+const HAND := 8
+const SETLIST := 5
+const DIGS := 2
+const DIG_MAX := 3
+const BASE_SOUND := [2, 5]
+const ABILITY_CHANCE := 0.65
+
+const GIGS := 8
+const TARGETS: Array[int] = [90, 120, 160, 210, 270, 350, 450, 580]
+const START_CASH := 0
+const REWARD_BASE := 5
+const BONUS_STEP := 0.25
+const BONUS_MAX := 3
+const RACK_SLOTS := 4
+const START_RACK: Array[String] = ["eq", "xfade"]
+
+const SHOP_ALBUMS := 2
+const SHOP_GEAR := 2
+const ALBUM_PRICE := 3
+const ABILITY_PREMIUM := 1
+const ALBUM_PACKS := [
+	{"name": "Sampler", "price": 4, "show": 3, "pick": 1},
+	{"name": "Box Set", "price": 7, "show": 4, "pick": 2},
+]
+const GEAR_PACKS := [
+	{"name": "Grab Box", "price": 6, "show": 3, "pick": 1},
+	{"name": "Studio Bundle", "price": 11, "show": 3, "pick": 2},
+]
+
+const SORT_KEYS: Array[String] = ["genre", "era", "sound", "ability", "band"]
+const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Sound", "ability": "Ability", "band": "Band"}
+
+const ABILITIES := {
+	"doubleshot": {"name": "Doubleshot", "text": "×2 Sound if it's the same decade as the previous song.", "gain": "sound", "chip": "×2"},
+	"one_hit": {"name": "One Hit Wonder", "text": "×1.1 Sound for every earlier play. Resets when another song by this band plays.", "gain": "sound", "chip": "×1.1"},
+	"opener": {"name": "Opener", "text": "+2 Energy if it's the first song.", "gain": "energy", "chip": "+2"},
+	"closer": {"name": "Closer", "text": "×2 Sound if it's the last song.", "gain": "sound", "chip": "×2"},
+	"crowd": {"name": "Crowd-Pleaser", "text": "+1 Energy.", "gain": "energy", "chip": "+1"},
+	"segue": {"name": "Segue", "text": "+4 Sound if the next song is the same genre.", "gain": "sound", "chip": "+4"},
+	"slow_jam": {"name": "Slow Jam", "text": "+8 Sound, then −1 Energy.", "gain": "sound", "chip": "+8"},
+	"deep_cut": {"name": "Deep Cut", "text": "+6 Sound if Energy is 2 or less.", "gain": "sound", "chip": "+6"},
+	"bandmates": {"name": "Bandmates", "text": "+1 Energy if another song by this band is in the set.", "gain": "energy", "chip": "+1"},
 }
 
-const JUDGE_ADJ := {
-	"genre:0": "Brooding", "genre:1": "Soulful", "genre:2": "Classic", "genre:3": "Indie", "genre:4": "Headbanging", "genre:5": "Groovy", "genre:6": "Rowdy",
-	"era:0": "Sixties", "era:1": "Seventies", "era:2": "Eighties", "era:3": "Nineties", "era:4": "Y2K", "era:5": "Modern",
-	"label:0": "Blue-Collar", "label:1": "Seafaring", "label:2": "Cosmic", "label:3": "Nocturnal",
-	"rarity:1": "Picky", "rarity:2": "Snobbish", "cond:1": "Tidy", "cond:2": "Fussy",
+const GEAR := {
+	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting is added to that genre's Sound.", "price": 6, "n": [0], "look": "faders"},
+	"xfade": {"name": "Crossfader", "text": "+%d Energy when a song shares a genre or decade with the one before.", "price": 7, "n": [1, 2], "look": "xfader"},
+	"gain": {"name": "Gain Stage", "text": "×%d Sound for songs in the genre on the dial.", "price": 7, "n": [2, 3], "look": "genre_knob"},
+	"comp": {"name": "Compressor", "text": "+%d Sound for every song.", "price": 5, "n": [1, 2, 3], "look": "knobs"},
+	"exciter": {"name": "Exciter", "text": "+%d Energy for songs from the decade on the dial.", "price": 6, "n": [1, 2], "look": "era_knob"},
+	"tube": {"name": "Tube Preamp", "text": "+%d Sound for songs without an ability.", "price": 5, "n": [3, 5, 7], "look": "tube"},
 }
-const JUDGE_NOUN := {
-	"genre:0": "Outsider", "genre:1": "Bluesman", "genre:2": "Rocker", "genre:3": "Hipster", "genre:4": "Metalhead", "genre:5": "Mystic", "genre:6": "Punk",
-	"era:0": "Beatnik", "era:1": "Disco Fan", "era:2": "Synth Kid", "era:3": "Grunge Kid", "era:4": "Millennial", "era:5": "Zoomer",
-	"label:0": "Steelworker", "label:1": "Lighthouse Keeper", "label:2": "Astronomer", "label:3": "Night Owl",
-	"rarity:1": "Collector", "rarity:2": "Connoisseur", "cond:1": "Inspector", "cond:2": "Appraiser",
-}
+const EQ_MIN := -1
+const EQ_MAX := 3
+const EQ_START: Array[int] = [2, 1, 1, -1, -1, 0, 0]
+const LEVEL_NAMES: Array[String] = ["", "MK II", "MK III"]
 
-const ABILITY_WEIGHTS := {
-	"flat": [3, 1, 0], "row_match": [4, 3, 2], "col_match": [4, 3, 2], "nbr_match": [5, 3, 2], "diag_match": [2, 2, 1],
-	"nbr_filter": [4, 3, 2], "slot": [4, 3, 2], "era_step": [2, 2, 1], "row_distinct": [2, 2, 1], "line_all": [0, 2, 3],
-	"x_nbrs": [0, 0, 2], "boost_row": [1, 2, 2], "boost_col": [1, 2, 2], "retrigger_left": [0, 2, 2], "retrigger_above": [0, 1, 2],
-	"retrigger_nbrs": [0, 0, 2], "runtime": [1, 0, 0], "cash": [1, 1, 1], "gen_cash": [1, 1, 1], "gen_pack": [0, 1, 1],
-	"sold_cash": [1, 1, 1], "sold_rare": [0, 1, 1],
-}
-const ABILITY_WHEN := {"gen_cash": "placed", "gen_pack": "placed", "sold_cash": "sold", "sold_rare": "sold"}
-const MATCH_ATTRS: Array[String] = ["genre", "genre", "era", "era", "label"]
-const ATTR_TEXT := {"era": "decade", "genre": "genre", "label": "label", "cond": "condition", "rarity": "rarity"}
-const SORT_KEYS: Array[String] = ["price", "genre", "era", "label", "rarity", "cond"]
-const SORT_TEXT := {"price": "Price", "genre": "Genre", "era": "Decade", "label": "Label", "rarity": "Rarity", "cond": "Condition"}
-const RUNTIME_STEP := 20
-const AMP_BONUS := 2
-
-const PACKS := {
-	"bargain": {"name": "Bargain Bin", "price": 6, "discs": 4, "rarity": [80, 18, 2], "cash": [0, 3], "color": "c0392b", "trim": "f4d03f"},
-	"estate": {"name": "Estate Sale", "price": 12, "discs": 5, "rarity": [55, 35, 10], "cash": [1, 5], "color": "2e6ea6", "trim": "ffffff"},
-	"box": {"name": "Box Set", "price": 20, "discs": 4, "rarity": [0, 50, 50], "cash": [2, 8], "color": "23262b", "trim": "e9b949"},
-}
-
-const SLEEVES := {
-	"echo": {"name": "Echo", "text": "The disc here activates twice.", "price": 5, "color": "3fa7a0"},
-	"amp": {"name": "Amplifier", "text": "+2 to every number in this disc's ability.", "price": 4, "color": "c4553f"},
-	"polish": {"name": "Polish", "text": "The disc here counts as Mint.", "price": 3, "color": "9ad1e6"},
-	"grade": {"name": "Grader", "text": "The disc here counts one rarity higher.", "price": 4, "color": "4a90d9"},
-	"wild": {"name": "Wildcard", "text": "The disc here counts as every genre.", "price": 4, "color": "d4508f"},
-	"gold": {"name": "Gold Sleeve", "text": "Gain $2 each time the disc here activates.", "price": 3, "color": "e9b949"},
-}
-
-const JOBS := {
-	"remix": {"name": "Remix", "price": 4, "weight": 3, "color": "d4508f"},
-	"remaster": {"name": "Remaster", "price": 3, "weight": 3, "color": "e07b2a"},
-	"relabel": {"name": "Relabel", "price": 3, "weight": 2, "color": "1f4e79"},
-	"repress": {"name": "Re-press", "price": 4, "weight": 2, "color": "3fa7a0"},
-	"signed": {"name": "Signed Edition", "price": 8, "weight": 2, "color": "c9a227"},
-	"picture": {"name": "Picture Disc", "price": 9, "weight": 2, "color": "8a63d2"},
-	"platinum": {"name": "Platinum Edition", "price": 14, "weight": 1, "color": "aeb8c4"},
-}
+const EDITION_CHANCE := 0.08
 const EDITIONS := {
-	"signed": {"name": "Signed", "text": "+6 Sound when it activates.", "kind": "sound", "n": 6, "color": "c9a227"},
-	"picture": {"name": "Picture Disc", "text": "+2 Mult when it activates.", "kind": "mult", "n": 2, "color": "8a63d2"},
-	"platinum": {"name": "Platinum", "text": "×2 Mult when it activates.", "kind": "xmult", "n": 2, "color": "aeb8c4"},
+	"holo": {"name": "Holographic", "short": "HOLO", "text": "+1 Energy.", "gain": "energy", "n": 1, "price": 6, "color": "a678f0"},
+	"signed": {"name": "Signed", "short": "SIGNED", "text": "+4 Sound.", "gain": "sound", "n": 4, "price": 5, "color": "c9a227"},
+	"limited": {"name": "Limited Edition", "short": "LTD", "text": "×2 Sound.", "gain": "sound", "n": 2, "price": 8, "color": "d4508f"},
+	"remaster": {"name": "Remaster", "short": "REMASTER", "text": "Its ability triggers twice.", "gain": "sound", "n": 2, "price": 6, "color": "4a90d9"},
+	"mint": {"name": "Mint Condition", "short": "MINT", "text": "+$1 each time it's played.", "gain": "cash", "n": 1, "price": 4, "color": "3fae5a"},
 }
-const EDITION_SELL := 2
+
+const SERVICES_MAX := 2
+const SERVICE_CHANCE := {"enhance": 0.45, "tweak": 0.5, "upgrade": 0.45}
+const TWEAK_PRICE := 3
+const UPGRADE_PRICE := 6

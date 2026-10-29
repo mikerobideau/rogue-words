@@ -1,42 +1,69 @@
-# Nine Pocket — CD binder roguelike
+# Disc Engine
 
-Collect CDs into one 3×3 binder sheet that you keep all run. Each round a judge scores it as **Sound × Mult**; miss the target and the run ends. Where a disc sits matters as much as what it is.
+A tour of 8 gigs. At each gig you load albums from your CD wallet into a 5-disc changer, press **PLAY**, and the set plays through your stereo rack. Each song adds Sound or Energy, and the set scores **total Sound × total Energy**. Beat the gig's target to get paid, then spend it at the record shop on albums and rack gear.
 
-**Prototype:** run `nine_pocket.tscn` (F6). Tuning numbers, judge rules, ability weights, jobs, editions, sleeves and bundles are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd` (scoring in `_score` / `_fire`, judges in `_make_judge`, abilities in `_make_ability`, workshop in `_make_orders` / `_apply_job`). Shared drawing helpers are in `nine_pocket_ui.gd`. Right-click or Esc cancels a selection, sleeve or job.
+**Prototype:** run `nine_pocket.tscn` (F6). Tuning numbers, abilities, gear, packs and targets are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd` (scoring in `_score`; run flow in `_new_run` / `_start_gig` / `_finish_set` / `_next_gig`; shop in `_make_shop` / `_buy` / `_take_pack` / `_install`). Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions (roguelike, logic puzzle) are in git history.
 
 ## Run
-- 7 rounds. Start with $30 and an empty sheet. Each round has three screens in order: **Store → Pressing plant → Judge**. Pass to get the clear reward; fail and the run ends.
-- Every screen is a place seen from the front. Your binder stands upright on the right. Minor UI sits in the corners: the wallet (cash + round pips) top left, flyers for tonight's judge and the next judge top right (hover for the rules, click for details), and the next-step button bottom right of the scene.
+- Start: 20 random albums in your **binder**, $0, and a 4-bay rack with a Graphic EQ and a Crossfader.
+- 8 gigs with fixed targets: 90, 120, 160, 210, 270, 350, 450, 580. Miss one and the tour ends.
+- Clearing a gig pays $5 + (gig − 1), plus a crowd bonus of $1 per 25% over the target (max $3). Then the record shop, then the next gig.
 
-## Discs and tags
-- Each disc is a real album from `art/album_photos` (Genre > Band > Album, files named `Band - Album - original.jpg`). Run `godot --headless --path <repo> -s res://prototypes/nine_pocket/tools/make_covers.gd` after changing photos; it center-crops 384px covers into `art/covers/` and writes `catalog.json`.
-- Tags: genre (7), decade (60s–10s), label (4), rarity (Common/Uncommon/Rare), condition (Worn/Good/Mint), runtime. Genre, band, title and cover come from the art; each band has a fixed decade and label until the pressing plant changes them.
-- Tags are printed in a strip under every binder pocket and store slot. Tags that match tonight's judge are outlined green (Sound rule) or purple (Mult rule).
-- Hover any disc for a sectioned tooltip: title and band, tags, its ability (with a colored Sound/Mult chip), edition, which of tonight's rules it matches and where it needs to sit, and label/runtime/sell price.
+## A gig (one set)
+- The **CD wallet** (4×2 sleeves) is your hand: 8 albums drawn at random from your binder.
+- Move up to 5 into the changer's slots (click or drag; dropping on a full slot swaps), then press PLAY.
+- **Sort wallet**: sort by Genre, Decade, Sound, Ability or Band (click again to turn off).
+- **Dig** (2 per gig, amber LEDs): pick up to 3 wallet albums to swap for others from your binder.
+- Genre and decade chips show under every disc. A gold outline means your rack boosts that genre or decade.
+
+## View binder
+The **View binder (N)** button sits at the bottom left on every screen (also the B key), including over the result, pack and end screens. It opens your whole collection as a leather binder of 9-pocket pages, 18 albums per spread, in the wallet's sort order (or the order you got them). Flip with the Prev/Next buttons, the arrow keys or the mouse wheel; Esc, right-click or Close shuts it. During a gig, discs are tagged IN WALLET, IN CHANGER or DUG. Hover any disc for its tooltip. The summary card shows totals by genre, decade, base Sound, ability, and band (bands with 2+ albums in bold, for Bandmates and One Hit Wonder).
 
 ## Scoring
-- Discs activate in slot order 1 to 9. Each activation adds, in order: base Sound by rarity (2/4/6), its edition, the judge's rules, any row/column boosts from other discs, then its own ability. Mult starts at 1. Score = Sound × Mult (each at least 1).
-- **Judges** have one Sound rule and one Mult rule. Each rule names a tag and a place: anywhere, corners, edges, center, a row or column, or "next to another album with this tag". The name comes from the rules' tags (e.g. "The Picky Millennial": Uncommon+ for Sound, 00s for Mult).
-- **Abilities** are mostly about placement: same genre/decade/label in its row, column, neighbors or diagonals; neighbors with a tag; corner/center/edge slot; neighbors one decade apart; different genres in its row; whole row or column matching; ×2 Mult if all neighbors match; boosting the rest of its row or column; retriggering the disc to its left, above it, or all neighbors. A few give cash, a free bundle when placed, or extra cash / a Rare album when sold. Retriggered discs don't retrigger anything themselves.
-- Neighbors are rows and columns only (diagonals only where an ability says so).
+Songs play left to right. The set keeps two running totals: **Sound** (starts at 0) and **Energy** (starts at 1). For each song:
+1. Base Sound (the green number on the disc, 2–5).
+2. The disc's ability, if it triggers (×2 and +N apply to this song's Sound; Energy effects change the set's Energy).
+3. Rack gear, top bay to bottom bay.
+4. The song's Sound is added to the set's Sound.
 
-## Store
-- A 4×3 display bin: 8 single albums in jewel cases (buy price = sell price × 2, +$2 if it has an ability), and 4 box sets (one of each tier plus a random fourth). Restock the singles for $2, +$1 each time. Organize the bin by price, genre, decade, label, rarity or condition.
-- Bought discs go into the first open pocket. If the sheet is full, sell a disc first (select it, then its Sell tag).
-- Box sets (Bargain Bin $6, Estate Sale $12, Box Set $20) give 4–5 discs plus cash; keep what fits, the rest sell automatically.
-- 2 sleeves hang beside the bin. A sleeve goes on one pocket for this round only: Echo (activates twice), Amplifier (+2 to its ability's number), Polish (counts as Mint), Grader (one rarity higher), Wildcard (every genre), Gold ($2 per activation).
+After the last song: **set score = total Sound × total Energy**. The rack display shows SOUND × ENERGY = SET live; each changer slot's readout shows what that song added.
 
-## Pressing plant
-- 5 work orders per round, each usable once. Pick an order, then a disc in your binder (discs that can take it glow green).
-- Remix (change genre to X, $4), Remaster (±1 decade, $3), Relabel (move to label X, $3), Re-press (+1 condition, $4).
-- Editions are permanent and one per disc: Signed (+6 Sound, $8), Picture Disc (+2 Mult, $9), Platinum (×2 Mult, $14). An edition adds $2 to the sell price.
+**Disc abilities**: Doubleshot (×2 Sound if same decade as previous song), One Hit Wonder (×1.1 Sound per earlier play this tour, resets when another song by the band plays), Opener (+2 Energy if first), Closer (×2 Sound if last), Crowd-Pleaser (+1 Energy), Segue (+4 Sound if the next song is the same genre), Slow Jam (+8 Sound, then −1 Energy), Deep Cut (+6 Sound if Energy ≤ 2), Bandmates (+1 Energy if another song by the band is in the set). Discs with an ability have 1 less base Sound.
 
-## Binder
-- One 3×3 sheet for the whole run. Move discs freely in the Store and Pressing plant (click a disc, then a pocket). Sell any disc for $1/$3/$6 by rarity + condition (0/1/2) + edition.
+**Editions** (8% of new albums; one per album; shown as a colored tag at the top right of the disc plus a look on the disc):
+| Edition | Effect | Look |
+|---|---|---|
+| Holographic | +1 Energy | rainbow sheen |
+| Signed | +4 Sound | marker signature |
+| Limited Edition | ×2 Sound | gold rim |
+| Remaster | its ability triggers twice | blue inner ring |
+| Mint Condition | +$1 each time it's played (paid with the gig) | sparkles |
+Editions apply after the disc's ability and before the rack.
 
-## Targets and economy
-- Targets self-calibrate at run start: median score of 200 random, unarranged full sheets under that judge × the round factor (0.5, 0.8, 1.1, 1.4, 1.8, 2.2, 2.7), minimum 4.
-- Cash: clear reward ($6 + $1 per round), selling, box set cash, cash abilities, Gold sleeves.
+**Rack gear** (4 bays; order matters, e.g. EQ's boost above a Gain Stage gets doubled). You can't own two of the same unit: the shop and gear boxes never offer one you have.
+| Gear | Effect by level | Price |
+|---|---|---|
+| Graphic EQ | each genre's fader (−1 to +3) is added to that genre's Sound; starts as a shuffled +2, +1, +1, −1, −1, 0, 0 | $6 |
+| Crossfader | +1 / +2 Energy when a song shares a genre or decade with the one before | $7 |
+| Gain Stage | ×2 / ×3 Sound for the genre on the dial | $7 |
+| Compressor | +1 / +2 / +3 Sound for every song | $5 |
+| Exciter | +1 / +2 Energy for the decade on the dial | $6 |
+| Tube Preamp | +3 / +5 / +7 Sound for songs without an ability | $5 |
+Levels show as MK II / MK III on the faceplate. Dials favor genres and decades you own 3+ of. EQ cuts show as red faders, and wallet chips for a cut genre get a red outline (gold for a boost).
 
-## Open for tuning
-Round factors vs. a persistent, arranged sheet; job prices and order mix; ability numbers; whether the pressing plant should also post a side request (bonus goal) each round.
+## Record shop
+Six offers, rolled fresh each visit:
+- **CD browser bin** (crate): 2 albums in jewel cases ($3, +$1 with an ability, +$1 if base Sound ≥ 4) and 1 shrink-wrapped album pack: Sampler ($4, pick 1 of 3) or Box Set ($7, pick 2 of 4).
+- **Pegboard gear wall**: 2 rack units on shelves with hang tags, and 1 cardboard gear box: Grab Box ($6, keep 1 of 3) or Studio Bundle ($11, keep 2 of 3).
+- **Counter**: cash register (cash, binder size, next target) and the Next gig button.
+- **Work orders** (pinned to the counter, up to 2, each appears sometimes): *Edition* ($4–8, 45%): pick an album without an edition in the binder overlay to give it that edition. *Bench tweak* ($3, 50%, needs an EQ, Gain Stage or Exciter): raise one EQ fader by 1, or set a dial to any genre/decade. *Unit upgrade* ($6, 45%): take one non-EQ unit to its next level. Pay on use; right-click or Esc cancels without charge.
+Buying gear (single or from a box) puts it in your hand: click a rack bay to install it. Installing over a unit replaces it. Right-click cancels (single gear isn't charged until installed; gear from a box is left behind).
+
+## Balance notes
+Gig 1 with the starting binder and rack (300 simulated runs, best of 40 / 300 random setlists after digging weak albums): median 108 / 130, 10th percentile 80 / 100, against a target of 90. Later targets assume shop upgrades and haven't been simulated.
+
+## Art
+Everything is drawn in code in a physical style (gradients, bevels, gloss, screws, LEDs, LCDs). Optional textures in `art/textures/` replace flat fills when present: `metal_brushed`, `metal_dark`, `rubber`, `leather`, `fabric`, `wood` (gig) and `crate_wood`, `pegboard`, `cardboard` (shop). png/jpg/webp; seamless, evenly lit, fairly neutral color.
+
+## Next
+A run-level simulation with a shopping bot to tune targets 2–8 and prices; selling or removing albums; more gear (repeat, tape deck, shuffle switch).
