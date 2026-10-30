@@ -4,7 +4,21 @@ You're a DJ playing shows against the crowd. Hold a hand of CDs, play them one s
 
 **Prototype:** run `nine_pocket.tscn` (F6). Venues, points, flow, targets, abilities, gear and editions are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd`: show flow in `_start_show` / `_on_pocket` / `_play` / `_finish_song` / `_confirm_dig` / `_fire` / `_end_show`, scoring in `_react` and `_links`, call-outs in `_new_call`. Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions are in git history.
 
-Loop: venue → show → pay → **record shop** → next venue, endlessly. *New binder* on the result screen starts over. No tour length or game over yet.
+Loop: **tour map** → pick a stop → show (then pay) or record shop → back to the map, until the headliner. Getting booed off ends the tour.
+
+## Tour map
+Modeled on Wildfrost: gig → a couple of rewards → gig. You start on the map (titled "Tour Map", with a legend using the real pin symbols), a worn road atlas spread on the desk (fold creases, lake and river, state lines, coffee ring, tape). Generated fresh each run in `_make_tour`:
+- **Columns:** Hometown → Gig → Reward → Reward → Gig → Reward → Reward → Gig → Reward → Reward → **Headliner**. Every route plays **3 gigs plus the headliner**.
+- **Gig columns** have 1–2 venues (red pins) so you can choose a crowd. Each tag shows the town, venue name and its liked (green ring) and hated (red ring) tags.
+- **Reward columns** have 2–3 stops. Each pair of reward columns has exactly one **record shop**; the other stops are **pickups** (60%, cardboard box pin) or **cash** (tip jar, $ pin).
+- Highways connect each stop to the nearest stop in the next column, with a 35% chance of a second road, so routes branch and cross.
+- Reachable stops pulse; click to travel. Your route is drawn in red marker; HERE marks your current stop. A sticky note shows cash and gigs played (of 4). *View binder* works on the map (button or B).
+- Target scores grow with gigs played; the headliner's are ×1.25 on top. Finishing the headliner: **Tour complete!** Booed off anywhere: the tour ends. Both offer *New tour*.
+
+## Pickups and cash
+Black screen, a spotlight from above, and the reward on a pool of light.
+- **Pickup:** a taped cardboard box marked FRAGILE. **Click it three times** to open it (it shakes, the lid lifts and the tape tears; three dots track progress). Inside is a random album (any points, may have an ability or edition) or, 30% of the time when you have an empty rack bay, a gear unit. *Add to binder* / *Install in rack*, or *Leave it*.
+- **Cash:** a tip jar full of bills. Click once to collect $4–8.
 
 ## Scoring
 **Score = points × flow.** That's the whole formula.
@@ -56,7 +70,7 @@ All 4 bays start empty; every unit is bought in the shop.
 ## Pay and the shop
 After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus Mint Condition money.
 
-**The B-Side**, restocked at random each visit:
+**The B-Side** (a record shop stop in each reward stretch), restocked at random each visit. *Back on the road* returns to the map:
 - **Record bin:** 2 albums in jewel cases ($3–5) plus an album pack (Sampler: pick 1 of 3 for $4, or Box Set: pick 2 of 4 for $7).
 - **Gear wall:** 2 units you don't own plus a gear box (Grab Box: pick 1 of 3 for $6, or Studio Bundle: pick 2 of 3 for $11).
 - **Work orders** (sometimes): bench tweak ($3), upgrade a unit ($6), or give an album an edition.
@@ -86,4 +100,4 @@ Random play isn't booed off at the first show; that pressure is meant to come fr
 Drawn in code in a physical style. Optional textures in `art/textures/`: `metal_brushed`, `metal_dark`, `rubber`, `leather`, `fabric`, `wood`, `crate_wood`, `pegboard`, `cardboard`.
 
 ## Next
-A tour with a length and a game over; a tour map where you pick the next venue to suit your binder; more flow gear and call-out types.
+Shop services Burn (copy an album to a CD-R) and Trade in; crowd mood zones; more stop types (rest stop, radio station); more flow gear and call-out types.

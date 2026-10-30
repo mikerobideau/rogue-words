@@ -59,6 +59,19 @@ const VENUES := [
 	{"name": "Record Store Day", "likes": [["genre", "Alternative"], ["era", "70s"]], "dislikes": [["era", "10s"]]},
 ]
 
+const TOUR_GIGS := 3
+const GIG_CHOICES := [1, 2]
+const REWARDS_BETWEEN := 2
+const REWARD_ROWS := [2, 3]
+const PICKUP_CHANCE := 0.6
+const SECOND_ROAD := 0.35
+const REVEAL_CLICKS := 3
+const CASH_REWARD := [4, 8]
+const PICKUP_GEAR_CHANCE := 0.3
+const HEADLINER_MULT := 1.25
+const HEADLINER_NAMES: Array[String] = ["The Grand Ballroom", "Riverside Amphitheater", "The Palladium", "Starlight Arena"]
+const TOWNS: Array[String] = ["Rustfield", "Lake Halcyon", "Cedar Bluff", "Port Amber", "Millbrook", "Granite Falls", "Fairhaven", "Copper Ridge", "Elk Hollow", "New Bristol", "Saltmarsh", "Pinecrest", "Wolf Creek", "Hadley", "Ironton", "Sparrow Bay", "Kettle Rock", "Brightwater", "Old Mesa", "Juniper", "Harlow", "Dunmore", "Silver Lake", "Bramblewood", "Northgate", "Canyon City", "Larkspur", "Tinley", "Marigold", "Stonebridge"]
+
 const GIGS := 8
 const TARGETS: Array[int] = [90, 120, 160, 210, 270, 350, 450, 580]
 const START_CASH := 0
