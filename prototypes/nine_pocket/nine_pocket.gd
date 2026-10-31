@@ -25,6 +25,7 @@ class Disc:
 	var ability := ""
 	var edition := ""
 	var cdr := false
+	var mix_cover := ""
 
 var rng := RandomNumberGenerator.new()
 var albums: Array = []
@@ -60,11 +61,13 @@ var gear_uses: Array[int] = []
 var booed := false
 var tour: Array = []
 var tour_at := 0
+var basement_done := false
 var tour_path: Array[int] = []
 var map_seed := 0
 var tour_cols := 1
 var pickup := {}
 var pickup_shake := 0.0
+var pickups_since_gear := 0
 var prev_disc: Disc = null
 var played: Array[int] = []
 var call := {}
@@ -90,10 +93,10 @@ var readout: Array = []
 var comp_flash: Array[float] = [0.0, 0.0, 0.0, 0.0]
 var slot_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
 var spin := 0.0
+var font_marker: Font
 var music_player: AudioStreamPlayer
 var music_t := 0.0
 var album_music := {}
-var genre_music := {}
 var xfade_pos := 0.5
 var set_total := 0
 var set_sound := 0.0
@@ -242,23 +245,10 @@ func _load_music() -> void:
 			var base := _music_key(f.get_file().get_basename())
 			if base == key or base.begins_with(key + " -"):
 				album_music[a["cover"]] = f
-				if not genre_music.has(a["genre"]):
-					genre_music[a["genre"]] = []
-				genre_music[a["genre"]].append(f)
 				break
 
 func _music_for(d: Disc) -> String:
-	if not d.cdr:
-		return String(album_music.get(d.cover, ""))
-	var genres: Array = []
-	for w in wallet:
-		if w >= 0 and not collection[w].cdr and genre_music.has(collection[w].genre) and not genres.has(collection[w].genre):
-			genres.append(collection[w].genre)
-	if genres.is_empty():
-		genres = genre_music.keys()
-	if genres.is_empty():
-		return ""
-	return String((genre_music[genres.pick_random()] as Array).pick_random())
+	return String(album_music.get(d.mix_cover if d.cdr else d.cover, ""))
 
 func _music_start(d: Disc) -> void:
 	music_t = D.MUSIC_SECONDS
@@ -276,7 +266,7 @@ func _music_start(d: Disc) -> void:
 		return
 	music_player.stream = stream
 	music_player.volume_db = 0.0
-	music_player.play()
+	music_player.play(rng.randf_range(0.0, maxf(0.0, stream.get_length() - D.MUSIC_SECONDS - 1.0)))
 
 func _music_stop() -> void:
 	if music_player != null:
@@ -333,6 +323,19 @@ func _make_basic(a: Dictionary) -> Disc:
 	d.ability = ""
 	d.edition = ""
 	return d
+
+func _resolve_mix(d: Disc) -> void:
+	var a: Dictionary = albums[rng.randi_range(0, albums.size() - 1)]
+	d.genre = a["genre"]
+	d.era = a["era"]
+	d.mix_cover = a["cover"]
+
+func _reset_mixes() -> void:
+	for d in collection:
+		if d.cdr:
+			d.genre = -1
+			d.era = -1
+			d.mix_cover = ""
 
 func _make_cdr() -> Disc:
 	var d := Disc.new()
@@ -416,18 +419,7 @@ func _random_gear_ids(n: int, exclude: Array = []) -> Array:
 func _new_run() -> void:
 	collection.clear()
 	next_uid = 1
-	var gs: Array = range(D.GENRES.size())
-	_shuffle(gs)
-	gs = gs.slice(0, D.START_GENRES)
-	var es: Array = range(D.ERAS.size())
-	_shuffle(es)
-	es = es.slice(0, D.START_ERAS)
-	var pool: Array = albums.filter(func(a): return int(a["genre"]) in gs and int(a["era"]) in es)
-	_shuffle(pool)
-	var extra: Array = albums.filter(func(a): return int(a["genre"]) in gs and not int(a["era"]) in es)
-	_shuffle(extra)
-	pool.append_array(extra)
-	for a in pool.slice(0, D.START_BASIC):
+	for a in _balanced_starter(D.START_BASIC):
 		collection.append(_make_basic(a))
 	for k in D.START_CDRS:
 		collection.append(_make_cdr())
@@ -442,9 +434,65 @@ func _new_run() -> void:
 	pack = {}
 	install_queue.clear()
 	last_venue = -1
+	pickups_since_gear = 0
 	_make_tour()
 	phase = "map"
 	message_t = 0.0
+
+func _balanced_starter(n: int, tries: int = 0) -> Array:
+	var per_era := n / D.ERAS.size()
+	var by_era := {}
+	for a in albums:
+		if not by_era.has(int(a["era"])):
+			by_era[int(a["era"])] = []
+		by_era[int(a["era"])].append(a)
+	var order: Array = by_era.keys()
+	_shuffle(order)
+	order.sort_custom(func(x, y): return by_era[x].size() < by_era[y].size())
+	var gcount := {}
+	var bcount := {}
+	var picks: Array = []
+	for e in order:
+		var pool: Array = by_era[e].duplicate()
+		for k in per_era:
+			var best: Array = []
+			var low := 1000000
+			for o: Dictionary in pool:
+				var c: int = int(gcount.get(int(o["genre"]), 0)) * 100 + int(bcount.get(String(o["band"]), 0))
+				if c < low:
+					low = c
+					best = [o]
+				elif c == low:
+					best.append(o)
+			var a: Dictionary = best[rng.randi_range(0, best.size() - 1)]
+			pool.erase(a)
+			picks.append(a)
+			gcount[int(a["genre"])] = int(gcount.get(int(a["genre"]), 0)) + 1
+			bcount[String(a["band"])] = int(bcount.get(String(a["band"]), 0)) + 1
+	var counts: Array = []
+	for g in D.GENRES.size():
+		counts.append(int(gcount.get(g, 0)))
+	if tries < 20 and counts.max() - counts.min() > 1:
+		return _balanced_starter(n, tries + 1)
+	return picks
+
+func _basement_discs() -> Array:
+	var keys: Array = D.ABILITIES.keys()
+	_shuffle(keys)
+	var out: Array = []
+	var genres := {}
+	for a: Dictionary in _fresh_albums(albums.size()):
+		if genres.has(int(a["genre"])):
+			continue
+		genres[int(a["genre"])] = true
+		var d := _make_disc(a)
+		d.ability = String(keys[out.size()])
+		d.edition = ""
+		d.sound = maxi(D.BASE_SOUND[0], rng.randi_range(D.BASE_SOUND[0], D.BASE_SOUND[1]) - 1)
+		out.append(d)
+		if out.size() >= D.BASEMENT_CARDS:
+			break
+	return out
 
 func _refill() -> void:
 	for p in wallet.size():
@@ -832,7 +880,7 @@ func _draw_well(s: int) -> void:
 	if slot_flash[s] > 0.0:
 		draw_arc(c, DISC_R + 4.0, 0.0, TAU, 64, Color(c_gold, slot_flash[s]), 5.0, true)
 	if i >= 0:
-		_chip_row(Rect2(c.x - 130.0, c.y + WELL_R + 6.0, 260.0, 32.0), collection[i])
+		_chip_row(Rect2(c.x - 130.0, c.y + WELL_R + 6.0, 260.0, 34.0), collection[i])
 	var ro: Dictionary = readout[s]
 	var lr := Rect2(c.x - 130.0, c.y + WELL_R + 46.0, 260.0, 42.0)
 	_panel(lr.grow(4.0), Color("0a0b0d"), 8)
@@ -852,6 +900,7 @@ func _disc_marks(c: Vector2, rad: float, d: Disc) -> void:
 	if d.cdr:
 		_heavy_center(Rect2(c.x - rad, c.y - rad * 0.62, rad * 2.0, rad * 0.4), "MIX", int(rad * 0.3), Color("2b5fa8"))
 		_text_center(Rect2(c.x - rad, c.y + rad * 0.32, rad * 2.0, rad * 0.3), "CD-R", int(rad * 0.16), Color("5d626a"), true)
+	_band_text(c, rad, d)
 	var sc := Color(D.SOUND_COLOR)
 	var tc := c + Vector2(-rad * 0.72, -rad * 0.72)
 	draw_circle(tc + Vector2(0, 3), rad * 0.2, Color(0, 0, 0, 0.4))
@@ -860,22 +909,142 @@ func _disc_marks(c: Vector2, rad: float, d: Disc) -> void:
 	_heavy_center(Rect2(tc - Vector2(rad, rad) * 0.2, Vector2(rad, rad) * 0.4), str(d.sound), int(rad * 0.24), Color.WHITE)
 	if d.edition != "":
 		_edition_marks(c, rad, d.edition)
-	if d.ability == "":
+	if d.ability != "":
+		_ability_icon(c + Vector2(rad * 0.72, rad * 0.72), rad * 0.2, d.ability)
+
+func _tape_poly(c: Vector2, rr: float, hw: float, a0: float, a1: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var n := maxi(8, int((a1 - a0) * rr / 6.0))
+	var jit := 4.0 / rr
+	for i in n + 1:
+		pts.append(c + Vector2.from_angle(a0 + (a1 - a0) * i / n) * (rr + hw))
+	for k in range(1, 5):
+		pts.append(c + Vector2.from_angle(a1 + (jit if k % 2 == 1 else -jit)) * (rr + hw - 2.0 * hw * k / 5.0))
+	for i in n + 1:
+		pts.append(c + Vector2.from_angle(a1 - (a1 - a0) * i / n) * (rr - hw))
+	for k in range(1, 5):
+		pts.append(c + Vector2.from_angle(a0 + (jit if k % 2 == 1 else -jit)) * (rr - hw + 2.0 * hw * k / 5.0))
+	return pts
+
+func _band_text(c: Vector2, rad: float, d: Disc) -> void:
+	if d.cdr or d.band == "":
 		return
-	var a: Dictionary = D.ABILITIES[d.ability]
-	var name := String(a["name"])
-	var chip := String(a["chip"])
-	var gc := Color(D.HYPE_COLOR).darkened(0.2) if chip.begins_with("+") else Color(D.FLOW_COLOR).darkened(0.2)
-	var fs := int(rad * 0.15)
-	var h := rad * 0.27
-	var cw := _text_w(chip, fs, true) + h * 0.6
-	var w := _text_w(name, fs, true) + cw + h * 0.9
-	var pr := Rect2(c.x - w * 0.5, c.y + rad * 0.5, w, h)
-	_panel(pr, Color(0.06, 0.07, 0.09, 0.9), int(h * 0.5), Color(1, 1, 1, 0.35), 1)
-	_text(Vector2(pr.position.x + h * 0.4, pr.get_center().y + _vc(font_bold, fs)), name, fs, Color.WHITE, true)
-	var cr := Rect2(pr.end.x - cw - h * 0.14, pr.position.y + h * 0.13, cw, h * 0.74)
-	_panel(cr, gc, int(h * 0.37))
-	_text_center(cr, chip, fs, Color.WHITE, true)
+	var f := _marker_font()
+	var rr := rad * 0.62
+	var fs := maxi(10, int(rad * 0.18))
+	var adv: Array[float] = []
+	var total := 0.0
+	for i in d.band.length():
+		adv.append(f.get_string_size(d.band.substr(i, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		total += adv[i]
+	var max_arc := rr * deg_to_rad(140.0)
+	if total > max_arc:
+		fs = maxi(9, int(fs * maxf(0.6, max_arc / total)))
+		total = 0.0
+		for i in adv.size():
+			adv[i] = f.get_string_size(d.band.substr(i, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			total += adv[i]
+	var ctr := -PI * 0.5 + ((d.uid * 37) % 7 - 3) * 0.035
+	var half := total / rr * 0.5 + 0.2
+	var hw := fs * 0.95
+	var tape := _tape_poly(c, rr, hw, ctr - half, ctr + half)
+	var drop := PackedVector2Array()
+	for q in tape:
+		drop.append(q + Vector2(0.0, 2.0))
+	draw_colored_polygon(drop, Color(0, 0, 0, 0.3))
+	draw_colored_polygon(tape, Color("eadfbf", 0.96))
+	draw_arc(c, rr + hw * 0.7, ctr - half + 0.05, ctr + half - 0.05, 32, Color(1, 1, 1, 0.35), 1.5, true)
+	draw_arc(c, rr - hw * 0.7, ctr - half + 0.05, ctr + half - 0.05, 32, Color(0.5, 0.42, 0.25, 0.18), 1.5, true)
+	var ink := Color("17171b")
+	var pos := -total * 0.5
+	for i in d.band.length():
+		var ch := d.band.substr(i, 1)
+		var th := ctr + (pos + adv[i] * 0.5) / rr
+		pos += adv[i]
+		if ch == " ":
+			continue
+		draw_set_transform(screen_origin + (c + Vector2.from_angle(th) * rr) * ui_scale, th + PI * 0.5, Vector2(ui_scale, ui_scale))
+		var p := Vector2(-adv[i] * 0.5, fs * 0.35)
+		draw_string(f, p + Vector2(0.7, 0.5), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, 0.5))
+		draw_string(f, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	draw_set_transform(screen_origin, 0.0, Vector2(ui_scale, ui_scale))
+
+func _ability_icon(c: Vector2, rad: float, key: String) -> void:
+	draw_circle(c + Vector2(0.0, 3.0), rad, Color(0, 0, 0, 0.4))
+	draw_circle(c, rad, Color("15181d"))
+	draw_arc(c, rad, 0.0, TAU, 32, Color(1, 1, 1, 0.8), maxf(1.5, rad * 0.09), true)
+	var u := rad * 0.5
+	var ink := Color.WHITE
+	match key:
+		"opener":
+			draw_rect(Rect2(c.x - u * 0.95, c.y - u * 0.8, u * 0.28, u * 1.6), ink)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-u * 0.45, -u * 0.8), c + Vector2(u * 0.95, 0.0), c + Vector2(-u * 0.45, u * 0.8)]), ink)
+		"closer":
+			draw_rect(Rect2(c.x + u * 0.67, c.y - u * 0.8, u * 0.28, u * 1.6), ink)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-u * 0.95, -u * 0.8), c + Vector2(u * 0.45, 0.0), c + Vector2(-u * 0.95, u * 0.8)]), ink)
+		"crowd":
+			for k: int in [0, 2, 1]:
+				var sc := 1.0 if k == 1 else 0.78
+				var px := (k - 1) * u * 0.8
+				var py := 0.0 if k == 1 else u * 0.24
+				draw_circle(c + Vector2(px, py - u * 0.46 * sc), u * 0.27 * sc, ink)
+				draw_arc(c + Vector2(px, py + u * 0.62 * sc), u * 0.36 * sc, PI, TAU, 12, ink, u * 0.36 * sc)
+		"bandmates":
+			var tri := PackedVector2Array([c + Vector2(-u * 0.5, -u * 0.5), c + Vector2(u * 0.5, -u * 0.5), c + Vector2(0.0, u * 0.62)])
+			for poly in Geometry2D.offset_polygon(tri, u * 0.3, Geometry2D.JOIN_ROUND):
+				draw_colored_polygon(poly, ink)
+		"segue":
+			draw_arc(c + Vector2(-u * 0.4, 0.0), u * 0.62, 0.0, TAU, 24, ink, u * 0.22, true)
+			draw_arc(c + Vector2(u * 0.4, 0.0), u * 0.62, 0.0, TAU, 24, ink, u * 0.22, true)
+		"fanclub":
+			var star := PackedVector2Array()
+			for k in 10:
+				star.append(c + Vector2.from_angle(-PI * 0.5 + TAU * k / 10.0) * u * (1.0 if k % 2 == 0 else 0.45))
+			draw_colored_polygon(star, ink)
+		"warmup":
+			draw_colored_polygon(PackedVector2Array([c + Vector2(0.0, -u), c + Vector2(u * 0.6, -u * 0.05), c + Vector2(u * 0.5, u * 0.55), c + Vector2(0.0, u * 0.95), c + Vector2(-u * 0.5, u * 0.55), c + Vector2(-u * 0.6, -u * 0.05)]), ink)
+			draw_circle(c + Vector2(0.0, u * 0.5), u * 0.25, Color("15181d"))
+		"genrerun":
+			draw_line(c + Vector2(-u * 0.8, 0.0), c + Vector2(u * 0.8, 0.0), ink, u * 0.2, true)
+			for k in 3:
+				draw_circle(c + Vector2((k - 1) * u * 0.8, 0.0), u * 0.3, ink)
+		"callback":
+			var a0 := deg_to_rad(250.0)
+			draw_arc(c, u * 0.62, a0, deg_to_rad(500.0), 20, ink, u * 0.24, true)
+			var ep := c + Vector2.from_angle(a0) * u * 0.62
+			var tn := Vector2(sin(a0), -cos(a0))
+			var sd := tn.orthogonal()
+			draw_colored_polygon(PackedVector2Array([ep + tn * u * 0.55, ep + sd * u * 0.42, ep - sd * u * 0.42]), ink)
+		"deepcut":
+			draw_colored_polygon(PackedVector2Array([c + Vector2(0.0, -u), c + Vector2(u * 0.85, -u * 0.1), c + Vector2(0.0, u), c + Vector2(-u * 0.85, -u * 0.1)]), ink)
+			draw_line(c + Vector2(-u * 0.85, -u * 0.1), c + Vector2(u * 0.85, -u * 0.1), Color("15181d"), u * 0.12, true)
+		"hypeman":
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-u, -u * 0.3), c + Vector2(-u * 0.25, -u * 0.3), c + Vector2(u * 0.9, -u * 0.85), c + Vector2(u * 0.9, u * 0.85), c + Vector2(-u * 0.25, u * 0.3), c + Vector2(-u, u * 0.3)]), ink)
+			draw_rect(Rect2(c.x - u * 0.75, c.y + u * 0.25, u * 0.3, u * 0.6), ink)
+		"openingact":
+			for k in 2:
+				var ox := (k - 0.5) * u * 0.95
+				draw_colored_polygon(PackedVector2Array([c + Vector2(ox - u * 0.45, -u * 0.8), c + Vector2(ox + u * 0.5, 0.0), c + Vector2(ox - u * 0.45, u * 0.8)]), ink)
+		"collector":
+			for k in 3:
+				_panel(Rect2(c.x - u * 0.9 + k * u * 0.15, c.y - u * 0.9 + k * u * 0.65, u * 1.6, u * 0.45), ink, int(u * 0.2))
+
+func _debuff_marks(c: Vector2, rad: float, d: Disc, soft: bool) -> void:
+	if not soft:
+		draw_circle(c, rad, Color(0.34, 0.35, 0.38, 0.62))
+		draw_arc(c, rad, 0.0, TAU, 64, Color(c_bad, 0.6), 3.0, true)
+	var bc := c + Vector2(-rad * 0.72, rad * 0.72)
+	var br := rad * 0.2
+	var u := br * 0.5
+	draw_circle(bc + Vector2(0.0, 3.0), br, Color(0, 0, 0, 0.4))
+	draw_circle(bc, br, Color("2a0f12"))
+	draw_arc(bc, br, 0.0, TAU, 32, c_bad.lightened(0.25), maxf(1.5, br * 0.12), true)
+	draw_colored_polygon(PackedVector2Array([bc + Vector2(-u * 0.95, -u * 0.55), bc + Vector2(u * 0.95, -u * 0.55), bc + Vector2(0.0, u * 0.8)]), c_bad.lightened(0.3))
+
+func _flow_fit(d: Disc) -> int:
+	if phase != "show" or dig_mode or playing or prev_disc == null or (d.cdr and d.genre < 0):
+		return 0
+	return 1 if _links(d, prev_disc) else -1
 
 func _draw_wallet() -> void:
 	var b := r_wallet
@@ -898,21 +1067,24 @@ func _draw_wallet() -> void:
 		var r := _pocket_rect(p)
 		var pocket := Rect2(r.position - Vector2(6.0, 6.0), Vector2(r.size.x + 12.0, r.size.y + 54.0))
 		var over := ui_live and pocket.has_point(mouse) and wallet[p] >= 0 and (dig_mode or _open_slot() >= 0)
-		_panel(pocket, Color(1, 1, 1, 0.07 if over else 0.03), 8, Color(c_gold, 0.8) if over else Color(1, 1, 1, 0.13), 3 if over else 2)
-		_pocket_lip(pocket)
 		var i := wallet[p]
+		var fit := _flow_fit(collection[i]) if i >= 0 else 0
+		if fit > 0:
+			for k in range(1, 4):
+				_panel(pocket.grow(float(k * 5)), Color(0, 0, 0, 0), 8 + k * 5, Color(D.FLOW_COLOR, 0.24 / k), 5)
+		var edge := Color(c_gold, 0.8) if over else (Color(D.FLOW_COLOR) if fit > 0 else (Color(c_bad, 0.5) if fit < 0 else Color(1, 1, 1, 0.13)))
+		var fill := Color(D.FLOW_COLOR, 0.12) if fit > 0 and not over else Color(1, 1, 1, 0.07 if over else 0.03)
+		_panel(pocket, fill, 8, edge, 3 if over or fit > 0 else 2)
+		_pocket_lip(pocket)
 		if i >= 0:
 			var d := collection[i]
+			var dim := fit < 0 and not over
 			_cd_art(r.get_center(), r.size.x * 0.5 - 8.0, _cover_tex(d.cover))
 			_disc_marks(r.get_center(), r.size.x * 0.5 - 8.0, d)
-			_chip_row(Rect2(r.position.x, r.end.y + 6.0, r.size.x, 34.0), d)
+			if fit < 0:
+				_debuff_marks(r.get_center(), r.size.x * 0.5 - 8.0, d, over)
+			_chip_row(Rect2(r.position.x, r.end.y + 6.0, r.size.x, 38.0), d, dim)
 			_tip_disc(pocket, d)
-			if phase == "show" and not dig_mode and _links(d, prev_disc):
-				var ft := "FLOW +1" if flow < D.FLOW_MAX else "FLOW ×%d" % D.FLOW_MAX
-				var fw := _text_w(ft, 13, true) + 18.0
-				var fr := Rect2(pocket.end.x - fw - 4.0, pocket.position.y + 4.0, fw, 26.0)
-				_panel(fr, Color(D.FLOW_COLOR), 13, Color(1, 1, 1, 0.6), 1)
-				_text_center(fr, ft, 13, Color("10161a"), true)
 			if dig_mode and p in dig_marks:
 				draw_circle(r.get_center(), r.size.x * 0.5 - 8.0, Color(0, 0, 0, 0.55))
 				_heavy_center(r, "DISCARD", T_XL, c_gold)
@@ -1001,41 +1173,57 @@ func _energy_color(v: float) -> Color:
 		return Color("7fe0a0")
 	return Color("b6ff8a")
 
-func _chip_row(r: Rect2, d: Disc) -> void:
-	if d.cdr:
-		var t := "CD-R · LINKS ANYTHING"
+func _chip_row(r: Rect2, d: Disc, dim: bool = false) -> void:
+	if d.cdr and d.genre < 0:
+		var t := "MIX · RANDOM ALBUM"
 		var cw := _text_w(t, T_XS, true) + 20.0
 		var cr := Rect2(r.get_center().x - cw * 0.5, r.position.y + 2.0, cw, r.size.y - 4.0)
 		_panel(cr, Color(D.FLOW_COLOR).darkened(0.2), 10, Color(0, 0, 0, 0.25), 1)
 		_text_center(cr, t, T_XS, Color.WHITE, true)
+		if dim:
+			_panel(cr, Color(0.04, 0.05, 0.07, 0.5), 10)
 		return
-	var chips := [[D.GENRES[d.genre].to_upper(), Color(D.GENRE_COLORS[d.genre]), Color.WHITE, ["genre", D.GENRES[d.genre]]], [D.ERAS[d.era], Color("fbfaf5"), c_ink, ["era", D.ERAS[d.era]]]]
-	var fs := T_XS
-	var total := -6.0
-	for c in chips:
-		total += _text_w(String(c[0]), fs, true) + 22.0
-	var x := r.get_center().x - total * 0.5
-	for ci in chips.size():
-		var c: Array = chips[ci]
-		var w := _text_w(String(c[0]), fs, true) + 16.0
-		var cr := Rect2(x, r.position.y + 2.0, w, r.size.y - 4.0)
-		var ring := Color(0, 0, 0, 0)
-		if not venue.is_empty():
-			for tag: Array in venue["likes"]:
-				if tag == c[3]:
-					ring = c_good.lightened(0.2)
-			for tag: Array in venue["dislikes"]:
-				if tag == c[3]:
-					ring = c_bad
-		if ring.a == 0.0:
-			var bo := _boosts("genre", d.genre) if ci == 0 else _boosts("era", d.era)
-			if bo != 0:
-				ring = c_gold if bo > 0 else c_bad
-		if ring.a > 0.0:
-			_panel(cr.grow(3.0), Color(0, 0, 0, 0), 12, ring, 3)
-		_panel(cr, c[1], 10, Color(0, 0, 0, 0.25), 1)
-		_text_center(cr, String(c[0]), fs, c[2], true)
-		x += w + 6.0
+	var label := String(D.ERAS[d.era])
+	var pw := clampf(r.size.x * 0.9, 150.0, 250.0)
+	var plate := Rect2(r.get_center().x - pw * 0.5, r.position.y + 1.0, pw, r.size.y - 2.0)
+	var gring := _tag_ring(d, false)
+	if gring.a > 0.0:
+		_panel(plate.grow(3.0), Color(0, 0, 0, 0), 14, gring, 3)
+	_panel(plate, Color(D.GENRE_COLORS[d.genre]), 12, Color(0, 0, 0, 0.3), 1)
+	_grad_panel(plate, 12.0, Color(1, 1, 1, 0.16), Color(0, 0, 0, 0.14))
+	var fs := int(plate.size.y * 0.8)
+	var tw := _heavy_w(label, fs)
+	var nx := plate.end.x - 12.0 - tw
+	_heavy_center(Rect2(nx - 4.0, plate.position.y, tw + 8.0, plate.size.y), label, fs, Color.WHITE)
+	var gname := String(D.GENRES[d.genre]).to_upper()
+	var gfs := 16
+	var area := nx - plate.position.x - 24.0
+	if _text_w(gname, gfs, true) > area:
+		gname = String(D.GENRE_SHORT[d.genre])
+	while gfs > 11 and _text_w(gname, gfs, true) > area:
+		gfs -= 1
+	_text(Vector2(plate.position.x + 12.0, plate.get_center().y + _vc(font_bold, gfs)), gname, gfs, Color(1, 1, 1, 0.95), true)
+	var ering := _tag_ring(d, true)
+	if ering.a > 0.0:
+		draw_rect(Rect2(nx - 2.0, plate.end.y - 9.0, tw + 4.0, 8.0), Color(0, 0, 0, 0.6))
+		draw_rect(Rect2(nx, plate.end.y - 7.0, tw, 4.0), ering)
+	if dim:
+		_panel(plate, Color(0.04, 0.05, 0.07, 0.5), 12)
+
+func _tag_ring(d: Disc, era: bool) -> Color:
+	var key := "era" if era else "genre"
+	var name := String(D.ERAS[d.era]) if era else String(D.GENRES[d.genre])
+	if not venue.is_empty():
+		for tag: Array in venue["dislikes"]:
+			if tag == [key, name]:
+				return c_bad
+		for tag: Array in venue["likes"]:
+			if tag == [key, name]:
+				return c_good.lightened(0.2)
+	var bo := _boosts(key, d.era if era else d.genre)
+	if bo != 0:
+		return c_gold if bo > 0 else c_bad
+	return Color(0, 0, 0, 0)
 
 func _boosts(key: String, v: int) -> int:
 	var best := 0
@@ -1189,8 +1377,6 @@ func _draw_display(r: Rect2) -> void:
 	_silk(Vector2(lx2, fy), "NEXT LINK", 13, Color("8d939b"))
 	if prev_disc == null:
 		_text(Vector2(lx2, fy + 40.0), "Any CD starts at ×1", 15, Color("8d939b"), true)
-	elif prev_disc.cdr:
-		_text(Vector2(lx2, fy + 40.0), "Anything links", 15, Color("8d939b"), true)
 	else:
 		var links: Array = [[D.GENRES[prev_disc.genre].to_upper(), Color(D.GENRE_COLORS[prev_disc.genre])], [D.ERAS[prev_disc.era], Color("5d626a")]]
 		if _bay_of("comp") >= 0:
@@ -1402,10 +1588,19 @@ func _draw_disc_tip(d: Disc) -> void:
 		head = String(a["name"]).to_upper()
 		body = String(a["text"])
 	elif d.cdr:
-		head = "WILDCARD"
-		body = "Counts as the genre and decade of the song before it, so it always keeps the flow going. No genre or decade of its own."
-	var bh := font.get_multiline_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y if body != "" else 0.0
-	var h := pad + 84.0 + 44.0 + (52.0 + bh + 10.0 if body != "" else 0.0) + (84.0 if d.edition != "" else 0.0) + pad - 6.0
+		head = "MIX"
+		body = "When you play it, it picks a random album and becomes that album's genre and decade. The crowd, requests, gear and flow all treat it like that CD, so it may delight them or turn them against you."
+	var fit := _flow_fit(d) if wallet.has(collection.find(d)) else 0
+	var fit_head := ""
+	var fit_body := ""
+	if fit < 0:
+		fit_head = "BREAKS THE FLOW"
+		fit_body = "Playing it next drops the flow by 1." if _bay_of("xfade") >= 0 else "Playing it next resets the flow to ×1."
+	elif fit > 0:
+		fit_head = "KEEPS THE FLOW"
+		fit_body = "Playing it next adds 1 to the flow."
+	var bh := font.get_multiline_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, iw - 56.0, T_SM).y if body != "" else 0.0
+	var h := pad + 84.0 + 44.0 + (52.0 + bh + 10.0 if body != "" else 0.0) + (92.0 if fit_head != "" else 0.0) + (84.0 if d.edition != "" else 0.0) + pad - 6.0
 	var box := Rect2(mouse + Vector2(28.0, 28.0), Vector2(w, h))
 	if box.end.x > UI_W - 12.0:
 		box.position.x = mouse.x - w - 20.0
@@ -1416,9 +1611,9 @@ func _draw_disc_tip(d: Disc) -> void:
 	var x := box.position.x + pad
 	var y := box.position.y + pad
 	_heavy(Vector2(x, y + 30.0), d.title, T_LG, Color.WHITE)
-	_text_i(Vector2(x, y + 64.0), "Burn it with anything" if d.cdr else "by %s  ·  %s" % [d.band, D.LABELS[d.label]["name"]], T_SM, Color("b8c0cc"))
+	_text_i(Vector2(x, y + 64.0), "Picks a random album when played" if d.cdr else "by %s  ·  %s" % [d.band, D.LABELS[d.label]["name"]], T_SM, Color("b8c0cc"))
 	y += 84.0
-	var chips := [[D.GENRES[d.genre].to_upper(), Color(D.GENRE_COLORS[d.genre])], [D.ERAS[d.era], Color("5d626a")], ["%d POINTS" % d.sound, Color(D.SOUND_COLOR)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]] if not d.cdr else [["CD-R", Color(D.FLOW_COLOR).darkened(0.2)], ["%d POINT" % d.sound, Color(D.SOUND_COLOR)]]
+	var chips := [[D.GENRES[d.genre].to_upper(), Color(D.GENRE_COLORS[d.genre])], [D.ERAS[d.era], Color("5d626a")], ["%d POINTS" % d.sound, Color(D.SOUND_COLOR)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]] if d.genre >= 0 else [["CD-R", Color(D.FLOW_COLOR).darkened(0.2)], ["%d POINT" % d.sound, Color(D.SOUND_COLOR)]]
 	var cx := x
 	for c in chips:
 		var cw := _text_w(String(c[0]), T_XS, true) + 18.0
@@ -1429,9 +1624,16 @@ func _draw_disc_tip(d: Disc) -> void:
 	y += 44.0
 	if body != "":
 		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
-		_text(Vector2(x, y + 34.0), head, T_XS, c_gold, true)
-		_wrap(Vector2(x, y + 46.0), body, iw, T_SM, Color("e8ecf2"))
+		if d.ability != "":
+			_ability_icon(Vector2(x + 24.0, y + 52.0), 24.0, d.ability)
+		_text(Vector2(x + 56.0, y + 34.0), head, T_XS, c_gold, true)
+		_wrap(Vector2(x + 56.0, y + 46.0), body, iw - 56.0, T_SM, Color("e8ecf2"))
 		y += 52.0 + bh + 10.0
+	if fit_head != "":
+		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+		_text(Vector2(x, y + 34.0), fit_head, T_XS, c_bad.lightened(0.3) if fit < 0 else Color(D.FLOW_COLOR).lightened(0.2), true)
+		_text(Vector2(x, y + 68.0), fit_body, T_SM, Color("e8ecf2"))
+		y += 92.0
 	if d.edition != "":
 		var ed: Dictionary = D.EDITIONS[d.edition]
 		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
@@ -1470,8 +1672,8 @@ func _draw_run_end(won: bool) -> void:
 	_text_center(Rect2(r.position.x, r.position.y + 205.0, r.size.x, 40.0), "You played all %d gigs." % D.GIGS if won else "Your tour ended at gig %d of %d." % [gig_n, D.GIGS], T_MD, c_body)
 	_hw_button(Rect2(r.get_center().x - 160.0, r.end.y - 130.0, 320.0, 86.0), "New tour", _new_run, true, Color("3f9b5a"), T_LG)
 
-func _to_shop() -> void:
-	_make_shop()
+func _to_shop(hint: Dictionary = {}) -> void:
+	_make_shop(hint)
 	phase = "shop"
 	message_t = 0.0
 
@@ -1489,14 +1691,37 @@ func _leave_shop() -> void:
 func _album_price(d: Disc) -> int:
 	return D.ALBUM_PRICE + (D.ABILITY_PREMIUM if d.ability != "" else 0) + (1 if d.sound >= 4 else 0)
 
-func _make_shop() -> void:
+func _make_shop(hint: Dictionary = {}) -> void:
 	shop_items.clear()
-	for a in _fresh_albums(D.SHOP_ALBUMS):
+	var fresh: Array = _fresh_albums(albums.size())
+	var picks: Array = []
+	var used := {}
+	if not hint.is_empty():
+		for exact in [true, false]:
+			if not picks.is_empty():
+				break
+			for a: Dictionary in fresh:
+				if int(a["genre"]) == int(hint["genre"]) and (not exact or int(a["era"]) == int(hint["era"])):
+					picks.append(a)
+					used[a["cover"]] = true
+					break
+	for a: Dictionary in fresh:
+		if picks.size() >= D.SHOP_ALBUMS:
+			break
+		if not used.has(a["cover"]):
+			picks.append(a)
+			used[a["cover"]] = true
+	for a: Dictionary in picks:
 		var d := _make_disc(a)
 		shop_items.append({"kind": "album", "disc": d, "price": _album_price(d), "sold": false})
 	var ap: Dictionary = D.ALBUM_PACKS[rng.randi_range(0, D.ALBUM_PACKS.size() - 1)]
 	shop_items.append({"kind": "album_pack", "pack": ap, "price": int(ap["price"]), "sold": false})
 	var gear_ids := _random_gear_ids(D.SHOP_GEAR)
+	if not hint.is_empty() and not String(hint["gear"]) in gear_ids and not String(hint["gear"]) in _owned_gear():
+		if gear_ids.is_empty():
+			gear_ids.append(String(hint["gear"]))
+		else:
+			gear_ids[0] = String(hint["gear"])
 	for k in D.SHOP_GEAR:
 		if k < gear_ids.size():
 			shop_items.append({"kind": "gear", "gear": _make_gear(gear_ids[k]), "price": int(D.GEAR[gear_ids[k]]["price"]), "sold": false})
@@ -2248,6 +2473,7 @@ func _start_show(v: Dictionary) -> void:
 	booed = false
 	show_cash = cash
 	prev_disc = null
+	_reset_mixes()
 	played.clear()
 	call = {}
 	floats.clear()
@@ -2291,7 +2517,7 @@ func _front() -> int:
 	return o if o >= 0 and tray[o] >= 0 else -1
 
 func _tag_match(d: Disc, tag: Array) -> bool:
-	if d.cdr:
+	if d.genre < 0:
 		return false
 	if tag[0] == "genre":
 		return D.GENRES[d.genre] == tag[1]
@@ -2310,7 +2536,7 @@ func _bay_of(id: String) -> int:
 func _links(d: Disc, prev: Disc) -> bool:
 	if prev == null:
 		return false
-	if d.cdr or prev.cdr or d.ability == "segue" or prev.genre == d.genre or prev.era == d.era:
+	if d.ability == "segue" or prev.genre == d.genre or prev.era == d.era:
 		return true
 	return _bay_of("comp") >= 0 and prev.label == d.label
 
@@ -2321,12 +2547,15 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 	var hit := false
 	var bonus_flow := 0
 	_push(out, acc, "base", "%d points" % d.sound, d.sound)
+	var taste := 0
 	for tag: Array in venue["likes"]:
 		if _tag_match(d, tag):
-			_push(out, acc, "crowd", "They love %s +%d" % [tag[1], D.LIKE], D.LIKE)
+			taste += D.LIKE
+			out.append({"src": "taste", "text": "They love %s +%d crowd" % [tag[1], D.LIKE], "n": D.LIKE, "ci": -1})
 	for tag: Array in venue["dislikes"]:
 		if _tag_match(d, tag):
-			_push(out, acc, "crowd", "They hate %s %d" % [tag[1], D.DISLIKE], D.DISLIKE)
+			taste += D.DISLIKE
+			out.append({"src": "taste", "text": "They hate %s %d crowd" % [tag[1], D.DISLIKE], "n": D.DISLIKE, "ci": -1})
 	if not cl.is_empty() and _tag_match(d, cl["tag"]):
 		if cl["kind"] == "request":
 			hit = true
@@ -2348,6 +2577,18 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 				n = 2
 			"bandmates":
 				n = 3 if before.any(func(o): return not collection[o].cdr and collection[o].band == d.band) else 0
+			"fanclub":
+				n = before.size()
+			"warmup":
+				n = 4 if before.size() >= 3 else 0
+			"genrerun":
+				n = 2 * before.filter(func(o): return collection[o].genre == d.genre).size()
+			"callback":
+				n = 3 if before.size() > 1 and before.slice(0, before.size() - 1).any(func(o): return collection[o].era == d.era) else 0
+			"deepcut":
+				n = 0 if before.any(func(o): return collection[o].genre == d.genre) else 3
+			"collector":
+				n = 2 if wallet.any(func(w): return w >= 0 and collection[w].genre == d.genre) else 0
 		if n != 0:
 			_push(out, acc, "disc", "%s +%d" % [D.ABILITIES[d.ability]["name"], n], n)
 	match d.edition:
@@ -2356,6 +2597,16 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 			_push(out, acc, "disc", "%s +%d" % [D.EDITIONS[d.edition]["name"], en], en)
 		"mint":
 			cash_gain += int(D.EDITIONS["mint"]["n"])
+	if d.genre >= 0 and not before.is_empty():
+		var last: Disc = collection[before.back()]
+		if last.ability == "hypeman" and (last.genre == d.genre or last.era == d.era):
+			var hn := 3 * (2 if last.edition == "remaster" else 1)
+			_push(out, acc, "disc", "Hype Man +%d" % hn, hn)
+		for o in before:
+			var oa: Disc = collection[o]
+			if oa.ability == "openingact" and oa.genre == d.genre:
+				var on := 1 * (2 if oa.edition == "remaster" else 1)
+				_push(out, acc, "disc", "Opening Act +%d" % on, on)
 	for ci in rack.size():
 		var g: Dictionary = rack[ci]
 		if g.is_empty():
@@ -2363,7 +2614,7 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 		var n := _gear_n(g)
 		match String(g["id"]):
 			"eq":
-				var lv := 0 if d.cdr else int(g["levels"][d.genre])
+				var lv := 0 if d.genre < 0 else int(g["levels"][d.genre])
 				if lv != 0:
 					_push(out, acc, "rack", "EQ %+d" % lv, lv, ci)
 			"gain":
@@ -2389,7 +2640,7 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 			why = "broken"
 	f = mini(D.FLOW_MAX, f + bonus_flow + fog_armed)
 	var pts := int(acc["total"])
-	return {"points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "steps": out, "cash": cash_gain, "hit": hit}
+	return {"points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "taste": taste, "steps": out, "cash": cash_gain, "hit": hit}
 
 func _play() -> void:
 	if playing or phase != "show":
@@ -2398,15 +2649,20 @@ func _play() -> void:
 	if s < 0:
 		return
 	var d := collection[tray[s]]
+	var mixed := d.cdr and d.genre < 0
+	if mixed:
+		_resolve_mix(d)
 	result = _react(d, prev_disc, call, played, s)
 	steps = (result["steps"] as Array).duplicate()
+	if mixed:
+		steps.push_front({"src": "mix", "text": "Mix: %s, %s" % [D.GENRES[d.genre], D.ERAS[d.era]], "n": 0, "ci": -1})
 	var fl := int(result["flow"])
 	var ftxt := "Flow ×%d" % fl
 	if result["why"] == "broken":
 		ftxt = "Flow broken ×%d" % fl
 	steps.append({"src": "flow", "text": ftxt, "n": 0, "ci": _bay_of("xfade") if result["why"] == "broken" and _bay_of("xfade") >= 0 else -1})
 	var tg: int = _target(s)
-	var net := int(result["score"]) - tg
+	var net := int(result["score"]) + int(result["taste"]) - tg
 	result["net"] = net
 	steps.append({"src": "score", "text": "Score %d · target %d" % [int(result["score"]), tg], "n": net, "ci": -1})
 	play_fog = fog_armed
@@ -2435,6 +2691,8 @@ func _play_step(st: Dictionary) -> void:
 			ro["net"] = n
 			energy_live = clampi(energy + n, 0, D.ENERGY_MAX)
 			col = c_good.lightened(0.3) if n >= 0 else c_bad.lightened(0.3)
+		"taste":
+			col = c_good.lightened(0.3) if n > 0 else c_bad.lightened(0.3)
 		_:
 			ro["pts"] = int(ro["pts"]) + n
 			ro["text"] = "%d POINTS" % int(ro["pts"])
@@ -2457,8 +2715,7 @@ func _finish_song() -> void:
 	energy = clampi(energy + got, 0, D.ENERGY_MAX)
 	flow = int(result["flow"])
 	played.append(i)
-	if not d.cdr or prev_disc == null:
-		prev_disc = d
+	prev_disc = d
 	cash += int(result["cash"])
 	readout[s] = {"text": "%d vs %d · %+d" % [int(result["score"]), _target(s), got], "net": got}
 	now_slot = -1
@@ -2547,6 +2804,7 @@ func _draw_show_end() -> void:
 		_hw_button(Rect2(r.get_center().x - 220.0, r.end.y - 130.0, 440.0, 86.0), "Back on the road", _to_map, true, Color("3f9b5a"), T_LG)
 
 func _to_map() -> void:
+	_reset_mixes()
 	binder_open = false
 	message_t = 0.0
 	phase = "map"
@@ -2584,8 +2842,8 @@ func _draw_crowd() -> void:
 	_text(Vector2(note.position.x + 60.0, note.position.y + 38.0), "TONIGHT'S CROWD", T_XS, c_ink, true)
 	_tag_chips(note.position.x + 60.0, note.position.y + 64.0, "LIKES", venue.get("likes", []), c_good)
 	_tag_chips(note.position.x + 60.0, note.position.y + 112.0, "HATES", venue.get("dislikes", []), c_bad)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 182.0), "+%d points per liked tag" % D.LIKE, 15, c_body, true)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 210.0), "%d points per hated tag" % D.DISLIKE, 15, c_body, true)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 182.0), "+%d crowd per liked tag" % D.LIKE, 15, c_body, true)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 210.0), "%d crowd per hated tag" % D.DISLIKE, 15, c_body, true)
 	var slip := Rect2(x, r.position.y + 430.0, w, 150.0)
 	if call.is_empty():
 		_text_i(Vector2(x, slip.position.y + 40.0), "No requests right now.", T_SM, c_muted)
@@ -2606,7 +2864,7 @@ func _make_tour() -> void:
 	var towns: Array = []
 	towns.assign(D.TOWNS)
 	_shuffle(towns)
-	tour.append({"id": 0, "col": 0, "y": 0.5, "kind": "start", "town": String(towns.pop_back()), "next": [], "road": 0})
+	tour.append({"id": 0, "col": 0, "y": 0.5, "kind": "basement", "town": String(towns.pop_back()), "next": [], "road": 0})
 	var prev: Array = [0]
 	var col := 1
 	for gi in D.TOUR_GIGS + 1:
@@ -2618,14 +2876,14 @@ func _make_tour() -> void:
 			likes.append(["era", D.ERAS[rng.randi_range(0, D.ERAS.size() - 1)]])
 			var hate_g := (g + rng.randi_range(1, D.GENRES.size() - 1)) % D.GENRES.size()
 			var head := {"name": D.HEADLINER_NAMES[rng.randi_range(0, D.HEADLINER_NAMES.size() - 1)], "likes": likes, "dislikes": [["genre", D.GENRES[hate_g]]], "headliner": true}
-			tour.append({"id": tour.size(), "col": col, "y": 0.5, "kind": "headliner", "town": String(towns.pop_back()), "venue": head, "next": [], "road": 0})
+			tour.append({"id": tour.size(), "col": col, "y": 0.5, "kind": "headliner", "town": String(towns.pop_back()), "venue": head, "hint": _gig_hint(head), "next": [], "road": 0})
 			row.append(tour.size() - 1)
 		else:
 			var n := rng.randi_range(D.GIG_CHOICES[0], D.GIG_CHOICES[1])
 			var vs: Array = range(D.VENUES.size())
 			_shuffle(vs)
 			for k in n:
-				tour.append({"id": tour.size(), "col": col, "y": (k + 0.5) / n + rng.randf_range(-0.05, 0.05), "kind": "venue", "venue": D.VENUES[vs[k]], "town": String(towns.pop_back()), "next": [], "road": 0})
+				tour.append({"id": tour.size(), "col": col, "y": (k + 0.5) / n + rng.randf_range(-0.05, 0.05), "kind": "venue", "venue": D.VENUES[vs[k]], "hint": _gig_hint(D.VENUES[vs[k]]), "town": String(towns.pop_back()), "next": [], "road": 0})
 				row.append(tour.size() - 1)
 		_link_cols(prev, row)
 		prev = row
@@ -2636,10 +2894,13 @@ func _make_tour() -> void:
 		for rc in D.REWARDS_BETWEEN:
 			var n := rng.randi_range(D.REWARD_ROWS[0], D.REWARD_ROWS[1])
 			var shop_k := rng.randi_range(0, n - 1) if rc == shop_col else -1
+			var cash_k := -1
+			if rc == shop_col and rng.randf() < D.CASH_CHANCE:
+				cash_k = (shop_k + rng.randi_range(1, n - 1)) % n
 			var rrow: Array = []
 			for k in n:
-				var kind := "shop" if k == shop_k else ("pickup" if rng.randf() < D.PICKUP_CHANCE else "cash")
-				tour.append({"id": tour.size(), "col": col, "y": (k + 0.5) / n + rng.randf_range(-0.05, 0.05), "kind": kind, "town": String(towns.pop_back()), "next": [], "road": 0})
+				var kind := "shop" if k == shop_k else ("cash" if k == cash_k else "pickup")
+				tour.append({"id": tour.size(), "col": col, "y": (k + 0.5) / n + rng.randf_range(-0.05, 0.05), "kind": kind, "stamp": _random_stamp() if kind == "pickup" else [], "hint": _shop_hint() if kind == "shop" else {}, "town": String(towns.pop_back()), "next": [], "road": 0})
 				rrow.append(tour.size() - 1)
 			_link_cols(prev, rrow)
 			prev = rrow
@@ -2648,7 +2909,20 @@ func _make_tour() -> void:
 	for nd: Dictionary in tour:
 		nd["road"] = rng.randi_range(1, 99)
 	tour_at = 0
+	basement_done = false
 	tour_path = [0]
+
+func _random_stamp() -> Array:
+	var a: Dictionary = albums[rng.randi_range(0, albums.size() - 1)]
+	return [int(a["genre"]), -1] if rng.randf() < 0.5 else [-1, int(a["era"])]
+
+func _shop_hint() -> Dictionary:
+	var a: Dictionary = albums[rng.randi_range(0, albums.size() - 1)]
+	var ids: Array = D.GEAR.keys()
+	return {"show": "album" if rng.randf() < 0.5 else "gear", "genre": int(a["genre"]), "era": int(a["era"]), "gear": String(ids[rng.randi_range(0, ids.size() - 1)])}
+
+func _gig_hint(v: Dictionary) -> Dictionary:
+	return {"like": rng.randi_range(0, maxi(0, (v["likes"] as Array).size() - 1)), "hate": rng.randi_range(0, maxi(0, (v["dislikes"] as Array).size() - 1))}
 
 func _link_cols(a: Array, b: Array) -> void:
 	var fed := {}
@@ -2670,10 +2944,16 @@ func _link_cols(a: Array, b: Array) -> void:
 		tour[best]["next"].append(j)
 
 func _reachable() -> Array:
+	if not basement_done and tour_at == 0:
+		return [0]
 	return tour[tour_at]["next"]
 
 func _travel(id: int) -> void:
 	if not id in _reachable():
+		return
+	if id == 0:
+		_sfx("page_turn")
+		_start_pickup("basement")
 		return
 	tour_at = id
 	tour_path.append(id)
@@ -2681,9 +2961,9 @@ func _travel(id: int) -> void:
 	_sfx("page_turn")
 	match String(nd["kind"]):
 		"shop":
-			_to_shop()
+			_to_shop(nd.get("hint", {}))
 		"pickup", "cash":
-			_start_pickup(String(nd["kind"]))
+			_start_pickup(String(nd["kind"]), nd.get("stamp", []))
 		_:
 			gig_n = tour_path.filter(func(i): return tour[i]["kind"] in ["venue", "headliner"]).size()
 			_start_show(nd["venue"])
@@ -2694,19 +2974,52 @@ func _free_bay() -> int:
 			return k
 	return -1
 
-func _start_pickup(kind: String) -> void:
-	pickup = {"kind": kind, "hits": 0, "need": D.REVEAL_CLICKS if kind == "pickup" else 1}
+func _start_pickup(kind: String, stamp: Array = []) -> void:
+	pickup = {"kind": kind, "hits": 0, "need": D.REVEAL_CLICKS if kind in ["pickup", "basement"] else 1}
 	if kind == "cash":
 		pickup["cash"] = rng.randi_range(D.CASH_REWARD[0], D.CASH_REWARD[1])
+	elif kind == "basement":
+		pickup["discs"] = _basement_discs()
+		pickup["gear"] = _make_gear(String(_random_gear_ids(1)[0]))
+		pickup["stage"] = 0
 	else:
-		var ids := _random_gear_ids(1)
-		if _free_bay() >= 0 and not ids.is_empty() and rng.randf() < D.PICKUP_GEAR_CHANCE:
-			pickup["gear"] = _make_gear(String(ids[0]))
-		else:
-			pickup["disc"] = _make_disc(_fresh_albums(1)[0])
+		pickup["options"] = _pickup_options(stamp)
 	pickup_shake = 0.0
 	message_t = 0.0
 	phase = "pickup"
+
+func _pickup_options(stamp: Array) -> Array:
+	var fresh: Array = _fresh_albums(albums.size())
+	var chosen: Array = []
+	var used := {}
+	var genres := {}
+	if stamp.size() == 2:
+		for a: Dictionary in fresh:
+			if (int(stamp[0]) < 0 or int(a["genre"]) == int(stamp[0])) and (int(stamp[1]) < 0 or int(a["era"]) == int(stamp[1])):
+				chosen.append(a)
+				used[a["cover"]] = true
+				genres[int(a["genre"])] = true
+				break
+	for distinct in [true, false]:
+		for a: Dictionary in fresh:
+			if chosen.size() >= D.PICKUP_CHOICES:
+				break
+			if used.has(a["cover"]) or (distinct and genres.has(int(a["genre"]))):
+				continue
+			chosen.append(a)
+			used[a["cover"]] = true
+			genres[int(a["genre"])] = true
+	var opts: Array = []
+	for a: Dictionary in chosen:
+		opts.append({"disc": _make_disc(a)})
+	var ids := _random_gear_ids(1)
+	if _free_bay() >= 0 and not ids.is_empty() and opts.size() > 1 and (pickups_since_gear >= D.PICKUP_GEAR_PITY or rng.randf() < D.PICKUP_GEAR_CHANCE):
+		opts[rng.randi_range(1, opts.size() - 1)] = {"gear": _make_gear(String(ids[0]))}
+		pickups_since_gear = 0
+	else:
+		pickups_since_gear += 1
+	_shuffle(opts)
+	return opts
 
 func _hit_pickup() -> void:
 	if int(pickup["hits"]) >= int(pickup["need"]):
@@ -2719,15 +3032,32 @@ func _hit_pickup() -> void:
 		if pickup["kind"] == "cash":
 			cash += int(pickup["cash"])
 
-func _take_pickup() -> void:
-	if pickup.has("disc"):
-		collection.append(pickup["disc"])
-		_say("Added %s to your binder." % pickup["disc"].title)
-	elif pickup.has("gear"):
+func _take_basement() -> void:
+	if int(pickup["stage"]) == 0:
+		for d: Disc in pickup["discs"]:
+			collection.append(d)
+		_say("Added %d CDs to your binder." % (pickup["discs"] as Array).size())
+		pickup["stage"] = 1
+		return
+	var gb := _free_bay()
+	if gb >= 0:
+		rack[gb] = pickup["gear"]
+		_say("Installed the %s." % D.GEAR[pickup["gear"]["id"]]["name"])
+	pickup = {}
+	basement_done = true
+	phase = "map"
+
+func _take_option(k: int) -> void:
+	var o: Dictionary = (pickup["options"] as Array)[k]
+	if o.has("disc"):
+		var d: Disc = o["disc"]
+		collection.append(d)
+		_say("Added %s to your binder." % d.title)
+	else:
 		var b := _free_bay()
 		if b >= 0:
-			rack[b] = pickup["gear"]
-			_say("Installed the %s." % D.GEAR[pickup["gear"]["id"]]["name"])
+			rack[b] = o["gear"]
+			_say("Installed the %s." % D.GEAR[o["gear"]["id"]]["name"])
 	pickup = {}
 	phase = "map"
 
@@ -2754,16 +3084,16 @@ func _draw_map() -> void:
 		for j in nd["next"]:
 			var done := int(nd["id"]) in tour_path and int(j) in tour_path and tour_path.find(int(j)) == tour_path.find(int(nd["id"])) + 1
 			_draw_road(_map_pos(nd), _map_pos(tour[j]), done, int(nd["road"]) + int(j))
+	var hover_id := -1
 	for nd: Dictionary in tour:
 		var id := int(nd["id"])
 		var c := _map_pos(nd)
 		var can := ui_live and id in reach
-		var hot := false
-		var big := String(nd["kind"]) in ["venue", "headliner", "start"]
-		var hit := Rect2(c.x - 130.0, c.y - 50.0, 260.0, 190.0) if big else Rect2(c.x - 85.0, c.y - 60.0, 170.0, 150.0)
-		if can and hit.has_point(mouse):
-			hot = true
-		_draw_stop(nd, c, id in tour_path, id == tour_at, can, hot)
+		var hit := Rect2(c.x - 100.0, c.y - 62.0, 200.0, 128.0)
+		var over := ui_live and hit.has_point(mouse)
+		if over and String(nd["kind"]) in ["venue", "headliner"]:
+			hover_id = id
+		_draw_stop(nd, c, id in tour_path, id == tour_at, can, can and over)
 		if can:
 			_register(hit, _travel.bind(id))
 	_draw_map_legend(P)
@@ -2773,7 +3103,9 @@ func _draw_map() -> void:
 	var shows := tour_path.filter(func(i): return tour[i]["kind"] in ["venue", "headliner"]).size()
 	_heavy(Vector2(note.position.x + 20.0, note.position.y + 52.0), "$%d" % cash, T_XL, c_ink)
 	_text(Vector2(note.position.x + 130.0, note.position.y + 36.0), "Gigs played: %d of %d" % [shows, D.TOUR_GIGS + 1], T_SM, c_body, true)
-	_text(Vector2(note.position.x + 130.0, note.position.y + 66.0), "Pick the next stop on the road.", T_SM, c_body, true)
+	_text(Vector2(note.position.x + 130.0, note.position.y + 66.0), ("Pick the next stop on the road." if basement_done else "Open the basement to start."), T_SM, c_body, true)
+	if hover_id >= 0:
+		_stop_card(tour[hover_id], _map_pos(tour[hover_id]), hover_id == tour_at)
 
 func _draw_map_paper(P: Rect2) -> void:
 	_shadow(P, 4, 14.0)
@@ -2855,37 +3187,109 @@ func _draw_stop(nd: Dictionary, c: Vector2, visited: bool, here: bool, can: bool
 	draw_arc(c, 11.0, 0.0, TAU, 24, Color("2b2e33"), 3.0, true)
 	var ic := c + Vector2(0.0, -32.0)
 	draw_line(c, ic, Color("5d626a"), 3.0)
-	_map_icon(kind, ic, here)
-	var big := kind in ["venue", "headliner", "start"]
-	var tag := Rect2(c.x - 125.0, c.y + 24.0, 250.0, 110.0 if kind in ["venue", "headliner"] else 74.0) if big else Rect2(c.x - 80.0, c.y + 22.0, 160.0, 58.0)
-	var a := 1.0 if (can or visited or kind == "start") else 0.8
-	_shadow(tag, 2, 3.0)
-	_panel(tag, Color(1, 1, 0.97, a), 3, Color("d7263d") if hot else Color(0, 0, 0, 0.18), 3 if hot else 1)
-	var x := tag.position.x + 12.0
-	var ink := Color(c_ink, a)
-	match kind:
-		"start":
-			_text(Vector2(x, tag.position.y + 28.0), "HOMETOWN", T_XS, Color("d7263d"), true)
-			_heavy(Vector2(x, tag.position.y + 60.0), String(nd["town"]), T_MD, ink)
-		"shop", "pickup", "cash":
-			var names := {"shop": ["RECORD SHOP", "The B-Side", Color("2e6ea6")], "pickup": ["PICKUP", "Mystery box", Color("8a5a2b")], "cash": ["TIP JAR", "Cash", Color("2f7d4a")]}
-			var nm: Array = names[kind]
-			_text(Vector2(x, tag.position.y + 22.0), String(nm[0]), 13, nm[2], true)
-			_heavy(Vector2(x, tag.position.y + 48.0), String(nm[1]), T_SM, ink)
-		_:
-			var v: Dictionary = nd["venue"]
-			var head := kind == "headliner"
-			_text(Vector2(x, tag.position.y + 26.0), ("HEADLINER · " if head else "GIG · ") + String(nd["town"]).to_upper(), 14, Color("b8860b") if head else Color("d7263d"), true)
-			_heavy(Vector2(x, tag.position.y + 56.0), String(v["name"]), T_SM if _heavy_w(String(v["name"]), T_MD) > 226.0 else T_MD, ink)
-			var cx := x
-			for t: Array in v["likes"]:
-				cx += _map_chip(cx, tag.position.y + 72.0, t, c_good) + 5.0
-			for t: Array in v["dislikes"]:
-				cx += _map_chip(cx, tag.position.y + 72.0, t, c_bad) + 5.0
-	if here and kind != "start":
-		_text_right(tag.end.x - 10.0, tag.position.y + 22.0, "HERE", 13, Color("b8860b"), true)
+	_map_icon(kind, ic, here, nd.get("stamp", []))
+	_stop_label(nd, c, 1.0 if (can or here or kind == "basement") else (0.55 if visited else 0.8), hot)
 
-func _map_icon(kind: String, ic: Vector2, here: bool = false) -> void:
+func _marker_font() -> Font:
+	if font_marker == null:
+		var path := "res://assets/fonts/PermanentMarker-Regular.ttf"
+		if ResourceLoader.exists(path):
+			font_marker = load(path)
+		else:
+			var ff := FontFile.new()
+			font_marker = ff if ff.load_dynamic_font(path) == OK else font_heavy
+	return font_marker
+
+func _marker(center: Vector2, s: String, size: int, col: Color, rot: float, under: int = 0) -> void:
+	var f := _marker_font()
+	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	draw_set_transform(screen_origin + center * ui_scale, rot, Vector2(ui_scale, ui_scale))
+	var p := Vector2(-w * 0.5, size * 0.35)
+	draw_string(f, p + Vector2(1.2, 1.0), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(col, col.a * 0.55))
+	draw_string(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	for k in under:
+		var y := size * 0.55 + k * 7.0
+		draw_line(Vector2(-w * 0.5, y), Vector2(w * 0.5, y + 1.5), col, 3.0, true)
+	draw_set_transform(screen_origin, 0.0, Vector2(ui_scale, ui_scale))
+
+func _stop_label(nd: Dictionary, c: Vector2, a: float, hot: bool) -> void:
+	var kind := String(nd["kind"])
+	var ink := Color(0.07, 0.07, 0.09, a)
+	var tilt := (int(nd["id"]) * 37 % 7 - 3) * 0.012
+	var name := ""
+	var sub := ""
+	var sub_col := Color("d7263d")
+	match kind:
+		"basement":
+			name = "Basement"
+			sub = String(nd["town"])
+		"shop":
+			name = "Record shop"
+			var sh: Dictionary = nd.get("hint", {})
+			if not sh.is_empty():
+				var gid := String(sh["gear"])
+				if String(sh["show"]) == "gear" and not gid in _owned_gear():
+					sub = "Has %s" % String(D.GEAR[gid]["name"])
+					sub_col = Color("2e6ea6")
+				else:
+					sub = "Has %s %s" % [D.GENRES[int(sh["genre"])], D.ERAS[int(sh["era"])]]
+					sub_col = Color(D.GENRE_COLORS[int(sh["genre"])]).darkened(0.1)
+		"pickup":
+			name = "Pickup"
+			var st: Array = nd.get("stamp", [])
+			if st.size() == 2 and int(st[0]) >= 0:
+				sub = String(D.GENRES[int(st[0])])
+				sub_col = Color(D.GENRE_COLORS[int(st[0])]).darkened(0.1)
+		"cash":
+			name = "Tip jar"
+		_:
+			name = String((nd["venue"] as Dictionary)["name"])
+			sub = String(nd["town"])
+	var fs := 28
+	var w := _marker_font().get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	if w > 200.0:
+		fs = maxi(16, int(fs * 200.0 / w))
+	_marker(Vector2(c.x, c.y + 50.0), name, fs, ink, tilt, 2 if kind == "headliner" else (1 if hot else 0))
+	if sub != "":
+		var sfs := 18
+		var sw := _marker_font().get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x
+		if sw > 200.0:
+			sfs = maxi(12, int(sfs * 200.0 / sw))
+		_marker(Vector2(c.x, c.y + 80.0), sub, sfs, Color(sub_col, a), tilt * 0.5)
+	if kind in ["venue", "headliner"]:
+		var v: Dictionary = nd["venue"]
+		var gh: Dictionary = nd.get("hint", {})
+		var likes: Array = v["likes"]
+		var hates: Array = v["dislikes"]
+		if not likes.is_empty():
+			_marker(Vector2(c.x, c.y + 106.0), "+ " + String((likes[int(gh.get("like", 0))] as Array)[1]), 17, Color(c_good.darkened(0.2), a), tilt * 0.4)
+		if not hates.is_empty():
+			_marker(Vector2(c.x, c.y + 130.0), "- " + String((hates[int(gh.get("hate", 0))] as Array)[1]), 17, Color(c_bad.darkened(0.1), a), tilt * 0.4)
+
+func _stop_card(nd: Dictionary, c: Vector2, here: bool) -> void:
+	var v: Dictionary = nd["venue"]
+	var head := String(nd["kind"]) == "headliner"
+	var P := _map_rect()
+	var tag := Rect2(c.x - 170.0, c.y + 24.0, 340.0, 196.0)
+	tag.position.x = clampf(tag.position.x, P.position.x + 12.0, P.end.x - tag.size.x - 12.0)
+	if tag.end.y > P.end.y - 12.0:
+		tag.position.y = c.y - 60.0 - tag.size.y
+	_shadow(tag, 2, 6.0)
+	_panel(tag, Color(1, 1, 0.97), 3, Color("d7263d"), 3)
+	var x := tag.position.x + 14.0
+	_text(Vector2(x, tag.position.y + 26.0), ("HEADLINER · " if head else "GIG · ") + String(nd["town"]).to_upper(), 14, Color("b8860b") if head else Color("d7263d"), true)
+	_heavy(Vector2(x, tag.position.y + 58.0), String(v["name"]), T_SM if _heavy_w(String(v["name"]), T_MD) > 300.0 else T_MD, c_ink)
+	var y := tag.position.y + 92.0
+	for row: Array in [["LIKES", v["likes"], c_good, D.LIKE], ["HATES", v["dislikes"], c_bad, D.DISLIKE]]:
+		_text(Vector2(x, y), "%s  ·  %+d crowd each" % [row[0], row[3]], 13, row[2], true)
+		var cx := x
+		for t: Array in row[1]:
+			cx += _tip_chip(cx, y + 8.0, t, row[2]) + 6.0
+		y += 52.0
+	if here:
+		_text_right(tag.end.x - 12.0, tag.position.y + 22.0, "HERE", 13, Color("b8860b"), true)
+
+func _map_icon(kind: String, ic: Vector2, here: bool = false, stamp: Array = []) -> void:
 	match kind:
 		"shop":
 			draw_circle(ic + Vector2(2, 3), 20.0, Color(0, 0, 0, 0.3))
@@ -2894,12 +3298,34 @@ func _map_icon(kind: String, ic: Vector2, here: bool = false) -> void:
 				draw_arc(ic, 8.0 + k * 3.5, 0.0, TAU, 24, Color(1, 1, 1, 0.12), 1.0, true)
 			draw_circle(ic, 6.0, Color("e2725b"))
 			draw_circle(ic, 1.8, Color("15171a"))
+		"basement":
+			var hb := Rect2(ic - Vector2(22.0, 8.0), Vector2(44.0, 26.0))
+			_panel(Rect2(hb.position + Vector2(2, 3), hb.size), Color(0, 0, 0, 0.3), 2)
+			_panel(hb, Color("d9cfb6"), 2, Color("7a7260"), 2)
+			draw_colored_polygon(PackedVector2Array([ic + Vector2(-27.0, -7.0), ic + Vector2(0.0, -28.0), ic + Vector2(27.0, -7.0)]), Color("b03a2e"))
+			draw_rect(Rect2(ic.x - 6.0, ic.y + 2.0, 12.0, 16.0), Color("6b4a32"))
+			draw_circle(ic + Vector2(3.0, 11.0), 1.4, Color("e9b949"))
+			draw_rect(Rect2(hb.position.x + 4.0, hb.end.y - 9.0, 11.0, 6.0), Color("2b2e33"))
+			draw_rect(Rect2(hb.end.x - 15.0, hb.end.y - 9.0, 11.0, 6.0), Color("2b2e33"))
 		"pickup":
-			var br := Rect2(ic - Vector2(20, 16), Vector2(40, 32))
-			_panel(Rect2(br.position + Vector2(2, 3), br.size), Color(0, 0, 0, 0.3), 3)
-			_panel(br, Color("b98a55"), 3, Color("7a5a33"), 2)
-			draw_rect(Rect2(br.position.x + 16.0, br.position.y, 8.0, br.size.y), Color("e6d3a3"))
-			_heavy_center(br, "?", 20, Color("4a3222"))
+			if stamp.size() == 2:
+				var sb := Rect2(ic - Vector2(26.0, 20.0), Vector2(52.0, 40.0))
+				_panel(Rect2(sb.position + Vector2(2, 3), sb.size), Color(0, 0, 0, 0.3), 3)
+				_panel(sb, Color("b98a55"), 3, Color("7a5a33"), 2)
+				draw_rect(Rect2(sb.position.x + 20.0, sb.position.y, 12.0, 9.0), Color("e6d3a3"))
+				var lab := Rect2(sb.position.x + 5.0, sb.position.y + 13.0, 42.0, 22.0)
+				if int(stamp[0]) >= 0:
+					_panel(lab, Color(D.GENRE_COLORS[int(stamp[0])]), 3, Color(1, 1, 1, 0.5), 1)
+					_heavy_center(lab, String(D.GENRE_SHORT[int(stamp[0])]), 13, Color.WHITE)
+				else:
+					_panel(lab, Color("5d626a"), 3, Color(1, 1, 1, 0.5), 1)
+					_heavy_center(lab, String(D.ERAS[int(stamp[1])]), 17, Color.WHITE)
+			else:
+				var br := Rect2(ic - Vector2(20, 16), Vector2(40, 32))
+				_panel(Rect2(br.position + Vector2(2, 3), br.size), Color(0, 0, 0, 0.3), 3)
+				_panel(br, Color("b98a55"), 3, Color("7a5a33"), 2)
+				draw_rect(Rect2(br.position.x + 16.0, br.position.y, 8.0, br.size.y), Color("e6d3a3"))
+				_heavy_center(br, "?", 20, Color("4a3222"))
 		"cash":
 			draw_circle(ic + Vector2(2, 3), 19.0, Color(0, 0, 0, 0.3))
 			draw_circle(ic, 19.0, Color("3f9b5a"))
@@ -2917,13 +3343,14 @@ func _map_icon(kind: String, ic: Vector2, here: bool = false) -> void:
 			draw_circle(ic, 14.0, col)
 			draw_circle(ic - Vector2(4, 4), 5.0, Color(1, 1, 1, 0.55))
 
-func _map_chip(x: float, y: float, tag: Array, ring: Color) -> float:
-	var t := (D.GENRE_SHORT[D.GENRES.find(String(tag[1]))] if tag[0] == "genre" else String(tag[1]).to_upper())
-	var w := _text_w(t, 13, true) + 14.0
-	var r := Rect2(x, y, w, 26.0)
-	var bg := Color(D.GENRE_COLORS[D.GENRES.find(String(tag[1]))]) if tag[0] == "genre" else Color("5d626a")
+func _tip_chip(x: float, y: float, tag: Array, ring: Color) -> float:
+	var is_genre: bool = tag[0] == "genre"
+	var t := String(tag[1]).to_upper() if is_genre else String(tag[1])
+	var w := _text_w(t, 14, true) + 18.0
+	var r := Rect2(x, y, w, 28.0)
+	var bg := Color(D.GENRE_COLORS[D.GENRES.find(String(tag[1]))]) if is_genre else Color("5d626a")
 	_panel(r, bg, 10, ring, 2)
-	_text_center(r, t, 13, Color.WHITE, true)
+	_text_center(r, t, 14, Color.WHITE, true)
 	return w
 
 func _draw_map_legend(P: Rect2) -> void:
@@ -2963,7 +3390,7 @@ func _draw_pickup() -> void:
 	var open := hits >= need
 	var kind := String(pickup.get("kind", "pickup"))
 	var shake := Vector2(sin(clock * 70.0), cos(clock * 53.0)) * 10.0 * pickup_shake / 0.35
-	var title := "TIP JAR" if kind == "cash" else "PICKUP"
+	var title := "TIP JAR" if kind == "cash" else ("BASEMENT" if kind == "basement" else "PICKUP")
 	_text_center(Rect2(0.0, 90.0, UI_W, 60.0), title, T_LG, Color(1, 0.95, 0.8, 0.8), true)
 	if not open:
 		var obj := Rect2(cx - 200.0, floor_y - 300.0, 400.0, 300.0)
@@ -2986,33 +3413,66 @@ func _draw_pickup() -> void:
 		var a := TAU * k / 14.0 + clock * 0.2
 		draw_line(Vector2(cx, floor_y - 260.0), Vector2(cx, floor_y - 260.0) + Vector2.from_angle(a) * 420.0, Color(1, 0.9, 0.6, 0.06), 30.0)
 	var by := floor_y + 140.0
+	if kind == "basement":
+		_draw_basement(floor_y, by)
+		return
 	if kind == "cash":
 		_draw_tip_jar(Vector2(cx, floor_y), true)
 		_heavy_center(Rect2(0.0, floor_y - 560.0, UI_W, 120.0), "+$%d" % int(pickup["cash"]), T_HERO + 20, Color("7fe0a0"))
 		_hw_button(Rect2(cx - 220.0, by, 440.0, 90.0), "Back on the road", _leave_pickup, true, Color("3f9b5a"), T_LG)
 		return
-	if pickup.has("disc"):
-		var d: Disc = pickup["disc"]
-		var dc := Vector2(cx, floor_y - 280.0)
-		_cd_art(dc, 220.0, _cover_tex(d.cover))
-		_disc_marks(dc, 220.0, d)
-		_chip_row(Rect2(cx - 200.0, floor_y - 40.0, 400.0, 40.0), d)
-		_heavy_center(Rect2(0.0, floor_y - 640.0, UI_W, 70.0), d.title, T_XL, Color.WHITE)
-		_text_center(Rect2(0.0, floor_y - 580.0, UI_W, 40.0), "by %s" % d.band, T_MD, Color(1, 1, 1, 0.7), true)
-		if d.ability != "" or d.edition != "":
-			var line := ""
-			if d.ability != "":
-				line = "%s: %s" % [D.ABILITIES[d.ability]["name"], D.ABILITIES[d.ability]["text"]]
-			if d.edition != "":
-				line += ("   ·   " if line != "" else "") + "%s: %s" % [D.EDITIONS[d.edition]["name"], D.EDITIONS[d.edition]["text"]]
-			_text_center(Rect2(0.0, floor_y + 10.0, UI_W, 40.0), line, T_SM, Color(1, 0.9, 0.6, 0.9), true)
-		_hw_button(Rect2(cx - 330.0, by, 400.0, 90.0), "Add to binder", _take_pickup, true, Color("3f9b5a"), T_LG)
+	_draw_pickup_options(floor_y, by)
+
+func _draw_card_detail(dc: Vector2, d: Disc, rad: float) -> void:
+	_cd_art(dc, rad, _cover_tex(d.cover))
+	_disc_marks(dc, rad, d)
+	_chip_row(Rect2(dc.x - 200.0, dc.y + rad + 20.0, 400.0, 40.0), d)
+	_heavy_center(Rect2(dc.x - 270.0, dc.y + rad + 72.0, 540.0, 50.0), d.title, T_LG, Color.WHITE)
+	var y := dc.y + rad + 130.0
+	if d.ability != "":
+		var a: Dictionary = D.ABILITIES[d.ability]
+		_text_center(Rect2(dc.x - 270.0, y, 540.0, 30.0), String(a["name"]).to_upper(), T_SM, c_gold, true)
+		_wrap(Vector2(dc.x - 240.0, y + 40.0), String(a["text"]), 480.0, T_SM, Color("e8ecf2"))
+		y += 110.0
+	if d.edition != "":
+		var ed: Dictionary = D.EDITIONS[d.edition]
+		_text_center(Rect2(dc.x - 270.0, y, 540.0, 30.0), "%s EDITION" % String(ed["name"]).to_upper(), T_SM, Color(ed["color"]).lightened(0.3), true)
+		_wrap(Vector2(dc.x - 240.0, y + 40.0), String(ed["text"]), 480.0, T_SM, Color("e8ecf2"))
+	if d.ability == "" and d.edition == "":
+		_text_center(Rect2(dc.x - 270.0, y, 540.0, 30.0), "NO ABILITY", T_SM, Color(1, 1, 1, 0.4), true)
+
+func _draw_pickup_options(floor_y: float, by: float) -> void:
+	var cx := UI_W * 0.5
+	_heavy_center(Rect2(0.0, 170.0, UI_W, 70.0), "Take one", T_XL, Color.WHITE)
+	var opts: Array = pickup["options"]
+	for k in opts.size():
+		var o: Dictionary = opts[k]
+		var dc := Vector2(cx + (k - (opts.size() - 1) * 0.5) * 560.0, 540.0)
+		if o.has("disc"):
+			_draw_card_detail(dc, o["disc"], 160.0)
+			_hw_button(Rect2(dc.x - 160.0, 1000.0, 320.0, 80.0), "Take this CD", _take_option.bind(k), true, Color("3f9b5a"), T_MD)
+		else:
+			var g: Dictionary = o["gear"]
+			_text_center(Rect2(dc.x - 250.0, 360.0, 500.0, 40.0), "GEAR", T_MD, c_gold, true)
+			_draw_gear(Rect2(dc.x - 250.0, 420.0, 500.0, 214.0), g, 0.6 + 0.4 * sin(clock * 3.0))
+			_hw_button(Rect2(dc.x - 160.0, 1000.0, 320.0, 80.0), "Install this", _take_option.bind(k), true, Color("3f9b5a"), T_MD)
+	_hw_button(Rect2(cx - 150.0, by, 300.0, 70.0), "Leave them", _leave_pickup, true, Color("6a6f77"), T_MD)
+
+func _draw_basement(floor_y: float, by: float) -> void:
+	var cx := UI_W * 0.5
+	if int(pickup["stage"]) == 0:
+		_heavy_center(Rect2(0.0, 170.0, UI_W, 70.0), "Three CDs from the basement", T_XL, Color.WHITE)
+		var k := 0
+		for d: Disc in pickup["discs"]:
+			_draw_card_detail(Vector2(cx + (k - 1) * 560.0, 540.0), d, 160.0)
+			k += 1
+		_hw_button(Rect2(cx - 220.0, by, 440.0, 90.0), "Add all to binder", _take_basement, true, Color("3f9b5a"), T_LG)
 	else:
 		var g: Dictionary = pickup["gear"]
+		_heavy_center(Rect2(0.0, floor_y - 640.0, UI_W, 70.0), "And a piece of gear", T_XL, Color(1, 0.95, 0.8, 0.85))
 		_draw_gear(Rect2(cx - 278.0, floor_y - 380.0, 556.0, 236.0), g, 0.6 + 0.4 * sin(clock * 3.0))
 		_heavy_center(Rect2(0.0, floor_y - 520.0, UI_W, 70.0), String(D.GEAR[g["id"]]["name"]), T_XL, Color.WHITE)
-		_hw_button(Rect2(cx - 330.0, by, 400.0, 90.0), "Install in rack", _take_pickup, true, Color("3f9b5a"), T_LG)
-	_hw_button(Rect2(cx + 90.0, by, 240.0, 90.0), "Leave it", _leave_pickup, true, Color("6a6f77"), T_LG)
+		_hw_button(Rect2(cx - 220.0, by, 440.0, 90.0), "Install in rack", _take_basement, true, Color("3f9b5a"), T_LG)
 
 func _draw_package(base: Vector2, hits: int) -> void:
 	var w := 360.0

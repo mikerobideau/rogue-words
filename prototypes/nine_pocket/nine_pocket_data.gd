@@ -32,14 +32,12 @@ const ABILITY_CHANCE := 0.4
 const FLOW_MAX := 4
 const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 11]
 const TARGET_GROWTH := 0.15
-const START_BASIC := 10
+const START_BASIC := 12
 const START_CDRS := 2
-const START_GENRES := 3
-const START_ERAS := 3
 const BASIC_POINTS := [2, 3]
 const CDR_POINTS := 1
-const LIKE := 2
-const DISLIKE := -2
+const LIKE := 3
+const DISLIKE := -3
 const REQUEST := 4
 const REQUEST_FLOW_CHANCE := 0.3
 const BAN := -3
@@ -66,11 +64,14 @@ const TOUR_GIGS := 3
 const GIG_CHOICES := [1, 2]
 const REWARDS_BETWEEN := 2
 const REWARD_ROWS := [2, 3]
-const PICKUP_CHANCE := 0.6
+const CASH_CHANCE := 0.5
 const SECOND_ROAD := 0.35
 const REVEAL_CLICKS := 3
+const BASEMENT_CARDS := 3
 const CASH_REWARD := [4, 8]
 const PICKUP_GEAR_CHANCE := 0.3
+const PICKUP_GEAR_PITY := 2
+const PICKUP_CHOICES := 3
 const HEADLINER_MULT := 1.25
 const HEADLINER_NAMES: Array[String] = ["The Grand Ballroom", "Riverside Amphitheater", "The Palladium", "Starlight Arena"]
 const TOWNS: Array[String] = ["Rustfield", "Lake Halcyon", "Cedar Bluff", "Port Amber", "Millbrook", "Granite Falls", "Fairhaven", "Copper Ridge", "Elk Hollow", "New Bristol", "Saltmarsh", "Pinecrest", "Wolf Creek", "Hadley", "Ironton", "Sparrow Bay", "Kettle Rock", "Brightwater", "Old Mesa", "Juniper", "Harlow", "Dunmore", "Silver Lake", "Bramblewood", "Northgate", "Canyon City", "Larkspur", "Tinley", "Marigold", "Stonebridge"]
@@ -110,6 +111,14 @@ const ABILITIES := {
 	"crowd": {"name": "Crowd-Pleaser", "text": "+2 points.", "chip": "+2"},
 	"bandmates": {"name": "Bandmates", "text": "+3 points if another song by this band already played tonight.", "chip": "+3"},
 	"segue": {"name": "Segue", "text": "Always keeps the flow going, whatever played before it.", "chip": "FLOW"},
+	"fanclub": {"name": "Fan Club", "text": "+1 point for each song already played tonight.", "chip": "+1"},
+	"warmup": {"name": "Warm-Up", "text": "+4 points if three or more songs have already played.", "chip": "+4"},
+	"genrerun": {"name": "Genre Run", "text": "+2 points for each earlier song of the same genre.", "chip": "+2"},
+	"callback": {"name": "Callback", "text": "+3 points if a song of this decade played earlier, but not right before.", "chip": "+3"},
+	"deepcut": {"name": "Deep Cut", "text": "+3 points if no earlier song shares its genre.", "chip": "+3"},
+	"hypeman": {"name": "Hype Man", "text": "The next song gets +3 points if it shares this disc's genre or decade.", "chip": "+3"},
+	"openingact": {"name": "Opening Act", "text": "Each later song of this genre gets +1 point.", "chip": "+1"},
+	"collector": {"name": "Collector", "text": "+2 points if you still hold another disc of this genre.", "chip": "+2"},
 }
 
 const GEAR := {
