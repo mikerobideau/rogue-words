@@ -32,12 +32,21 @@ const ABILITY_CHANCE := 0.4
 const FLOW_MAX := 4
 const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 11]
 const TARGET_GROWTH := 0.15
-const START_BASIC := 12
 const START_CDRS := 2
+const KIT_FILLER := 9
+const KIT_LEAN_FILLER := 5
+const KITS := [
+	{"name": "Flow Crew", "idea": "Chain songs together and keep the flow rolling.", "abilities": ["hypeman", "segue", "callback"], "gear": "xfade", "lean": ["genre", "Indie"]},
+	{"name": "Showstopper", "idea": "Open big and close bigger.", "abilities": ["opener", "closer", "warmup"], "gear": "mic", "lean": ["genre", "Classic Rock"]},
+	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "abilities": ["genrerun", "openingact", "collector"], "gear": "gain", "lean": ["genre", "Punk"], "lean_filler": 3},
+	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "abilities": ["deepcut", "fanclub", "crowd"], "gear": "tube", "lean": ["era", "90s"]},
+]
 const BASIC_POINTS := [2, 3]
 const CDR_POINTS := 1
 const LIKE := 3
-const DISLIKE := -3
+const DISLIKE := -5
+const FATIGUE_RUN := 3
+const FATIGUE := -4
 const REQUEST := 4
 const REQUEST_FLOW_CHANCE := 0.3
 const BAN := -3
@@ -60,6 +69,21 @@ const VENUES := [
 	{"name": "Record Store Day", "likes": [["genre", "Alternative"], ["era", "70s"]], "dislikes": [["era", "10s"]]},
 ]
 
+const USE_FORK := true
+const BOSS_EVERY := 3
+const TOUR_BOSSES := 2
+const BOSS_DEBUFF := -3
+const BOSS_TARGET := 1.3
+const BOSS_DESTROY := 0.2
+const BOSS_DIGS := 1
+const BOSS_HATE_MULT := 2
+const BOSS_KINDS: Array[String] = ["genre", "era", "slot", "hates", "target", "gear", "destroy", "discards"]
+const ROAD_COMBOS := [
+	{"stops": ["pickup", "pickup"], "weight": 25},
+	{"stops": ["pickup", "shop"], "weight": 40},
+	{"stops": ["cash", "pickup"], "weight": 20},
+	{"stops": ["shop", "pickup"], "weight": 15},
+]
 const TOUR_GIGS := 3
 const GIG_CHOICES := [1, 2]
 const REWARDS_BETWEEN := 2
@@ -67,7 +91,6 @@ const REWARD_ROWS := [2, 3]
 const CASH_CHANCE := 0.5
 const SECOND_ROAD := 0.35
 const REVEAL_CLICKS := 3
-const BASEMENT_CARDS := 3
 const CASH_REWARD := [4, 8]
 const PICKUP_GEAR_CHANCE := 0.3
 const PICKUP_GEAR_PITY := 2
