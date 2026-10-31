@@ -90,6 +90,10 @@ var readout: Array = []
 var comp_flash: Array[float] = [0.0, 0.0, 0.0, 0.0]
 var slot_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
 var spin := 0.0
+var music_player: AudioStreamPlayer
+var music_t := 0.0
+var album_music := {}
+var genre_music := {}
 var xfade_pos := 0.5
 var set_total := 0
 var set_sound := 0.0
@@ -117,6 +121,7 @@ func _ready() -> void:
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	rng.randomize()
 	_load_albums()
+	_load_music()
 	_new_run()
 
 func _process(delta: float) -> void:
@@ -144,8 +149,11 @@ func _process(delta: float) -> void:
 			elif step_i == steps.size():
 				step_i += 1
 				step_t = 0.9
-			else:
+			elif music_t <= 0.0:
 				_finish_song()
+		music_t = maxf(0.0, music_t - delta)
+		if music_player != null and music_player.playing:
+			music_player.volume_db = linear_to_db(clampf(music_t / D.MUSIC_FADE, 0.0, 1.0))
 	_ui_process(delta)
 
 func _unhandled_input(ev: InputEvent) -> void:
@@ -209,6 +217,70 @@ func _load_albums() -> void:
 			continue
 		var h := absi(String(a["band"]).hash())
 		albums.append({"title": a["album"], "band": a["band"], "cover": a["cover"], "genre": g, "era": h % D.ERAS.size(), "label": (h / 7) % D.LABELS.size()})
+
+func _music_files(dir: String, out: Array) -> void:
+	for sub in DirAccess.get_directories_at(dir):
+		_music_files(dir.path_join(sub), out)
+	var seen := {}
+	for f in DirAccess.get_files_at(dir):
+		var name := f.trim_suffix(".import").trim_suffix(".remap")
+		if name.get_extension().to_lower() in ["mp3", "ogg", "wav"] and not seen.has(name):
+			seen[name] = true
+			out.append(dir.path_join(name))
+
+func _music_key(s: String) -> String:
+	return " ".join(s.to_lower().split(" ", false))
+
+func _load_music() -> void:
+	music_player = AudioStreamPlayer.new()
+	add_child(music_player)
+	var files: Array = []
+	_music_files(D.MUSIC_DIR, files)
+	for a: Dictionary in albums:
+		var key := _music_key("%s - %s" % [a["band"], a["title"]])
+		for f: String in files:
+			var base := _music_key(f.get_file().get_basename())
+			if base == key or base.begins_with(key + " -"):
+				album_music[a["cover"]] = f
+				if not genre_music.has(a["genre"]):
+					genre_music[a["genre"]] = []
+				genre_music[a["genre"]].append(f)
+				break
+
+func _music_for(d: Disc) -> String:
+	if not d.cdr:
+		return String(album_music.get(d.cover, ""))
+	var genres: Array = []
+	for w in wallet:
+		if w >= 0 and not collection[w].cdr and genre_music.has(collection[w].genre) and not genres.has(collection[w].genre):
+			genres.append(collection[w].genre)
+	if genres.is_empty():
+		genres = genre_music.keys()
+	if genres.is_empty():
+		return ""
+	return String((genre_music[genres.pick_random()] as Array).pick_random())
+
+func _music_start(d: Disc) -> void:
+	music_t = D.MUSIC_SECONDS
+	var path := _music_for(d)
+	if path == "" or music_player == null:
+		return
+	var stream: AudioStream
+	if ResourceLoader.exists(path):
+		stream = load(path)
+	elif path.get_extension().to_lower() == "mp3":
+		var mp3 := AudioStreamMP3.new()
+		mp3.data = FileAccess.get_file_as_bytes(path)
+		stream = mp3
+	if stream == null:
+		return
+	music_player.stream = stream
+	music_player.volume_db = 0.0
+	music_player.play()
+
+func _music_stop() -> void:
+	if music_player != null:
+		music_player.stop()
 
 func _cover_tex(path: String) -> Texture2D:
 	if path == "":
@@ -2348,6 +2420,7 @@ func _play() -> void:
 	energy_live = energy
 	playing = true
 	_sfx("click")
+	_music_start(d)
 
 func _play_step(st: Dictionary) -> void:
 	var n := int(st["n"])
@@ -2376,6 +2449,7 @@ func _play_step(st: Dictionary) -> void:
 
 func _finish_song() -> void:
 	playing = false
+	_music_stop()
 	var s := song_slot
 	var i := tray[s]
 	var d := collection[i]
@@ -2439,6 +2513,7 @@ func _call_text(cl: Dictionary) -> String:
 func _end_show() -> void:
 	_return_held()
 	playing = false
+	_music_stop()
 	dig_mode = false
 	dig_marks.clear()
 	var pay := D.PAY_BOOED if booed else (D.PAY_ENCORE if energy >= D.ENCORE else (D.PAY_APPLAUSE if energy >= D.APPLAUSE else D.PAY_BASE))

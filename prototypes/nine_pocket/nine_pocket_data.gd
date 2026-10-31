@@ -1,6 +1,9 @@
 extends RefCounted
 
 const CATALOG := "res://prototypes/nine_pocket/art/covers/catalog.json"
+const MUSIC_DIR := "res://prototypes/nine_pocket/music"
+const MUSIC_SECONDS := 5.0
+const MUSIC_FADE := 0.8
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
 const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
