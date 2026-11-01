@@ -23,8 +23,9 @@ const HYPE_COLOR := "e9b949"
 const FLOW_COLOR := "4ab3d9"
 
 const COLLECTION := 20
-const HAND := 8
-const SETLIST := 5
+const HAND := 4
+const SETLIST := 8
+const MIRROR_BONUS := 1
 const DIGS := 3
 const DIG_MAX := 1
 const DIG_OFFERS := 3
@@ -32,8 +33,10 @@ const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 const STICKERS := CATALOG_DATA.STICKERS
 const SHOP_DUPE_CHANCE := 0.35
 
-const FLOW_MAX := 4
-const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 11]
+const FLOW_MAX := 6
+const LINK_MODE := "ladder"
+const LINK_WRAP := false
+const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 12, 14, 17, 21]
 const TARGET_GROWTH := 0.15
 const START_CDRS := 2
 const KIT_ALBUMS := 12

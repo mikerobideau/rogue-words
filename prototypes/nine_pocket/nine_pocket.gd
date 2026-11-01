@@ -3,8 +3,9 @@ extends "res://prototypes/nine_pocket/nine_pocket_ui.gd"
 const D := preload("res://prototypes/nine_pocket/nine_pocket_data.gd")
 
 const DRAG_MIN := 24.0
-const WELL_R := 138.0
-const DISC_R := 124.0
+const WELL_R := 106.0
+const DISC_R := 96.0
+const WELL_PITCH := 300.0
 const CELL := 270.0
 const CELL_GAP := 18.0
 const SPINE := 70.0
@@ -103,13 +104,15 @@ var step_t := 0.0
 var now_slot := -1
 var readout: Array = []
 var comp_flash: Array[float] = [0.0, 0.0, 0.0, 0.0]
-var slot_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]
+var slot_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var spin := 0.0
 var font_marker: Font
 var music_player: AudioStreamPlayer
 var music_t := 0.0
 var menu_album: Dictionary = {}
 var pile_with_hand := false
+var link_mode: String = D.LINK_MODE
+var link_wrap: bool = D.LINK_WRAP
 var menu_fade := 0.0
 var menu_music := false
 var album_music := {}
@@ -125,9 +128,9 @@ var hover_disc: Disc = null
 var covers := {}
 var textures := {}
 
-var r_changer := Rect2(60.0, 40.0, 1780.0, 490.0)
-var r_wallet := Rect2(60.0, 570.0, 1254.0, 722.0)
-var r_side := Rect2(1350.0, 570.0, 490.0, 722.0)
+var r_changer := Rect2(60.0, 40.0, 1780.0, 770.0)
+var r_wallet := Rect2(60.0, 836.0, 1254.0, 440.0)
+var r_side := Rect2(1350.0, 836.0, 490.0, 460.0)
 var r_rack := Rect2(1880.0, 40.0, 620.0, 1360.0)
 var r_display := Rect2(1912.0, 76.0, 556.0, 330.0)
 var r_bin := Rect2(70.0, 200.0, 1000.0, 420.0)
@@ -782,7 +785,7 @@ func _draw_pile_table(r: Rect2) -> void:
 			var cell := Rect2(x0 + k * cw + 2.0, ly + 4.0, cw - 4.0, 24.0)
 			var lab := String(D.GENRE_SHORT[k]) if is_genre else String(D.ERAS[k]).to_upper()
 			var cnt := int((counts["genre"] if is_genre else counts["era"])[k])
-			var keeps := (k == keep_g) if is_genre else (k == keep_e)
+			var keeps := _cell_keeps(is_genre, k)
 			_silk(Vector2(cell.get_center().x - _text_w(lab, 12, true) * 0.5, ly), lab, 12, ink)
 			_panel(cell, Color("0b0d0e"), 3, Color(D.FLOW_COLOR) if keeps else Color(0, 0, 0, 0.6), 2 if keeps else 1)
 			var col := Color(D.FLOW_COLOR).lightened(0.3) if keeps else Color("ff9a6b")
@@ -813,7 +816,18 @@ func _draw_dig_offer() -> void:
 		_hw_button(Rect2(dc.x - 160.0, 1000.0, 320.0, 80.0), "Take this CD", _take_offer.bind(k), true, Color("3f9b5a"), T_MD)
 
 func _well_center(s: int) -> Vector2:
-	return Vector2(r_changer.position.x + 196.0 + s * 296.0, r_changer.position.y + 200.0)
+	var cols := D.SETLIST / 2
+	var col := s if s < cols else D.SETLIST - 1 - s
+	var row := 0 if s < cols else 1
+	return Vector2(r_changer.position.x + 44.0 + WELL_R + 14.0 + col * WELL_PITCH, r_changer.position.y + 68.0 + WELL_R + row * (2.0 * WELL_R + 166.0))
+
+func _mirror_disc(slot: int, before: Array) -> Disc:
+	if slot < D.SETLIST / 2 + 1:
+		return null
+	var ms := D.SETLIST - 1 - slot
+	if ms < 0 or ms >= before.size():
+		return null
+	return collection[before[ms]]
 
 func _pocket_rect(p: int) -> Rect2:
 	var col := p % 4
@@ -1014,10 +1028,11 @@ func _draw_changer() -> void:
 	_panel(r, Color(0, 0, 0, 0), 16, Color(0, 0, 0, 0.6), 2)
 	for p in [r.position + Vector2(22, 22), Vector2(r.end.x - 22, r.position.y + 22), Vector2(r.position.x + 22, r.end.y - 22), r.end - Vector2(22, 22)]:
 		_screw(p, 7.0)
-	var tray_r := Rect2(r.position.x + 44.0, r.position.y + 30.0, 1500.0 - 12.0, r.size.y - 60.0)
+	var tray_r := Rect2(r.position.x + 44.0, r.position.y + 30.0, 28.0 + 2.0 * WELL_R + (D.SETLIST / 2 - 1) * WELL_PITCH, r.size.y - 60.0)
 	_inset(tray_r, 14.0, Color("141518"))
 	for s in D.SETLIST:
 		_draw_well(s)
+	_draw_set_links()
 	var panel := Rect2(tray_r.end.x + 24.0, tray_r.position.y, r.end.x - tray_r.end.x - 52.0, tray_r.size.y)
 	_brushed(panel, 10.0, Color("aab0b7"), 31)
 	_text_center(Rect2(panel.position.x, panel.position.y + 10.0, panel.size.x, 34.0), "DISC ENGINE", T_SM, Color("2b2e33"), true)
@@ -1026,8 +1041,31 @@ func _draw_changer() -> void:
 	_lcd(Rect2(panel.position.x + 20.0, panel.position.y + 86.0, panel.size.x - 40.0, 66.0), str(_target(o)) if o >= 0 else "--", Color("ff9a6b"), T_XL, "88")
 	_silk(Vector2(panel.position.x + 26.0, panel.position.y + 176.0), "TARGET", 13, Color("2b2e33"))
 	_text_right(panel.end.x - 24.0, panel.position.y + 176.0, "SLOT %d / %d" % [mini(played.size() + 1, D.SETLIST), D.SETLIST], 13, Color("2b2e33"), true)
-	var pr := Rect2(panel.position.x + 20.0, panel.position.y + 196.0, panel.size.x - 40.0, 188.0)
+	var pr := Rect2(panel.position.x + 20.0, panel.position.y + 196.0, panel.size.x - 40.0, minf(300.0, panel.size.y - 230.0))
 	_hw_button(pr, "PLAY" if not playing else "PLAYING", _play, ui_live and phase == "show" and _front() >= 0, Color("3f9b5a"), T_XL if not playing else T_MD)
+
+func _draw_set_links() -> void:
+	var half := D.SETLIST / 2
+	for s in D.SETLIST - 1:
+		if s == half - 1:
+			continue
+		var a := _well_center(s)
+		var b := _well_center(s + 1)
+		var m := (a + b) * 0.5
+		var dir := (b - a).normalized()
+		var side := dir.orthogonal()
+		draw_colored_polygon(PackedVector2Array([m + dir * 12.0, m - dir * 8.0 + side * 10.0, m - dir * 8.0 - side * 10.0]), Color(1, 1, 1, 0.22))
+	for s in half:
+		var lo := s
+		var hi := D.SETLIST - 1 - s
+		var a := _well_center(lo)
+		var b := _well_center(hi)
+		var m := Vector2(a.x, (a.y + b.y + 50.0) * 0.5)
+		var col := Color(1, 1, 1, 0.22)
+		if played.size() > hi:
+			col = Color(D.FLOW_COLOR) if _links(collection[played[hi]], collection[played[lo]]) else c_bad
+		draw_arc(m + Vector2(-8.0, 0.0), 10.0, 0.0, TAU, 20, col, 3.5, true)
+		draw_arc(m + Vector2(8.0, 0.0), 10.0, 0.0, TAU, 20, col, 3.5, true)
 
 func _draw_well(s: int) -> void:
 	var c := _well_center(s)
@@ -1258,7 +1296,11 @@ func _flow_fit(d: Disc) -> int:
 		return 0
 	if _fatigue_name(d, played) != "" or _slot_locked(d, _open_slot()) or _repeat_album(d):
 		return -1
-	return 1 if _links(d, prev_disc) else -1
+	var ok := _links(d, prev_disc)
+	var md := _mirror_disc(_open_slot(), played)
+	if md != null and _links(d, md):
+		ok = true
+	return 1 if ok else -1
 
 func _draw_wallet() -> void:
 	var b := r_wallet
@@ -1595,20 +1637,18 @@ func _draw_display(r: Rect2) -> void:
 	var fy := r.position.y + 236.0
 	_silk(Vector2(x, fy), "FLOW", 13, Color("8d939b"))
 	for k in D.FLOW_MAX:
-		var lr := Rect2(x + k * 58.0, fy + 12.0, 48.0, 40.0)
+		var lr := Rect2(x + k * 46.0, fy + 12.0, 40.0, 40.0)
 		var on := k < fl
 		_panel(lr, Color(D.FLOW_COLOR) if on else Color("1d1f23"), 6, Color(0, 0, 0, 0.6), 1)
-		_text_center(lr, "×%d" % (k + 1), 15, Color("10161a") if on else Color("4c5058"), true)
-	var lx2 := x + D.FLOW_MAX * 58.0 + 14.0
+		_text_center(lr, "×%d" % (k + 1), 14, Color("10161a") if on else Color("4c5058"), true)
+	var lx2 := x + D.FLOW_MAX * 46.0 + 14.0
 	_silk(Vector2(lx2, fy), "NEXT LINK", 13, Color("8d939b"))
 	if prev_disc == null:
 		_text(Vector2(lx2, fy + 40.0), "Any CD starts at ×1", 15, Color("8d939b"), true)
 	else:
-		var links: Array = [[D.GENRES[prev_disc.genre].to_upper(), Color(D.GENRE_COLORS[prev_disc.genre])], [D.ERAS[prev_disc.era], Color("5d626a")]]
-		if _bay_of("comp") >= 0:
-			links.append([String(D.LABELS[prev_disc.label]["short"]).to_upper(), Color(D.LABELS[prev_disc.label]["color"])])
+		var chain: Array = _link_chips(prev_disc)
 		var cx := lx2
-		for c in links:
+		for c in chain:
 			var tw := _text_w(String(c[0]), 13, true) + 16.0
 			var cr := Rect2(cx, fy + 16.0, tw, 32.0)
 			if cr.end.x > r.end.x - 30.0:
@@ -1616,6 +1656,28 @@ func _draw_display(r: Rect2) -> void:
 			_panel(cr, c[1], 10, fc, 2)
 			_text_center(cr, String(c[0]), 13, Color.WHITE, true)
 			cx += tw + 6.0
+	var md := _mirror_disc(o, played)
+	if md != null:
+		_silk(Vector2(x, fy + 78.0), "MIRROR", 13, Color("8d939b"))
+		var mx := x + 80.0
+		for c in _link_chips(md):
+			var tw := _text_w(String(c[0]), 13, true) + 16.0
+			var cr := Rect2(mx, fy + 60.0, tw, 32.0)
+			_panel(cr, c[1], 10, fc, 2)
+			_text_center(cr, String(c[0]), 13, Color.WHITE, true)
+			mx += tw + 6.0
+
+func _link_chips(src: Disc) -> Array:
+	var links: Array = []
+	if link_mode == "ladder":
+		for e in D.ERAS.size():
+			if _era_step(src.era, e):
+				links.append([D.ERAS[e], Color("5d626a")])
+	else:
+		links = [[D.GENRES[src.genre].to_upper(), Color(D.GENRE_COLORS[src.genre])], [D.ERAS[src.era], Color("5d626a")]]
+	if _bay_of("comp") >= 0:
+		links.append([String(D.LABELS[src.label]["short"]).to_upper(), Color(D.LABELS[src.label]["color"])])
+	return links
 
 func _draw_empty_bay(r: Rect2) -> void:
 	_shadow(r, 6, 4.0)
@@ -2736,12 +2798,38 @@ func _bay_of(id: String) -> int:
 			return k
 	return -1
 
+func _era_step(a: int, b: int) -> bool:
+	if a < 0 or b < 0:
+		return false
+	var diff := absi(a - b)
+	return diff == 1 or (link_wrap and diff == D.ERAS.size() - 1)
+
 func _links(d: Disc, prev: Disc) -> bool:
 	if prev == null:
 		return false
-	if d.sticker == "crossover" or prev.genre == d.genre or prev.era == d.era:
+	if d.sticker == "crossover":
+		return true
+	if link_mode == "ladder":
+		if _era_step(prev.era, d.era):
+			return true
+	elif prev.genre == d.genre or prev.era == d.era:
 		return true
 	return _bay_of("comp") >= 0 and prev.label == d.label
+
+func _cell_keeps(is_genre: bool, k: int) -> bool:
+	if prev_disc == null or phase != "show":
+		return false
+	var sources: Array = [prev_disc]
+	var md := _mirror_disc(_open_slot(), played)
+	if md != null:
+		sources.append(md)
+	for src: Disc in sources:
+		if link_mode == "ladder":
+			if (not is_genre) and _era_step(src.era, k):
+				return true
+		elif (k == src.genre) if is_genre else (k == src.era):
+			return true
+	return false
 
 func _boss_kind() -> String:
 	return String((venue.get("challenge", {}) as Dictionary).get("kind", ""))
@@ -2793,10 +2881,16 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 	var locked := _slot_locked(d, slot)
 	var f := 1
 	var why := ""
+	var echo := ""
+	var mirror_disc := _mirror_disc(slot, before)
+	var chain_ok := prev != null and _links(d, prev)
+	var mirror_ok := mirror_disc != null and _links(d, mirror_disc)
 	if prev != null:
-		if _links(d, prev) and tired == "" and not locked:
-			f = mini(D.FLOW_MAX, flow + 1)
+		if (chain_ok or mirror_ok) and tired == "" and not locked:
+			var extra := D.MIRROR_BONUS if (chain_ok and mirror_ok) else 0
+			f = mini(D.FLOW_MAX, flow + 1 + extra)
 			why = "linked"
+			echo = "double" if extra > 0 else ("mirror" if not chain_ok else "")
 		else:
 			var xf := _bay_of("xfade")
 			f = maxi(1, flow - 1) if xf >= 0 else 1
@@ -2863,7 +2957,7 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 	if locked and int(acc["total"]) > 0:
 		_push(out, acc, "boss", "Slot locked: no points", -int(acc["total"]))
 	var pts := int(acc["total"])
-	return {"points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "taste": taste, "steps": out, "cash": cash_gain, "hit": hit}
+	return {"echo": echo, "points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "taste": taste, "steps": out, "cash": cash_gain, "hit": hit}
 
 func _play() -> void:
 	if playing or phase != "show":
@@ -2881,6 +2975,10 @@ func _play() -> void:
 		steps.push_front({"src": "mix", "text": "Mix: %s, %s" % [D.GENRES[d.genre], D.ERAS[d.era]], "n": 0, "ci": -1})
 	var fl := int(result["flow"])
 	var ftxt := "Flow ×%d" % fl
+	if result["echo"] == "double":
+		ftxt = "Double link! Flow ×%d" % fl
+	elif result["echo"] == "mirror":
+		ftxt = "Mirror link! Flow ×%d" % fl
 	if result["why"] == "broken":
 		ftxt = "Flow broken ×%d" % fl
 	steps.append({"src": "flow", "text": ftxt, "n": 0, "ci": _bay_of("xfade") if result["why"] == "broken" and _bay_of("xfade") >= 0 else -1})
@@ -3079,21 +3177,21 @@ func _draw_crowd() -> void:
 	if _boss_kind() != "":
 		_text(Vector2(x, r.position.y + 104.0), "BOSS · " + String(_boss_info(venue["challenge"])["short"]), 17, c_bad, true)
 	else:
-		_text(Vector2(x, r.position.y + 104.0), "5 songs  ·  beat each slot's target score", T_SM, c_body, true)
-	var note := Rect2(x, r.position.y + 150.0, w, 230.0)
+		_text(Vector2(x, r.position.y + 104.0), "%d songs  ·  beat each slot's target score" % D.SETLIST, T_SM, c_body, true)
+	var note := Rect2(x, r.position.y + 124.0, w, 196.0)
 	_shadow(note, 2, 5.0)
 	_panel(note, Color("fbfaf5"), 2)
-	for k in 6:
-		var ly := note.position.y + 44.0 + k * 32.0
+	for k in 5:
+		var ly := note.position.y + 40.0 + k * 32.0
 		draw_line(Vector2(note.position.x + 10.0, ly), Vector2(note.end.x - 10.0, ly), Color("9cc3e6", 0.35), 1.0)
 	draw_line(Vector2(note.position.x + 44.0, note.position.y), Vector2(note.position.x + 44.0, note.end.y), Color("e6a0a0", 0.5), 1.5)
 	draw_rect(Rect2(note.get_center().x - 50.0, note.position.y - 10.0, 100.0, 24.0), Color(1, 1, 1, 0.6))
-	_text(Vector2(note.position.x + 60.0, note.position.y + 38.0), "TONIGHT'S CROWD", T_XS, c_ink, true)
-	_tag_chips(note.position.x + 60.0, note.position.y + 64.0, "LIKES", venue.get("likes", []), c_good)
-	_tag_chips(note.position.x + 60.0, note.position.y + 112.0, "HATES", venue.get("dislikes", []), c_bad)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 182.0), "+%d crowd per liked tag" % D.LIKE, 15, c_body, true)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 210.0), "%d crowd per hated tag" % (D.DISLIKE * (D.BOSS_HATE_MULT if _boss_kind() == "hates" else 1)), 15, c_body, true)
-	var slip := Rect2(x, r.position.y + 430.0, w, 150.0)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 32.0), "TONIGHT'S CROWD", T_XS, c_ink, true)
+	_tag_chips(note.position.x + 60.0, note.position.y + 48.0, "LIKES", venue.get("likes", []), c_good)
+	_tag_chips(note.position.x + 60.0, note.position.y + 92.0, "HATES", venue.get("dislikes", []), c_bad)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 148.0), "+%d crowd per liked tag" % D.LIKE, 15, c_body, true)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 174.0), "%d crowd per hated tag" % (D.DISLIKE * (D.BOSS_HATE_MULT if _boss_kind() == "hates" else 1)), 15, c_body, true)
+	var slip := Rect2(x, r.position.y + 332.0, w, 120.0)
 	if call.is_empty():
 		_text_i(Vector2(x, slip.position.y + 40.0), "No requests right now.", T_SM, c_muted)
 	else:

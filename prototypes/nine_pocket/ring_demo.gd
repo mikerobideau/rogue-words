@@ -1,5 +1,8 @@
 extends "res://prototypes/nine_pocket/nine_pocket.gd"
 
+const RD_SET := 5
+const RD_HAND := 8
+
 const R_MATRIX := Rect2(70.0, 130.0, 1100.0, 860.0)
 const R_RING := Rect2(1200.0, 130.0, 1290.0, 860.0)
 const RING_C := Vector2(1625.0, 575.0)
@@ -55,7 +58,7 @@ func _rd_deal(wide: bool) -> void:
 			for e in range(start, start + 3):
 				cells.append(Vector2i(g, e))
 	_shuffle(cells)
-	var pick: Array = cells.slice(0, D.HAND)
+	var pick: Array = cells.slice(0, RD_HAND)
 	pick.sort_custom(func(a: Vector2i, b: Vector2i): return a.x < b.x or (a.x == b.x and a.y < b.y))
 	var used := {}
 	for c: Vector2i in pick:
@@ -64,7 +67,7 @@ func _rd_deal(wide: bool) -> void:
 		used[a["cover"]] = true
 		var d := _make_disc(a)
 		d.era = c.y
-		d.ability = ""
+		d.sticker = ""
 		d.edition = ""
 		rd_hand.append(d)
 		var roll := rng.randf()
@@ -83,7 +86,7 @@ func _rd_toggle_label() -> void:
 func _rd_click(i: int) -> void:
 	if rd_label:
 		rd_tags[i] = (rd_tags[i] + 1) % 4
-	elif rd_line.size() < D.SETLIST and not rd_line.has(i):
+	elif rd_line.size() < RD_SET and not rd_line.has(i):
 		rd_line.append(i)
 
 func _rd_link(a: Disc, b: Disc) -> bool:
@@ -105,11 +108,11 @@ func _rd_state() -> Dictionary:
 			lk = _rd_link(d, rd_hand[rd_line[i - 1]])
 			if lk:
 				f = mini(D.FLOW_MAX, flows[i - 1] + 1)
-		if i == D.SETLIST - 1 and _rd_link(d, rd_hand[rd_line[0]]):
+		if i == RD_SET - 1 and _rd_link(d, rd_hand[rd_line[0]]):
 			ring = true
 			f = mini(D.FLOW_MAX + 1, f + 1)
 		var p := d.sound
-		var tagged := (i == 0 and (tag & TAG_OPEN) != 0) or (i == D.SETLIST - 1 and (tag & TAG_CLOSE) != 0)
+		var tagged := (i == 0 and (tag & TAG_OPEN) != 0) or (i == RD_SET - 1 and (tag & TAG_CLOSE) != 0)
 		if tagged:
 			p += 3
 		flows.append(f)
@@ -123,10 +126,10 @@ func _rd_keeps(i: int) -> bool:
 	return not rd_line.is_empty() and not rd_line.has(i) and _rd_link(rd_hand[i], rd_hand[rd_line.back()])
 
 func _rd_closes(i: int) -> bool:
-	return rd_line.size() == D.SETLIST - 1 and not rd_line.has(i) and _rd_link(rd_hand[i], rd_hand[rd_line[0]])
+	return rd_line.size() == RD_SET - 1 and not rd_line.has(i) and _rd_link(rd_hand[i], rd_hand[rd_line[0]])
 
 func _rd_card(i: int) -> Rect2:
-	var gap := (UI_W - 2.0 * 84.0 - D.HAND * CARD_WD) / (D.HAND - 1)
+	var gap := (UI_W - 2.0 * 84.0 - RD_HAND * CARD_WD) / (RD_HAND - 1)
 	return Rect2(84.0 + i * (CARD_WD + gap), CARD_TOP, CARD_WD, CARD_HT)
 
 func _rd_cell(g: int, e: int) -> Rect2:
@@ -193,7 +196,7 @@ func _rd_matrix(st: Dictionary) -> void:
 	var has_cur := not rd_line.is_empty()
 	var cur := rd_hand[rd_line.back()] if has_cur else null
 	var op := rd_hand[rd_line[0]] if has_cur else null
-	var closing := rd_line.size() == D.SETLIST - 1
+	var closing := rd_line.size() == RD_SET - 1
 	var seqs := {}
 	for i in rd_line.size():
 		var d := rd_hand[rd_line[i]]
@@ -266,7 +269,7 @@ func _rd_matrix(st: Dictionary) -> void:
 		var b2 := _rd_cell_of(rd_hand[rd_line[0]]).get_center()
 		if a2.distance_to(b2) > 1.0:
 			draw_dashed_line(a2, b2, GOLD, 6.0, 14.0)
-	if rd_hover >= 0 and not rd_label and rd_line.size() < D.SETLIST:
+	if rd_hover >= 0 and not rd_label and rd_line.size() < RD_SET:
 		var hd := rd_hand[rd_hover]
 		var hr2 := _rd_cell_of(hd)
 		if has_cur:
@@ -280,7 +283,7 @@ func _rd_matrix(st: Dictionary) -> void:
 		_panel(hr2.grow(5.0), Color(0, 0, 0, 0), 9, Color(1, 1, 1, 0.5 + 0.5 * pulse), 4)
 
 func _rd_ring_pos(i: int) -> Vector2:
-	return RING_C + Vector2.from_angle(-PI * 0.5 + TAU / D.SETLIST * i) * RING_R
+	return RING_C + Vector2.from_angle(-PI * 0.5 + TAU / RD_SET * i) * RING_R
 
 func _rd_ring(st: Dictionary) -> void:
 	var P := R_RING
@@ -296,17 +299,17 @@ func _rd_ring(st: Dictionary) -> void:
 	draw_arc(RING_C, RING_R, 0.0, TAU, 160, Color("0d0f12"), 40.0, true)
 	draw_arc(RING_C, RING_R + 20.0, 0.0, TAU, 160, Color(1, 1, 1, 0.25), 2.0, true)
 	draw_arc(RING_C, RING_R - 20.0, 0.0, TAU, 160, Color(0, 0, 0, 0.5), 2.0, true)
-	for i in D.SETLIST:
-		var a0 := -PI * 0.5 + TAU / D.SETLIST * i + 0.42
-		var a1 := -PI * 0.5 + TAU / D.SETLIST * (i + 1) - 0.42
-		var closing_seg := i == D.SETLIST - 1
+	for i in RD_SET:
+		var a0 := -PI * 0.5 + TAU / RD_SET * i + 0.42
+		var a1 := -PI * 0.5 + TAU / RD_SET * (i + 1) - 0.42
+		var closing_seg := i == RD_SET - 1
 		var col := Color(0, 0, 0, 0)
 		var live := false
 		if closing_seg:
-			if n == D.SETLIST:
+			if n == RD_SET:
 				live = true
 				col = GOLD if ring else c_bad
-			elif n == D.SETLIST - 1:
+			elif n == RD_SET - 1:
 				col = Color(GOLD, 0.25 + 0.3 * pulse)
 				live = true
 		elif i + 1 < n:
@@ -318,9 +321,9 @@ func _rd_ring(st: Dictionary) -> void:
 			draw_arc(RING_C, RING_R, a0, a1, 24, col, 10.0, true)
 		else:
 			draw_arc(RING_C, RING_R, a0, a1, 24, Color(1, 1, 1, 0.07), 8.0, true)
-	for i in D.SETLIST:
+	for i in RD_SET:
 		var pos := _rd_ring_pos(i)
-		var out := Vector2.from_angle(-PI * 0.5 + TAU / D.SETLIST * i)
+		var out := Vector2.from_angle(-PI * 0.5 + TAU / RD_SET * i)
 		if i < n:
 			var d := rd_hand[rd_line[i]]
 			_cd_art(pos, SLOT_R, _cover_tex(d.cover), clock * 0.6 if i == n - 1 else 0.0)
@@ -342,7 +345,7 @@ func _rd_ring(st: Dictionary) -> void:
 	for k in D.FLOW_MAX + 1:
 		var on := 1.0 if k < cf else 0.0
 		_led(Vector2(RING_C.x + (k - 2) * 46.0, RING_C.y + 36.0), 9.0, GOLD if k == D.FLOW_MAX else Color(D.FLOW_COLOR), on)
-	var ring_on := 1.0 if ring else (0.3 + 0.7 * pulse if n == D.SETLIST - 1 else 0.0)
+	var ring_on := 1.0 if ring else (0.3 + 0.7 * pulse if n == RD_SET - 1 else 0.0)
 	_led(Vector2(RING_C.x - 56.0, RING_C.y + 94.0), 11.0, GOLD, ring_on)
 	_silk(Vector2(RING_C.x - 32.0, RING_C.y + 104.0), "RING CLOSED" if ring else "RING", T_SM, INK)
 	var lx := P.end.x - 430.0
@@ -374,9 +377,9 @@ func _rd_ring(st: Dictionary) -> void:
 	match n:
 		0:
 			msg = "Pick an opener. Its row and column on the map decide where the ring can close."
-		D.SETLIST:
+		RD_SET:
 			msg = "Set complete. %s Total %d." % ["The ring closed." if ring else "The ring stayed open.", int(st["total"])]
-		D.SETLIST - 1:
+		RD_SET - 1:
 			msg = "Slot 5: %d %s close the ring and %d keep the flow." % [closes, "CD" if closes == 1 else "CDs", keeps]
 		_:
 			msg = "Slot %d: %d %s keep the flow." % [n + 1, keeps, "CD keeps" if keeps == 1 else "CDs keep"]

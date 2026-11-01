@@ -39,7 +39,7 @@ Black screen, a spotlight from above, and the reward on a pool of light.
 - **Points:** every album has a number (green token, 2–6). Added on top:
   - a matching request +4,
   - stickers, editions and gear.
-- **Flow (×1 to ×4):** play an album that shares a **genre or decade** with the previous one and flow goes up by 1. Anything else resets it to ×1. Some gear and requests give flow instead of points.
+- **Flow (×1 to ×6):** the link rule is Golf-style on **decade**: play an album whose decade is **one step above or below** the previous one (80s links to 70s or 90s, never to another 80s) and flow goes up by 1. Genre plays no part in linking. Crossover always links, a Mix links by the decade it resolves to, and Compressor still links same-label albums. Anything else resets flow to ×1. `LINK_MODE` ("ladder" or "match", the old genre-or-decade rule) and `LINK_WRAP` (whether 10s links to 60s) in the data file switch the rule for testing. Some gear and requests give flow instead of points. Some gear and requests give flow instead of points.
 - If points are negative, flow doesn't multiply them.
 - **The crowd's tastes are flat crowd changes, not points.** Each liked tag a song matches is **+3 crowd** and each hated tag **−5 crowd**, added after the score is compared with the target, so flow never multiplies them. A song matching a liked genre and a liked decade is +6; a hated one is −3. This bounds how much a mismatched venue can hurt you.
 
@@ -48,15 +48,16 @@ Black screen, a spotlight from above, and the reward on a pool of light.
 **Crowd meter (0–100):** starts at 50. At 0 you're booed off. At the end, 80+ is an **Encore**, 50+ is **Big applause**, and below that is polite clapping.
 
 ## The show
-- Your binder is shuffled at the start of each show. You hold a **hand of 8** in the CD wallet (4×2).
-- The changer's 5 slots are played in order. Only the open slot takes a CD:
+- Your binder is shuffled at the start of each show. You hold a **hand of 4** in the CD wallet (`HAND`) and it refills from the draw pile after every song.
+- The changer has **8 slots in a 2×4 snake** (`SETLIST`): slots 1 to 4 run left to right along the top row, then slots 5 to 8 run right to left along the bottom, so slot 5 sits under 4 and slot 8 sits under slot 1. They are played in order, one at a time. Only the open slot takes a CD:
   - Click a CD in your hand to load it (clicking another swaps them). Click the loaded CD to send it back, until you press **PLAY**.
   - Slots show only their target score. There's no exact preview, but CDs in your hand that would keep the flow glow cyan and ones that would break it look debuffed (see Card tags).
   - PLAY: the points float up one by one, then the flow, then the score against the target. The slot locks showing "18 vs 14 · +4", and the next slot opens.
 - After each song you **draw 1** from your binder.
 - **Discard** (3 per show): throw away 1 CD from your hand, then **choose 1 of 3** CDs drawn at random from the draw pile. The other two go back into the pile. The discarded CD goes to a discard pile and can't be offered again until the draw pile runs low (fewer than 3 left), when the discard pile is shuffled back in. Each discard costs 3 crowd, and each offered CD shows whether it would keep or break the flow. If the pile is empty, discarding is unavailable.
 - **Draw pile table:** a readout in the console strip shows (a toggle switch beside it flips between *PILE* and *PILE + HAND*, which also adds the CDs in your hand; the card tooltips follow the same setting) how many CDs of each genre and each decade are still in the draw pile (amber digits, genre-colored underline), plus the pile total and the number of Mixes. The genre and decade of the song just played glow cyan, since those are the tags that keep the flow. Hovering a CD in your hand or the changer adds "Left in the draw pile: N of its genre, M of its decade" to its tooltip.
-- The show ends after slot 5, or when the crowd hits 0.
+- The show ends after slot 8, or when the crowd hits 0.
+- **Mirror link:** slots 6, 7 and 8 sit under slots 3, 2 and 1. Each of them links if it fits the song before it **or** the song above it, using the same decade rule. If both fit, flow goes up by 2 (`MIRROR_BONUS`) and the step reads "Double link!"; if only the song above fits, it reads "Mirror link!". The console shows MIRROR chips for the decades the song above allows, and the ring-shaped icons between the rows turn cyan (linked) or red (not) as pairs are played. Slots 1 to 5 read only the song before them.
 - After a song, 55% of the time (when no call is active) the crowd shouts:
   - **Request** ("Play some 90s!"): +4 points, or 30% of the time +1 flow, if one of the next 2 songs matches.
   - **Complaint** ("No more Metal!"): −3 points for each matching song in the next 3.
@@ -95,7 +96,7 @@ Better albums, stickers, editions and more gear come from pickups and the shop.
 | Sticker | Points | Cash |
 |---|---|---|
 | Opener | +4 in slot 1 | +$2 in slot 1 |
-| Closer | +4 in slot 5 | +$2 in slot 5 |
+| Closer | +4 in slot 8 | +$2 in slot 8 |
 | Crossover | always keeps the flow | none |
 | Chart Topper | +2 per level of this song's own flow | +$1 per level above ×1 |
 | Reprise | +4 if it shares a genre or decade with the song two back | +$2 |
@@ -127,7 +128,7 @@ After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus
 The binder shows only its pages (discs tagged IN HAND / IN CHANGER / PLAYED / DUG during a show), centered, with a Close button at the top right. The tag count panel is gone; the draw pile table in the console strip covers what's left to draw.
 
 ## Screen
-Changer (5 slots, each with its target score) top left, with a TARGET readout and PLAY on its panel. Your hand in the CD wallet is below it, with the console strip underneath. The venue clipboard is in the middle and the rack on the right, topped by a display showing CROWD, FLOW and TARGET, the crowd meter, the flow lamps (×1–×4) and the NEXT LINK tags (the last song's genre and decade, plus its label with a Compressor).
+Changer (8 slots in a 2×4 snake, each with its target score) top left, with a TARGET readout and PLAY on its panel. Your hand in the CD wallet is below it, with the console strip underneath. The venue clipboard is in the middle and the rack on the right, topped by a display showing CROWD, FLOW and TARGET, the crowd meter, the flow lamps (×1–×4) and the NEXT LINK tags (the last song's genre and decade, plus its label with a Compressor).
 
 ## Balance
 **Out of date.** These numbers were measured on an older starting binder (three genres, no abilities) and the earlier scoring, before the kits, flat crowd tastes, Mixes that resolve to a real genre and decade, and the new abilities. Re-run the sim before trusting them. Originally, 500 simulated first shows with the starting binder: a greedy bot (plays the best-scoring CD, discards losing ones when nothing beats the target) vs. random play.
@@ -159,7 +160,7 @@ Each kind of information has one visual channel, and nothing else uses it.
 - **Decade** is the large numeral on that plate. A venue like or hate, or a gear boost, on the genre rings the plate. One on the decade underlines the numeral.
 - **Band** is written in black marker on a curved strip of masking tape across the top of the CD, so it reads on any cover. Each disc gets a slight tilt. Long names shrink to fit. Blank CD-Rs have none.
 - **Sticker** is a small foil label across the bottom of the disc with a mini five-cell setlist strip: the song's own cell is filled black and the cells it reads from are marked with a dot (Opener fills cell 1, Closer cell 5, Reprise marks the cell two back, Discography marks all earlier cells, Throwback marks the earlier cells but skips the one right before, Chart Topper shows rising bars, Crossover links to the cell before). Silver foil pays points; gold foil with a coin pays cash.
-- **Situation** is a single state per hand card, drawn only during a show after the first song: a cyan glow when it keeps the flow, debuffed when it breaks the flow, nothing otherwise. A debuffed CD has washed-out art, a red edge, a red down-arrow badge in its bottom-left corner and a dimmed plate. Hovering it clears the wash and keeps the badge, and the tooltip says it breaks (or keeps) the flow. Unplayed Mixes show no state, since their genre and decade are unknown. If a closes-the-ring state is ever added it goes first in the priority order, ahead of keeps and breaks.
+- **Situation** is a single state per hand card, drawn only during a show after the first song: a cyan glow when it keeps the flow (the console's NEXT LINK chips and the draw pile table show the one or two decades that link), debuffed when it breaks the flow, nothing otherwise. A debuffed CD has washed-out art, a red edge, a red down-arrow badge in its bottom-left corner and a dimmed plate. Hovering it clears the wash and keeps the badge, and the tooltip says it breaks (or keeps) the flow. Unplayed Mixes show no state, since their genre and decade are unknown. If a closes-the-ring state is ever added it goes first in the priority order, ahead of keeps and breaks.
 
 The old FLOW +1 tag and the old ability icons are gone.
 
