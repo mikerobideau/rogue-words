@@ -4,6 +4,7 @@ const CATALOG := "res://prototypes/nine_pocket/art/covers/catalog.json"
 const MUSIC_DIR := "res://prototypes/nine_pocket/music"
 const MUSIC_SECONDS := 5.0
 const MUSIC_FADE := 0.8
+const MENU_FADE := 1.5
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
 const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
@@ -24,24 +25,25 @@ const FLOW_COLOR := "4ab3d9"
 const COLLECTION := 20
 const HAND := 8
 const SETLIST := 5
-const DIGS := 2
-const DIG_MAX := 3
-const BASE_SOUND := [2, 6]
-const ABILITY_CHANCE := 0.4
+const DIGS := 3
+const DIG_MAX := 1
+const DIG_OFFERS := 3
+const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
+const STICKERS := CATALOG_DATA.STICKERS
+const SHOP_DUPE_CHANCE := 0.35
 
 const FLOW_MAX := 4
 const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 11]
 const TARGET_GROWTH := 0.15
 const START_CDRS := 2
-const KIT_FILLER := 9
-const KIT_LEAN_FILLER := 5
+const KIT_ALBUMS := 12
+const KIT_LEAN := 8
 const KITS := [
-	{"name": "Flow Crew", "idea": "Chain songs together and keep the flow rolling.", "abilities": ["hypeman", "segue", "callback"], "gear": "xfade", "lean": ["genre", "Indie"]},
-	{"name": "Showstopper", "idea": "Open big and close bigger.", "abilities": ["opener", "closer", "warmup"], "gear": "mic", "lean": ["genre", "Classic Rock"]},
-	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "abilities": ["genrerun", "openingact", "collector"], "gear": "gain", "lean": ["genre", "Punk"], "lean_filler": 3},
-	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "abilities": ["deepcut", "fanclub", "crowd"], "gear": "tube", "lean": ["era", "90s"]},
+	{"name": "Flow Crew", "idea": "Chain songs together and keep the flow rolling.", "gear": "xfade", "lean": ["genre", "Indie"]},
+	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Classic Rock"]},
+	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Punk"], "lean_n": 6},
+	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "gear": "tube", "lean": ["era", "90s"]},
 ]
-const BASIC_POINTS := [2, 3]
 const CDR_POINTS := 1
 const LIKE := 3
 const DISLIKE := -5
@@ -115,7 +117,6 @@ const START_RACK: Array[String] = []
 const SHOP_ALBUMS := 2
 const SHOP_GEAR := 2
 const ALBUM_PRICE := 3
-const ABILITY_PREMIUM := 1
 const ALBUM_PACKS := [
 	{"name": "Sampler", "price": 4, "show": 3, "pick": 1},
 	{"name": "Box Set", "price": 7, "show": 4, "pick": 2},
@@ -125,24 +126,8 @@ const GEAR_PACKS := [
 	{"name": "Studio Bundle", "price": 11, "show": 3, "pick": 2},
 ]
 
-const SORT_KEYS: Array[String] = ["genre", "era", "sound", "ability", "band"]
-const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "ability": "Ability", "band": "Band"}
-
-const ABILITIES := {
-	"opener": {"name": "Opener", "text": "+3 points in slot 1.", "chip": "+3"},
-	"closer": {"name": "Closer", "text": "+3 points in slot 5.", "chip": "+3"},
-	"crowd": {"name": "Crowd-Pleaser", "text": "+2 points.", "chip": "+2"},
-	"bandmates": {"name": "Bandmates", "text": "+3 points if another song by this band already played tonight.", "chip": "+3"},
-	"segue": {"name": "Segue", "text": "Always keeps the flow going, whatever played before it.", "chip": "FLOW"},
-	"fanclub": {"name": "Fan Club", "text": "+1 point for each song already played tonight.", "chip": "+1"},
-	"warmup": {"name": "Warm-Up", "text": "+4 points if three or more songs have already played.", "chip": "+4"},
-	"genrerun": {"name": "Genre Run", "text": "+2 points for each earlier song of the same genre.", "chip": "+2"},
-	"callback": {"name": "Callback", "text": "+3 points if a song of this decade played earlier, but not right before.", "chip": "+3"},
-	"deepcut": {"name": "Deep Cut", "text": "+3 points if no earlier song shares its genre.", "chip": "+3"},
-	"hypeman": {"name": "Hype Man", "text": "The next song gets +3 points if it shares this disc's genre or decade.", "chip": "+3"},
-	"openingact": {"name": "Opening Act", "text": "Each later song of this genre gets +1 point.", "chip": "+1"},
-	"collector": {"name": "Collector", "text": "+2 points if you still hold another disc of this genre.", "chip": "+2"},
-}
+const SORT_KEYS: Array[String] = ["genre", "era", "sound", "sticker", "band"]
+const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "sticker": "Sticker", "band": "Band"}
 
 const GEAR := {
 	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting is added to that genre's points.", "price": 6, "n": [0], "look": "faders"},
@@ -150,7 +135,7 @@ const GEAR := {
 	"gain": {"name": "Gain Stage", "text": "+%d points for songs in the genre on the dial.", "price": 7, "n": [2, 3], "look": "genre_knob"},
 	"comp": {"name": "Compressor", "text": "Songs from the same record label also keep the flow going.", "price": 5, "n": [0], "look": "knobs"},
 	"exciter": {"name": "Exciter", "text": "+%d points for songs from the decade on the dial.", "price": 6, "n": [1, 2], "look": "era_knob"},
-	"tube": {"name": "Tube Preamp", "text": "+%d points for songs without an ability.", "price": 5, "n": [2, 3, 4], "look": "tube"},
+	"tube": {"name": "Tube Preamp", "text": "+%d points for songs that pay cash.", "price": 5, "n": [2, 3, 4], "look": "tube"},
 	"fog": {"name": "Fog Machine", "text": "Fire before a song: +%d flow. Twice a show.", "price": 6, "n": [1, 2], "look": "fog", "uses": 2},
 	"mic": {"name": "Make Some Noise", "text": "Fire between songs: +%d crowd. Twice a show.", "price": 6, "n": [8, 12], "look": "mic", "uses": 2},
 }
@@ -164,7 +149,7 @@ const EDITIONS := {
 	"holo": {"name": "Holographic", "short": "HOLO", "text": "+2 points.", "n": 2, "price": 6, "color": "a678f0"},
 	"signed": {"name": "Signed", "short": "SIGNED", "text": "+3 points.", "n": 3, "price": 5, "color": "c9a227"},
 	"limited": {"name": "Limited Edition", "short": "LTD", "text": "Doubles this song's points.", "n": 2, "price": 8, "color": "d4508f"},
-	"remaster": {"name": "Remaster", "short": "REMASTER", "text": "Its ability triggers twice.", "n": 2, "price": 6, "color": "4a90d9"},
+	"remaster": {"name": "Remaster", "short": "REMASTER", "text": "Its sticker triggers twice.", "n": 2, "price": 6, "color": "4a90d9"},
 	"mint": {"name": "Mint Condition", "short": "MINT", "text": "+$1 each time it's played.", "n": 1, "price": 4, "color": "3fae5a"},
 }
 
