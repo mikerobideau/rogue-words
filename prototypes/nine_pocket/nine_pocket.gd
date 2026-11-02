@@ -25,6 +25,7 @@ class Disc:
 	var sound := 3
 	var cond := ""
 	var cond_v := 0
+	var cond_w := 0
 	var edition := ""
 	var cdr := false
 	var mix_cover := ""
@@ -58,6 +59,8 @@ var energy := 0
 var energy_live := 0
 var flow := 0
 var fog_armed := 0
+var comp_used := false
+var pending := {}
 var play_fog := 0
 var gear_uses: Array[int] = []
 var booed := false
@@ -266,23 +269,50 @@ func _load_albums() -> void:
 			var e0 := D.ERAS.find(String(ca["decade"]))
 			var rgn := RandomNumberGenerator.new()
 			rgn.seed = absi(String(rc["cover"]).hash())
-			var tot := 0
-			for ck in D.COND_WEIGHTS:
-				tot += int(D.COND_WEIGHTS[ck])
-			var roll := rgn.randi_range(0, tot - 1)
-			var cname := ""
-			for ck in D.COND_WEIGHTS:
-				roll -= int(D.COND_WEIGHTS[ck])
-				if roll < 0:
-					cname = String(ck)
-					break
-			var cv := 0
-			if cname.ends_with("genre"):
-				cv = rgn.randi_range(0, D.GENRES.size() - 1)
-			elif cname.ends_with("decade"):
-				cv = rgn.randi_range(0, D.ERAS.size() - 1)
-			var pts := 2 + int(ca["points"]) % 2 if cname in D.COND_EASY else 4 + int(ca["points"]) % 2
-			albums.append({"title": ca["album"], "orig": rc["album"], "band": rc["band"], "cover": rc["cover"], "genre": g, "era": e0, "label": (h / 7) % D.LABELS.size(), "points": pts, "cond": cname, "cond_v": cv})
+			var cr := _roll_cond(rgn, "")
+			albums.append({"title": ca["album"], "orig": rc["album"], "band": rc["band"], "cover": rc["cover"], "genre": g, "era": e0, "label": (h / 7) % D.LABELS.size(), "points": cr["points"], "cond": cr["cond"], "cond_v": cr["cond_v"], "cond_w": cr["cond_w"]})
+
+func _roll_tag(rg: RandomNumberGenerator) -> int:
+	if rg.randf() < 0.6:
+		return rg.randi_range(0, D.GENRES.size() - 1)
+	return 10 + rg.randi_range(0, D.ERAS.size() - 1)
+
+func _roll_cond(rg: RandomNumberGenerator, cname: String) -> Dictionary:
+	if cname == "":
+		var tot := 0
+		for ck in D.COND_WEIGHTS:
+			tot += int(D.COND_WEIGHTS[ck])
+		var roll := rg.randi_range(0, tot - 1)
+		for ck in D.COND_WEIGHTS:
+			roll -= int(D.COND_WEIGHTS[ck])
+			if roll < 0:
+				cname = String(ck)
+				break
+	var cv := 0
+	var cw := 0
+	if cname == "between":
+		cv = _roll_tag(rg)
+		cw = _roll_tag(rg)
+		while cw == cv:
+			cw = _roll_tag(rg)
+	elif cname.ends_with("genre"):
+		cv = rg.randi_range(0, D.GENRES.size() - 1)
+	elif cname.ends_with("decade"):
+		cv = rg.randi_range(0, D.ERAS.size() - 1)
+	return {"cond": cname, "cond_v": cv, "cond_w": cw, "points": int(D.COND_STARS[cname])}
+
+func _tag_ok(d: Disc, t: int) -> bool:
+	if d.genre < 0:
+		return false
+	if t < 10:
+		return d.genre == t
+	return _era_near(d.era, t - 10)
+
+func _tag_label(t: int) -> String:
+	return String(D.GENRE_SHORT[t]) if t < 10 else String(D.ERAS[t - 10]).to_upper()
+
+func _tag_name(t: int) -> String:
+	return String(D.GENRES[t]) if t < 10 else String(D.ERAS[t - 10])
 
 func _music_files(dir: String, out: Array) -> void:
 	for sub in DirAccess.get_directories_at(dir):
@@ -407,6 +437,7 @@ func _make_disc(a: Dictionary) -> Disc:
 	d.sound = int(a["points"])
 	d.cond = String(a["cond"])
 	d.cond_v = int(a["cond_v"])
+	d.cond_w = int(a.get("cond_w", 0))
 	if rng.randf() < D.EDITION_CHANCE:
 		var eds: Array = D.EDITIONS.keys()
 		d.edition = eds[rng.randi_range(0, eds.size() - 1)]
@@ -435,7 +466,7 @@ func _make_cdr() -> Disc:
 	d.genre = -1
 	d.era = -1
 	d.label = rng.randi_range(0, D.LABELS.size() - 1)
-	d.sound = D.CDR_POINTS
+	d.sound = D.CDR_STARS
 	d.cdr = true
 	return d
 
@@ -449,26 +480,13 @@ func _gen_album(g: int, e: int, cname: String = "", used: Array = []) -> Diction
 	if near.is_empty():
 		near = pool
 	var a: Dictionary = (near[rng.randi_range(0, near.size() - 1)] as Dictionary).duplicate()
-	if cname == "":
-		var tot := 0
-		for ck in D.COND_WEIGHTS:
-			tot += int(D.COND_WEIGHTS[ck])
-		var roll := rng.randi_range(0, tot - 1)
-		for ck in D.COND_WEIGHTS:
-			roll -= int(D.COND_WEIGHTS[ck])
-			if roll < 0:
-				cname = String(ck)
-				break
-	var cv := 0
-	if cname.ends_with("genre"):
-		cv = rng.randi_range(0, D.GENRES.size() - 1)
-	elif cname.ends_with("decade"):
-		cv = rng.randi_range(0, D.ERAS.size() - 1)
+	var cr := _roll_cond(rng, cname)
 	a["genre"] = g
 	a["era"] = e
-	a["cond"] = cname
-	a["cond_v"] = cv
-	a["points"] = rng.randi_range(2, 3) if cname in D.COND_EASY else rng.randi_range(4, 5)
+	a["cond"] = cr["cond"]
+	a["cond_v"] = cr["cond_v"]
+	a["cond_w"] = cr["cond_w"]
+	a["points"] = cr["points"]
 	return a
 
 func _random_albums(n: int, g0: int = -1, e0: int = -1) -> Array:
@@ -562,13 +580,18 @@ func _new_run(kit_i: int = 0) -> void:
 		phase = "map"
 
 func _kit_discs(_kit: Dictionary) -> Array:
-	var kinds: Array = D.COND_WEIGHTS.keys()
-	var off := rng.randi_range(0, kinds.size() - 1)
+	var deal: Array = []
+	for ck in D.COND_DECK:
+		for k in int(D.COND_DECK[ck]):
+			deal.append(ck)
+	_shuffle(deal)
 	var used: Array = []
 	var out: Array = []
+	var n := 0
 	for e in D.ERAS.size():
 		for g in D.GENRES.size():
-			var a := _gen_album(g, e, String(kinds[(e * D.GENRES.size() + g + off) % kinds.size()]), used)
+			var a := _gen_album(g, e, String(deal[n % deal.size()]), used)
+			n += 1
 			used.append(a["cover"])
 			var d := _make_disc(a)
 			d.edition = ""
@@ -811,8 +834,6 @@ func _draw_dig_offer() -> void:
 		_draw_card_detail(dc, d, 160.0)
 		var fit := _flow_fit(d)
 		var ft := "KEEPS THE FLOW" if fit > 0 else ("BREAKS THE FLOW" if fit < 0 else "")
-		if _fatigue_name(d, played) != "":
-			ft = "TIRED CROWD"
 		if ft != "":
 			_text_center(Rect2(dc.x - 250.0, 345.0, 500.0, 36.0), ft, T_SM, Color(D.FLOW_COLOR).lightened(0.2) if fit > 0 else c_bad.lightened(0.3), true)
 		_hw_button(Rect2(dc.x - 160.0, 1000.0, 320.0, 80.0), "Take this CD", _take_offer.bind(k), true, Color("3f9b5a"), T_MD)
@@ -1036,8 +1057,8 @@ func _draw_changer() -> void:
 	_text_center(Rect2(panel.position.x, panel.position.y + 10.0, panel.size.x, 34.0), "DISC ENGINE", T_SM, Color("2b2e33"), true)
 	_text_center(Rect2(panel.position.x, panel.position.y + 38.0, panel.size.x, 24.0), "COMPACT DISC CHANGER", 13, Color("4c5058"), true)
 	var o := _open_slot()
-	_lcd(Rect2(panel.position.x + 20.0, panel.position.y + 86.0, panel.size.x - 40.0, 66.0), str(_target(o)) if o >= 0 else "--", Color("ff9a6b"), T_XL, "88")
-	_silk(Vector2(panel.position.x + 26.0, panel.position.y + 176.0), "TARGET", 13, Color("2b2e33"))
+	_lcd(Rect2(panel.position.x + 20.0, panel.position.y + 86.0, panel.size.x - 40.0, 66.0), "-%d" % _cooling() if o >= 0 else "--", Color("ff9a6b"), T_XL, "-8")
+	_silk(Vector2(panel.position.x + 26.0, panel.position.y + 176.0), "COOLING", 13, Color("2b2e33"))
 	_text_right(panel.end.x - 24.0, panel.position.y + 176.0, "SLOT %d / %d" % [mini(played.size() + 1, D.SETLIST), D.SETLIST], 13, Color("2b2e33"), true)
 	var pr := Rect2(panel.position.x + 20.0, panel.position.y + 196.0, panel.size.x - 40.0, minf(300.0, panel.size.y - 230.0))
 	_hw_button(pr, "PLAY" if not playing else "PLAYING", _play, ui_live and phase == "show" and _front() >= 0, Color("3f9b5a"), T_XL if not playing else T_MD)
@@ -1115,6 +1136,10 @@ func _draw_well(s: int) -> void:
 		var lr0 := Rect2(c.x - 118.0, c.y - WELL_R + 4.0, 236.0, 32.0)
 		_panel(lr0, Color("7a1f1f"), 8, Color("ffb0a6"), 2)
 		_text_center(lr0, lock_tag, 14, Color.WHITE, true)
+	if not pending.is_empty() and int(pending["slot"]) == s:
+		var pr0 := Rect2(c.x - 118.0, c.y - WELL_R + 4.0, 236.0, 32.0)
+		_panel(pr0, Color("5a3d00"), 8, c_gold, 2)
+		_text_center(pr0, "NEEDS " + _tag_label(int(pending["y"])), 14, Color.WHITE, true)
 	var ro: Dictionary = readout[s]
 	var lr := Rect2(c.x - 130.0, c.y + WELL_R + 10.0, 260.0, 42.0)
 	_panel(lr.grow(4.0), Color("0a0b0d"), 8)
@@ -1126,7 +1151,7 @@ func _draw_well(s: int) -> void:
 			lc = c_good.lightened(0.3) if int(ro["net"]) >= 0 else c_bad.lightened(0.3)
 		_text_center(lr, String(ro["text"]), T_SM, lc, true)
 	else:
-		_text_center(lr, str(_target(s)), T_MD, Color("ff9a6b") if open else Color(1, 1, 1, 0.3), true)
+		_text_center(lr, "-%d" % _cooling(), T_MD, Color("ff9a6b") if open else Color(1, 1, 1, 0.3), true)
 	if ui_live and not dig_mode and open and i >= 0:
 		_register(pocket, _on_slot.bind(s))
 
@@ -1224,6 +1249,10 @@ func _cond_label(d: Disc) -> String:
 			return "OPENER"
 		"closer":
 			return "CLOSER"
+		"any":
+			return "ANYWHERE"
+		"between":
+			return "%s · %s" % [_tag_label(d.cond_v), _tag_label(d.cond_w)]
 		"after_genre":
 			return "AFTER " + String(D.GENRE_SHORT[d.cond_v])
 		"after_decade":
@@ -1248,6 +1277,10 @@ func _cond_text(d: Disc) -> String:
 			return "Keeps the flow as the opener (track 1)."
 		"closer":
 			return "Keeps the flow as the closer (track 8)."
+		"any":
+			return "Keeps the flow in any slot. It pays no stars, so use it for safety or to set up a later card."
+		"between":
+			return "Plays between %s and %s. The song before it must be %s, and the song after it must be %s. If both hold it pays %d stars one song late; if the next song isn't a match, the flow resets." % [_tag_name(d.cond_v), _tag_name(d.cond_w), _tag_name(d.cond_v), _tag_name(d.cond_w), d.sound]
 		"after_genre":
 			return "Keeps the flow right after a %s song." % D.GENRES[d.cond_v]
 		"after_decade":
@@ -1263,8 +1296,6 @@ func _cond_met(d: Disc, slot: int, before: Array) -> bool:
 		return true
 	var half := D.SETLIST / 2
 	var prev: Disc = collection[before[slot - 1]] if slot > 0 and slot - 1 < before.size() else null
-	if prev != null and _bay_of("comp") >= 0 and prev.label == d.label:
-		return true
 	var above: Disc = null
 	if slot >= half and D.SETLIST - 1 - slot < before.size():
 		above = collection[before[D.SETLIST - 1 - slot]]
@@ -1284,12 +1315,19 @@ func _cond_met(d: Disc, slot: int, before: Array) -> bool:
 		"after_genre":
 			return prev != null and prev.genre == d.cond_v
 		"after_decade":
-			return prev != null and prev.era == d.cond_v
+			return prev != null and _era_near(prev.era, d.cond_v)
+		"any":
+			return true
+		"between":
+			return prev != null and _tag_ok(prev, d.cond_v) and slot < D.SETLIST - 1
 		"above_genre":
 			return above != null and above.genre == d.cond_v
 		"above_decade":
-			return above != null and above.era == d.cond_v
+			return above != null and _era_near(above.era, d.cond_v)
 	return true
+
+func _era_near(e: int, v: int) -> bool:
+	return e == v or (_bay_of("pitch") >= 0 and absi(e - v) <= 1)
 
 func _disc_marks(c: Vector2, rad: float, d: Disc) -> void:
 	if d.cdr and d.genre < 0:
@@ -1304,14 +1342,27 @@ func _disc_marks(c: Vector2, rad: float, d: Disc) -> void:
 		_panel(Rect2(pr.position + Vector2(1.0, 2.0), pr.size), Color(0, 0, 0, 0.45), int(fs * 0.8))
 		_panel(pr, Color("14181d"), int(fs * 0.8), Color(D.FLOW_COLOR).lightened(0.2), maxi(1, int(rad * 0.02)))
 		_heavy_center(pr, lab, fs, Color.WHITE)
-	var tc := c + Vector2(-rad * 0.72, -rad * 0.72)
-	var sc := Color(D.SOUND_COLOR)
-	draw_circle(tc + Vector2(0, 3), rad * 0.2, Color(0, 0, 0, 0.4))
-	draw_circle(tc, rad * 0.2, sc.darkened(0.15))
-	draw_arc(tc, rad * 0.2, 0.0, TAU, 32, Color(1, 1, 1, 0.75), 2.0, true)
-	_heavy_center(Rect2(tc - Vector2(rad, rad) * 0.2, Vector2(rad, rad) * 0.4), str(d.sound), int(rad * 0.24), Color.WHITE)
+	if d.sound > 0:
+		var tc := c + Vector2(-rad * 0.72, -rad * 0.72)
+		var sr := rad * 0.17
+		var many := d.sound > 3
+		var nstar := 1 if many else d.sound
+		var tw := _heavy_w("x%d" % d.sound, int(sr * 1.6)) + sr * 0.4 if many else 0.0
+		var pr2 := Rect2(tc.x - sr * 1.3, tc.y - sr * 1.3, nstar * sr * 2.2 + sr * 0.4 + tw, sr * 2.6)
+		_panel(Rect2(pr2.position + Vector2(1.0, 2.0), pr2.size), Color(0, 0, 0, 0.45), int(sr))
+		_panel(pr2, Color("14181d"), int(sr), Color(D.HYPE_COLOR, 0.7), maxi(1, int(rad * 0.02)))
+		for k in nstar:
+			_star(Vector2(pr2.position.x + sr * 1.3 + k * sr * 2.2, pr2.get_center().y), sr, Color(D.HYPE_COLOR))
+		if many:
+			_heavy_center(Rect2(pr2.position.x + sr * 2.5, pr2.position.y, tw, pr2.size.y), "x%d" % d.sound, int(sr * 1.6), Color(D.HYPE_COLOR).lightened(0.3))
 	if d.edition != "":
 		_edition_marks(c, rad, d.edition)
+
+func _star(c: Vector2, r: float, col: Color) -> void:
+	var pts := PackedVector2Array()
+	for k in 10:
+		pts.append(c + Vector2.from_angle(-PI * 0.5 + k * PI / 5.0) * (r if k % 2 == 0 else r * 0.45))
+	draw_colored_polygon(pts, col)
 
 func _debuff_marks(c: Vector2, rad: float, d: Disc, soft: bool) -> void:
 	if not soft:
@@ -1331,7 +1382,7 @@ func _flow_fit(d: Disc) -> int:
 	var s := _open_slot()
 	if s < 0:
 		return 0
-	if _fatigue_name(d, played) != "" or _slot_locked(d, s):
+	if _slot_locked(d, s):
 		return -1
 	return 1 if _cond_met(d, s, played) else -1
 
@@ -1371,10 +1422,6 @@ func _draw_wallet() -> void:
 			_disc_marks(r.get_center(), r.size.x * 0.5 - 8.0, d)
 			if fit < 0:
 				_debuff_marks(r.get_center(), r.size.x * 0.5 - 8.0, d, over)
-				if _fatigue_name(d, played) != "" and not over:
-					var tr := Rect2(r.position.x + 20.0, r.get_center().y - 18.0, r.size.x - 40.0, 36.0)
-					_panel(tr, Color("7a1f1f"), 8, Color("ffb0a6"), 2)
-					_text_center(tr, "TIRED", 17, Color.WHITE, true)
 			_tip_disc(pocket, d)
 			if dig_mode and p in dig_marks:
 				draw_circle(r.get_center(), r.size.x * 0.5 - 8.0, Color(0, 0, 0, 0.55))
@@ -1464,7 +1511,7 @@ func _toggle_switch(c: Vector2, on: bool) -> void:
 	draw_circle(tip - Vector2(2.0, 2.0), 2.5, Color(1, 1, 1, 0.8))
 
 func _energy_color(v: float) -> Color:
-	if v < 25.0:
+	if v < D.ENERGY_START * 0.5:
 		return Color("ff6b5a")
 	if v < D.APPLAUSE:
 		return Color("f2c14e")
@@ -1610,9 +1657,9 @@ func _draw_display(r: Rect2) -> void:
 	var cw := (w - 40.0) / 3.0
 	var shown := clampi(energy_live if playing else energy, 0, D.ENERGY_MAX)
 	var o := _open_slot()
-	var fl := maxi(1, int(result.get("flow", flow)) if playing else flow)
+	var fl := int(result.get("flow", flow)) if playing else flow
 	var fc := Color(D.FLOW_COLOR).lightened(0.3)
-	var cols := [["CROWD", str(shown), _energy_color(float(shown)), "888"], ["FLOW", "×%d" % fl, fc, "×8"], ["TARGET", str(_target(o)) if o >= 0 else "--", Color("ff9a6b"), "88"]]
+	var cols := [["AUDIENCE", str(shown), _energy_color(float(shown)), "888"], ["FLOW", str(fl), fc, "8"], ["COOLING", "-%d" % _cooling(), Color("ff9a6b"), "-8"]]
 	for k in 3:
 		var lx := x + k * (cw + 20.0)
 		_silk(Vector2(lx, r.position.y + 40.0), String(cols[k][0]), 14, Color("8d939b"))
@@ -1629,13 +1676,7 @@ func _draw_display(r: Rect2) -> void:
 		_panel(br, col if on else Color(col, 0.08), 2)
 	_text_right(x + w, meter.end.y + 22.0, "APPLAUSE %d  ·  ENCORE %d" % [D.APPLAUSE, D.ENCORE], 13, Color("8d939b"), true)
 	var fy := r.position.y + 236.0
-	_silk(Vector2(x, fy), "FLOW", 13, Color("8d939b"))
-	for k in D.FLOW_MAX:
-		var lr := Rect2(x + k * 46.0, fy + 12.0, 40.0, 40.0)
-		var on := k < fl
-		_panel(lr, Color(D.FLOW_COLOR) if on else Color("1d1f23"), 6, Color(0, 0, 0, 0.6), 1)
-		_text_center(lr, "×%d" % (k + 1), 14, Color("10161a") if on else Color("4c5058"), true)
-	var lx2 := x + D.FLOW_MAX * 46.0 + 14.0
+	var lx2 := x
 	_silk(Vector2(lx2, fy), "THIS SLOT", 13, Color("8d939b"))
 	if o >= 0:
 		var half := D.SETLIST / 2
@@ -1647,6 +1688,8 @@ func _draw_display(r: Rect2) -> void:
 		var cx := lx2
 		for t in chips1:
 			cx += _info_chip(cx, fy + 16.0, String(t), fc) + 5.0
+		if not pending.is_empty() and int(pending["slot"]) == o - 1:
+			cx += _info_chip(cx, fy + 16.0, "NEEDS " + _tag_label(int(pending["y"])), c_gold) + 5.0
 		var gx := x
 		if o > 0 and o - 1 < played.size():
 			var pd: Disc = collection[played[o - 1]]
@@ -1865,7 +1908,7 @@ func _draw_disc_tip(d: Disc) -> void:
 		body = _cond_text(d)
 	else:
 		head = "MIX"
-		body = "When you play it, it picks a random album and becomes that album's genre and decade. The crowd, requests and gear treat it like that CD, so it may delight them or turn them against you. It always keeps the flow."
+		body = "When you play it, it picks a random album and becomes that album's genre and decade. The audience, requests and gear treat it like that CD, so it may delight them or turn them against you. It always keeps the flow."
 	var fit := _flow_fit(d) if wallet.has(collection.find(d)) else 0
 	var pile_head := ""
 	var pile_body := ""
@@ -1884,20 +1927,23 @@ func _draw_disc_tip(d: Disc) -> void:
 		pile_body = "%d %s  ·  %d %s  (of %d)" % [pg, D.GENRES[d.genre], pe, D.ERAS[d.era], tip_pool.size()]
 	var fit_head := ""
 	var fit_body := ""
-	if fit < 0 and _fatigue_name(d, played) != "":
-		fit_head = "TIRED CROWD"
-		fit_body = "Third %s song in a row: %d points and the flow breaks." % [_fatigue_name(d, played), D.FATIGUE]
-	elif fit < 0 and _slot_locked(d, _open_slot()):
+	var fit_h := 0.0
+	if fit < 0 and _slot_locked(d, _open_slot()):
 		fit_head = "SLOT LOCKED"
-		fit_body = "This slot only takes the boss's chosen genre or decade. It scores 0 and breaks the flow."
+		fit_body = "This slot only takes the boss's chosen genre or decade. Anything else is a miss."
 	elif fit < 0:
-		fit_head = "BREAKS THE FLOW"
-		fit_body = "Playing it next drops the flow by 1." if _bay_of("xfade") >= 0 else "Playing it next resets the flow to ×1."
+		fit_head = "MISSES HERE"
+		fit_body = "Its condition doesn't hold in the open slot."
+	elif fit > 0 and d.cond == "between":
+		fit_head = "WAITS FOR THE NEXT SONG"
+		fit_body = "The song before it fits. It pays if the next song is %s." % _tag_name(d.cond_w)
 	elif fit > 0:
-		fit_head = "KEEPS THE FLOW"
-		fit_body = "Playing it next adds 1 to the flow."
+		fit_head = "HITS HERE"
+		fit_body = "Its condition holds in the open slot."
+	if fit_head != "":
+		fit_h = 92.0
 	var bh := font.get_multiline_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y if body != "" else 0.0
-	var h := pad + 84.0 + 44.0 + (52.0 + bh + 10.0 if body != "" else 0.0) + (92.0 if fit_head != "" else 0.0) + (92.0 if pile_head != "" else 0.0) + (84.0 if d.edition != "" else 0.0) + pad - 6.0
+	var h := pad + 84.0 + 44.0 + (52.0 + bh + 10.0 if body != "" else 0.0) + (fit_h) + (92.0 if pile_head != "" else 0.0) + (84.0 if d.edition != "" else 0.0) + pad - 6.0
 	var box := Rect2(mouse + Vector2(28.0, 28.0), Vector2(w, h))
 	if box.end.x > UI_W - 12.0:
 		box.position.x = mouse.x - w - 20.0
@@ -1910,7 +1956,7 @@ func _draw_disc_tip(d: Disc) -> void:
 	_heavy(Vector2(x, y + 30.0), d.title, T_LG, Color.WHITE)
 	_text_i(Vector2(x, y + 64.0), "Picks a random album when played" if d.cdr else "by %s  ·  %s" % [d.band, D.LABELS[d.label]["name"]], T_SM, Color("b8c0cc"))
 	y += 84.0
-	var chips := [[D.GENRES[d.genre].to_upper(), Color("5d626a")], [D.ERAS[d.era], Color("5d626a")], ["%d POINTS" % d.sound, Color(D.SOUND_COLOR)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]] if not (d.genre < 0) else [["CD-R", Color(D.FLOW_COLOR).darkened(0.2)], ["%d POINT" % d.sound, Color(D.SOUND_COLOR)]]
+	var chips := [[D.GENRES[d.genre].to_upper(), Color("5d626a")], [D.ERAS[d.era], Color("5d626a")], ["%s" % ("NO STARS" if d.sound == 0 else "%d STAR%s" % [d.sound, "S" if d.sound > 1 else ""]), Color(D.HYPE_COLOR).darkened(0.35)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]] if not (d.genre < 0) else [["CD-R", Color(D.FLOW_COLOR).darkened(0.2)]]
 	var cx := x
 	for c in chips:
 		var cw := _text_w(String(c[0]), T_XS, true) + 18.0
@@ -1933,7 +1979,7 @@ func _draw_disc_tip(d: Disc) -> void:
 		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
 		_text(Vector2(x, y + 34.0), fit_head, T_XS, c_bad.lightened(0.3) if fit < 0 else Color(D.FLOW_COLOR).lightened(0.2), true)
 		_text(Vector2(x, y + 68.0), fit_body, T_SM, Color("e8ecf2"))
-		y += 92.0
+		y += fit_h
 	if d.edition != "":
 		var ed: Dictionary = D.EDITIONS[d.edition]
 		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
@@ -1989,7 +2035,7 @@ func _leave_shop() -> void:
 	_back_on_road()
 
 func _album_price(d: Disc) -> int:
-	return D.ALBUM_PRICE + (1 if d.sound >= 4 else 0)
+	return D.ALBUM_PRICE + (1 if d.sound >= 3 else 0) + (1 if d.sound >= 6 else 0)
 
 func _make_shop(hint: Dictionary = {}) -> void:
 	shop_items.clear()
@@ -2680,7 +2726,9 @@ func _start_show(v: Dictionary) -> void:
 	held = -1
 	energy = D.ENERGY_START
 	energy_live = energy
-	flow = 1
+	flow = 0
+	comp_used = false
+	pending = {}
 	link_log.clear()
 	fog_armed = 0
 	digs = D.BOSS_DIGS if String(chal.get("kind", "")) == "discards" else D.DIGS
@@ -2714,18 +2762,18 @@ func _fire(bay: int) -> void:
 		"mic":
 			energy = mini(D.ENERGY_MAX, energy + n)
 			energy_live = energy
-			_say("\"Make some noise!\" +%d crowd." % n)
+			_say("\"Make some noise!\" +%d audience score." % n)
 	gear_uses[bay] -= 1
 	comp_flash[bay] = 1.0
 	_sfx("click")
 
-func _target(s: int) -> int:
-	var m := 1.0 + D.TARGET_GROWTH * (gig_n - 1)
+func _cooling() -> int:
+	var c: int = D.COOLING[clampi(gig_n - 1, 0, D.COOLING.size() - 1)]
 	if venue.get("headliner", false):
-		m *= D.HEADLINER_MULT
+		c += D.COOL_HEADLINER
 	if _boss_kind() == "target":
-		m *= D.BOSS_TARGET
-	return int(round(D.SLOT_TARGETS[s] * m))
+		c += D.COOL_BOSS
+	return c
 
 func _open_slot() -> int:
 	return played.size() if played.size() < tray.size() else -1
@@ -2763,95 +2811,109 @@ func _cell_keeps(is_genre: bool, k: int) -> bool:
 func _boss_kind() -> String:
 	return String((venue.get("challenge", {}) as Dictionary).get("kind", ""))
 
-func _fatigue_name(d: Disc, before: Array) -> String:
-	if d.genre < 0 or before.size() < D.FATIGUE_RUN - 1:
-		return ""
-	var tail := before.slice(before.size() - (D.FATIGUE_RUN - 1))
-	if tail.all(func(o): return collection[o].genre == d.genre):
-		return D.GENRES[d.genre]
-	if tail.all(func(o): return collection[o].era == d.era):
-		return D.ERAS[d.era]
-	return ""
-
 func _slot_locked(d: Disc, slot: int) -> bool:
 	if _boss_kind() != "slot" or slot < 0:
 		return false
 	var bc: Dictionary = venue["challenge"]
 	return slot == int(bc["slot"]) and not (d.genre == int(bc["genre"]) or d.era == int(bc["era"]))
 
+func _miss_flow(fl: int, comp_free: bool) -> Dictionary:
+	var cb := _bay_of("comp")
+	if cb >= 0 and comp_free:
+		return {"f": fl, "saved": true, "bay": cb, "text": "Compressor holds the flow"}
+	var xb := _bay_of("xfade")
+	if xb >= 0:
+		return {"f": fl / 2, "saved": false, "bay": xb, "text": "Crossfader halves the flow"}
+	return {"f": 0, "saved": false, "bay": -1, "text": "Flow broken"}
+
 func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Dictionary:
 	var out: Array = []
 	var acc := {"total": 0}
 	var cash_gain := 0
-	var hit := false
-	var bonus_flow := 0
-	_push(out, acc, "base", "%d points" % d.sound, d.sound)
-	var taste := 0
+	var req_hit := false
+	var cool := _cooling()
+	var fl := flow
+	var comp_free := not comp_used
+	var saved := false
+	var res := ""
+	if not pending.is_empty() and int(pending["slot"]) == slot - 1:
+		if _tag_ok(d, int(pending["y"])):
+			fl = mini(D.FLOW_MAX, fl + 1)
+			var pay := fl + int(pending["stars"])
+			_push(out, acc, "flow", "Sandwich! +%d" % pay, pay)
+			res = "ok"
+		else:
+			var ms := _miss_flow(fl, comp_free)
+			fl = int(ms["f"])
+			if bool(ms["saved"]):
+				saved = true
+				comp_free = false
+			out.append({"src": "flow", "text": "Sandwich missed. %s" % String(ms["text"]), "n": 0, "ci": int(ms["bay"])})
+			res = "fail"
+	var met := _cond_met(d, slot, before)
+	var locked := _slot_locked(d, slot)
+	var is_between := d.cond == "between" and not d.cdr
+	var wait := met and not locked and is_between
+	var hit := met and not locked and not is_between
+	var f := fl
+	var new_pending := {}
+	if hit:
+		f = mini(D.FLOW_MAX, fl + 1 + fog_armed)
+		_push(out, acc, "flow", "Flow +%d" % f, f)
+		if d.sound > 0:
+			_push(out, acc, "base", "Stars +%d" % d.sound, d.sound)
+		match d.edition:
+			"holo", "signed", "limited":
+				var en := int(D.EDITIONS[d.edition]["n"])
+				_push(out, acc, "disc", "%s +%d" % [D.EDITIONS[d.edition]["name"], en], en)
+		for ci in rack.size():
+			var g: Dictionary = rack[ci]
+			if g.is_empty():
+				continue
+			var n := _gear_n(g)
+			match String(g["id"]):
+				"eq":
+					var lv := 0 if d.genre < 0 else int(g["levels"][d.genre])
+					if lv != 0:
+						_push(out, acc, "rack", "EQ %+d" % lv, lv, ci)
+				"gain":
+					var gn := _has_tag(d, false, int(g["genre"])) * n
+					if gn > 0:
+						_push(out, acc, "rack", "Gain +%d" % gn, gn, ci)
+				"exciter":
+					var en2 := _has_tag(d, true, int(g["era"])) * n
+					if en2 > 0:
+						_push(out, acc, "rack", "Exciter +%d" % en2, en2, ci)
+				"tube":
+					if d.sound == 0 and not d.cdr:
+						_push(out, acc, "rack", "Tube +%d" % n, n, ci)
+		var eb := _bay_of("echo")
+		if eb >= 0 and slot == D.SETLIST - 1:
+			_push(out, acc, "rack", "Echo +%d" % int(acc["total"]), int(acc["total"]), eb)
+	elif wait:
+		f = mini(D.FLOW_MAX, fl + fog_armed)
+		new_pending = {"slot": slot, "y": d.cond_w, "stars": d.sound}
+		out.append({"src": "wait", "text": "Waiting for %s" % _tag_name(d.cond_w), "n": 0, "ci": -1})
+	else:
+		var ms2 := _miss_flow(fl, comp_free)
+		f = mini(D.FLOW_MAX, int(ms2["f"]) + fog_armed)
+		if bool(ms2["saved"]):
+			saved = true
+		out.append({"src": "flow", "text": "Slot locked" if locked else String(ms2["text"]), "n": 0, "ci": int(ms2["bay"])})
+	if d.edition == "mint":
+		cash_gain += int(D.EDITIONS["mint"]["n"])
 	for tag: Array in venue["likes"]:
 		var lc := _tag_count(d, tag)
 		if lc > 0:
-			taste += D.LIKE * lc
-			out.append({"src": "taste", "text": "They love %s ×%d +%d crowd" % [tag[1], lc, D.LIKE * lc] if lc > 1 else "They love %s +%d crowd" % [tag[1], D.LIKE], "n": D.LIKE * lc, "ci": -1})
+			_push(out, acc, "taste", "They love %s +%d" % [tag[1], D.LIKE * lc], D.LIKE * lc)
 	for tag: Array in venue["dislikes"]:
 		var hc := _tag_count(d, tag)
 		if hc > 0:
 			var hate := D.DISLIKE * hc * (D.BOSS_HATE_MULT if _boss_kind() == "hates" else 1)
-			taste += hate
-			out.append({"src": "taste", "text": "They hate %s ×%d %d crowd" % [tag[1], hc, hate] if hc > 1 else "They hate %s %d crowd" % [tag[1], hate], "n": hate, "ci": -1})
+			_push(out, acc, "taste", "They hate %s %d" % [tag[1], hate], hate)
 	if not cl.is_empty() and _tag_match(d, cl["tag"]):
-		if cl["kind"] == "request":
-			hit = true
-			if bool(cl.get("flow", false)):
-				bonus_flow += 1
-				out.append({"src": "call", "text": "Request! +1 flow", "n": 0, "ci": -1})
-			else:
-				_push(out, acc, "call", "Request! +%d" % D.REQUEST, D.REQUEST)
-		else:
-			var bn := D.BAN * _tag_count(d, cl["tag"])
-			_push(out, acc, "call", "Ignored the crowd %d" % bn, bn)
-	var tired := _fatigue_name(d, before)
-	var locked := _slot_locked(d, slot)
-	var f := 1
-	var why := ""
-	var echo := ""
-	var met := _cond_met(d, slot, before)
-	if met and tired == "" and not locked:
-		f = mini(D.FLOW_MAX, flow + 1)
-		why = "linked"
-	else:
-		var xf := _bay_of("xfade")
-		f = maxi(1, flow - 1) if xf >= 0 else 1
-		why = "broken"
-	f = mini(D.FLOW_MAX, f + bonus_flow + fog_armed)
-	match d.edition:
-		"holo", "signed":
-			var en := int(D.EDITIONS[d.edition]["n"])
-			_push(out, acc, "disc", "%s +%d" % [D.EDITIONS[d.edition]["name"], en], en)
-		"mint":
-			cash_gain += int(D.EDITIONS["mint"]["n"])
-	for ci in rack.size():
-		var g: Dictionary = rack[ci]
-		if g.is_empty():
-			continue
-		var n := _gear_n(g)
-		match String(g["id"]):
-			"eq":
-				var lv := 0 if d.genre < 0 else int(g["levels"][d.genre])
-				if lv != 0:
-					_push(out, acc, "rack", "EQ %+d" % lv, lv, ci)
-			"gain":
-				var gn := _has_tag(d, false, int(g["genre"])) * n
-				if gn > 0:
-					_push(out, acc, "rack", "Gain +%d" % gn, gn, ci)
-			"exciter":
-				var en2 := _has_tag(d, true, int(g["era"])) * n
-				if en2 > 0:
-					_push(out, acc, "rack", "Exciter +%d" % en2, en2, ci)
-			"tube":
-				if d.sound <= 3:
-					_push(out, acc, "rack", "Tube +%d" % n, n, ci)
-	if tired != "":
-		_push(out, acc, "fatigue", "Tired of %s %d" % [tired, D.FATIGUE], D.FATIGUE)
+		req_hit = true
+		_push(out, acc, "call", "Request! +%d" % D.REQUEST, D.REQUEST)
 	var bc: Dictionary = venue.get("challenge", {})
 	var bdc := 0
 	if _boss_kind() == "genre":
@@ -2860,12 +2922,9 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 		bdc = _has_tag(d, true, int(bc.get("era", -2)))
 	if bdc > 0:
 		_push(out, acc, "boss", "Boss debuff %d" % (D.BOSS_DEBUFF * bdc), D.BOSS_DEBUFF * bdc)
-	if d.edition == "limited" and int(acc["total"]) > 0:
-		_push(out, acc, "disc", "Limited ×2", int(acc["total"]))
-	if locked and int(acc["total"]) > 0:
-		_push(out, acc, "boss", "Slot locked: no points", -int(acc["total"]))
+	out.append({"src": "cool", "text": "Cooling -%d" % cool, "n": -cool, "ci": -1})
 	var pts := int(acc["total"])
-	return {"met": met and tired == "" and not locked, "cond_met": met, "echo": echo, "points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "taste": taste, "steps": out, "cash": cash_gain, "hit": hit}
+	return {"met": hit, "wait": wait, "cond_met": met, "points": pts, "flow": f, "why": "linked" if hit else "broken", "saved": saved, "score": pts, "net": pts - cool, "steps": out, "cash": cash_gain, "hit": req_hit, "pending": new_pending, "res": res}
 
 func _play() -> void:
 	if playing or phase != "show":
@@ -2879,25 +2938,21 @@ func _play() -> void:
 		_resolve_mix(d)
 	result = _react(d, prev_disc, call, played, s)
 	steps = (result["steps"] as Array).duplicate()
+	var cl := "MIX" if d.cdr else _cond_label(d)
+	var ctxt := ("%s pending" % cl) if bool(result["wait"]) else (("%s met" % cl) if bool(result["cond_met"]) else ("%s missed" % cl))
+	steps.push_front({"src": "cond", "text": ctxt, "n": 0, "ci": -1})
 	if mixed:
 		steps.push_front({"src": "mix", "text": "Mix: %s, %s" % [D.GENRES[d.genre], D.ERAS[d.era]], "n": 0, "ci": -1})
-	var fl := int(result["flow"])
-	var ftxt := "Flow ×%d" % fl
-	var cl := "MIX" if d.cdr else _cond_label(d)
-	steps.append({"src": "cond", "text": ("%s met" % cl) if bool(result["cond_met"]) else ("%s missed" % cl), "n": 0, "ci": -1})
-	if result["why"] == "broken":
-		ftxt = "Flow broken ×%d" % fl
-	steps.append({"src": "flow", "text": ftxt, "n": 0, "ci": _bay_of("xfade") if result["why"] == "broken" and _bay_of("xfade") >= 0 else -1})
-	var tg: int = _target(s)
-	var net := int(result["score"]) + int(result["taste"]) - tg
-	result["net"] = net
-	steps.append({"src": "score", "text": "Score %d · target %d" % [int(result["score"]), tg], "n": net, "ci": -1})
+	var net := int(result["net"])
+	steps.append({"src": "score", "text": "Audience %+d" % net, "n": net, "ci": -1})
+	if bool(result["saved"]):
+		comp_used = true
 	play_fog = fog_armed
 	fog_armed = 0
 	song_slot = s
 	now_slot = s
 	slot_flash[s] = 1.0
-	readout[s] = {"text": "0 POINTS", "pts": 0}
+	readout[s] = {"text": "+0", "pts": 0}
 	step_i = 0
 	step_t = 0.35
 	energy_live = energy
@@ -2908,25 +2963,23 @@ func _play() -> void:
 func _play_step(st: Dictionary) -> void:
 	var n := int(st["n"])
 	var ro: Dictionary = readout[song_slot]
+	var src := String(st["src"])
 	var col := Color(D.SOUND_COLOR).lightened(0.25) if n > 0 else (c_bad.lightened(0.25) if n < 0 else Color("c9ced6"))
-	match String(st["src"]):
-		"cash", "cond":
-			col = c_gold if int(st["n"]) >= 0 and String(st["src"]) == "cash" or (String(st["src"]) == "cond" and not String(st["text"]).ends_with("missed")) else c_bad.lightened(0.25)
+	match src:
+		"cond":
+			col = c_gold if not String(st["text"]).ends_with("missed") else c_bad.lightened(0.25)
 		"flow":
-			ro["text"] = "%d PTS × FLOW %d" % [int(ro["pts"]), int(result["flow"])]
-			col = Color(D.FLOW_COLOR).lightened(0.3) if result["why"] != "broken" else c_bad.lightened(0.25)
+			col = Color(D.FLOW_COLOR).lightened(0.3) if n > 0 else c_bad.lightened(0.25)
 		"score":
-			ro["text"] = "%d vs %d · %+d" % [int(result["score"]), _target(song_slot), n]
+			ro["text"] = "%+d" % n
 			ro["net"] = n
 			energy_live = clampi(energy + n, 0, D.ENERGY_MAX)
 			col = c_good.lightened(0.3) if n >= 0 else c_bad.lightened(0.3)
-		"taste":
-			col = c_good.lightened(0.3) if n > 0 else c_bad.lightened(0.3)
-		_:
-			ro["pts"] = int(ro["pts"]) + n
-			ro["text"] = "%d POINTS" % int(ro["pts"])
-			if st["src"] == "call":
-				col = c_gold
+		"call":
+			col = c_gold
+	if src != "cond" and src != "score":
+		ro["pts"] = int(ro["pts"]) + n
+		ro["text"] = "%+d" % int(ro["pts"])
 	if int(st["ci"]) >= 0:
 		comp_flash[int(st["ci"])] = 1.0
 	for f: Dictionary in floats:
@@ -2943,14 +2996,17 @@ func _finish_song() -> void:
 	var got := int(result["net"])
 	energy = clampi(energy + got, 0, D.ENERGY_MAX)
 	flow = int(result["flow"])
+	pending = result["pending"]
 	played.append(i)
 	prev_disc = d
 	link_log.append({"met": bool(result["met"]), "above": String(d.cond).begins_with("above")})
+	if String(result["res"]) != "" and link_log.size() >= 2:
+		link_log[link_log.size() - 2]["met"] = String(result["res"]) == "ok"
 	if _boss_kind() == "destroy" and rng.randf() < D.BOSS_DESTROY:
 		doomed.append(d)
 		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": "Scratched beyond repair!", "col": c_bad.lightened(0.3), "life": 2.0})
 	cash += int(result["cash"])
-	readout[s] = {"text": "%d vs %d · %+d" % [int(result["score"]), _target(s), got], "net": got}
+	readout[s] = {"text": "%+d" % got, "net": got}
 	now_slot = -1
 	song_slot = -1
 	if not call.is_empty():
@@ -2961,8 +3017,8 @@ func _finish_song() -> void:
 			if int(call["left"]) <= 0:
 				call = {}
 	energy_live = energy
-	var mood := "The crowd goes wild!" if got >= 8 else ("They love it." if got >= 3 else ("Heads are nodding." if got >= 0 else ("They're getting restless." if got >= -4 else "They're turning on you.")))
-	_say("%+d crowd. %s" % [got, mood])
+	var mood := "The crowd goes wild!" if got >= 5 else ("They love it." if got >= 2 else ("Heads are nodding." if got >= 0 else ("They're getting restless." if got >= -3 else "They're turning on you.")))
+	_say("%+d audience score. %s" % [got, mood])
 	_refill()
 	if energy <= 0:
 		booed = true
@@ -2989,16 +3045,13 @@ func _new_call() -> void:
 		tag = ["genre", D.GENRES[d.genre]] if rng.randf() < 0.6 else ["era", D.ERAS[d.era]]
 	else:
 		tag = ["genre", D.GENRES[rng.randi_range(0, D.GENRES.size() - 1)]] if rng.randf() < 0.6 else ["era", D.ERAS[rng.randi_range(0, D.ERAS.size() - 1)]]
-	var kind := "request" if rng.randf() < 0.6 else "ban"
-	call = {"kind": kind, "tag": tag, "left": D.REQUEST_SONGS if kind == "request" else D.BAN_SONGS, "flow": kind == "request" and rng.randf() < D.REQUEST_FLOW_CHANCE}
+	call = {"kind": "request", "tag": tag, "left": D.REQUEST_SONGS}
 	message = "Someone shouts: \"%s\"" % _call_text(call)
 	message_t = 3.5
 
 func _call_text(cl: Dictionary) -> String:
 	var v := String(cl["tag"][1])
-	if cl["kind"] == "request":
-		return "Play some %s!" % v
-	return "No more %s!" % v
+	return "Play some %s!" % v
 
 func _restore_gear() -> void:
 	if not broken_gear.is_empty() and broken_bay >= 0 and broken_bay < rack.size():
@@ -3031,7 +3084,7 @@ func _draw_show_end() -> void:
 		title = "Tour complete!"
 	_heavy_center(Rect2(r.position.x, r.position.y + 40.0, r.size.x, 90.0), title, T_HERO, c_good if energy >= D.APPLAUSE and not booed else c_bad)
 	_text_center(Rect2(r.position.x, r.position.y + 140.0, r.size.x, 40.0), "%s: crowd %d" % [venue["name"], energy], T_LG, c_ink, true)
-	var sub := "The tour ends here." if booed else ("You beat the final boss. %d shows on the road." % gig_n if final else ("You beat the boss." if bool(venue.get("headliner", false)) else "%d of %d songs played · ended at flow ×%d" % [played.size(), D.SETLIST, flow]))
+	var sub := "The tour ends here." if booed else ("You beat the final boss. %d shows on the road." % gig_n if final else ("You beat the boss." if bool(venue.get("headliner", false)) else "%d of %d songs played · ended at flow %d" % [played.size(), D.SETLIST, flow]))
 	_text_center(Rect2(r.position.x, r.position.y + 186.0, r.size.x, 40.0), sub, T_MD, c_body)
 	var x := r.position.x + 220.0
 	var w := r.size.x - 440.0
@@ -3084,7 +3137,7 @@ func _draw_crowd() -> void:
 	if _boss_kind() != "":
 		_text(Vector2(x, r.position.y + 104.0), "BOSS · " + String(_boss_info(venue["challenge"])["short"]), 17, c_bad, true)
 	else:
-		_text(Vector2(x, r.position.y + 104.0), "%d songs  ·  beat each slot's target score" % D.SETLIST, T_SM, c_body, true)
+		_text(Vector2(x, r.position.y + 104.0), "%d songs  ·  the audience cools %d a song" % [D.SETLIST, _cooling()], T_SM, c_body, true)
 	var note := Rect2(x, r.position.y + 124.0, w, 196.0)
 	_shadow(note, 2, 5.0)
 	_panel(note, Color("fbfaf5"), 2)
@@ -3096,8 +3149,8 @@ func _draw_crowd() -> void:
 	_text(Vector2(note.position.x + 60.0, note.position.y + 32.0), "TONIGHT'S CROWD", T_XS, c_ink, true)
 	_tag_chips(note.position.x + 60.0, note.position.y + 48.0, "LIKES", venue.get("likes", []), c_good)
 	_tag_chips(note.position.x + 60.0, note.position.y + 92.0, "HATES", venue.get("dislikes", []), c_bad)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 148.0), "+%d crowd per liked tag" % D.LIKE, 15, c_body, true)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 174.0), "%d crowd per hated tag" % (D.DISLIKE * (D.BOSS_HATE_MULT if _boss_kind() == "hates" else 1)), 15, c_body, true)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 148.0), "+%d audience score per liked song" % D.LIKE, 15, c_body, true)
+	_text(Vector2(note.position.x + 60.0, note.position.y + 174.0), "%d audience score per hated song" % (D.DISLIKE * (D.BOSS_HATE_MULT if _boss_kind() == "hates" else 1)), 15, c_body, true)
 	var slip := Rect2(x, r.position.y + 332.0, w, 120.0)
 	if call.is_empty():
 		_text_i(Vector2(x, slip.position.y + 40.0), "No requests right now.", T_SM, c_muted)
@@ -3105,12 +3158,9 @@ func _draw_crowd() -> void:
 		_shadow(slip, 2, 5.0)
 		_panel(slip, Color("fff3a8"), 2)
 		draw_rect(Rect2(slip.get_center().x - 40.0, slip.position.y - 8.0, 80.0, 20.0), Color(1, 1, 1, 0.6))
-		var req: bool = call["kind"] == "request"
-		_text(Vector2(slip.position.x + 18.0, slip.position.y + 34.0), "REQUEST" if req else "THE CROWD SAYS", T_XS, c_good if req else c_bad, true)
+		_text(Vector2(slip.position.x + 18.0, slip.position.y + 34.0), "REQUEST", T_XS, c_good, true)
 		_heavy(Vector2(slip.position.x + 18.0, slip.position.y + 78.0), _call_text(call), T_LG, Color("22252a"))
-		var reward := "+1 flow" if bool(call.get("flow", false)) else "+%d points" % D.REQUEST
-		var tail := "%s if one of the next %d songs is %s." % [reward, int(call["left"]), call["tag"][1]] if req else "%d points for each %s song in the next %d." % [D.BAN, call["tag"][1], int(call["left"])]
-		_wrap(Vector2(slip.position.x + 18.0, slip.position.y + 98.0), tail, slip.size.x - 36.0, 15, c_body, true)
+		_wrap(Vector2(slip.position.x + 18.0, slip.position.y + 98.0), "+%d audience score if one of the next %d songs is %s." % [D.REQUEST, int(call["left"]), call["tag"][1]], slip.size.x - 36.0, 15, c_body, true)
 
 func _make_tour() -> void:
 	tour.clear()
@@ -3472,15 +3522,15 @@ func _draw_map() -> void:
 func _boss_generic(kind: String) -> Dictionary:
 	match kind:
 		"genre":
-			return {"name": "Genre debuffed", "text": "your most common genre scores %d" % D.BOSS_DEBUFF}
+			return {"name": "Genre debuffed", "text": "songs of your most common genre cost %d" % absi(D.BOSS_DEBUFF)}
 		"era":
-			return {"name": "Decade debuffed", "text": "your most common decade scores %d" % D.BOSS_DEBUFF}
+			return {"name": "Decade debuffed", "text": "songs of your most common decade cost %d" % absi(D.BOSS_DEBUFF)}
 		"slot":
 			return {"name": "Crowd request", "text": "one slot only takes a chosen genre or decade"}
 		"hates":
 			return {"name": "Angry crowd", "text": "an extra hate, and hates cost double"}
 		"target":
-			return {"name": "High expectations", "text": "targets +%d%%" % int(round((D.BOSS_TARGET - 1.0) * 100.0))}
+			return {"name": "High expectations", "text": "the audience cools %d faster" % D.COOL_BOSS}
 		"gear":
 			return {"name": "Broken equipment", "text": "one piece of your gear is out"}
 		"destroy":
@@ -3492,18 +3542,18 @@ func _boss_info(c: Dictionary) -> Dictionary:
 	match String(c["kind"]):
 		"genre":
 			var g := String(D.GENRES[int(c["genre"])])
-			return {"name": gen["name"], "text": "%s songs score %d points all night." % [g, D.BOSS_DEBUFF], "short": "%s songs score %d" % [g, D.BOSS_DEBUFF]}
+			return {"name": gen["name"], "text": "%s songs cost %d audience score all night." % [g, absi(D.BOSS_DEBUFF)], "short": "%s songs cost %d" % [g, absi(D.BOSS_DEBUFF)]}
 		"era":
 			var e := String(D.ERAS[int(c["era"])])
-			return {"name": gen["name"], "text": "%s songs score %d points all night." % [e, D.BOSS_DEBUFF], "short": "%s songs score %d" % [e, D.BOSS_DEBUFF]}
+			return {"name": gen["name"], "text": "%s songs cost %d audience score all night." % [e, absi(D.BOSS_DEBUFF)], "short": "%s songs cost %d" % [e, absi(D.BOSS_DEBUFF)]}
 		"slot":
 			var g2 := String(D.GENRES[int(c["genre"])])
 			var e2 := String(D.ERAS[int(c["era"])])
-			return {"name": gen["name"], "text": "Slot %d only takes %s or %s songs. Anything else scores 0 points and breaks the flow." % [int(c["slot"]) + 1, g2, e2], "short": "Slot %d needs %s or %s" % [int(c["slot"]) + 1, g2, e2]}
+			return {"name": gen["name"], "text": "Slot %d only takes %s or %s songs. Anything else counts as a miss." % [int(c["slot"]) + 1, g2, e2], "short": "Slot %d needs %s or %s" % [int(c["slot"]) + 1, g2, e2]}
 		"hates":
-			return {"name": gen["name"], "text": "They hate %s as well, and every hated song costs double (%d crowd)." % [String(c["hate"]), D.DISLIKE * D.BOSS_HATE_MULT], "short": "Hates cost double"}
+			return {"name": gen["name"], "text": "They hate %s as well, and every hated song costs double (%d)." % [String(c["hate"]), D.DISLIKE * D.BOSS_HATE_MULT], "short": "Hates cost double"}
 		"target":
-			return {"name": gen["name"], "text": "Every target is %d%% higher." % int(round((D.BOSS_TARGET - 1.0) * 100.0)), "short": "Targets +%d%%" % int(round((D.BOSS_TARGET - 1.0) * 100.0))}
+			return {"name": gen["name"], "text": "The audience cools %d faster every song." % D.COOL_BOSS, "short": "Cooling +%d" % D.COOL_BOSS}
 		"gear":
 			var gn := String(c["name"])
 			return {"name": gen["name"], "text": "Your %s is broken for the night." % gn, "short": "%s is broken" % gn}
@@ -3585,7 +3635,7 @@ func _draw_boss() -> void:
 	var x := r.position.x + 150.0
 	_tag_chips(x, r.position.y + 470.0, "LIKES", boss_venue["likes"], c_good)
 	_tag_chips(x, r.position.y + 530.0, "HATES", boss_venue["dislikes"], c_bad)
-	_text(Vector2(x, r.position.y + 620.0), "+%d crowd per liked tag   ·   %d per hated tag" % [D.LIKE, D.DISLIKE * (D.BOSS_HATE_MULT if String(ch["kind"]) == "hates" else 1)], 16, c_body, true)
+	_text(Vector2(x, r.position.y + 620.0), "+%d for a liked song   ·   %d for a hated song" % [D.LIKE, D.DISLIKE * (D.BOSS_HATE_MULT if String(ch["kind"]) == "hates" else 1)], 16, c_body, true)
 	_hw_button(Rect2(r.get_center().x - 220.0, r.end.y - 120.0, 440.0, 86.0), "Take the stage", _begin_boss, true, Color("3f9b5a"), T_LG)
 
 func _to_title() -> void:
@@ -3598,8 +3648,13 @@ func _to_title() -> void:
 func _show_title() -> void:
 	phase = "title"
 
-func _menu_bg() -> void:
+func _menu_bg(art: bool = true) -> void:
 	var full := Rect2(-800.0, -800.0, UI_W + 1600.0, UI_H + 1600.0)
+	if not art:
+		draw_rect(full, Color.BLACK)
+		if not menu_album.is_empty():
+			_text_right(UI_W - 70.0, 1404.0, "Now playing: %s, %s" % [String(menu_album["band"]), String(menu_album["title"])], T_SM, Color(1, 1, 1, 0.75), true)
+		return
 	draw_rect(full, Color("0e1018"))
 	var tex := _cover_tex(String(menu_album.get("cover", "")))
 	if tex != null:
@@ -3619,7 +3674,7 @@ func _pick_kit(i: int) -> void:
 	_new_run(i)
 
 func _draw_title() -> void:
-	_menu_bg()
+	_menu_bg(false)
 	var c := Vector2(UI_W * 0.5, 470.0)
 	draw_circle(c + Vector2(10.0, 16.0), 300.0, Color(0, 0, 0, 0.35))
 	draw_circle(c, 300.0, Color("111317"))
@@ -3646,7 +3701,7 @@ func _kit_gear(kit: Dictionary) -> Dictionary:
 	return g
 
 func _draw_kits() -> void:
-	_menu_bg()
+	_menu_bg(false)
 	_heavy_center(Rect2(0.0, 40.0, UI_W, 110.0), "Choose your kit", T_XL + 16, Color("f4efe4"))
 	var n: int = D.KITS.size()
 	var w := 560.0
@@ -3668,7 +3723,7 @@ func _draw_kits() -> void:
 		_draw_gear(Rect2(x, r.position.y + 304.0, iw, 200.0), _kit_gear(kit), 0.5)
 		_text(Vector2(x, r.position.y + 550.0), "THE DECK", 14, c_muted, true)
 		_wrap(Vector2(x, r.position.y + 580.0), "One album for every genre and decade (%d), plus %d Mixes." % [D.GENRES.size() * D.ERAS.size(), D.START_CDRS], iw, T_SM, c_body, true)
-		_wrap(Vector2(x, r.position.y + 680.0), "Every CD has one flow condition (set, side, opener, closer, after or above). Play it where its condition holds to keep the flow.", iw, 15, c_body, true)
+		_wrap(Vector2(x, r.position.y + 680.0), "Every CD has one condition: anywhere, a set or side, opener or closer, after or above a genre or decade, or between two. Safe ones pay little; risky ones pay a lot.", iw, 15, c_body, true)
 		_text_center(Rect2(r.position.x, r.end.y - 150.0, r.size.x, 30.0), "%d CDs  ·  %d Mixes" % [D.GENRES.size() * D.ERAS.size() + D.START_CDRS, D.START_CDRS], 15, c_muted, true)
 		_hw_button(Rect2(r.get_center().x - 190.0, r.end.y - 110.0, 380.0, 80.0), "Pick this kit", _pick_kit.bind(i), true, Color("3f9b5a"), T_MD)
 		if ui_live:
