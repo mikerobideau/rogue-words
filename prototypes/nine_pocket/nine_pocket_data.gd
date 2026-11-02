@@ -30,13 +30,10 @@ const DIGS := 3
 const DIG_MAX := 1
 const DIG_OFFERS := 3
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
-const STICKERS := CATALOG_DATA.STICKERS
 const SHOP_DUPE_CHANCE := 0.35
 
 const FLOW_MAX := 6
-const LINK_MODE := "ladder"
-const LINK_WRAP := false
-const SLOT_TARGETS: Array[int] = [3, 5, 7, 9, 12, 14, 17, 21]
+const SLOT_TARGETS: Array[int] = [3, 4, 5, 6, 7, 9, 10, 11]
 const TARGET_GROWTH := 0.15
 const START_CDRS := 2
 const KIT_ALBUMS := 12
@@ -129,8 +126,8 @@ const GEAR_PACKS := [
 	{"name": "Studio Bundle", "price": 11, "show": 3, "pick": 2},
 ]
 
-const SORT_KEYS: Array[String] = ["genre", "era", "sound", "sticker", "band"]
-const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "sticker": "Sticker", "band": "Band"}
+const SORT_KEYS: Array[String] = ["genre", "era", "sound", "band"]
+const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "band": "Band"}
 
 const GEAR := {
 	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting is added to that genre's points.", "price": 6, "n": [0], "look": "faders"},
@@ -138,7 +135,7 @@ const GEAR := {
 	"gain": {"name": "Gain Stage", "text": "+%d points for songs in the genre on the dial.", "price": 7, "n": [2, 3], "look": "genre_knob"},
 	"comp": {"name": "Compressor", "text": "Songs from the same record label also keep the flow going.", "price": 5, "n": [0], "look": "knobs"},
 	"exciter": {"name": "Exciter", "text": "+%d points for songs from the decade on the dial.", "price": 6, "n": [1, 2], "look": "era_knob"},
-	"tube": {"name": "Tube Preamp", "text": "+%d points for songs that pay cash.", "price": 5, "n": [2, 3, 4], "look": "tube"},
+	"tube": {"name": "Tube Preamp", "text": "+%d points for songs worth 3 points or less.", "price": 5, "n": [2, 3, 4], "look": "tube"},
 	"fog": {"name": "Fog Machine", "text": "Fire before a song: +%d flow. Twice a show.", "price": 6, "n": [1, 2], "look": "fog", "uses": 2},
 	"mic": {"name": "Make Some Noise", "text": "Fire between songs: +%d crowd. Twice a show.", "price": 6, "n": [8, 12], "look": "mic", "uses": 2},
 }
@@ -152,7 +149,6 @@ const EDITIONS := {
 	"holo": {"name": "Holographic", "short": "HOLO", "text": "+2 points.", "n": 2, "price": 6, "color": "a678f0"},
 	"signed": {"name": "Signed", "short": "SIGNED", "text": "+3 points.", "n": 3, "price": 5, "color": "c9a227"},
 	"limited": {"name": "Limited Edition", "short": "LTD", "text": "Doubles this song's points.", "n": 2, "price": 8, "color": "d4508f"},
-	"remaster": {"name": "Remaster", "short": "REMASTER", "text": "Its sticker triggers twice.", "n": 2, "price": 6, "color": "4a90d9"},
 	"mint": {"name": "Mint Condition", "short": "MINT", "text": "+$1 each time it's played.", "n": 1, "price": 4, "color": "3fae5a"},
 }
 

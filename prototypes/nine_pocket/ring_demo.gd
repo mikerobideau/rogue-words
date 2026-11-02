@@ -67,7 +67,6 @@ func _rd_deal(wide: bool) -> void:
 		used[a["cover"]] = true
 		var d := _make_disc(a)
 		d.era = c.y
-		d.sticker = ""
 		d.edition = ""
 		rd_hand.append(d)
 		var roll := rng.randf()
