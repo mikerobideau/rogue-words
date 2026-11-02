@@ -9,8 +9,9 @@ const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
 const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
 const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a"]
-const COND_WEIGHTS := {"plain": 9, "set1": 4, "set2": 4, "odd": 4, "even": 4, "opener": 3, "closer": 3, "after_genre": 9, "after_decade": 7, "above_genre": 6, "above_decade": 6, "hype": 9, "boost": 5, "fans": 7, "anthem": 7, "mirror": 3}
-const COND_DECK := {"plain": 2, "set1": 2, "set2": 2, "odd": 1, "even": 1, "opener": 2, "closer": 2, "after_genre": 4, "after_decade": 3, "above_genre": 3, "above_decade": 3, "hype": 5, "boost": 3, "fans": 4, "anthem": 3, "mirror": 2}
+const COND_WEIGHTS := {"plain": 6, "set1": 3, "set2": 3, "odd": 2, "even": 2, "opener": 3, "closer": 3, "after_genre": 7, "after_decade": 6, "above_genre": 7, "above_decade": 7, "hype": 10, "boost": 8, "fans": 8, "anthem": 8, "mirror": 5}
+const START_DECK := {"plain": 14, "set1": 1, "set2": 1, "odd": 1, "even": 1, "opener": 1, "closer": 1, "after_genre": 1, "after_decade": 1, "hype": 2}
+const START_POINTS := {"plain": 5, "set1": 3, "set2": 3, "odd": 3, "even": 3, "opener": 3, "closer": 3, "after_genre": 3, "after_decade": 3, "hype": 3}
 const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
 const SET_BONUS := 10
 const SIDE_BONUS := 8
@@ -46,13 +47,14 @@ const DIG_OFFERS := 3
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
 const FLOW_MAX := 6
-const GIG_TARGETS: Array[int] = [150, 260, 450, 800, 1400, 2500]
+const GIG_TARGETS: Array[int] = [70, 120, 210, 380, 680, 1200]
 const HEADLINER_MULT := 1.25
 const BOSS_TARGET := 1.3
 const TIER_GOOD := 1.5
 const TIER_GREAT := 2.0
 const EQ_UNIT := 3
-const START_CDRS := 2
+const DECK_SIZE := 24
+const DECK_THEME := 6
 const KITS := [
 	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "echo", "lean": ["genre", "Indie"]},
 	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Classic Rock"]},

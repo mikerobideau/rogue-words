@@ -59,6 +59,7 @@ var score_live := 0
 var resolving := false
 var sel_slot := -1
 var set_res := {}
+var pending_kit := 0
 var flow_live := 1.0
 var gear_uses: Array[int] = []
 var booed := false
@@ -320,7 +321,7 @@ func _music_for(d: Disc) -> String:
 	return String(album_music.get(d.mix_cover if d.cdr else d.cover, ""))
 
 func _on_music_finished() -> void:
-	if menu_music and phase in ["title", "kits"] and menu_fade <= 0.0:
+	if menu_music and phase in ["title", "kits", "decks"] and menu_fade <= 0.0:
 		music_player.play(0.0)
 
 func _music_stream(path: String) -> AudioStream:
@@ -524,15 +525,17 @@ func _random_gear_ids(n: int, exclude: Array = []) -> Array:
 	_shuffle(ids)
 	return ids.slice(0, n)
 
-func _new_run(kit_i: int = 0) -> void:
+func _new_run(kit_i: int = 0, deck: Dictionary = {}) -> void:
 	_menu_fade_out()
 	collection.clear()
 	next_uid = 1
 	var kit: Dictionary = D.KITS[kit_i]
-	for d: Disc in _kit_discs(kit):
+	var dk: Dictionary = deck
+	if dk.is_empty():
+		var all := _decks()
+		dk = all[rng.randi_range(0, all.size() - 1)]
+	for d: Disc in _deck_discs(dk):
 		collection.append(d)
-	for k in D.START_CDRS:
-		collection.append(_make_cdr())
 	rack.clear()
 	for k in D.RACK_SLOTS:
 		rack.append({})
@@ -552,23 +555,49 @@ func _new_run(kit_i: int = 0) -> void:
 	else:
 		phase = "map"
 
-func _kit_discs(_kit: Dictionary) -> Array:
+func _decks() -> Array:
+	var out: Array = []
+	for g in D.GENRES.size():
+		out.append({"kind": "genre", "v": g, "name": D.GENRES[g]})
+	for e in D.ERAS.size():
+		out.append({"kind": "era", "v": e, "name": D.ERAS[e]})
+	return out
+
+func _deck_discs(deck: Dictionary) -> Array:
+	var gn := D.GENRES.size()
+	var en := D.ERAS.size()
 	var deal: Array = []
-	for ck in D.COND_DECK:
-		for k in int(D.COND_DECK[ck]):
+	for ck in D.START_DECK:
+		for k in int(D.START_DECK[ck]):
 			deal.append(ck)
 	_shuffle(deal)
+	var combos: Array = []
+	var eras: Array = range(en)
+	_shuffle(eras)
+	for g in gn:
+		combos.append([g, int(eras[g % en])])
+	var tv := int(deck["v"])
+	if String(deck["kind"]) == "genre":
+		var te: Array = range(en)
+		_shuffle(te)
+		for k in D.DECK_THEME:
+			combos.append([tv, int(te[k % en])])
+	else:
+		var tg: Array = range(gn)
+		_shuffle(tg)
+		for k in D.DECK_THEME:
+			combos.append([int(tg[k % gn]), tv])
+	while combos.size() < D.DECK_SIZE:
+		combos.append([rng.randi_range(0, gn - 1), rng.randi_range(0, en - 1)])
 	var used: Array = []
 	var out: Array = []
-	var n := 0
-	for e in D.ERAS.size():
-		for g in D.GENRES.size():
-			var a := _gen_album(g, e, String(deal[n % deal.size()]), used)
-			n += 1
-			used.append(a["cover"])
-			var d := _make_disc(a)
-			d.edition = ""
-			out.append(d)
+	for n in combos.size():
+		var a := _gen_album(int(combos[n][0]), int(combos[n][1]), String(deal[n]), used)
+		a["points"] = int(D.START_POINTS[String(a["cond"])])
+		used.append(a["cover"])
+		var d := _make_disc(a)
+		d.edition = ""
+		out.append(d)
 	return out
 
 func _refill() -> void:
@@ -636,7 +665,7 @@ func _placed() -> int:
 	return n
 
 func _can_play() -> bool:
-	return ui_live and phase == "show" and not resolving and not playing and not dig_mode and _placed() == D.SETLIST
+	return ui_live and phase == "show" and not resolving and not playing and not dig_mode and dig_offer.is_empty() and _placed() == D.SETLIST
 
 func _on_pocket(p: int) -> void:
 	if dig_mode:
@@ -646,7 +675,7 @@ func _on_pocket(p: int) -> void:
 			else:
 				dig_marks.assign([p])
 		return
-	if resolving or playing:
+	if resolving or playing or not dig_offer.is_empty():
 		return
 	if sel_slot >= 0:
 		var back := tray[sel_slot]
@@ -668,7 +697,7 @@ func _on_pocket(p: int) -> void:
 	_sfx("page_turn")
 
 func _on_slot(s: int) -> void:
-	if resolving or playing:
+	if resolving or playing or not dig_offer.is_empty():
 		return
 	if sel_slot < 0:
 		if tray[s] >= 0:
@@ -831,18 +860,38 @@ func _draw_pile_table(r: Rect2) -> void:
 				draw_rect(Rect2(cell.position.x + 3.0, cell.end.y - 4.0, cell.size.x - 6.0, 2.0), Color(D.GENRE_COLORS[k]).lightened(0.35))
 
 func _draw_dig_offer() -> void:
-	var full := Rect2(Vector2(-800, -800), Vector2(UI_W, UI_H) + Vector2(1600, 1600))
-	draw_rect(full, Color(0.04, 0.05, 0.07, 0.9))
-	_register(full, func(): pass)
-	var cx := UI_W * 0.5
-	_heavy_center(Rect2(0.0, 90.0, UI_W, 90.0), "Choose 1 of %d" % dig_offer.size(), T_XL + 8, Color("f4efe4"))
+	var r := r_rack
+	_shadow(r, 10, 14.0)
+	_surface(r, 10.0, "metal_dark", Color("1d1f23"), Color("121316"))
+	_panel(r, Color(0, 0, 0, 0), 10, Color(c_gold, 0.8), 3)
+	var x := r.position.x + 40.0
+	var w := r.size.x - 80.0
 	var gone: Disc = collection[discard.back()]
-	_text_center(Rect2(0.0, 182.0, UI_W, 40.0), "You discarded %s. The rest go back in the binder." % gone.title, T_MD, Color("b8c0cc"), true)
+	_heavy(Vector2(x, r.position.y + 76.0), "Choose 1 of %d" % dig_offer.size(), T_XL, Color("f4efe4"))
+	_wrap(Vector2(x, r.position.y + 112.0), "You discarded %s. Pick a CD for the glowing slot in your hand." % gone.title, w, T_SM, Color("b8c0cc"), true)
+	var ch := 372.0
 	for k in dig_offer.size():
 		var d: Disc = collection[dig_offer[k]]
-		var dc := Vector2(cx + (k - (dig_offer.size() - 1) * 0.5) * 560.0, 560.0)
-		_draw_card_detail(dc, d, 160.0)
-		_hw_button(Rect2(dc.x - 160.0, 1000.0, 320.0, 80.0), "Take this CD", _take_offer.bind(k), true, Color("3f9b5a"), T_MD)
+		var cr := Rect2(x, r.position.y + 190.0 + k * (ch + 14.0), w, ch)
+		_panel(cr, Color(1, 1, 1, 0.05), 12, Color(1, 1, 1, 0.14), 2)
+		var dc := Vector2(cr.position.x + 120.0, cr.position.y + 124.0)
+		_disc_face(dc, DISC_R, d)
+		_disc_marks(dc, DISC_R, d)
+		_tip_disc(Rect2(dc - Vector2(DISC_R, DISC_R), Vector2(DISC_R, DISC_R) * 2.0), d)
+		var tx := cr.position.x + 250.0
+		var tw := cr.size.x - 270.0
+		_wrap(Vector2(tx, cr.position.y + 44.0), d.title, tw, T_MD, Color.WHITE, true)
+		var cx := tx
+		if d.genre >= 0:
+			cx += _info_chip(cx, cr.position.y + 112.0, String(D.GENRE_SHORT[d.genre]), Color("5d626a")) + 6.0
+			_info_chip(cx, cr.position.y + 112.0, String(D.ERAS[d.era]), Color("5d626a"))
+		else:
+			_info_chip(cx, cr.position.y + 112.0, "MIX", Color("2b5fa8"))
+		var body := "Becomes a random album when played." if d.cdr else _cond_text(d)
+		if d.edition != "":
+			body += "  " + String(D.EDITIONS[d.edition]["name"]) + " edition: " + String(D.EDITIONS[d.edition]["text"])
+		_wrap(Vector2(tx, cr.position.y + 170.0), body, tw, 15, Color("e8ecf2"), true)
+		_hw_button(Rect2(cr.position.x + 20.0, cr.end.y - 84.0, w - 40.0, 64.0), "Take this CD", _take_offer.bind(k), true, Color("3f9b5a"), T_SM)
 
 func _well_center(s: int) -> Vector2:
 	var cols := D.SETLIST / 2
@@ -863,7 +912,7 @@ func _pocket_rect(p: int) -> Rect2:
 
 func _draw() -> void:
 	_begin_draw()
-	var modal := phase in ["result", "over", "won", "end"] or not pack.is_empty() or binder_open or not dig_offer.is_empty()
+	var modal := phase in ["result", "over", "won", "end"] or not pack.is_empty() or binder_open
 	ui_live = not modal and not playing
 	hover_disc = null
 	if phase == "map":
@@ -876,6 +925,8 @@ func _draw() -> void:
 		_draw_title()
 	elif phase == "kits":
 		_draw_kits()
+	elif phase == "decks":
+		_draw_decks()
 	elif phase == "pickup":
 		_draw_pickup()
 	elif phase == "shop":
@@ -1360,6 +1411,8 @@ func _draw_wallet() -> void:
 		var edge := Color(c_gold, 0.8) if over else Color(1, 1, 1, 0.13)
 		var fill := Color(1, 1, 1, 0.07 if over else 0.03)
 		_panel(pocket, fill, 8, edge, 3 if over else 2)
+		if not dig_offer.is_empty() and p == dig_slot:
+			_panel(pocket.grow(5.0), Color(0, 0, 0, 0), 12, Color(c_gold, 0.6 + 0.3 * sin(clock * 5.0)), 4)
 		_pocket_lip(pocket)
 		if i >= 0:
 			var d := collection[i]
@@ -1401,7 +1454,7 @@ func _draw_console() -> void:
 		_hw_button(Rect2(x, cy, 104.0, bh), "Discard" if n > 0 else "Pick", _confirm_dig, n > 0, black, T_SM)
 		_hw_button(Rect2(x + 114.0, cy, 84.0, bh), "Cancel", _cancel, true, black, T_SM)
 	else:
-		var can := ui_live and phase == "show" and not resolving and digs > 0 and draw_pile.size() + discard.size() > 0
+		var can := ui_live and phase == "show" and not resolving and dig_offer.is_empty() and digs > 0 and draw_pile.size() + discard.size() > 0
 		_hw_button(Rect2(x, cy, 198.0, bh), "Discard", _start_dig, can, black, T_SM)
 	for k in D.DIGS:
 		_led(Vector2(x + 224.0 + k * 30.0, cy + bh * 0.5), 7.0, led, 1.0 if k < digs else 0.0)
@@ -3637,7 +3690,45 @@ func _to_kits() -> void:
 	phase = "kits"
 
 func _pick_kit(i: int) -> void:
-	_new_run(i)
+	pending_kit = i
+	phase = "decks"
+
+func _pick_deck(i: int) -> void:
+	_new_run(pending_kit, _decks()[i])
+
+func _draw_decks() -> void:
+	_menu_bg(false)
+	_heavy_center(Rect2(0.0, 40.0, UI_W, 110.0), "Choose your deck", T_XL + 16, Color("f4efe4"))
+	var kit: Dictionary = D.KITS[pending_kit]
+	_text_center(Rect2(0.0, 150.0, UI_W, 40.0), "%s kit  ·  %s" % [String(kit["name"]), String(D.GEAR[String(kit["gear"])]["name"])], T_MD, Color("b8c0cc"), true)
+	var ds := _decks()
+	var w := 300.0
+	var h := 400.0
+	var gap := 24.0
+	var rows := [[0, D.GENRES.size(), 270.0, "GENRE DECKS"], [D.GENRES.size(), ds.size(), 740.0, "DECADE DECKS"]]
+	for row: Array in rows:
+		var n: int = int(row[1]) - int(row[0])
+		var x0 := (UI_W - (n * w + (n - 1) * gap)) * 0.5
+		_silk(Vector2(x0, float(row[2]) - 18.0), String(row[3]), 16, Color("b8c0cc"))
+		for k in n:
+			var di: int = int(row[0]) + k
+			var dk: Dictionary = ds[di]
+			var r := Rect2(x0 + k * (w + gap), float(row[2]), w, h)
+			var hot := ui_live and r.has_point(mouse)
+			if hot:
+				_panel(r.grow(8.0), Color("f2c14e"), 22)
+			_shadow(r, 18, 10.0)
+			_panel(r, Color("f4efe4"), 18)
+			var ca := _theme_albums(["genre" if String(dk["kind"]) == "genre" else "era", String(dk["name"])])
+			var tex: Texture2D = _cover_tex(String(ca[0]["cover"])) if not ca.is_empty() else null
+			_cd_art(Vector2(r.get_center().x, r.position.y + 118.0), 84.0, tex, clock * 0.6 if hot else 0.0)
+			_heavy_center(Rect2(r.position.x, r.position.y + 224.0, w, 44.0), String(dk["name"]), T_LG, c_ink)
+			_text_center(Rect2(r.position.x, r.position.y + 268.0, w, 24.0), "GENRE DECK" if String(dk["kind"]) == "genre" else "DECADE DECK", 13, c_muted, true)
+			var blurb := "One CD of every %s, %d more %s CDs, and %d basic CDs." % ["genre" if String(dk["kind"]) == "genre" else "genre and decade", D.DECK_THEME, String(dk["name"]), D.DECK_SIZE - D.GENRES.size() - D.DECK_THEME]
+			_wrap(Vector2(r.position.x + 22.0, r.position.y + 322.0), blurb, w - 44.0, 15, c_body, true)
+			if ui_live:
+				_register(r, _pick_deck.bind(di))
+	_hw_button(Rect2(70.0, 1336.0, 260.0, 84.0), "Back", _to_kits, true, Color("6a6f77"), T_MD)
 
 func _draw_title() -> void:
 	_menu_bg(false)
@@ -3688,9 +3779,8 @@ func _draw_kits() -> void:
 		_text(Vector2(x, r.position.y + 290.0), "STARTING GEAR", 14, c_muted, true)
 		_draw_gear(Rect2(x, r.position.y + 304.0, iw, 200.0), _kit_gear(kit), 0.5)
 		_text(Vector2(x, r.position.y + 550.0), "THE DECK", 14, c_muted, true)
-		_wrap(Vector2(x, r.position.y + 580.0), "One album for every genre and decade (%d), plus %d Mixes." % [D.GENRES.size() * D.ERAS.size(), D.START_CDRS], iw, T_SM, c_body, true)
+		_wrap(Vector2(x, r.position.y + 580.0), "Next you pick a deck: one for every genre and decade.", iw, T_SM, c_body, true)
 		_wrap(Vector2(x, r.position.y + 680.0), "Every CD has one effect that reacts to the songs around it. Lay out the whole set, then press PLAY.", iw, 15, c_body, true)
-		_text_center(Rect2(r.position.x, r.end.y - 150.0, r.size.x, 30.0), "%d CDs  ·  %d Mixes" % [D.GENRES.size() * D.ERAS.size() + D.START_CDRS, D.START_CDRS], 15, c_muted, true)
 		_hw_button(Rect2(r.get_center().x - 190.0, r.end.y - 110.0, 380.0, 80.0), "Pick this kit", _pick_kit.bind(i), true, Color("3f9b5a"), T_MD)
 		if ui_live:
 			_register(r, _pick_kit.bind(i))
