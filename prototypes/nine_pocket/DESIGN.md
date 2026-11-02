@@ -1,8 +1,8 @@
 # Disc Engine
 
-You're a DJ playing shows against the crowd. Hold a hand of CDs, play them one slot at a time, and chain them so the **flow** builds. Each song's score has to beat that slot's target score to win the crowd over.
+You're a DJ playing shows against the crowd. Draw a hand of CDs, lay out a set of 6 in the order you want, and let the effects chain together. Your set's total score has to reach the gig's target score to win the crowd over.
 
-**Prototype:** run `nine_pocket.tscn` (F6). Venues, points, flow, targets, gear and editions are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd`: show flow in `_start_show` / `_on_pocket` / `_play` / `_finish_song` / `_confirm_dig` / `_fire` / `_end_show`, scoring in `_react` and `_links`, call-outs in `_new_call`. Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions are in git history.
+**Prototype:** run `nine_pocket.tscn` (F6). Venues, points, effects, targets, gear and editions are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd`: show flow in `_start_show` / `_on_pocket` / `_on_slot` / `_play` / `_start_slot` / `_finish_song` / `_confirm_dig` / `_end_show`, scoring in `_score_set` and `_apply_effect`, call-outs in `_new_call`. Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions are in git history.
 
 Loop: **fork in the road** (the old tour map is kept behind a flag) → pick a road → two reward stops and a gig → pay and the record shop → next fork, until the headliner. Getting booed off ends the tour.
 
@@ -34,42 +34,45 @@ Black screen, a spotlight from above, and the reward on a pool of light.
 - **Cash:** a tip jar full of bills. Click once to collect $4–8.
 
 ## Scoring
-One number matters: the **audience score**. It starts at 20 (`ENERGY_START`), you lose at 0, and it is capped at 60.
+**Lay out the whole set, then press PLAY.** You fill all 6 slots of the changer from your hand, in any order. When you press PLAY the set resolves left to right, one song at a time, and every card's effect fires in turn. There is no hit or miss and no flow: every card always scores. The gig is cleared if your total is at or above the target score after song 6, and you are booed off if it isn't. The target grows over the tour (`GIG_TARGETS`: 90, 120, 155, 200, 260, 330; a boss gig is x1.25 as a headliner, and the "High expectations" boss another x1.3).
 
-**Every song's result is one sum: flow + stars + extras - cooling.**
-- **Cooling:** after every song the audience cools (`COOLING`: 3, 4, 5, 5, 6, 6 by gig; a boss adds 1 for being a headliner, and the "High expectations" boss another 1).
-- **Hit or miss:** every album has **one condition** printed on it. If it holds where you play it, the song is a **hit**: flow goes up by 1 (it starts each show at 0) and the song pays its new flow, plus its stars and any extras. If not, it is a **miss**: it pays nothing and flow resets to 0 (Crossfader halves it instead, Compressor lets the first miss each show keep it). Conditions come in risk tiers:
-  - **Safe (0 to 1 star):** **Anywhere** (always hits, 0 stars: a setup card), **Set 1** (tracks 1 to 4), **Set 2** (tracks 5 to 8), **A-side** (odd tracks), **B-side** (even tracks).
-  - **Risky (2 to 3 stars):** **Opener** (track 1, 2 stars), **Closer** (track 8, 3 stars), **After a genre or decade** (the song just before it, 2 stars), **Above a genre or decade** (the song above it in the snake, tracks 5 to 8 only, 3 stars).
-  - **Very risky (6 stars): Between two tags**, such as "PUNK · ROCK": the song before it must match the first tag and the song after it the second (each a genre or decade, with Pitch Control widening decades). It only works on tracks 2 to 7. It pays nothing on its own turn; when the next song is placed it pays the flow (counted as a hit) plus 6 stars. If the next song doesn't match it counts as a miss one song late and the flow resets. A gold NEEDS tag sits on the disc and on the rack display until it resolves.
-  A Mix always hits. Compressor, Crossfader and Pitch Control are described under Rack.
-- **Stars (0 to 6):** the only number on an album, set by its condition (see the tiers above). Editions add +1 (Holographic), +2 (Signed) or +3 (Limited) on a hit. A card with 4 or more stars shows one star and a number.
-- **Extras, hit or miss:** a venue's liked tag a song matches is **+2**, a hated one **-2**; a matching request is **+4**; a boss's genre or decade debuff is **-2**. Hit-only extras come from gear.
-- Nothing in the game tells you what a song will score. Cards in your hand glow cyan when their condition holds in the open slot, and the tooltip says it hits or misses there, but you work out the audience change yourself from flow, stars, gear and the venue.
+**A song scores (points + additions) x multipliers.**
+- **Points:** every album has a number set by its effect (`COND_POINTS`): a plain card 12, an effect card 4 to 8.
+- **Effects** look at where the card sits in the sequence. The slot grid is a snake, so "above" means the song in the slot over it on slots 4 to 6:
+  - **Plain:** no effect, 12 points. (Tube Preamp adds to these.)
+  - **Set 1 / Set 2:** +10 points in slots 1 to 3 / slots 4 to 6.
+  - **Odd / Even:** +8 points in slots 1, 3, 5 / slots 2, 4, 6.
+  - **First / Last:** x2 in slot 1 / x3 in slot 6.
+  - **After a genre or decade:** x2 if the song before it matches.
+  - **Above a genre or decade:** x3 if the song above it matches (slots 4 to 6 only).
+  - **Hype:** the next song gets +12 points. **Boost:** the next song scores x2.
+  - **Fans:** +4 points for each song of its genre played before it.
+  - **Anthem:** every later song of its genre gets +8 points.
+  - **Copy:** repeats the effect of the song before it.
+- **Additions** are added to the points and **multipliers** multiply the total, in any order: a liked genre or decade +5, the request +10 (the first song of the requested genre or decade in your set), editions (Holographic +3, Signed +5, Limited +8), gear (see Rack), a hated song x0.5 (nothing on the "Angry crowd" boss), a boss debuff on your most common genre or decade x0.5, and a boss's locked slot scores nothing for songs that don't fit.
+- The lines of each song float up one by one with the running total on its slot as it plays, so you can see what fired. Nothing in the game shows what a set will score before you press PLAY: you read the cards, the slot and neighbour readout on the rack, and work it out.
 
-**Audience score (0-60):** starts at 20. At 0 you're booed off. At the end, 42+ is an **Encore**, 26+ is **Big applause**, and below that is polite clapping.
+**Pay:** a missed target pays $2 and ends the tour. A cleared target pays $5 ("Target cleared"), $8 at 1.5x the target ("Big applause") and $11 at 2x ("Encore!"). The meter on the rack shows your score against the target with ticks at 1.5x and 2x.
 
 ## The show
-- Your binder is shuffled at the start of each show. You hold a **hand of 8** in the CD wallet (two rows of 4) (`HAND`) and it refills from the draw pile after every song.
-- The changer has **8 slots in a 2×4 snake** (`SETLIST`): slots 1 to 4 run left to right along the top row, then slots 5 to 8 run right to left along the bottom, so slot 5 sits under 4 and slot 8 sits under slot 1. They are played in order, one at a time. Only the open slot takes a CD:
-  - Click a CD in your hand to load it (clicking another swaps them). Click the loaded CD to send it back, until you press **PLAY**.
-  - Slots show the cooling (-N) until played, then the audience change. CDs in your hand that would hit glow cyan (ones that would miss look debuffed).
-  - PLAY: the lines of the sum float up one by one (condition, flow, stars, extras, cooling), then the audience change. The slot locks showing "+4", and the next slot opens.
-- After each song you **draw 1** from your binder.
-- **Discard** (3 per show): throw away 1 CD from your hand, then **choose 1 of 3** CDs drawn at random from the draw pile. The other two go back into the pile. The discarded CD goes to a discard pile and can't be offered again until the draw pile runs low (fewer than 3 left), when the discard pile is shuffled back in. Each discard costs 3 crowd, and each offered CD shows whether it would keep or break the flow. If the pile is empty, discarding is unavailable.
+- Your binder is shuffled at the start of each show. You draw a **hand of 8** into the CD wallet (two rows of 4, `HAND`), and nothing is drawn after that: you choose which 6 of the 8 to play and in what order.
+- The changer has **6 slots in a 3×2 snake** (`SETLIST`): slots 1 to 3 run left to right along the top row, then slots 4 to 6 run right to left along the bottom, so slot 4 sits under 3 and slot 6 sits under slot 1. They are played in order, one at a time. Only the open slot takes a CD:
+  - Click a CD in your hand to load it into the first empty slot. Click a CD in the changer to pick it up (the slot glows gold), then click another slot to swap or move it, a hand pocket to swap it with that CD, or the same CD again to send it back to your hand. Right-click cancels. PLAY unlocks when all 6 slots are full.
+  - Slots show their score only once played; the arrows between slots and the link icons between rows light up when the song's effect fired.
+  - PLAY: Mixes become their genre and decade, then the set resolves left to right, 4 seconds a song. Each song floats up its lines (effect, points, additions, multipliers) with a running total, then locks showing e.g. "+168". The show ends after slot 8.
+- **Discard** (3 per show): throw away 1 CD from your hand, then **choose 1 of 3** CDs drawn at random from the draw pile. The other two go back into the pile. The discarded CD goes to a discard pile and can't be offered again until the draw pile runs low (fewer than 3 left), when the discard pile is shuffled back in. Discards are free; they are how you dig for the cards your sequence needs. If the pile is empty, discarding is unavailable.
 - **Draw pile table:** a readout in the console strip shows (a toggle switch beside it flips between *PILE* and *PILE + HAND*, which also adds the CDs in your hand; the card tooltips follow the same setting) how many CDs of each genre and each decade are still in the draw pile (amber digits, genre-colored underline), plus the pile total and the number of Mixes. The genre and decade of the song just played glow cyan, since those are the tags that keep the flow. Hovering a CD in your hand or the changer adds "Left in the draw pile: N of its genre, M of its decade" to its tooltip.
-- The show ends after slot 8, or when the audience score hits 0.
-- **Reading the slot:** the display on the rack under FLOW says THIS SLOT and lists the open slot's set, side and opener or closer, plus the genre and decade of the song before it (AFTER) and, on tracks 5 to 8, the song above it (ABOVE). Cards in your hand that meet their condition in this slot glow cyan; ones that don't look debuffed. The arrows between discs turn cyan or red for songs that kept or broke the flow, and the link icons between the rows light up for songs whose condition looked at the song above.
-- After a song, 55% of the time (when no request is active) the crowd shouts a **request** ("Play some 90s!"): +4 audience score if one of the next 2 songs matches. There are no complaints any more.
+- **Reading the slot:** the display on the rack shows the slot you have picked up, are hovering over or (while playing) are resolving: its set, odd or even, first or last, and the genre and decade of the song before it (PREV), above it (ABOVE) and after it (NEXT), so you can check an effect before you commit.
+- At the start of each show the crowd shouts a **request** ("Play some 90s!"): +10 points for the first song of that genre or decade in your set.
 - The clipboard holds a taped note with the venue's likes and hates, and the yellow slip with the current call.
 - **Console strip** (bottom, brushed metal like the rack units), left to right: a black *View binder* button; a black *Discard* button with three amber lights for discards left (while choosing, it becomes *Discard* and *Cancel*); the **draw pile table** (see Discard); and **Sort** as five amp-style toggle switches (Genre, Decade, Points, Band) whose lights use the same amber. All console buttons share the black style.
 
 ## Boss gigs
 **Every third gig is a boss** (boss and headliner mean the same thing): gigs 3 and 6, with the fork roads covering the gigs between. Beating gig 6 completes the tour. Bosses use the headliner's venue and ×1.25 targets, and carry one **challenge**, different for each boss in a run. The fork screen warns which challenge the next boss will have, a boss screen spells it out, and the crowd panel keeps a red reminder. The challenges (`BOSS_KINDS`):
-- **Genre debuffed / Decade debuffed:** your most common genre (or decade) costs 2 audience score a song all night.
-- **Crowd request:** one of slots 2-4 only takes a chosen genre or decade; anything else counts as a miss. A red tag marks the slot and the cards read as debuffed.
-- **Angry crowd:** an extra hated genre (one of your common ones) and hates cost double.
-- **High expectations:** the audience cools 1 faster every song.
+- **Genre debuffed / Decade debuffed:** songs of your most common genre (or decade) score half all night.
+- **Crowd request:** one of slots 2-5 only takes a chosen genre or decade; anything else scores nothing. A red tag marks the slot.
+- **Angry crowd:** an extra hated genre (one of your common ones), and hated songs score nothing.
+- **High expectations:** the target is 30% higher.
 - **Broken equipment:** one piece of rack gear is out for the show (restored afterward).
 - **Rough crowd:** each song played has a 20% chance to be destroyed for good (removed from the binder when you leave the show).
 - **No time to dig:** one discard instead of three.
@@ -77,33 +80,32 @@ One number matters: the **audience score**. It starts at 20 (`ENERGY_START`), yo
 
 ## Starting kits
 The game opens on a title screen (Play), on a plain black background, whose music comes from one **random album** that has a song (its cover shows only on the spinning disc; the song plays from the middle, loops, and "Now playing" names it). The kit screen keeps the song and is also on plain black. Going back to the title from the kit screen keeps the song; arriving at the title after a run picks a new one. Starting a run fades the music out over 1.5 seconds (`MENU_FADE`). Then a **kit screen** with four cards. Each kit is a 14-CD starting binder plus one piece of gear in the rack, and every kit starts with $0. There is no Basement any more. Picking a kit starts the run at the first fork. Winning or losing returns to the title.
-- **Deck:** one album for every genre and decade (7 genres x 6 decades = 42) plus 2 Mixes (CD-Rs), no editions at the start. Conditions are dealt from `COND_DECK`: 5 Anywhere, 2 each of set 1, set 2, A-side, B-side, opener and closer, 7 after-genre, 5 after-decade, 5 above-genre, 5 above-decade and 3 Between, shuffled across the grid each run. Each album borrows a catalog cover and title (preferring one with the same genre and decade) and takes the genre, decade, condition and stars of its slot in the grid.
+- **Deck:** one album for every genre and decade (7 genres x 6 decades = 42) plus 2 Mixes (CD-Rs), no editions at the start. Effects are dealt from `COND_DECK`: 4 plain, 2 each of set 1, set 2, odd, even, first and last, 4 after-genre, 3 after-decade, 3 above-genre, 3 above-decade, 4 hype, 2 boost, 3 fans, 3 anthem and 1 copy, shuffled across the grid each run. Each album borrows a catalog cover and title (preferring one with the same genre and decade) and takes the genre, decade, effect and points of its slot in the grid.
 - **Kits** (`KITS` in the data file):
-  - **Flow Crew:** Crossfader.
+  - **Chain Gang:** Echo Unit.
   - **Showstopper:** Make Some Noise.
   - **Genre Streak:** Gain Stage, dialed to Punk.
   - **Crowd Pleaser:** Tube Preamp.
-- **Mixes** (blank CD-Rs, no stars): when played, a Mix always hits, then picks a random album from the whole catalog and becomes that album's genre and decade for the crowd and gear, with the result shown on its label. It resets after each show.
+- **Mixes** (blank CD-Rs, 3 points, no effect): at PLAY a Mix picks a random album from the whole catalog and becomes that album's genre and decade for the neighbours, crowd and gear. It resets after each show.
 - Tuning knobs: `KITS`, `START_CDRS`. The kits differ only by gear for now.
 
 Better albums, editions and more gear come from pickups and the shop.
 
-## The catalog and conditions
+## The catalog and effects
 **The catalog** is `album_catalog.gd`: 63 albums, 7 genres x 3 bands x 3 albums. Each album has a catalog genre and decade and a title. The game pairs the new titles with the existing cover art within each genre, in order, keeping the real band names, and the mp3s stay bound to the cover art. The catalog's sticker and payout columns are not used.
 
-**Conditions** for catalog albums are rolled once per album from a seed on its cover using `COND_WEIGHTS` (Anywhere 10, sets and sides 5 each, opener and closer 3 each, after-genre 14, after-decade 12, above-genre 11, above-decade 10, Between 6), so they never change between runs. Generated albums (shop, pickups, packs) roll the same weights fresh. Stars follow `COND_STARS`. Genre and decade parameters are random; a Between card rolls two different tags (60% genre, 40% decade).
+**Effects** for catalog albums are rolled once per album from a seed on its cover using `COND_WEIGHTS`, so they never change between runs. Generated albums (shop, pickups, packs) roll the same weights fresh. Points follow `COND_POINTS`. Genre and decade parameters are random.
 
-**Genre and decade** are one of each per album and drive the crowd, gear, requests and bosses: a venue like pays +3 crowd for a matching genre or decade (hates -5), a request is met by a matching song, Graphic EQ adds the genre's fader, Gain Stage and Exciter pay for their dial's genre or decade, and boss genre and decade debuffs apply to matching songs. Genre has no colour anywhere. Fatigue (three songs in a row of one genre or decade), a boss's slot lock and kit leans use the same genre and decade. A Mix copies a random album's cover, genre and decade when it is played.
+**Genre and decade** are one of each per album and drive the crowd, gear, effects and bosses: a venue like adds +5 points for a matching genre or decade, a hated one halves the song, the request is met by a matching song, Graphic EQ adds the genre's fader, Gain Stage and Exciter add for their dial's genre or decade, and boss genre and decade debuffs apply to matching songs. Genre has no colour anywhere. A Mix copies a random album's cover, genre and decade when it is played.
 
 **Rules:** an album can be played any number of times in a set. The record shop, pickups and album packs generate albums with a random genre, decade and condition (`_gen_album`, using `COND_WEIGHTS`), borrowing a catalog cover; a road's theme fixes the first album's genre and decade.
 
-**Editions** (8% of albums): Holographic +1 on a hit, Signed +2, Limited Edition +3, Mint Condition +$1 per play.
+**Editions** (8% of albums): Holographic +3 points, Signed +5, Limited Edition +8, Mint Condition +$1 per play.
 
 ## Rack
 All 4 bays start empty. The kit gives one piece of gear; more comes from pickups and the shop.
-- **Hit bonuses:** Graphic EQ adds each genre's fader (-1 to +2) to that genre's hits; Gain Stage +1/+2 for the dial's genre; Exciter +1/+2 for the dial's decade; Tube Preamp +1/+2/+3 for songs with no stars; Echo Unit doubles a hit on the closing song.
-- **Flow:** Crossfader (a miss halves the flow instead of resetting it); Compressor (the first miss each show keeps the flow); Pitch Control (decade conditions after/above accept one decade either side).
-- **Triggered** (button on the unit, 2 uses per show): Fog Machine, fired before a song, gives +1 flow (MK II +2). Make Some Noise, fired between songs, gives +4 audience score (MK II +6).
+- **Point gear:** Graphic EQ adds 3 per fader step (-3 to +6) to every song of that genre; Gain Stage +3/+6 for the dial's genre; Exciter +3/+6 for the dial's decade; Tube Preamp +4/+8/+12 for plain cards (no effect).
+- **Sequence gear:** Make Some Noise makes your closing song score x2 (MK II x3); Pitch Control lets after/above decade effects accept a decade one step either side; Echo Unit makes Hype +24 and Boost x3.
 
 ## Pay and the shop
 After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus Mint Condition money.
@@ -118,17 +120,17 @@ After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus
 The binder shows only its pages (discs tagged IN HAND / IN CHANGER / PLAYED / DUG during a show), centered, with a Close button at the top right. The tag count panel is gone; the draw pile table in the console strip covers what's left to draw.
 
 ## Screen
-Changer (8 slots in a 2×4 snake, each showing the cooling or its result) top left, with a COOLING readout and PLAY on its panel. Your hand in the CD wallet is below it, with the console strip underneath. The venue clipboard is in the middle and the rack on the right, topped by a display showing AUDIENCE, FLOW and TARGET, the crowd meter, the flow lamps (×1–×4) and the NEXT LINK tags (the last song's genre and decade, plus its label with a Compressor).
+Left: the changer (6 slots in a 3×2 snake, each showing its score once played) with the hand in the CD wallet below it (8 CDs in two rows of 4, the same size as the discs in the changer) and the venue clipboard beside the hand. Middle: one score panel, the only place the score lives: SCORE, TARGET and SONGS readouts, the score meter, the readout for the slot you are working on (its set, odd or even, first or last, and its PREV, ABOVE and NEXT neighbours) and the PLAY SET button with a loaded count. Right: the gear rack, four tall bays. The console strip runs along the bottom (View binder, Discard, draw pile table, sort switches).
 
 ## Balance
-The scoring changed to cooling and flow (see Scoring), so the old per-venue table is gone.
+The scoring is now a laid-out sequence (see Scoring), so the old per-venue table is gone.
 
 
-Measured over 80 shows per row at a plain venue (no boss extras) with two full-information bots. The "greedy" bot plays the card with the best result now; the "look" bot also looks one song ahead (it can plan a sandwich). Greedy ends at 38 / 30 / 20 / 15 audience score on gigs 1, 2, 4 and 6 (cooling 3 / 4 / 5 / 6), surviving 100% to 85%; the look bot ends 1 to 5 points higher at the harder gigs and picks a different card on about 20% of turns, so planning pays. Random play gets about 2 hits a show and dies by gig 5. The bots don't use gear or the shop. Tuning knobs: `COOLING`, `COOL_HEADLINER`, `COOL_BOSS`, `COND_WEIGHTS`, `COND_DECK`, `COND_STARS`, `ENERGY_START`, `ENERGY_MAX`, `APPLAUSE`, `ENCORE`, `LIKE`, `DISLIKE`, `REQUEST`, `START_CDRS`, `CDR_STARS`, `FLOW_MAX`, `MUSIC_SECONDS`.
+Measured over 150 hands of 8 at random venues (no gear): picking and ordering 6 cards at random scores a median of about 71 points (p10 52, p90 99); the 6 highest-point cards in hand order about the same (median 69); and a hill-climbing planner that searches for the best 6 and order scores about 131 (p10 99, p90 205). So planning is worth about 1.8x, and the first gig target of 90 sits between the two. Targets are a first pass (about 1.3x per gig) and need playtesting with upgrades. Tuning knobs: `GIG_TARGETS`, `HEADLINER_MULT`, `BOSS_TARGET`, `COND_POINTS`, `COND_WEIGHTS`, `COND_DECK`, `SET_BONUS`, `SIDE_BONUS`, `OPENER_MULT`, `CLOSER_MULT`, `AFTER_MULT`, `ABOVE_MULT`, `HYPE_ADD`, `BOOST_MULT`, `FANS_PER`, `ANTHEM_ADD`, `HATE_MULT`, `LIKE`, `REQUEST`, `EQ_UNIT`, `HAND`, `SETLIST`, `TIER_GOOD`, `TIER_GREAT`, `PAY_*`, `START_CDRS`, `CDR_POINTS`, `MUSIC_SECONDS`.
 
 ## Music
 
-Pressing PLAY starts the album's track from a random point (at least a second before the end) and lets it run 5 seconds, fading over the last 0.8. The song only finishes, and the next one can be played, once both the score readout and the 5 seconds are done. Tracks live in `music/<Genre>/<Band>/` and are matched to albums by the file name starting with "Band - Album". A Mix plays the track of the random album it picked. Length is `MUSIC_SECONDS` in the data file.
+Pressing PLAY starts the album's track from a random point (at least a second before the end) and lets it run 4 seconds, fading over the last 0.8. The song only finishes, and the next one can be played, once both the score readout and the 5 seconds are done. Tracks live in `music/<Genre>/<Band>/` and are matched to albums by the file name starting with "Band - Album". A Mix plays the track of the random album it picked. Length is `MUSIC_SECONDS` in the data file.
 
 ## Ring demo
 
@@ -138,8 +140,8 @@ Pressing PLAY starts the album's track from a random point (at least a second be
 
 Each kind of information has one visual channel, and nothing else uses it.
 
-- **Cover and condition:** the disc is the album's cover art. A strip of masking tape across the top reads "Decade-Genre" (for example "80s-Indie") in black marker; if a venue likes or hates that genre or decade, or a gear unit boosts it, that half of the label turns green, red or gold. A dark pill near the bottom of the disc names its flow condition (SET 1, A-SIDE, CLOSER, AFTER PUNK, ABOVE 90S and so on). Points sit in the green badge at the top left. There are no chips under the disc and genre has no colour. A Mix shows a blank CD-R until it is played, then the cover it became with a MIX pill.
-- **Situation** is a single state per hand card, drawn only during a show after the first song: a cyan glow when it keeps the flow (the console's NEXT LINK chips and the draw pile table show the one or two decades that link), debuffed when it breaks the flow, nothing otherwise. A debuffed CD has washed-out art, a red edge, a red down-arrow badge in its bottom-left corner and a dimmed plate. Hovering it clears the wash and keeps the badge, and the tooltip says it breaks (or keeps) the flow. Unplayed Mixes show no state, since their genre and decade are unknown. If a closes-the-ring state is ever added it goes first in the priority order, ahead of keeps and breaks.
+- **Cover and condition:** the disc is the album's cover art. A strip of masking tape across the top reads "Decade-Genre" (for example "80s-Indie") in black marker; if a venue likes or hates that genre or decade, or a gear unit boosts it, that half of the label turns green, red or gold. A dark pill near the bottom of the disc names its effect (SET 2 +10, LAST x3, AFTER PUNK x2, NEXT +12, +4 PER ROCK, COPY PREV and so on). Points sit in the green badge at the top left. There are no chips under the disc and genre has no colour. A Mix shows a blank CD-R until it is played, then the cover it became with a MIX pill.
+- **No situation states:** cards in your hand are never highlighted or debuffed; the card shows its effect and you decide.
 
 The old FLOW +1 tag and the old ability icons are gone.
 

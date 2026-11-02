@@ -2,16 +2,27 @@ extends RefCounted
 
 const CATALOG := "res://prototypes/nine_pocket/art/covers/catalog.json"
 const MUSIC_DIR := "res://prototypes/nine_pocket/music"
-const MUSIC_SECONDS := 5.0
+const MUSIC_SECONDS := 4.0
 const MUSIC_FADE := 0.8
 const MENU_FADE := 1.5
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
 const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
 const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a"]
-const COND_WEIGHTS := {"any": 10, "set1": 5, "set2": 5, "odd": 5, "even": 5, "opener": 3, "closer": 3, "after_genre": 14, "after_decade": 12, "above_genre": 11, "above_decade": 10, "between": 6}
-const COND_DECK := {"any": 5, "set1": 2, "set2": 2, "odd": 2, "even": 2, "opener": 2, "closer": 2, "after_genre": 7, "after_decade": 5, "above_genre": 5, "above_decade": 5, "between": 3}
-const COND_STARS := {"any": 0, "set1": 1, "set2": 1, "odd": 1, "even": 1, "opener": 2, "closer": 3, "after_genre": 2, "after_decade": 2, "above_genre": 3, "above_decade": 3, "between": 6}
+const COND_WEIGHTS := {"plain": 9, "set1": 4, "set2": 4, "odd": 4, "even": 4, "opener": 3, "closer": 3, "after_genre": 9, "after_decade": 7, "above_genre": 6, "above_decade": 6, "hype": 9, "boost": 5, "fans": 7, "anthem": 7, "mirror": 3}
+const COND_DECK := {"plain": 4, "set1": 2, "set2": 2, "odd": 2, "even": 2, "opener": 2, "closer": 2, "after_genre": 4, "after_decade": 3, "above_genre": 3, "above_decade": 3, "hype": 4, "boost": 2, "fans": 3, "anthem": 3, "mirror": 1}
+const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
+const SET_BONUS := 10
+const SIDE_BONUS := 8
+const OPENER_MULT := 2.0
+const CLOSER_MULT := 3.0
+const AFTER_MULT := 2.0
+const ABOVE_MULT := 3.0
+const HYPE_ADD := 12
+const BOOST_MULT := 2.0
+const FANS_PER := 4
+const ANTHEM_ADD := 8
+const HATE_MULT := 0.5
 const ERAS: Array[String] = ["60s", "70s", "80s", "90s", "00s", "10s"]
 const LABELS := [
 	{"name": "Rust Belt Records", "short": "Rust Belt", "color": "b4532a"},
@@ -27,35 +38,32 @@ const FLOW_COLOR := "4ab3d9"
 
 const COLLECTION := 20
 const HAND := 8
-const SETLIST := 8
+const SETLIST := 6
 const DIGS := 3
 const DIG_MAX := 1
 const DIG_OFFERS := 3
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
-const FLOW_MAX := 8
-const COOLING: Array[int] = [3, 4, 5, 5, 6, 6]
-const COOL_HEADLINER := 1
-const COOL_BOSS := 1
+const FLOW_MAX := 6
+const GIG_TARGETS: Array[int] = [90, 120, 155, 200, 260, 330]
+const HEADLINER_MULT := 1.25
+const BOSS_TARGET := 1.3
+const TIER_GOOD := 1.5
+const TIER_GREAT := 2.0
+const EQ_UNIT := 3
 const START_CDRS := 2
 const KITS := [
-	{"name": "Flow Crew", "idea": "Chain songs together and keep the flow rolling.", "gear": "xfade", "lean": ["genre", "Indie"]},
+	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "echo", "lean": ["genre", "Indie"]},
 	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Classic Rock"]},
 	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Punk"]},
 	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "gear": "tube", "lean": ["era", "90s"]},
 ]
-const CDR_STARS := 0
-const LIKE := 2
-const DISLIKE := -2
-const REQUEST := 4
+const CDR_POINTS := 3
+const LIKE := 5
+const REQUEST := 10
 const CALL_CHANCE := 0.55
 const REQUEST_SONGS := 2
 
-const ENERGY_START := 20
-const ENERGY_MAX := 60
-const APPLAUSE := 26
-const ENCORE := 42
-const DIG_COST := 3
 
 const VENUES := [
 	{"name": "Basement Show", "likes": [["genre", "Punk"], ["era", "90s"]], "dislikes": [["genre", "Blues"]]},
@@ -69,10 +77,9 @@ const VENUES := [
 const USE_FORK := true
 const BOSS_EVERY := 3
 const TOUR_BOSSES := 2
-const BOSS_DEBUFF := -2
+const BOSS_DEBUFF_MULT := 0.5
 const BOSS_DESTROY := 0.2
 const BOSS_DIGS := 1
-const BOSS_HATE_MULT := 2
 const BOSS_KINDS: Array[String] = ["genre", "era", "slot", "hates", "target", "gear", "destroy", "discards"]
 const ROAD_COMBOS := [
 	{"stops": ["pickup", "pickup"], "weight": 25},
@@ -120,19 +127,16 @@ const GEAR_PACKS := [
 ]
 
 const SORT_KEYS: Array[String] = ["genre", "era", "sound", "band"]
-const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Stars", "band": "Band"}
+const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "band": "Band"}
 
 const GEAR := {
-	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting is added to that genre's hits.", "price": 6, "n": [0], "look": "faders"},
-	"xfade": {"name": "Crossfader", "text": "A miss halves your flow instead of resetting it.", "price": 7, "n": [0], "look": "xfader"},
-	"gain": {"name": "Gain Stage", "text": "+%d on a hit for songs in the genre on the dial.", "price": 7, "n": [1, 2], "look": "genre_knob"},
-	"comp": {"name": "Compressor", "text": "The first miss each show doesn't break your flow.", "price": 5, "n": [0], "look": "knobs"},
-	"exciter": {"name": "Exciter", "text": "+%d on a hit for songs from the decade on the dial.", "price": 6, "n": [1, 2], "look": "era_knob"},
-	"tube": {"name": "Tube Preamp", "text": "+%d on a hit for songs with no stars.", "price": 5, "n": [1, 2, 3], "look": "tube"},
-	"fog": {"name": "Fog Machine", "text": "Fire before a song: +%d flow. Twice a show.", "price": 6, "n": [1, 2], "look": "fog", "uses": 2},
-	"mic": {"name": "Make Some Noise", "text": "Fire between songs: +%d audience score. Twice a show.", "price": 6, "n": [4, 6], "look": "mic", "uses": 2},
-	"pitch": {"name": "Pitch Control", "text": "After and above decade conditions accept a decade one step either side.", "price": 6, "n": [0], "look": "knobs"},
-	"echo": {"name": "Echo Unit", "text": "A hit on the closing song pays double.", "price": 6, "n": [0], "look": "knobs"},
+	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting (x3) is added to that genre's songs.", "price": 6, "n": [0], "look": "faders"},
+	"gain": {"name": "Gain Stage", "text": "+%d points for songs in the genre on the dial.", "price": 7, "n": [3, 6], "look": "genre_knob"},
+	"exciter": {"name": "Exciter", "text": "+%d points for songs from the decade on the dial.", "price": 6, "n": [3, 6], "look": "era_knob"},
+	"tube": {"name": "Tube Preamp", "text": "+%d points for songs with no effect.", "price": 5, "n": [4, 8, 12], "look": "tube"},
+	"mic": {"name": "Make Some Noise", "text": "Your closing song scores x%d.", "price": 6, "n": [2, 3], "look": "knobs"},
+	"pitch": {"name": "Pitch Control", "text": "After and above decade effects accept a decade one step either side.", "price": 6, "n": [0], "look": "knobs"},
+	"echo": {"name": "Echo Unit", "text": "Effects that boost the next song are stronger (Hype +24, Boost x3).", "price": 6, "n": [0], "look": "knobs"},
 }
 const EQ_MIN := -1
 const EQ_MAX := 3
@@ -141,9 +145,9 @@ const LEVEL_NAMES: Array[String] = ["", "MK II", "MK III"]
 
 const EDITION_CHANCE := 0.08
 const EDITIONS := {
-	"holo": {"name": "Holographic", "short": "HOLO", "text": "+1 on a hit.", "n": 1, "price": 6, "color": "a678f0"},
-	"signed": {"name": "Signed", "short": "SIGNED", "text": "+2 on a hit.", "n": 2, "price": 5, "color": "c9a227"},
-	"limited": {"name": "Limited Edition", "short": "LTD", "text": "+3 on a hit.", "n": 3, "price": 8, "color": "d4508f"},
+	"holo": {"name": "Holographic", "short": "HOLO", "text": "+3 points on a hit.", "n": 3, "price": 6, "color": "a678f0"},
+	"signed": {"name": "Signed", "short": "SIGNED", "text": "+5 points on a hit.", "n": 5, "price": 5, "color": "c9a227"},
+	"limited": {"name": "Limited Edition", "short": "LTD", "text": "+8 points on a hit.", "n": 8, "price": 8, "color": "d4508f"},
 	"mint": {"name": "Mint Condition", "short": "MINT", "text": "+$1 each time it's played.", "n": 1, "price": 4, "color": "3fae5a"},
 }
 
