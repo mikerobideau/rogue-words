@@ -34,9 +34,9 @@ Black screen, a spotlight from above, and the reward on a pool of light.
 - **Cash:** a tip jar full of bills. Click once to collect $4–8.
 
 ## Scoring
-**Lay out the whole set, then press PLAY.** You fill all 6 slots of the changer from your hand, in any order. When you press PLAY the set resolves left to right, one song at a time, and every card's effect fires in turn. There is no hit or miss and no flow: every card always scores. The gig is cleared if your total is at or above the target score after song 6, and you are booed off if it isn't. The target grows over the tour (`GIG_TARGETS`: 90, 120, 155, 200, 260, 330; a boss gig is x1.25 as a headliner, and the "High expectations" boss another x1.3).
+**Lay out the whole set, then press PLAY.** You fill all 6 slots of the changer from your hand, in any order. When you press PLAY the set resolves left to right, one song at a time, and every card's effect fires in turn. There is no hit or miss: every card always scores, and a set-wide **flow** builds up as the set plays. The gig is cleared if your total is at or above the target score after song 6, and you are booed off if it isn't. The target grows over the tour (`GIG_TARGETS`: 150, 260, 450, 800, 1400, 2500; a boss gig is x1.25 as a headliner, and the "High expectations" boss another x1.3).
 
-**A song scores (points + additions) x multipliers.**
+**Flow is a running multiplier. A song scores (points + additions) x flow x local multipliers.** Flow starts at x1 each show and persists through the set. Effects raise it after their song plays, so builders go early and your big-point songs go late, building to a finale. Scores can get very large and are shown with K and M suffixes above 100,000.
 - **Points:** every album has a number set by its effect (`COND_POINTS`): a plain card 12, an effect card 4 to 8.
 - **Effects** look at where the card sits in the sequence. The slot grid is a snake, so "above" means the song in the slot over it on slots 4 to 6:
   - **Plain:** no effect, 12 points. (Tube Preamp adds to these.)
@@ -45,8 +45,8 @@ Black screen, a spotlight from above, and the reward on a pool of light.
   - **First / Last:** x2 in slot 1 / x3 in slot 6.
   - **After a genre or decade:** x2 if the song before it matches.
   - **Above a genre or decade:** x3 if the song above it matches (slots 4 to 6 only).
-  - **Hype:** the next song gets +12 points. **Boost:** the next song scores x2.
-  - **Fans:** +4 points for each song of its genre played before it.
+  - **Amp** (flow +1.5), **Surge** (flow x2.5): raise your flow after this song plays.
+  - **Fans:** raises your flow by 1 for each song of its genre played before it, after this song plays.
   - **Anthem:** every later song of its genre gets +8 points.
   - **Copy:** repeats the effect of the song before it.
 - **Additions** are added to the points and **multipliers** multiply the total, in any order: a liked genre or decade +5, the request +10 (the first song of the requested genre or decade in your set), editions (Holographic +3, Signed +5, Limited +8), gear (see Rack), a hated song x0.5 (nothing on the "Angry crowd" boss), a boss debuff on your most common genre or decade x0.5, and a boss's locked slot scores nothing for songs that don't fit.
@@ -80,7 +80,7 @@ Black screen, a spotlight from above, and the reward on a pool of light.
 
 ## Starting kits
 The game opens on a title screen (Play), on a plain black background, whose music comes from one **random album** that has a song (its cover shows only on the spinning disc; the song plays from the middle, loops, and "Now playing" names it). The kit screen keeps the song and is also on plain black. Going back to the title from the kit screen keeps the song; arriving at the title after a run picks a new one. Starting a run fades the music out over 1.5 seconds (`MENU_FADE`). Then a **kit screen** with four cards. Each kit is a 14-CD starting binder plus one piece of gear in the rack, and every kit starts with $0. There is no Basement any more. Picking a kit starts the run at the first fork. Winning or losing returns to the title.
-- **Deck:** one album for every genre and decade (7 genres x 6 decades = 42) plus 2 Mixes (CD-Rs), no editions at the start. Effects are dealt from `COND_DECK`: 4 plain, 2 each of set 1, set 2, odd, even, first and last, 4 after-genre, 3 after-decade, 3 above-genre, 3 above-decade, 4 hype, 2 boost, 3 fans, 3 anthem and 1 copy, shuffled across the grid each run. Each album borrows a catalog cover and title (preferring one with the same genre and decade) and takes the genre, decade, effect and points of its slot in the grid.
+- **Deck:** one album for every genre and decade (7 genres x 6 decades = 42) plus 2 Mixes (CD-Rs), no editions at the start. Effects are dealt from `COND_DECK`: 2 plain, 2 each of set 1, set 2, first and last, 1 each of odd and even, 4 after-genre, 3 after-decade, 3 above-genre, 3 above-decade, 5 amp, 3 surge, 4 fans, 3 anthem and 2 copy, shuffled across the grid each run. Each album borrows a catalog cover and title (preferring one with the same genre and decade) and takes the genre, decade, effect and points of its slot in the grid.
 - **Kits** (`KITS` in the data file):
   - **Chain Gang:** Echo Unit.
   - **Showstopper:** Make Some Noise.
@@ -105,7 +105,7 @@ Better albums, editions and more gear come from pickups and the shop.
 ## Rack
 All 4 bays start empty. The kit gives one piece of gear; more comes from pickups and the shop.
 - **Point gear:** Graphic EQ adds 3 per fader step (-3 to +6) to every song of that genre; Gain Stage +3/+6 for the dial's genre; Exciter +3/+6 for the dial's decade; Tube Preamp +4/+8/+12 for plain cards (no effect).
-- **Sequence gear:** Make Some Noise makes your closing song score x2 (MK II x3); Pitch Control lets after/above decade effects accept a decade one step either side; Echo Unit makes Hype +24 and Boost x3.
+- **Sequence gear:** Make Some Noise makes your closing song score x2 (MK II x3); Pitch Control lets after/above decade effects accept a decade one step either side; Echo Unit makes flow gains from effects 50% bigger.
 
 ## Pay and the shop
 After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus Mint Condition money.
@@ -120,13 +120,13 @@ After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus
 The binder shows only its pages (discs tagged IN HAND / IN CHANGER / PLAYED / DUG during a show), centered, with a Close button at the top right. The tag count panel is gone; the draw pile table in the console strip covers what's left to draw.
 
 ## Screen
-Left: the changer (6 slots in a 3×2 snake, each showing its score once played) with the hand in the CD wallet below it (8 CDs in two rows of 4, the same size as the discs in the changer) and the venue clipboard beside the hand. Middle: one score panel, the only place the score lives: SCORE, TARGET and SONGS readouts, the score meter, the readout for the slot you are working on (its set, odd or even, first or last, and its PREV, ABOVE and NEXT neighbours) and the PLAY SET button with a loaded count. Right: the gear rack, four tall bays. The console strip runs along the bottom (View binder, Discard, draw pile table, sort switches).
+Left: the changer (6 slots in a 3×2 snake, each showing its score once played) with the hand in the CD wallet below it (8 CDs in two rows of 4, the same size as the discs in the changer) and the venue clipboard beside the hand. Middle: one score panel, the only place the score lives: SCORE, TARGET and FLOW readouts, the score meter, the readout for the slot you are working on (its set, odd or even, first or last, and its PREV, ABOVE and NEXT neighbours) and the PLAY SET button with a loaded count. Right: the gear rack, four tall bays. The console strip runs along the bottom (View binder, Discard, draw pile table, sort switches).
 
 ## Balance
 The scoring is now a laid-out sequence (see Scoring), so the old per-venue table is gone.
 
 
-Measured over 150 hands of 8 at random venues (no gear): picking and ordering 6 cards at random scores a median of about 71 points (p10 52, p90 99); the 6 highest-point cards in hand order about the same (median 69); and a hill-climbing planner that searches for the best 6 and order scores about 131 (p10 99, p90 205). So planning is worth about 1.8x, and the first gig target of 90 sits between the two. Targets are a first pass (about 1.3x per gig) and need playtesting with upgrades. Tuning knobs: `GIG_TARGETS`, `HEADLINER_MULT`, `BOSS_TARGET`, `COND_POINTS`, `COND_WEIGHTS`, `COND_DECK`, `SET_BONUS`, `SIDE_BONUS`, `OPENER_MULT`, `CLOSER_MULT`, `AFTER_MULT`, `ABOVE_MULT`, `HYPE_ADD`, `BOOST_MULT`, `FANS_PER`, `ANTHEM_ADD`, `HATE_MULT`, `LIKE`, `REQUEST`, `EQ_UNIT`, `HAND`, `SETLIST`, `TIER_GOOD`, `TIER_GREAT`, `PAY_*`, `START_CDRS`, `CDR_POINTS`, `MUSIC_SECONDS`.
+Measured over 150 hands of 8 at random venues (no gear): picking and ordering 6 cards at random scores a median of about 97 (p10 55, p90 209); the 6 highest-point cards in hand order about 70; and a hill-climbing planner that searches for the best 6 and order scores about 377 (p10 167, p90 1188). Planning is worth about 4x at the median and the top end runs away, which is the point of the running flow. Targets (150, 260, 450, 800, 1400, 2500, about 1.7x per gig) are a first pass and need playtesting with upgrades. Tuning knobs: `GIG_TARGETS`, `HEADLINER_MULT`, `BOSS_TARGET`, `COND_POINTS`, `COND_WEIGHTS`, `COND_DECK`, `AMP_ADD`, `SURGE_MULT`, `FANS_FLOW`, `ECHO_FLOW`, `SET_BONUS`, `SIDE_BONUS`, `OPENER_MULT`, `CLOSER_MULT`, `AFTER_MULT`, `ABOVE_MULT`, `ANTHEM_ADD`, `HATE_MULT`, `LIKE`, `REQUEST`, `EQ_UNIT`, `HAND`, `SETLIST`, `TIER_GOOD`, `TIER_GREAT`, `PAY_*`, `START_CDRS`, `CDR_POINTS`, `MUSIC_SECONDS`.
 
 ## Music
 

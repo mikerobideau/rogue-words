@@ -10,7 +10,7 @@ const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", 
 const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
 const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a"]
 const COND_WEIGHTS := {"plain": 9, "set1": 4, "set2": 4, "odd": 4, "even": 4, "opener": 3, "closer": 3, "after_genre": 9, "after_decade": 7, "above_genre": 6, "above_decade": 6, "hype": 9, "boost": 5, "fans": 7, "anthem": 7, "mirror": 3}
-const COND_DECK := {"plain": 4, "set1": 2, "set2": 2, "odd": 2, "even": 2, "opener": 2, "closer": 2, "after_genre": 4, "after_decade": 3, "above_genre": 3, "above_decade": 3, "hype": 4, "boost": 2, "fans": 3, "anthem": 3, "mirror": 1}
+const COND_DECK := {"plain": 2, "set1": 2, "set2": 2, "odd": 1, "even": 1, "opener": 2, "closer": 2, "after_genre": 4, "after_decade": 3, "above_genre": 3, "above_decade": 3, "hype": 5, "boost": 3, "fans": 4, "anthem": 3, "mirror": 2}
 const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
 const SET_BONUS := 10
 const SIDE_BONUS := 8
@@ -18,9 +18,10 @@ const OPENER_MULT := 2.0
 const CLOSER_MULT := 3.0
 const AFTER_MULT := 2.0
 const ABOVE_MULT := 3.0
-const HYPE_ADD := 12
-const BOOST_MULT := 2.0
-const FANS_PER := 4
+const AMP_ADD := 1.5
+const SURGE_MULT := 2.5
+const FANS_FLOW := 1.0
+const ECHO_FLOW := 1.5
 const ANTHEM_ADD := 8
 const HATE_MULT := 0.5
 const ERAS: Array[String] = ["60s", "70s", "80s", "90s", "00s", "10s"]
@@ -45,7 +46,7 @@ const DIG_OFFERS := 3
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
 const FLOW_MAX := 6
-const GIG_TARGETS: Array[int] = [90, 120, 155, 200, 260, 330]
+const GIG_TARGETS: Array[int] = [150, 260, 450, 800, 1400, 2500]
 const HEADLINER_MULT := 1.25
 const BOSS_TARGET := 1.3
 const TIER_GOOD := 1.5
@@ -136,7 +137,7 @@ const GEAR := {
 	"tube": {"name": "Tube Preamp", "text": "+%d points for songs with no effect.", "price": 5, "n": [4, 8, 12], "look": "tube"},
 	"mic": {"name": "Make Some Noise", "text": "Your closing song scores x%d.", "price": 6, "n": [2, 3], "look": "knobs"},
 	"pitch": {"name": "Pitch Control", "text": "After and above decade effects accept a decade one step either side.", "price": 6, "n": [0], "look": "knobs"},
-	"echo": {"name": "Echo Unit", "text": "Effects that boost the next song are stronger (Hype +24, Boost x3).", "price": 6, "n": [0], "look": "knobs"},
+	"echo": {"name": "Echo Unit", "text": "Flow gains from effects are 50% bigger.", "price": 6, "n": [0], "look": "knobs"},
 }
 const EQ_MIN := -1
 const EQ_MAX := 3

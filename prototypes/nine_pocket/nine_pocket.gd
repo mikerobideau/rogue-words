@@ -59,6 +59,7 @@ var score_live := 0
 var resolving := false
 var sel_slot := -1
 var set_res := {}
+var flow_live := 1.0
 var gear_uses: Array[int] = []
 var booed := false
 var tour: Array = []
@@ -593,7 +594,17 @@ func _num(x: float) -> String:
 		return str(int(roundf(x)))
 	return String.num(x, 1)
 
+func _ff(v: float) -> String:
+	var t := "%.2f" % v
+	while t.contains(".") and (t.ends_with("0") or t.ends_with(".")):
+		t = t.left(t.length() - 1)
+	return t
+
 func _fmt_int(n: int) -> String:
+	if absi(n) >= 1000000:
+		return ("-" if n < 0 else "") + _ff(snappedf(absi(n) / 1000000.0, 0.01)) + "M"
+	if absi(n) >= 100000:
+		return ("-" if n < 0 else "") + str(absi(n) / 1000) + "K"
 	var s := str(absi(n))
 	var out := ""
 	while s.length() > 3:
@@ -1242,11 +1253,11 @@ func _cond_label(d: Disc) -> String:
 		"above_decade":
 			return "ABOVE %s x%d" % [String(D.ERAS[d.cond_v]).to_upper(), int(D.ABOVE_MULT)]
 		"hype":
-			return "NEXT +%d" % D.HYPE_ADD
+			return "FLOW +%s" % _ff(D.AMP_ADD)
 		"boost":
-			return "NEXT x%d" % int(D.BOOST_MULT)
+			return "FLOW x%s" % _ff(D.SURGE_MULT)
 		"fans":
-			return "+%d PER %s" % [D.FANS_PER, D.GENRE_SHORT[d.cond_v]]
+			return "FLOW PER %s" % D.GENRE_SHORT[d.cond_v]
 		"anthem":
 			return "LATER %s +%d" % [D.GENRE_SHORT[d.cond_v], D.ANTHEM_ADD]
 		"mirror":
@@ -1276,11 +1287,11 @@ func _cond_text(d: Disc) -> String:
 		"above_decade":
 			return "Scores x%d if the song above it is from the %s (slots 5 to 8 only)." % [int(D.ABOVE_MULT), D.ERAS[d.cond_v]]
 		"hype":
-			return "The next song scores +%d points." % D.HYPE_ADD
+			return "After this song plays, your flow goes up by %s, so every later song scores more." % _ff(D.AMP_ADD)
 		"boost":
-			return "The next song scores x%d." % int(D.BOOST_MULT)
+			return "After this song plays, your flow is multiplied by %s." % _ff(D.SURGE_MULT)
 		"fans":
-			return "+%d points for each %s song played before it." % [D.FANS_PER, D.GENRES[d.cond_v]]
+			return "After this song plays, your flow goes up by %s for each %s song played before it." % [_ff(D.FANS_FLOW), D.GENRES[d.cond_v]]
 		"anthem":
 			return "Every later %s song scores +%d points." % [D.GENRES[d.cond_v], D.ANTHEM_ADD]
 		"mirror":
@@ -1591,14 +1602,13 @@ func _draw_score_panel() -> void:
 	var tgt := _gig_target()
 	var o := _focus_slot()
 	var fc := Color(D.FLOW_COLOR).lightened(0.3)
-	var songs := played.size() if resolving else _placed()
 	var dim := Color("8d939b")
 	_silk(Vector2(x, y + 54.0), "SCORE", 14, dim)
 	_lcd(Rect2(x, y + 66.0, w, 96.0), _fmt_int(shown), _score_color(float(shown)), T_XL, "88888")
 	_silk(Vector2(x, y + 196.0), "TARGET", 14, dim)
-	_silk(Vector2(x + w * 0.5 + 10.0, y + 196.0), "SONGS", 14, dim)
+	_silk(Vector2(x + w * 0.5 + 10.0, y + 196.0), "FLOW", 14, dim)
 	_lcd(Rect2(x, y + 208.0, w * 0.5 - 10.0, 64.0), _fmt_int(tgt), Color("ff9a6b"), T_LG, "8888")
-	_lcd(Rect2(x + w * 0.5 + 10.0, y + 208.0, w * 0.5 - 10.0, 64.0), "%d/%d" % [songs, D.SETLIST], fc, T_LG, "8/8")
+	_lcd(Rect2(x + w * 0.5 + 10.0, y + 208.0, w * 0.5 - 10.0, 64.0), "x" + _ff(flow_live), fc, T_LG, "x8.88")
 	var meter := Rect2(x, y + 298.0, w, 48.0)
 	_inset(meter, 6.0, Color("0b0c0e"))
 	var frac := clampf(float(shown) / (2.0 * tgt), 0.0, 1.0)
@@ -2648,6 +2658,7 @@ func _start_show(v: Dictionary) -> void:
 	resolving = false
 	sel_slot = -1
 	set_res = {}
+	flow_live = 1.0
 	link_log.clear()
 	digs = D.BOSS_DIGS if String(chal.get("kind", "")) == "discards" else D.DIGS
 	dig_mode = false
@@ -2729,7 +2740,8 @@ func _s_mult(out: Array, st: Dictionary, src: String, text: String, m: float, ci
 
 func _apply_effect(src: Disc, s: int, ids: Array, prev: Disc, above: Disc, out: Array, st: Dictionary, fx: Dictionary, depth: int) -> bool:
 	var half := D.SETLIST / 2
-	var echo := _bay_of("echo")
+	var eb := _bay_of("echo")
+	var echo := D.ECHO_FLOW if eb >= 0 else 1.0
 	match src.cond:
 		"set1":
 			if s < half:
@@ -2772,14 +2784,14 @@ func _apply_effect(src: Disc, s: int, ids: Array, prev: Disc, above: Disc, out: 
 				_s_mult(out, st, "fx", "Above %s x%d" % [D.ERAS[src.cond_v], int(D.ABOVE_MULT)], D.ABOVE_MULT)
 				return true
 		"hype":
-			var n := D.HYPE_ADD * (2 if echo >= 0 else 1)
-			fx["add"] = int(fx["add"]) + n
-			out.append({"src": "fx", "text": "Hype: next song +%d" % n, "n": 0, "ci": echo, "run": _s_run(st)})
+			var n := D.AMP_ADD * echo
+			fx["fadd"] = float(fx["fadd"]) + n
+			out.append({"src": "fx", "text": "Amp: flow +%s after this song" % _ff(n), "n": 0, "ci": eb, "run": _s_run(st)})
 			return true
 		"boost":
-			var m := D.BOOST_MULT + (1.0 if echo >= 0 else 0.0)
-			fx["mult"] = float(fx["mult"]) * m
-			out.append({"src": "fx", "text": "Boost: next song x%d" % int(m), "n": 0, "ci": echo, "run": _s_run(st)})
+			var m := 1.0 + (D.SURGE_MULT - 1.0) * echo
+			fx["fmul"] = float(fx["fmul"]) * m
+			out.append({"src": "fx", "text": "Surge: flow x%s after this song" % _ff(m), "n": 0, "ci": eb, "run": _s_run(st)})
 			return true
 		"fans":
 			var c := 0
@@ -2787,7 +2799,9 @@ func _apply_effect(src: Disc, s: int, ids: Array, prev: Disc, above: Disc, out: 
 				if collection[ids[j]].genre == src.cond_v:
 					c += 1
 			if c > 0:
-				_s_add(out, st, "fx", "Fans (%d %s) +%d" % [c, D.GENRES[src.cond_v], D.FANS_PER * c], D.FANS_PER * c)
+				var fa := D.FANS_FLOW * c * echo
+				fx["fadd"] = float(fx["fadd"]) + fa
+				out.append({"src": "fx", "text": "Fans (%d %s): flow +%s after this song" % [c, D.GENRES[src.cond_v], _ff(fa)], "n": 0, "ci": eb, "run": _s_run(st)})
 				return true
 		"anthem":
 			var g: Dictionary = fx["gadd"]
@@ -2804,9 +2818,10 @@ func _score_set(ids: Array) -> Dictionary:
 	var half := D.SETLIST / 2
 	var slots: Array = []
 	var total := 0
-	var fx := {"add": 0, "mult": 1.0, "gadd": {}}
+	var fx := {"fadd": 0.0, "fmul": 1.0, "gadd": {}}
 	var req_done := false
 	var call_tag: Array = call["tag"] if not call.is_empty() else []
+	var fl := 1.0
 	for s in ids.size():
 		var d: Disc = collection[ids[s]]
 		var prev: Disc = collection[ids[s - 1]] if s > 0 else null
@@ -2815,16 +2830,9 @@ func _score_set(ids: Array) -> Dictionary:
 		var out: Array = [{"src": "base", "text": "Points %d" % d.sound, "n": d.sound, "ci": -1, "run": d.sound}]
 		var fired := false
 		var cash_gain := 0
-		var carry_add := int(fx["add"])
-		var carry_mult := float(fx["mult"])
-		fx["add"] = 0
-		fx["mult"] = 1.0
-		if carry_add != 0:
-			_s_add(out, st, "carry", "From the song before +%d" % carry_add, carry_add)
-			fired = true
-		if carry_mult != 1.0:
-			_s_mult(out, st, "carry", "From the song before x%d" % int(carry_mult), carry_mult)
-			fired = true
+		var fl_start := fl
+		fx["fadd"] = 0.0
+		fx["fmul"] = 1.0
 		var gn := int((fx["gadd"] as Dictionary).get(d.genre, 0))
 		if gn != 0 and d.genre >= 0:
 			_s_add(out, st, "carry", "Anthem +%d" % gn, gn)
@@ -2875,6 +2883,8 @@ func _score_set(ids: Array) -> Dictionary:
 		if not req_done and not call_tag.is_empty() and _tag_match(d, call_tag):
 			req_done = true
 			_s_add(out, st, "call", "Request! +%d" % D.REQUEST, D.REQUEST)
+		if absf(fl - 1.0) > 0.001:
+			_s_mult(out, st, "fx", "Flow x%s" % _ff(fl), fl)
 		var bc: Dictionary = venue.get("challenge", {})
 		var bdc := 0
 		if _boss_kind() == "genre":
@@ -2886,7 +2896,12 @@ func _score_set(ids: Array) -> Dictionary:
 		if _slot_locked(d, s):
 			_s_mult(out, st, "boss", "Slot locked: no points", 0.0)
 		var sc := _s_run(st)
-		slots.append({"score": sc, "steps": out, "fired": fired, "cash": cash_gain})
+		var fl_next := (fl + float(fx["fadd"])) * float(fx["fmul"])
+		if absf(fl_next - fl) > 0.001:
+			out.append({"src": "flowup", "text": "Flow x%s" % _ff(fl_next), "n": 1, "ci": -1, "run": sc, "flow": fl_next})
+			fired = true
+		fl = fl_next
+		slots.append({"score": sc, "steps": out, "fired": fired, "cash": cash_gain, "flow_start": fl_start, "flow_end": fl})
 		total += sc
 	return {"slots": slots, "total": total}
 
@@ -2907,6 +2922,7 @@ func _play() -> void:
 func _start_slot(s: int) -> void:
 	var d := collection[tray[s]]
 	result = (set_res["slots"] as Array)[s]
+	flow_live = float(result["flow_start"])
 	steps = (result["steps"] as Array).duplicate()
 	var cl := "MIX" if d.cdr else _cond_label(d)
 	var ctxt := cl if bool(result["fired"]) else ("%s: no effect" % cl)
@@ -2934,7 +2950,7 @@ func _play_step(st: Dictionary) -> void:
 	match src:
 		"cond":
 			col = Color("c9ced6") if String(st["text"]).ends_with("no effect") else c_gold
-		"fx", "carry":
+		"fx", "carry", "flowup":
 			col = Color(D.FLOW_COLOR).lightened(0.3)
 		"score":
 			ro["net"] = int(st["run"])
@@ -2942,6 +2958,8 @@ func _play_step(st: Dictionary) -> void:
 			col = c_gold
 		"call":
 			col = c_gold
+	if src == "flowup":
+		flow_live = float(st["flow"])
 	if st.has("run"):
 		ro["text"] = _fmt_int(int(st["run"]))
 	if int(st["ci"]) >= 0:
