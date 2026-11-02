@@ -8,7 +8,9 @@ const MENU_FADE := 1.5
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
 const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
-const GENRE_COLORS: Array[String] = ["6a4bb5", "1f4e79", "b4532a", "2f6b4f", "3a3d42", "d4508f", "c0392b"]
+const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a"]
+const COND_WEIGHTS := {"set1": 12, "set2": 12, "odd": 15, "even": 15, "opener": 6, "closer": 6, "after_genre": 10, "after_decade": 8, "above_genre": 8, "above_decade": 8}
+const COND_EASY: Array[String] = ["set1", "set2", "odd", "even"]
 const ERAS: Array[String] = ["60s", "70s", "80s", "90s", "00s", "10s"]
 const LABELS := [
 	{"name": "Rust Belt Records", "short": "Rust Belt", "color": "b4532a"},
@@ -23,25 +25,21 @@ const HYPE_COLOR := "e9b949"
 const FLOW_COLOR := "4ab3d9"
 
 const COLLECTION := 20
-const HAND := 4
+const HAND := 8
 const SETLIST := 8
-const MIRROR_BONUS := 1
 const DIGS := 3
 const DIG_MAX := 1
 const DIG_OFFERS := 3
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
-const SHOP_DUPE_CHANCE := 0.35
 
 const FLOW_MAX := 6
-const SLOT_TARGETS: Array[int] = [3, 4, 5, 6, 7, 9, 10, 11]
+const SLOT_TARGETS: Array[int] = [6, 7, 8, 10, 12, 13, 14, 17]
 const TARGET_GROWTH := 0.15
 const START_CDRS := 2
-const KIT_ALBUMS := 12
-const KIT_LEAN := 8
 const KITS := [
 	{"name": "Flow Crew", "idea": "Chain songs together and keep the flow rolling.", "gear": "xfade", "lean": ["genre", "Indie"]},
 	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Classic Rock"]},
-	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Punk"], "lean_n": 6},
+	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Punk"]},
 	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "gear": "tube", "lean": ["era", "90s"]},
 ]
 const CDR_POINTS := 1

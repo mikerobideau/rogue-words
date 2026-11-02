@@ -6,7 +6,7 @@ const DRAG_MIN := 24.0
 const WELL_R := 106.0
 const DISC_R := 96.0
 const WELL_PITCH := 300.0
-const CELL := 270.0
+const CELL := 200.0
 const CELL_GAP := 18.0
 const SPINE := 70.0
 const WALLET_BORDER := 34.0
@@ -23,8 +23,8 @@ class Disc:
 	var era := 0
 	var label := 0
 	var sound := 3
-	var rg: Array = []
-	var re: Array = []
+	var cond := ""
+	var cond_v := 0
 	var edition := ""
 	var cdr := false
 	var mix_cover := ""
@@ -111,6 +111,7 @@ var music_player: AudioStreamPlayer
 var music_t := 0.0
 var menu_album: Dictionary = {}
 var pile_with_hand := false
+var link_log: Array = []
 var menu_fade := 0.0
 var menu_music := false
 var album_music := {}
@@ -127,7 +128,7 @@ var covers := {}
 var textures := {}
 
 var r_changer := Rect2(60.0, 40.0, 1780.0, 730.0)
-var r_wallet := Rect2(60.0, 796.0, 1254.0, 370.0)
+var r_wallet := Rect2(60.0, 796.0, 1254.0, 500.0)
 var r_side := Rect2(1350.0, 796.0, 490.0, 500.0)
 var r_rack := Rect2(1880.0, 40.0, 620.0, 1360.0)
 var r_display := Rect2(1912.0, 76.0, 556.0, 330.0)
@@ -265,13 +266,23 @@ func _load_albums() -> void:
 			var e0 := D.ERAS.find(String(ca["decade"]))
 			var rgn := RandomNumberGenerator.new()
 			rgn.seed = absi(String(rc["cover"]).hash())
-			var cells: Array = [[g, e0], [g, (e0 + rgn.randi_range(1, D.ERAS.size() - 1)) % D.ERAS.size()], [(g + rgn.randi_range(1, D.GENRES.size() - 1)) % D.GENRES.size(), e0], [rgn.randi_range(0, D.GENRES.size() - 1), rgn.randi_range(0, D.ERAS.size() - 1)]]
-			for q in range(3, 0, -1):
-				var w := rgn.randi_range(0, q)
-				var tmp: Array = cells[q]
-				cells[q] = cells[w]
-				cells[w] = tmp
-			albums.append({"title": ca["album"], "orig": rc["album"], "band": rc["band"], "cover": rc["cover"], "genre": g, "era": e0, "label": (h / 7) % D.LABELS.size(), "points": int(ca["points"]), "rg": cells.map(func(c): return c[0]), "re": cells.map(func(c): return c[1])})
+			var tot := 0
+			for ck in D.COND_WEIGHTS:
+				tot += int(D.COND_WEIGHTS[ck])
+			var roll := rgn.randi_range(0, tot - 1)
+			var cname := ""
+			for ck in D.COND_WEIGHTS:
+				roll -= int(D.COND_WEIGHTS[ck])
+				if roll < 0:
+					cname = String(ck)
+					break
+			var cv := 0
+			if cname.ends_with("genre"):
+				cv = rgn.randi_range(0, D.GENRES.size() - 1)
+			elif cname.ends_with("decade"):
+				cv = rgn.randi_range(0, D.ERAS.size() - 1)
+			var pts := 2 + int(ca["points"]) % 2 if cname in D.COND_EASY else 4 + int(ca["points"]) % 2
+			albums.append({"title": ca["album"], "orig": rc["album"], "band": rc["band"], "cover": rc["cover"], "genre": g, "era": e0, "label": (h / 7) % D.LABELS.size(), "points": pts, "cond": cname, "cond_v": cv})
 
 func _music_files(dir: String, out: Array) -> void:
 	for sub in DirAccess.get_directories_at(dir):
@@ -394,8 +405,8 @@ func _make_disc(a: Dictionary) -> Disc:
 	d.era = a["era"]
 	d.label = a["label"]
 	d.sound = int(a["points"])
-	d.rg = (a["rg"] as Array).duplicate()
-	d.re = (a["re"] as Array).duplicate()
+	d.cond = String(a["cond"])
+	d.cond_v = int(a["cond_v"])
 	if rng.randf() < D.EDITION_CHANCE:
 		var eds: Array = D.EDITIONS.keys()
 		d.edition = eds[rng.randi_range(0, eds.size() - 1)]
@@ -405,8 +416,6 @@ func _resolve_mix(d: Disc) -> void:
 	var a: Dictionary = albums[rng.randi_range(0, albums.size() - 1)]
 	d.genre = a["genre"]
 	d.era = a["era"]
-	d.rg = (a["rg"] as Array).duplicate()
-	d.re = (a["re"] as Array).duplicate()
 	d.mix_cover = a["cover"]
 
 func _reset_mixes() -> void:
@@ -414,8 +423,6 @@ func _reset_mixes() -> void:
 		if d.cdr:
 			d.genre = -1
 			d.era = -1
-			d.rg = []
-			d.re = []
 			d.mix_cover = ""
 
 func _make_cdr() -> Disc:
@@ -432,27 +439,56 @@ func _make_cdr() -> Disc:
 	d.cdr = true
 	return d
 
-func _fresh_albums(n: int, exclude: Array = []) -> Array:
-	var owned := {}
-	for d in collection:
-		owned[d.cover] = true
-	for c in exclude:
-		owned[c] = true
-	var pool: Array = albums.filter(func(a): return not owned.has(a["cover"]))
-	_shuffle(pool)
-	if pool.size() < n:
-		var extra := albums.duplicate()
-		_shuffle(extra)
-		pool.append_array(extra)
-	return pool.slice(0, n)
+func _gen_album(g: int, e: int, cname: String = "", used: Array = []) -> Dictionary:
+	var pool: Array = albums.filter(func(a): return not a["cover"] in used)
+	if pool.is_empty():
+		pool = albums
+	var near: Array = pool.filter(func(a): return int(a["genre"]) == g and int(a["era"]) == e)
+	if near.is_empty():
+		near = pool.filter(func(a): return int(a["genre"]) == g)
+	if near.is_empty():
+		near = pool
+	var a: Dictionary = (near[rng.randi_range(0, near.size() - 1)] as Dictionary).duplicate()
+	if cname == "":
+		var tot := 0
+		for ck in D.COND_WEIGHTS:
+			tot += int(D.COND_WEIGHTS[ck])
+		var roll := rng.randi_range(0, tot - 1)
+		for ck in D.COND_WEIGHTS:
+			roll -= int(D.COND_WEIGHTS[ck])
+			if roll < 0:
+				cname = String(ck)
+				break
+	var cv := 0
+	if cname.ends_with("genre"):
+		cv = rng.randi_range(0, D.GENRES.size() - 1)
+	elif cname.ends_with("decade"):
+		cv = rng.randi_range(0, D.ERAS.size() - 1)
+	a["genre"] = g
+	a["era"] = e
+	a["cond"] = cname
+	a["cond_v"] = cv
+	a["points"] = rng.randi_range(2, 3) if cname in D.COND_EASY else rng.randi_range(4, 5)
+	return a
+
+func _random_albums(n: int, g0: int = -1, e0: int = -1) -> Array:
+	var out: Array = []
+	var used: Array = []
+	for k in n:
+		var g := g0 if k == 0 and g0 >= 0 else rng.randi_range(0, D.GENRES.size() - 1)
+		var e := e0 if k == 0 and e0 >= 0 else rng.randi_range(0, D.ERAS.size() - 1)
+		var a := _gen_album(g, e, "", used)
+		used.append(a["cover"])
+		out.append(a)
+	return out
 
 func _common(key: String, count: int) -> Array:
 	var counts := {}
 	for d in collection:
 		if d.cdr:
 			continue
-		for v in (d.rg if key == "genre" else d.re):
-			counts[int(v)] = int(counts.get(int(v), 0)) + 1
+		var v: int = d.genre if key == "genre" else d.era
+		counts[v] = int(counts.get(v, 0)) + 1
 	var out: Array = counts.keys().filter(func(v): return int(counts[v]) >= count)
 	return out if not out.is_empty() else counts.keys()
 
@@ -525,51 +561,18 @@ func _new_run(kit_i: int = 0) -> void:
 	else:
 		phase = "map"
 
-func _kit_discs(kit: Dictionary) -> Array:
-	var lean: Array = kit["lean"]
-	var lean_pool: Array = _theme_albums(lean)
-	_shuffle(lean_pool)
-	var covers := {}
-	for a: Dictionary in lean_pool:
-		covers[a["cover"]] = true
-	var rest: Array = albums.filter(func(a): return not covers.has(a["cover"]))
-	var picks: Array = []
-	var bands := {}
-	var want := int(kit.get("lean_n", D.KIT_LEAN))
-	for distinct in [true, false]:
-		for a: Dictionary in lean_pool:
-			if picks.size() >= want:
-				break
-			if a in picks or (distinct and bands.has(a["band"])):
-				continue
-			picks.append(a)
-			bands[a["band"]] = true
-	var gcount := {}
-	var ecount := {}
-	for a: Dictionary in picks:
-		gcount[int(a["genre"])] = int(gcount.get(int(a["genre"]), 0)) + 1
-		ecount[int(a["era"])] = int(ecount.get(int(a["era"]), 0)) + 1
-	while picks.size() < D.KIT_ALBUMS and not rest.is_empty():
-		var best: Array = []
-		var low := 1000000
-		for o: Dictionary in rest:
-			var c: int = int(gcount.get(int(o["genre"]), 0)) * 100 + int(ecount.get(int(o["era"]), 0)) * 10 + (5 if bands.has(o["band"]) else 0)
-			if c < low:
-				low = c
-				best = [o]
-			elif c == low:
-				best.append(o)
-		var a: Dictionary = best[rng.randi_range(0, best.size() - 1)]
-		rest.erase(a)
-		picks.append(a)
-		bands[a["band"]] = true
-		gcount[int(a["genre"])] = int(gcount.get(int(a["genre"]), 0)) + 1
-		ecount[int(a["era"])] = int(ecount.get(int(a["era"]), 0)) + 1
+func _kit_discs(_kit: Dictionary) -> Array:
+	var kinds: Array = D.COND_WEIGHTS.keys()
+	var off := rng.randi_range(0, kinds.size() - 1)
+	var used: Array = []
 	var out: Array = []
-	for pk: Dictionary in picks:
-		var d := _make_disc(pk)
-		d.edition = ""
-		out.append(d)
+	for e in D.ERAS.size():
+		for g in D.GENRES.size():
+			var a := _gen_album(g, e, String(kinds[(e * D.GENRES.size() + g + off) % kinds.size()]), used)
+			used.append(a["cover"])
+			var d := _make_disc(a)
+			d.edition = ""
+			out.append(d)
 	return out
 
 func _refill() -> void:
@@ -629,9 +632,6 @@ func _on_pocket(p: int) -> void:
 		return
 	var o := _open_slot()
 	if o < 0 or wallet[p] < 0:
-		return
-	if _repeat_album(collection[wallet[p]]):
-		_say("You already played that album tonight.")
 		return
 	var back := tray[o]
 	tray[o] = wallet[p]
@@ -756,12 +756,11 @@ func _pile_counts() -> Dictionary:
 				pool.append(w)
 	for i in pool:
 		var d := collection[i]
-		if d.rg.is_empty():
+		if d.cdr and d.genre < 0:
 			mix += 1
 		else:
-			for k in 4:
-				g[int(d.rg[k])] += 1
-				e[int(d.re[k])] += 1
+			g[d.genre] += 1
+			e[d.era] += 1
 	return {"genre": g, "era": e, "mix": mix, "total": pool.size()}
 
 func _draw_pile_table(r: Rect2) -> void:
@@ -814,8 +813,6 @@ func _draw_dig_offer() -> void:
 		var ft := "KEEPS THE FLOW" if fit > 0 else ("BREAKS THE FLOW" if fit < 0 else "")
 		if _fatigue_name(d, played) != "":
 			ft = "TIRED CROWD"
-		if _repeat_album(d):
-			ft = "ALREADY PLAYED"
 		if ft != "":
 			_text_center(Rect2(dc.x - 250.0, 345.0, 500.0, 36.0), ft, T_SM, Color(D.FLOW_COLOR).lightened(0.2) if fit > 0 else c_bad.lightened(0.3), true)
 		_hw_button(Rect2(dc.x - 160.0, 1000.0, 320.0, 80.0), "Take this CD", _take_offer.bind(k), true, Color("3f9b5a"), T_MD)
@@ -827,10 +824,14 @@ func _well_center(s: int) -> Vector2:
 	return Vector2(r_changer.position.x + 44.0 + WELL_R + 14.0 + col * WELL_PITCH, r_changer.position.y + 68.0 + WELL_R + row * (2.0 * WELL_R + 126.0))
 
 func _pocket_rect(p: int) -> Rect2:
-	var col := p % 4
-	var row := p / 4
-	var x := r_wallet.position.x + WALLET_BORDER + col * (CELL + CELL_GAP) + (SPINE - CELL_GAP if col >= 2 else 0.0)
-	var y := r_wallet.position.y + WALLET_BORDER + row * (CELL + 48.0 + CELL_GAP)
+	var per := D.HAND / 2
+	var col := p % per
+	var row := p / per
+	var span := (r_wallet.size.x - 2.0 * WALLET_BORDER - SPINE) * 0.5
+	var slot := span / (per / 2)
+	var side := col / (per / 2)
+	var x := r_wallet.position.x + WALLET_BORDER + side * (span + SPINE) + (col % (per / 2)) * slot + (slot - CELL) * 0.5
+	var y := r_wallet.position.y + WALLET_BORDER + row * (CELL + 26.0)
 	return Rect2(x, y, CELL, CELL)
 
 func _draw() -> void:
@@ -1052,19 +1053,17 @@ func _draw_set_links() -> void:
 		var dir := (b - a).normalized()
 		var side := dir.orthogonal()
 		var col := Color(1, 1, 1, 0.22)
-		if played.size() > s + 1:
-			var okk := _regions_match(collection[played[s + 1]], 3 if s < half else 1, collection[played[s]], 1 if s < half else 3)
-			col = Color(D.FLOW_COLOR) if okk else c_bad
+		if s + 1 < link_log.size():
+			col = Color(D.FLOW_COLOR) if bool(link_log[s + 1]["met"]) else c_bad
 		draw_colored_polygon(PackedVector2Array([m + dir * 12.0, m - dir * 8.0 + side * 10.0, m - dir * 8.0 - side * 10.0]), col)
 	for s in half:
-		var lo := s
 		var hi := D.SETLIST - 1 - s
-		var a := _well_center(lo)
+		var a := _well_center(s)
 		var b := _well_center(hi)
 		var m := Vector2(a.x, (a.y + b.y + 14.0) * 0.5)
 		var col := Color(1, 1, 1, 0.22)
-		if played.size() > hi:
-			col = Color(D.FLOW_COLOR) if _regions_match(collection[played[hi]], 0, collection[played[lo]], 2) else c_bad
+		if hi < link_log.size() and bool(link_log[hi]["above"]):
+			col = Color(D.FLOW_COLOR) if bool(link_log[hi]["met"]) else c_bad
 		draw_arc(m + Vector2(-8.0, 0.0), 10.0, 0.0, TAU, 20, col, 3.5, true)
 		draw_arc(m + Vector2(8.0, 0.0), 10.0, 0.0, TAU, 20, col, 3.5, true)
 
@@ -1131,67 +1130,180 @@ func _draw_well(s: int) -> void:
 	if ui_live and not dig_mode and open and i >= 0:
 		_register(pocket, _on_slot.bind(s))
 
-func _cd_wedges(c: Vector2, rad: float, d: Disc) -> void:
-	draw_circle(c + Vector2(0, rad * 0.06), rad, Color(0, 0, 0, 0.35))
-	for k in 4:
-		var a0 := -PI * 0.75 + k * PI * 0.5
-		var pts := PackedVector2Array([c])
-		for i in 13:
-			pts.append(c + Vector2.from_angle(a0 + PI * 0.5 * i / 12.0) * rad)
-		draw_colored_polygon(pts, Color(D.GENRE_COLORS[int(d.rg[k])]))
-	for k in 4:
-		draw_line(c, c + Vector2.from_angle(-PI * 0.75 + k * PI * 0.5) * rad, Color(0, 0, 0, 0.55), maxf(2.0, rad * 0.03), true)
-	draw_circle(c + Vector2(0.0, rad * 0.35), rad * 0.62, Color(0, 0, 0, 0.08))
-	draw_circle(c - Vector2(0.0, rad * 0.4), rad * 0.55, Color(1, 1, 1, 0.05))
-	draw_circle(c, rad * 0.14, Color("1b1d21"))
-	draw_arc(c, rad * 0.14, 0, TAU, 32, Color(1, 1, 1, 0.5), maxf(1.0, rad * 0.015), true)
-	draw_arc(c, rad - 1.0, 0, TAU, 72, Color("2b5fa8") if d.cdr else Color(1, 1, 1, 0.55), maxf(2.0, rad * (0.05 if d.cdr else 0.018)), true)
+func _tape_poly(c: Vector2, rr: float, hw: float, a0: float, a1: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var n := maxi(8, int((a1 - a0) * rr / 6.0))
+	var jit := 4.0 / rr
+	for i in n + 1:
+		pts.append(c + Vector2.from_angle(a0 + (a1 - a0) * i / n) * (rr + hw))
+	for k in range(1, 5):
+		pts.append(c + Vector2.from_angle(a1 + (jit if k % 2 == 1 else -jit)) * (rr + hw - 2.0 * hw * k / 5.0))
+	for i in n + 1:
+		pts.append(c + Vector2.from_angle(a1 - (a1 - a0) * i / n) * (rr - hw))
+	for k in range(1, 5):
+		pts.append(c + Vector2.from_angle(a0 + (jit if k % 2 == 1 else -jit)) * (rr - hw + 2.0 * hw * k / 5.0))
+	return pts
+
+func _band_text(c: Vector2, rad: float, d: Disc) -> void:
+	if d.genre < 0:
+		return
+	var label := "%s-%s" % [D.ERAS[d.era], D.GENRES[d.genre]]
+	var split := String(D.ERAS[d.era]).length()
+	var f := _marker_font()
+	var rr := rad * 0.62
+	var fs := maxi(10, int(rad * 0.18))
+	var adv: Array[float] = []
+	var total := 0.0
+	for i in label.length():
+		adv.append(f.get_string_size(label.substr(i, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		total += adv[i]
+	var max_arc := rr * deg_to_rad(140.0)
+	if total > max_arc:
+		fs = maxi(9, int(fs * maxf(0.6, max_arc / total)))
+		total = 0.0
+		for i in adv.size():
+			adv[i] = f.get_string_size(label.substr(i, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			total += adv[i]
+	var ctr := -PI * 0.5 + ((d.uid * 37) % 7 - 3) * 0.035
+	var half := total / rr * 0.5 + 0.2
+	var hw := fs * 0.95
+	var tape := _tape_poly(c, rr, hw, ctr - half, ctr + half)
+	var drop := PackedVector2Array()
+	for q in tape:
+		drop.append(q + Vector2(0.0, 2.0))
+	draw_colored_polygon(drop, Color(0, 0, 0, 0.3))
+	draw_colored_polygon(tape, Color("eadfbf", 0.96))
+	draw_arc(c, rr + hw * 0.7, ctr - half + 0.05, ctr + half - 0.05, 32, Color(1, 1, 1, 0.35), 1.5, true)
+	draw_arc(c, rr - hw * 0.7, ctr - half + 0.05, ctr + half - 0.05, 32, Color(0.5, 0.42, 0.25, 0.18), 1.5, true)
+	var base_ink := Color("17171b")
+	var pos := -total * 0.5
+	for i in label.length():
+		var ch := label.substr(i, 1)
+		var th := ctr + (pos + adv[i] * 0.5) / rr
+		pos += adv[i]
+		if ch == " ":
+			continue
+		var ink := base_ink
+		if i < split:
+			ink = _ring_ink(true, d.era, base_ink)
+		elif i > split:
+			ink = _ring_ink(false, d.genre, base_ink)
+		draw_set_transform(screen_origin + (c + Vector2.from_angle(th) * rr) * ui_scale, th + PI * 0.5, Vector2(ui_scale, ui_scale))
+		var p := Vector2(-adv[i] * 0.5, fs * 0.35)
+		draw_string(f, p + Vector2(0.7, 0.5), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, 0.5))
+		draw_string(f, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	draw_set_transform(screen_origin, 0.0, Vector2(ui_scale, ui_scale))
+
+func _ring_ink(is_era: bool, v: int, base: Color) -> Color:
+	var r := _tag_ring_val(is_era, v)
+	if r.a <= 0.0:
+		return base
+	if r == c_bad:
+		return Color("a01820")
+	if r == c_gold:
+		return Color("8a5a00")
+	return Color("1f6b3a")
 
 func _disc_face(c: Vector2, rad: float, d: Disc, spin: float = 0.0) -> void:
-	if d.rg.is_empty():
+	if d.cdr and d.genre < 0:
 		_cd_art(c, rad, null, spin)
-	else:
-		_cd_wedges(c, rad, d)
+		return
+	_cd_art(c, rad, _cover_tex(d.mix_cover if d.cdr else d.cover), spin)
+
+func _cond_label(d: Disc) -> String:
+	match d.cond:
+		"set1":
+			return "SET 1"
+		"set2":
+			return "SET 2"
+		"odd":
+			return "A-SIDE"
+		"even":
+			return "B-SIDE"
+		"opener":
+			return "OPENER"
+		"closer":
+			return "CLOSER"
+		"after_genre":
+			return "AFTER " + String(D.GENRE_SHORT[d.cond_v])
+		"after_decade":
+			return "AFTER " + String(D.ERAS[d.cond_v]).to_upper()
+		"above_genre":
+			return "ABOVE " + String(D.GENRE_SHORT[d.cond_v])
+		"above_decade":
+			return "ABOVE " + String(D.ERAS[d.cond_v]).to_upper()
+	return "ANY SLOT"
+
+func _cond_text(d: Disc) -> String:
+	match d.cond:
+		"set1":
+			return "Keeps the flow in the first set (tracks 1 to 4, the top row)."
+		"set2":
+			return "Keeps the flow in the second set (tracks 5 to 8, the bottom row)."
+		"odd":
+			return "Keeps the flow on an A-side track (1, 3, 5 or 7)."
+		"even":
+			return "Keeps the flow on a B-side track (2, 4, 6 or 8)."
+		"opener":
+			return "Keeps the flow as the opener (track 1)."
+		"closer":
+			return "Keeps the flow as the closer (track 8)."
+		"after_genre":
+			return "Keeps the flow right after a %s song." % D.GENRES[d.cond_v]
+		"after_decade":
+			return "Keeps the flow right after a song from the %s." % D.ERAS[d.cond_v]
+		"above_genre":
+			return "Keeps the flow when the song above it is %s (tracks 5 to 8 only)." % D.GENRES[d.cond_v]
+		"above_decade":
+			return "Keeps the flow when the song above it is from the %s (tracks 5 to 8 only)." % D.ERAS[d.cond_v]
+	return "Keeps the flow in any slot."
+
+func _cond_met(d: Disc, slot: int, before: Array) -> bool:
+	if d.cdr:
+		return true
+	var half := D.SETLIST / 2
+	var prev: Disc = collection[before[slot - 1]] if slot > 0 and slot - 1 < before.size() else null
+	if prev != null and _bay_of("comp") >= 0 and prev.label == d.label:
+		return true
+	var above: Disc = null
+	if slot >= half and D.SETLIST - 1 - slot < before.size():
+		above = collection[before[D.SETLIST - 1 - slot]]
+	match d.cond:
+		"set1":
+			return slot < half
+		"set2":
+			return slot >= half
+		"odd":
+			return slot % 2 == 0
+		"even":
+			return slot % 2 == 1
+		"opener":
+			return slot == 0
+		"closer":
+			return slot == D.SETLIST - 1
+		"after_genre":
+			return prev != null and prev.genre == d.cond_v
+		"after_decade":
+			return prev != null and prev.era == d.cond_v
+		"above_genre":
+			return above != null and above.genre == d.cond_v
+		"above_decade":
+			return above != null and above.era == d.cond_v
+	return true
 
 func _disc_marks(c: Vector2, rad: float, d: Disc) -> void:
-	if d.rg.is_empty():
+	if d.cdr and d.genre < 0:
 		_heavy_center(Rect2(c.x - rad, c.y - rad * 0.62, rad * 2.0, rad * 0.4), "MIX", int(rad * 0.3), Color("2b5fa8"))
 		_text_center(Rect2(c.x - rad, c.y + rad * 0.32, rad * 2.0, rad * 0.3), "CD-R", int(rad * 0.16), Color("5d626a"), true)
 	else:
-		var dfs := int(rad * 0.26)
-		var cfs := maxi(10, int(rad * 0.15))
-		for k in 4:
-			var gi := int(d.rg[k])
-			var ei := int(d.re[k])
-			var dp := c
-			var cp := c
-			match k:
-				0:
-					dp = c + Vector2(0.0, -rad * 0.7)
-					cp = c + Vector2(0.0, -rad * 0.48)
-				1:
-					dp = c + Vector2(rad * 0.6, -rad * 0.12)
-					cp = c + Vector2(rad * 0.6, rad * 0.16)
-				2:
-					dp = c + Vector2(0.0, rad * 0.7)
-					cp = c + Vector2(0.0, rad * 0.48)
-				3:
-					dp = c + Vector2(-rad * 0.6, -rad * 0.12)
-					cp = c + Vector2(-rad * 0.6, rad * 0.16)
-			var era_t := String(D.ERAS[ei])
-			var dr := Rect2(dp - Vector2(rad * 0.34, rad * 0.15), Vector2(rad * 0.68, rad * 0.3))
-			_heavy_center(Rect2(dr.position + Vector2(0.0, rad * 0.02), dr.size), era_t, dfs, Color(0, 0, 0, 0.35))
-			_heavy_center(dr, era_t, dfs, Color.WHITE)
-			var ering := _tag_ring_val(true, ei)
-			if ering.a > 0.0:
-				var uw := _heavy_w(era_t, dfs)
-				draw_rect(Rect2(dp.x - uw * 0.5, dp.y + dfs * 0.52, uw, maxf(3.0, rad * 0.04)), ering)
-			var code := String(D.GENRE_SHORT[gi])
-			_text_center(Rect2(cp - Vector2(rad * 0.34, rad * 0.1), Vector2(rad * 0.68, rad * 0.2)), code, cfs, Color(1, 1, 1, 0.95), true)
-			var gring := _tag_ring_val(false, gi)
-			if gring.a > 0.0:
-				var gw := _text_w(code, cfs, true) + 12.0
-				_panel(Rect2(cp.x - gw * 0.5, cp.y - cfs * 0.75, gw, cfs * 1.5), Color(0, 0, 0, 0), int(cfs * 0.6), gring, maxi(2, int(rad * 0.025)))
+		_band_text(c, rad, d)
+		var lab := "MIX" if d.cdr else _cond_label(d)
+		var fs := maxi(10, int(rad * 0.17))
+		var pw := minf(_heavy_w(lab, fs) + rad * 0.3, rad * 1.7)
+		var pr := Rect2(c.x - pw * 0.5, c.y + rad * 0.5, pw, fs * 1.7)
+		_panel(Rect2(pr.position + Vector2(1.0, 2.0), pr.size), Color(0, 0, 0, 0.45), int(fs * 0.8))
+		_panel(pr, Color("14181d"), int(fs * 0.8), Color(D.FLOW_COLOR).lightened(0.2), maxi(1, int(rad * 0.02)))
+		_heavy_center(pr, lab, fs, Color.WHITE)
 	var tc := c + Vector2(-rad * 0.72, -rad * 0.72)
 	var sc := Color(D.SOUND_COLOR)
 	draw_circle(tc + Vector2(0, 3), rad * 0.2, Color(0, 0, 0, 0.4))
@@ -1213,21 +1325,15 @@ func _debuff_marks(c: Vector2, rad: float, d: Disc, soft: bool) -> void:
 	draw_arc(bc, br, 0.0, TAU, 32, c_bad.lightened(0.25), maxf(1.5, br * 0.12), true)
 	draw_colored_polygon(PackedVector2Array([bc + Vector2(-u * 0.95, -u * 0.55), bc + Vector2(u * 0.95, -u * 0.55), bc + Vector2(0.0, u * 0.8)]), c_bad.lightened(0.3))
 
-func _repeat_album(d: Disc) -> bool:
-	if d.cdr or phase != "show":
-		return false
-	return played.any(func(o): return collection[o].cover == d.cover)
-
 func _flow_fit(d: Disc) -> int:
-	if phase != "show" or dig_mode or playing or d.rg.is_empty():
+	if phase != "show" or dig_mode or playing or (d.cdr and d.genre < 0):
 		return 0
 	var s := _open_slot()
-	var links := _link_info(d, s, played) if s >= 0 else []
-	if links.is_empty():
+	if s < 0:
 		return 0
-	if _fatigue_name(d, played) != "" or _slot_locked(d, s) or _repeat_album(d):
+	if _fatigue_name(d, played) != "" or _slot_locked(d, s):
 		return -1
-	return 1 if links.any(func(r): return bool(r["ok"])) else -1
+	return 1 if _cond_met(d, s, played) else -1
 
 func _draw_wallet() -> void:
 	var b := r_wallet
@@ -1236,7 +1342,7 @@ func _draw_wallet() -> void:
 	if _tex("leather") == null:
 		_grain(b, 19, 260.0)
 	_stitch_rect(b.grow(-12.0), Color("aab3bf", 0.45))
-	var spine_x := _pocket_rect(1).end.x + (SPINE - CELL_GAP) * 0.5 + CELL_GAP * 0.5
+	var spine_x := b.get_center().x
 	var spine := Rect2(spine_x - SPINE * 0.5 + 8.0, b.position.y + 18.0, SPINE - 16.0, b.size.y - 36.0)
 	_grad_panel(spine, 8.0, Color("23262b"), Color("15171a"))
 	draw_line(Vector2(spine.get_center().x, spine.position.y + 10.0), Vector2(spine.get_center().x, spine.end.y - 10.0), Color(0, 0, 0, 0.5), 3.0)
@@ -1265,10 +1371,10 @@ func _draw_wallet() -> void:
 			_disc_marks(r.get_center(), r.size.x * 0.5 - 8.0, d)
 			if fit < 0:
 				_debuff_marks(r.get_center(), r.size.x * 0.5 - 8.0, d, over)
-				if (_fatigue_name(d, played) != "" or _repeat_album(d)) and not over:
+				if _fatigue_name(d, played) != "" and not over:
 					var tr := Rect2(r.position.x + 20.0, r.get_center().y - 18.0, r.size.x - 40.0, 36.0)
 					_panel(tr, Color("7a1f1f"), 8, Color("ffb0a6"), 2)
-					_text_center(tr, "PLAYED" if _repeat_album(d) else "TIRED", 17, Color.WHITE, true)
+					_text_center(tr, "TIRED", 17, Color.WHITE, true)
 			_tip_disc(pocket, d)
 			if dig_mode and p in dig_marks:
 				draw_circle(r.get_center(), r.size.x * 0.5 - 8.0, Color(0, 0, 0, 0.55))
@@ -1530,31 +1636,37 @@ func _draw_display(r: Rect2) -> void:
 		_panel(lr, Color(D.FLOW_COLOR) if on else Color("1d1f23"), 6, Color(0, 0, 0, 0.6), 1)
 		_text_center(lr, "×%d" % (k + 1), 14, Color("10161a") if on else Color("4c5058"), true)
 	var lx2 := x + D.FLOW_MAX * 46.0 + 14.0
-	_silk(Vector2(lx2, fy), "NEXT LINK", 13, Color("8d939b"))
-	var nbs := _neighbors(o) if o >= 0 else []
-	var nshown := 0
-	for nb: Dictionary in nbs:
-		if int(nb["slot"]) >= played.size():
-			continue
-		var nd: Disc = collection[played[int(nb["slot"])]]
-		if nd.rg.is_empty():
-			continue
-		var gi := int(nd.rg[int(nb["theirs"])])
-		var ei := int(nd.re[int(nb["theirs"])])
-		var side_t: String = ["TOP", "RIGHT", "BOTTOM", "LEFT"][int(nb["mine"])]
-		var rx := lx2 if nshown == 0 else x
-		var ry := fy + 16.0 if nshown == 0 else fy + 60.0
-		_silk(Vector2(rx, ry + 22.0), side_t if nshown == 0 else side_t + " TOUCHES", 13, Color("8d939b"))
-		var cx := rx + (52.0 if nshown == 0 else 100.0)
-		for c in [[D.GENRE_SHORT[gi], Color(D.GENRE_COLORS[gi])], [D.ERAS[ei], Color("5d626a")]]:
-			var tw := _text_w(String(c[0]), 13, true) + 16.0
-			var cr := Rect2(cx, ry, tw, 32.0)
-			_panel(cr, c[1], 10, fc, 2)
-			_text_center(cr, String(c[0]), 13, Color.WHITE, true)
-			cx += tw + 6.0
-		nshown += 1
-	if nshown == 0:
-		_text(Vector2(lx2, fy + 40.0), "Any CD starts at ×1", 15, Color("8d939b"), true)
+	_silk(Vector2(lx2, fy), "THIS SLOT", 13, Color("8d939b"))
+	if o >= 0:
+		var half := D.SETLIST / 2
+		var chips1: Array = ["SET 1" if o < half else "SET 2", "A-SIDE" if o % 2 == 0 else "B-SIDE"]
+		if o == 0:
+			chips1.append("OPENER")
+		elif o == D.SETLIST - 1:
+			chips1.append("CLOSER")
+		var cx := lx2
+		for t in chips1:
+			cx += _info_chip(cx, fy + 16.0, String(t), fc) + 5.0
+		var gx := x
+		if o > 0 and o - 1 < played.size():
+			var pd: Disc = collection[played[o - 1]]
+			_silk(Vector2(gx, fy + 82.0), "AFTER", 13, Color("8d939b"))
+			gx += 52.0
+			gx += _info_chip(gx, fy + 60.0, String(D.GENRE_SHORT[pd.genre]), Color("5d626a")) + 5.0
+			gx += _info_chip(gx, fy + 60.0, String(D.ERAS[pd.era]), Color("5d626a")) + 22.0
+		if o >= half and D.SETLIST - 1 - o < played.size():
+			var ad: Disc = collection[played[D.SETLIST - 1 - o]]
+			_silk(Vector2(gx, fy + 82.0), "ABOVE", 13, Color("8d939b"))
+			gx += 52.0
+			gx += _info_chip(gx, fy + 60.0, String(D.GENRE_SHORT[ad.genre]), Color("5d626a")) + 5.0
+			_info_chip(gx, fy + 60.0, String(D.ERAS[ad.era]), Color("5d626a"))
+
+func _info_chip(x: float, y: float, text: String, col: Color) -> float:
+	var w := _text_w(text, 12, true) + 16.0
+	var cr := Rect2(x, y, w, 30.0)
+	_panel(cr, col, 9, Color(D.FLOW_COLOR).lightened(0.3), 2)
+	_text_center(cr, text, 12, Color.WHITE, true)
+	return w
 
 func _draw_empty_bay(r: Rect2) -> void:
 	_shadow(r, 6, 4.0)
@@ -1748,9 +1860,12 @@ func _draw_disc_tip(d: Disc) -> void:
 	var iw := w - pad * 2.0
 	var body := ""
 	var head := ""
-	if d.rg.is_empty():
+	if not d.cdr:
+		head = "KEEPS THE FLOW WHEN"
+		body = _cond_text(d)
+	else:
 		head = "MIX"
-		body = "When you play it, it picks a random album and becomes that album's genre and decade. The crowd, requests, gear and flow all treat it like that CD, so it may delight them or turn them against you."
+		body = "When you play it, it picks a random album and becomes that album's genre and decade. The crowd, requests and gear treat it like that CD, so it may delight them or turn them against you. It always keeps the flow."
 	var fit := _flow_fit(d) if wallet.has(collection.find(d)) else 0
 	var pile_head := ""
 	var pile_body := ""
@@ -1769,10 +1884,7 @@ func _draw_disc_tip(d: Disc) -> void:
 		pile_body = "%d %s  ·  %d %s  (of %d)" % [pg, D.GENRES[d.genre], pe, D.ERAS[d.era], tip_pool.size()]
 	var fit_head := ""
 	var fit_body := ""
-	if fit < 0 and _repeat_album(d):
-		fit_head = "ALREADY PLAYED"
-		fit_body = "You can't play the same album twice in one set."
-	elif fit < 0 and _fatigue_name(d, played) != "":
+	if fit < 0 and _fatigue_name(d, played) != "":
 		fit_head = "TIRED CROWD"
 		fit_body = "Third %s song in a row: %d points and the flow breaks." % [_fatigue_name(d, played), D.FATIGUE]
 	elif fit < 0 and _slot_locked(d, _open_slot()):
@@ -1785,7 +1897,7 @@ func _draw_disc_tip(d: Disc) -> void:
 		fit_head = "KEEPS THE FLOW"
 		fit_body = "Playing it next adds 1 to the flow."
 	var bh := font.get_multiline_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y if body != "" else 0.0
-	var h := pad + 84.0 + 44.0 + (52.0 + bh + 10.0 if body != "" else 0.0) + (92.0 if fit_head != "" else 0.0) + (92.0 if pile_head != "" else 0.0) + (112.0 if not d.rg.is_empty() else 0.0) + (84.0 if d.edition != "" else 0.0) + pad - 6.0
+	var h := pad + 84.0 + 44.0 + (52.0 + bh + 10.0 if body != "" else 0.0) + (92.0 if fit_head != "" else 0.0) + (92.0 if pile_head != "" else 0.0) + (84.0 if d.edition != "" else 0.0) + pad - 6.0
 	var box := Rect2(mouse + Vector2(28.0, 28.0), Vector2(w, h))
 	if box.end.x > UI_W - 12.0:
 		box.position.x = mouse.x - w - 20.0
@@ -1798,7 +1910,7 @@ func _draw_disc_tip(d: Disc) -> void:
 	_heavy(Vector2(x, y + 30.0), d.title, T_LG, Color.WHITE)
 	_text_i(Vector2(x, y + 64.0), "Picks a random album when played" if d.cdr else "by %s  ·  %s" % [d.band, D.LABELS[d.label]["name"]], T_SM, Color("b8c0cc"))
 	y += 84.0
-	var chips := [["%d POINTS" % d.sound, Color(D.SOUND_COLOR)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]] if not d.rg.is_empty() else [["CD-R", Color(D.FLOW_COLOR).darkened(0.2)], ["%d POINT" % d.sound, Color(D.SOUND_COLOR)]]
+	var chips := [[D.GENRES[d.genre].to_upper(), Color("5d626a")], [D.ERAS[d.era], Color("5d626a")], ["%d POINTS" % d.sound, Color(D.SOUND_COLOR)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]] if not (d.genre < 0) else [["CD-R", Color(D.FLOW_COLOR).darkened(0.2)], ["%d POINT" % d.sound, Color(D.SOUND_COLOR)]]
 	var cx := x
 	for c in chips:
 		var cw := _text_w(String(c[0]), T_XS, true) + 18.0
@@ -1812,16 +1924,6 @@ func _draw_disc_tip(d: Disc) -> void:
 		_text(Vector2(x, y + 34.0), head, T_XS, c_gold, true)
 		_wrap(Vector2(x, y + 46.0), body, iw, T_SM, Color("e8ecf2"))
 		y += 52.0 + bh + 10.0
-	if not d.rg.is_empty():
-		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
-		_text(Vector2(x, y + 34.0), "REGIONS", T_XS, c_gold, true)
-		var names: Array = ["TOP", "RIGHT", "BOTTOM", "LEFT"]
-		var parts: Array = []
-		for q in 4:
-			parts.append("%s %s %s" % [names[q], D.GENRE_SHORT[int(d.rg[q])], D.ERAS[int(d.re[q])]])
-		_text(Vector2(x, y + 62.0), "  ·  ".join(parts.slice(0, 2)), T_SM, Color("e8ecf2"))
-		_text(Vector2(x, y + 92.0), "  ·  ".join(parts.slice(2, 4)), T_SM, Color("e8ecf2"))
-		y += 112.0
 	if pile_head != "":
 		draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
 		_text(Vector2(x, y + 34.0), pile_head, T_XS, c_gold, true)
@@ -1891,31 +1993,7 @@ func _album_price(d: Disc) -> int:
 
 func _make_shop(hint: Dictionary = {}) -> void:
 	shop_items.clear()
-	var fresh: Array = _fresh_albums(albums.size())
-	var picks: Array = []
-	var used := {}
-	if not hint.is_empty():
-		for exact in [true, false]:
-			if not picks.is_empty():
-				break
-			for a: Dictionary in fresh:
-				if int(a["genre"]) == int(hint["genre"]) and (not exact or int(a["era"]) == int(hint["era"])):
-					picks.append(a)
-					used[a["cover"]] = true
-					break
-	for a: Dictionary in fresh:
-		if picks.size() >= D.SHOP_ALBUMS:
-			break
-		if not used.has(a["cover"]):
-			picks.append(a)
-			used[a["cover"]] = true
-	if picks.size() > 1 and rng.randf() < D.SHOP_DUPE_CHANCE:
-		var owned: Array = collection.filter(func(o): return not o.cdr)
-		if not owned.is_empty():
-			var od: Disc = owned[rng.randi_range(0, owned.size() - 1)]
-			var oa: Array = albums.filter(func(a): return a["cover"] == od.cover)
-			if not oa.is_empty() and not picks.any(func(a): return a["cover"] == od.cover):
-				picks[picks.size() - 1] = oa[0]
+	var picks: Array = _random_albums(D.SHOP_ALBUMS, int(hint["genre"]) if not hint.is_empty() else -1, int(hint["era"]) if not hint.is_empty() else -1)
 	for a: Dictionary in picks:
 		var d := _make_disc(a)
 		shop_items.append({"kind": "album", "disc": d, "price": _album_price(d), "sold": false})
@@ -1951,8 +2029,7 @@ func _buy(i: int) -> void:
 			it["sold"] = true
 			var ap: Dictionary = it["pack"]
 			var items: Array = []
-			var taken: Array = shop_items.filter(func(o): return o["kind"] == "album").map(func(o): return (o["disc"] as Disc).cover)
-			for a in _fresh_albums(int(ap["show"]), taken):
+			for a in _random_albums(int(ap["show"])):
 				items.append(_make_disc(a))
 			pack = {"kind": "album", "title": ap["name"], "pick": int(ap["pick"]), "items": items}
 			pack_sel.clear()
@@ -2187,7 +2264,7 @@ func _draw_case(r: Rect2, d: Disc, price: int = -1) -> void:
 		var sx := spine.position.x + spine.size.x * (0.3 + j * 0.2)
 		draw_line(Vector2(sx, spine.position.y + 8.0 * k), Vector2(sx, spine.end.y - 8.0 * k), Color(1, 1, 1, 0.12), maxf(1.0, 1.5 * k))
 	if d.genre >= 0:
-		_panel(cover, Color(D.GENRE_COLORS[d.genre]).darkened(0.5), 0)
+		_panel(cover, Color("2a2d33"), 0)
 	else:
 		_panel(cover, Color("2a2d33"), 0)
 	_disc_face(cover.get_center(), cover.size.x * 0.5 - 3.0, d)
@@ -2603,7 +2680,8 @@ func _start_show(v: Dictionary) -> void:
 	held = -1
 	energy = D.ENERGY_START
 	energy_live = energy
-	flow = 0
+	flow = 1
+	link_log.clear()
 	fog_armed = 0
 	digs = D.BOSS_DIGS if String(chal.get("kind", "")) == "discards" else D.DIGS
 	dig_mode = false
@@ -2670,66 +2748,16 @@ func _bay_of(id: String) -> int:
 	return -1
 
 func _has_tag(d: Disc, is_era: bool, v: int) -> int:
-	var n := 0
-	for x in (d.re if is_era else d.rg):
-		if int(x) == v:
-			n += 1
-	return n
+	return 1 if (d.era if is_era else d.genre) == v else 0
 
 func _tag_count(d: Disc, tag: Array) -> int:
-	if d.rg.is_empty():
+	if d.genre < 0:
 		return 0
 	if tag[0] == "genre":
 		return _has_tag(d, false, D.GENRES.find(String(tag[1])))
 	return _has_tag(d, true, D.ERAS.find(String(tag[1])))
 
-func _neighbors(slot: int) -> Array:
-	var half := D.SETLIST / 2
-	var out: Array = []
-	if slot <= 0:
-		return out
-	if slot < half:
-		out.append({"slot": slot - 1, "mine": 3, "theirs": 1})
-	elif slot == half:
-		out.append({"slot": slot - 1, "mine": 0, "theirs": 2})
-	else:
-		out.append({"slot": slot - 1, "mine": 1, "theirs": 3})
-		out.append({"slot": D.SETLIST - 1 - slot, "mine": 0, "theirs": 2})
-	return out
-
-func _regions_match(d: Disc, mine: int, o: Disc, theirs: int) -> bool:
-	if d.rg.is_empty() or o.rg.is_empty():
-		return false
-	return int(d.rg[mine]) == int(o.rg[theirs]) or int(d.re[mine]) == int(o.re[theirs])
-
-func _link_info(d: Disc, slot: int, before: Array) -> Array:
-	var results: Array = []
-	var comp := _bay_of("comp") >= 0
-	for nb: Dictionary in _neighbors(slot):
-		if int(nb["slot"]) >= before.size():
-			continue
-		var o: Disc = collection[before[int(nb["slot"])]]
-		var ok := _regions_match(d, int(nb["mine"]), o, int(nb["theirs"]))
-		if comp and int(nb["slot"]) == slot - 1 and o.label == d.label:
-			ok = true
-		results.append({"ok": ok, "side": int(nb["mine"]), "slot": int(nb["slot"])})
-	return results
-
 func _cell_keeps(is_genre: bool, k: int) -> bool:
-	if phase != "show":
-		return false
-	var s := _open_slot()
-	if s < 0:
-		return false
-	for nb: Dictionary in _neighbors(s):
-		if int(nb["slot"]) >= played.size():
-			continue
-		var o: Disc = collection[played[int(nb["slot"])]]
-		if o.rg.is_empty():
-			continue
-		var v := int(o.rg[int(nb["theirs"])]) if is_genre else int(o.re[int(nb["theirs"])])
-		if v == k:
-			return true
 	return false
 
 func _boss_kind() -> String:
@@ -2786,19 +2814,14 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 	var f := 1
 	var why := ""
 	var echo := ""
-	var links := _link_info(d, slot, before)
-	var any_ok := links.any(func(r): return bool(r["ok"]))
-	var all_ok := links.size() >= 2 and links.all(func(r): return bool(r["ok"]))
-	if not links.is_empty():
-		if any_ok and tired == "" and not locked:
-			var extra := D.MIRROR_BONUS if all_ok else 0
-			f = mini(D.FLOW_MAX, flow + 1 + extra)
-			why = "linked"
-			echo = "double" if extra > 0 else ("mirror" if (links.size() >= 2 and not bool(links[0]["ok"])) else "")
-		else:
-			var xf := _bay_of("xfade")
-			f = maxi(1, flow - 1) if xf >= 0 else 1
-			why = "broken"
+	var met := _cond_met(d, slot, before)
+	if met and tired == "" and not locked:
+		f = mini(D.FLOW_MAX, flow + 1)
+		why = "linked"
+	else:
+		var xf := _bay_of("xfade")
+		f = maxi(1, flow - 1) if xf >= 0 else 1
+		why = "broken"
 	f = mini(D.FLOW_MAX, f + bonus_flow + fog_armed)
 	match d.edition:
 		"holo", "signed":
@@ -2813,9 +2836,7 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 		var n := _gear_n(g)
 		match String(g["id"]):
 			"eq":
-				var lv := 0
-				for gq in d.rg:
-					lv += int(g["levels"][int(gq)])
+				var lv := 0 if d.genre < 0 else int(g["levels"][d.genre])
 				if lv != 0:
 					_push(out, acc, "rack", "EQ %+d" % lv, lv, ci)
 			"gain":
@@ -2844,7 +2865,7 @@ func _react(d: Disc, prev: Disc, cl: Dictionary, before: Array, slot: int) -> Di
 	if locked and int(acc["total"]) > 0:
 		_push(out, acc, "boss", "Slot locked: no points", -int(acc["total"]))
 	var pts := int(acc["total"])
-	return {"echo": echo, "points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "taste": taste, "steps": out, "cash": cash_gain, "hit": hit}
+	return {"met": met and tired == "" and not locked, "cond_met": met, "echo": echo, "points": pts, "flow": f, "why": why, "score": pts * f if pts > 0 else pts, "taste": taste, "steps": out, "cash": cash_gain, "hit": hit}
 
 func _play() -> void:
 	if playing or phase != "show":
@@ -2862,10 +2883,8 @@ func _play() -> void:
 		steps.push_front({"src": "mix", "text": "Mix: %s, %s" % [D.GENRES[d.genre], D.ERAS[d.era]], "n": 0, "ci": -1})
 	var fl := int(result["flow"])
 	var ftxt := "Flow ×%d" % fl
-	if result["echo"] == "double":
-		ftxt = "Double link! Flow ×%d" % fl
-	elif result["echo"] == "mirror":
-		ftxt = "Mirror link! Flow ×%d" % fl
+	var cl := "MIX" if d.cdr else _cond_label(d)
+	steps.append({"src": "cond", "text": ("%s met" % cl) if bool(result["cond_met"]) else ("%s missed" % cl), "n": 0, "ci": -1})
 	if result["why"] == "broken":
 		ftxt = "Flow broken ×%d" % fl
 	steps.append({"src": "flow", "text": ftxt, "n": 0, "ci": _bay_of("xfade") if result["why"] == "broken" and _bay_of("xfade") >= 0 else -1})
@@ -2891,8 +2910,8 @@ func _play_step(st: Dictionary) -> void:
 	var ro: Dictionary = readout[song_slot]
 	var col := Color(D.SOUND_COLOR).lightened(0.25) if n > 0 else (c_bad.lightened(0.25) if n < 0 else Color("c9ced6"))
 	match String(st["src"]):
-		"cash":
-			col = c_gold
+		"cash", "cond":
+			col = c_gold if int(st["n"]) >= 0 and String(st["src"]) == "cash" or (String(st["src"]) == "cond" and not String(st["text"]).ends_with("missed")) else c_bad.lightened(0.25)
 		"flow":
 			ro["text"] = "%d PTS × FLOW %d" % [int(ro["pts"]), int(result["flow"])]
 			col = Color(D.FLOW_COLOR).lightened(0.3) if result["why"] != "broken" else c_bad.lightened(0.25)
@@ -2926,6 +2945,7 @@ func _finish_song() -> void:
 	flow = int(result["flow"])
 	played.append(i)
 	prev_disc = d
+	link_log.append({"met": bool(result["met"]), "above": String(d.cond).begins_with("above")})
 	if _boss_kind() == "destroy" and rng.randf() < D.BOSS_DESTROY:
 		doomed.append(d)
 		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": "Scratched beyond repair!", "col": c_bad.lightened(0.3), "life": 2.0})
@@ -3365,26 +3385,7 @@ func _start_pickup(kind: String, stamp: Array = []) -> void:
 	phase = "pickup"
 
 func _pickup_options(stamp: Array) -> Array:
-	var fresh: Array = _fresh_albums(albums.size())
-	var chosen: Array = []
-	var used := {}
-	var genres := {}
-	if stamp.size() == 2:
-		for a: Dictionary in fresh:
-			if (int(stamp[0]) < 0 or int(a["genre"]) == int(stamp[0])) and (int(stamp[1]) < 0 or int(a["era"]) == int(stamp[1])):
-				chosen.append(a)
-				used[a["cover"]] = true
-				genres[int(a["genre"])] = true
-				break
-	for distinct in [true, false]:
-		for a: Dictionary in fresh:
-			if chosen.size() >= D.PICKUP_CHOICES:
-				break
-			if used.has(a["cover"]) or (distinct and genres.has(int(a["genre"]))):
-				continue
-			chosen.append(a)
-			used[a["cover"]] = true
-			genres[int(a["genre"])] = true
+	var chosen: Array = _random_albums(D.PICKUP_CHOICES, int(stamp[0]) if stamp.size() == 2 else -1, int(stamp[1]) if stamp.size() == 2 else -1)
 	var opts: Array = []
 	for a: Dictionary in chosen:
 		opts.append({"disc": _make_disc(a)})
@@ -3515,8 +3516,8 @@ func _ranked(is_genre: bool) -> Array:
 	for d: Disc in collection:
 		if d.cdr:
 			continue
-		for k in (d.rg if is_genre else d.re):
-			counts[int(k)] = int(counts.get(int(k), 0)) + 1
+		var k := d.genre if is_genre else d.era
+		counts[k] = int(counts.get(k, 0)) + 1
 	var ids: Array = counts.keys()
 	_shuffle(ids)
 	ids.sort_custom(func(a, b): return int(counts[a]) > int(counts[b]))
@@ -3663,16 +3664,12 @@ func _draw_kits() -> void:
 		var iw := r.size.x - 60.0
 		_heavy(Vector2(x, r.position.y + 70.0), String(kit["name"]), T_XL, c_ink)
 		_wrap(Vector2(x, r.position.y + 112.0), String(kit["idea"]), iw, T_SM, c_body, true)
-		var lean: Array = kit["lean"]
-		_text(Vector2(x, r.position.y + 226.0), "LEANS", 14, c_muted, true)
-		_tip_chip(x + 70.0, r.position.y + 206.0, lean, c_ink)
 		_text(Vector2(x, r.position.y + 290.0), "STARTING GEAR", 14, c_muted, true)
 		_draw_gear(Rect2(x, r.position.y + 304.0, iw, 200.0), _kit_gear(kit), 0.5)
 		_text(Vector2(x, r.position.y + 550.0), "THE DECK", 14, c_muted, true)
-		var lean_n := int(kit.get("lean_n", D.KIT_LEAN))
-		_wrap(Vector2(x, r.position.y + 580.0), "%d albums, %d of them %s, plus %d Mixes." % [D.KIT_ALBUMS, lean_n, String(lean[1]), D.START_CDRS], iw, T_SM, c_body, true)
-		_wrap(Vector2(x, r.position.y + 680.0), "Every CD has four coloured regions. Flow holds when the edge you place against matches in genre or decade.", iw, 15, c_body, true)
-		_text_center(Rect2(r.position.x, r.end.y - 150.0, r.size.x, 30.0), "%d CDs  ·  %d Mixes" % [D.KIT_ALBUMS + D.START_CDRS, D.START_CDRS], 15, c_muted, true)
+		_wrap(Vector2(x, r.position.y + 580.0), "One album for every genre and decade (%d), plus %d Mixes." % [D.GENRES.size() * D.ERAS.size(), D.START_CDRS], iw, T_SM, c_body, true)
+		_wrap(Vector2(x, r.position.y + 680.0), "Every CD has one flow condition (set, side, opener, closer, after or above). Play it where its condition holds to keep the flow.", iw, 15, c_body, true)
+		_text_center(Rect2(r.position.x, r.end.y - 150.0, r.size.x, 30.0), "%d CDs  ·  %d Mixes" % [D.GENRES.size() * D.ERAS.size() + D.START_CDRS, D.START_CDRS], 15, c_muted, true)
 		_hw_button(Rect2(r.get_center().x - 190.0, r.end.y - 110.0, 380.0, 80.0), "Pick this kit", _pick_kit.bind(i), true, Color("3f9b5a"), T_MD)
 		if ui_live:
 			_register(r, _pick_kit.bind(i))
