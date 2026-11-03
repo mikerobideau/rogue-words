@@ -11,6 +11,7 @@ const GENRE_SHORT: Array[String] = ["POP", "ROCK", "HIPHOP", "JAZZ"]
 const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a"]
 const COND_WEIGHTS := {"plain": 6, "set1": 3, "set2": 3, "odd": 2, "even": 2, "opener": 3, "closer": 3, "after_genre": 7, "after_decade": 6, "above_genre": 7, "above_decade": 7, "hype": 10, "boost": 8, "fans": 8, "anthem": 8, "mirror": 5}
 const RARITY_WEIGHTS := {"common": 20, "uncommon": 55, "rare": 25}
+const GEAR_PATH := "res://prototypes/nine_pocket/data/gear.json"
 const CARDS_PATH := "res://prototypes/nine_pocket/data/cards.json"
 const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
 const SET_BONUS := 10
@@ -56,9 +57,9 @@ const EQ_UNIT := 3
 const DECK_SIZE := 24
 const DECK_THEME := 6
 const KITS := [
-	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "echo", "lean": ["genre", "Jazz"]},
-	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Rock"]},
-	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Pop"]},
+	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "sax", "lean": ["genre", "Jazz"]},
+	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "fog", "lean": ["genre", "Rock"]},
+	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "reverb", "lean": ["genre", "Pop"]},
 	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "gear": "tube", "lean": ["era", "90s"]},
 ]
 const CDR_POINTS := 3
@@ -114,7 +115,7 @@ const PAY_APPLAUSE := 8
 const PAY_ENCORE := 11
 const BONUS_STEP := 0.25
 const BONUS_MAX := 3
-const RACK_SLOTS := 4
+const RACK_SLOTS := 8
 const START_RACK: Array[String] = []
 
 const SHOP_ALBUMS := 2
@@ -132,18 +133,10 @@ const GEAR_PACKS := [
 const SORT_KEYS: Array[String] = ["genre", "era", "sound", "band"]
 const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "band": "Band"}
 
-const GEAR := {
-	"eq": {"name": "Graphic EQ", "text": "Each genre's fader setting (x3) is added to that genre's songs.", "price": 6, "n": [0], "look": "faders"},
-	"gain": {"name": "Gain Stage", "text": "+%d points for songs in the genre on the dial.", "price": 7, "n": [3, 6], "look": "genre_knob"},
-	"exciter": {"name": "Exciter", "text": "+%d points for songs from the decade on the dial.", "price": 6, "n": [3, 6], "look": "era_knob"},
-	"tube": {"name": "Tube Preamp", "text": "+%d points for songs with no effect.", "price": 5, "n": [4, 8, 12], "look": "tube"},
-	"mic": {"name": "Make Some Noise", "text": "Your closing song scores x%d.", "price": 6, "n": [2, 3], "look": "knobs"},
-	"pitch": {"name": "Pitch Control", "text": "After and above decade effects accept a decade one step either side.", "price": 6, "n": [0], "look": "knobs"},
-	"echo": {"name": "Echo Unit", "text": "Flow gains from effects are 50% bigger.", "price": 6, "n": [0], "look": "knobs"},
-}
 const EQ_MIN := -1
 const EQ_MAX := 3
 const EQ_START: Array[int] = [2, 1, 0, -1]
+const EQ_ERA_START: Array[int] = [2, 1, 1, 0, -1, -1]
 const LEVEL_NAMES: Array[String] = ["", "MK II", "MK III"]
 
 const EDITION_CHANCE := 0.08

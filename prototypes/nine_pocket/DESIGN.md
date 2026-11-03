@@ -108,9 +108,28 @@ Better albums, editions and more gear come from pickups and the shop.
 **Editions** (8% of albums): Holographic +3 points, Signed +5, Limited Edition +8, Mint Condition +$1 per play.
 
 ## Rack
-All 4 bays start empty. The kit gives one piece of gear; more comes from pickups and the shop.
-- **Point gear:** Graphic EQ adds 3 per fader step (-3 to +6) to every song of that genre; Gain Stage +3/+6 for the dial's genre; Exciter +3/+6 for the dial's decade; Tube Preamp +4/+8/+12 for plain cards (no effect).
-- **Sequence gear:** Make Some Noise makes your closing song score x2 (MK II x3); Pitch Control lets after/above decade effects accept a decade one step either side; Echo Unit makes flow gains from effects 50% bigger.
+The rack has 4 bays. A Full unit fills a bay and a Half unit takes half of one, so a bay holds one Full unit or two Half units (8 half-slots). The full roster, with every unit's numbers, is in `GEAR.md` and `D.GEAR`. The kit gives one unit; more comes from pickups and the shop.
+- **Chain order:** the signal runs left to right through a bay, then down to the next bay. Splitter duplicates the next unit in the chain and Wah Pedal counts the units before it. A unit duplicated by Splitter applies its bonus a second time (+3 becomes +6, x2 becomes x3, $5 becomes $10, active units get a second use, Octave and Sampler use a second random pair).
+- **Rearranging:** click a unit (or press and drag it) and click another slot to move it, or swap it with the unit there, until PLAY is pressed. A Half unit can swap with a Full unit only if its bay has a free half-slot. Right-click or Escape cancels.
+- **Installing:** a new unit goes into a slot you pick. A Half unit replaces whatever is in that slot and a Full unit replaces the unit in a bay that holds at most one. In the shop, **SELL** on a unit pays half its price (a Piggy Bank also pays its pot).
+- **Active gear** (CD Burner, Deep Library, Sneak Peek) has a USE button that works while you lay out the set, once per gig (twice next to a Splitter). Deep Library redraws your whole hand, Sneak Peek shows the next 5 songs in the binder, and the CD Burner turns a Mix in your hand into a copy of an album in your hand.
+- **Scaling gear:** Vintage Amp (60s songs) and Feedback (Rock songs) store +0.1 flow for each matching song you play and add it to the starting flow of every set for the rest of the run. Piggy Bank gains $1 each gig and pays out when sold or when you beat a boss.
+- **Money gear:** Merch Table ($5), Tip Jar ($2 per unused discard) and Piggy Bank pay when the show ends ("+$ gear" on the end screen); Radio, Sampler and T Shirt Cannon pay as songs play.
+- **Crowd gear:** Noise Gate ignores one randomly chosen hated tag each gig (it does nothing when the boss has the hates ability); Request Line makes requests pay +20.
+- **Boss "broken equipment"** switches one unit off for the show (it shows BROKEN and is skipped by the chain).
+- **Tube Preamp** counts the different genres across your whole hand of 8 (the songs in the changer and the ones still in your hand).
+- Graphic EQ now comes as Genre EQ and Decade EQ. A work order tweak raises one fader by a step on either.
+
+## Gear data and the gear workshop
+Every gear unit lives in `data/gear.json`: id, name, text, size (full or half), price, panel look, whether it has a button, and its numbers (`params`). The game reads that file on start (`_load_gear`) and looks numbers up with `_gp` (a number) and `_gs` (a genre or decade name). Text can hold placeholders such as `+{points} points per song`, which fill in from the unit's numbers. What a unit does is still written in code, so a new behavior needs code; the numbers, text, price, size and look do not.
+
+Run `gear_workshop.tscn` (F6) to edit the file. It is laid out like the card workshop:
+- **Library** (left): every unit with search and filters for size and kind (active or passive).
+- **Preview** (center): the unit drawn by the game's own rack code, with its price and sell value, and the text with the numbers filled in.
+- **Inspector** (right): name, text, the unit's numbers (a genre or decade picker for units tied to one), bay size, price and panel look. The kind and a note on what the code does are shown but not editable. Ctrl+S saves.
+- **Balance test** (bottom left): each unit alone, on 60 random hands from the card catalog, scored by the real scorer. The table shows points lift, cash per gig (Merch Table, Tip Jar and Piggy Bank count their end-of-gig money), a value that counts $1 as a number of points you choose (default 3), and value per dollar of price. Wah Pedal is tested with three units to its left, Splitter with an Overdrive to its right, and the counter units with 10 stored. Units whose effect isn't a scoring bonus (buttons, rule changes, Tuner, Request Line, Noise Gate) show as "utility".
+- **Checks** (bottom right): missing or duplicate names, text placeholders with no matching number, numbers not shown in the text, text too long for a Half unit, a Full unit with no panel look, genre units whose genre has no cards in the catalog, and units whose value per dollar is more than twice or under half the median. Click one to jump to the unit.
+
 
 ## Pay and the shop
 After each show: booed $2, polite clapping $5, Big applause $8, Encore $11, plus Mint Condition money.
