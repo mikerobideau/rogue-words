@@ -6,12 +6,12 @@ const MUSIC_SECONDS := 4.0
 const MUSIC_FADE := 0.8
 const MENU_FADE := 1.5
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
-const GENRES: Array[String] = ["Alternative", "Blues", "Classic Rock", "Indie", "Metal", "Psychedelic", "Punk"]
-const GENRE_SHORT: Array[String] = ["ALT", "BLUES", "ROCK", "INDIE", "METAL", "PSYCH", "PUNK"]
-const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a", "5d626a"]
+const GENRES: Array[String] = ["Pop", "Rock", "Hip-Hop", "Jazz"]
+const GENRE_SHORT: Array[String] = ["POP", "ROCK", "HIPHOP", "JAZZ"]
+const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a"]
 const COND_WEIGHTS := {"plain": 6, "set1": 3, "set2": 3, "odd": 2, "even": 2, "opener": 3, "closer": 3, "after_genre": 7, "after_decade": 6, "above_genre": 7, "above_decade": 7, "hype": 10, "boost": 8, "fans": 8, "anthem": 8, "mirror": 5}
-const START_DECK := {"plain": 14, "set1": 1, "set2": 1, "odd": 1, "even": 1, "opener": 1, "closer": 1, "after_genre": 1, "after_decade": 1, "hype": 2}
-const START_POINTS := {"plain": 5, "set1": 3, "set2": 3, "odd": 3, "even": 3, "opener": 3, "closer": 3, "after_genre": 3, "after_decade": 3, "hype": 3}
+const RARITY_WEIGHTS := {"common": 20, "uncommon": 55, "rare": 25}
+const CARDS_PATH := "res://prototypes/nine_pocket/data/cards.json"
 const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
 const SET_BONUS := 10
 const SIDE_BONUS := 8
@@ -47,7 +47,7 @@ const DIG_OFFERS := 3
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
 const FLOW_MAX := 6
-const GIG_TARGETS: Array[int] = [70, 120, 210, 380, 680, 1200]
+const GIG_TARGETS: Array[int] = [60, 110, 200, 360, 650, 1150]
 const HEADLINER_MULT := 1.25
 const BOSS_TARGET := 1.3
 const TIER_GOOD := 1.5
@@ -56,9 +56,9 @@ const EQ_UNIT := 3
 const DECK_SIZE := 24
 const DECK_THEME := 6
 const KITS := [
-	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "echo", "lean": ["genre", "Indie"]},
-	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Classic Rock"]},
-	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Punk"]},
+	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "echo", "lean": ["genre", "Jazz"]},
+	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "mic", "lean": ["genre", "Rock"]},
+	{"name": "Genre Streak", "idea": "Stack one genre and watch it snowball.", "gear": "gain", "lean": ["genre", "Pop"]},
 	{"name": "Crowd Pleaser", "idea": "Steady points from variety and a full set.", "gear": "tube", "lean": ["era", "90s"]},
 ]
 const CDR_POINTS := 3
@@ -69,12 +69,12 @@ const REQUEST_SONGS := 2
 
 
 const VENUES := [
-	{"name": "Basement Show", "likes": [["genre", "Punk"], ["era", "90s"]], "dislikes": [["genre", "Blues"]]},
-	{"name": "Wedding Reception", "likes": [["genre", "Classic Rock"], ["era", "80s"]], "dislikes": [["genre", "Metal"]]},
-	{"name": "Coffeehouse", "likes": [["genre", "Indie"], ["genre", "Alternative"]], "dislikes": [["genre", "Metal"], ["genre", "Punk"]]},
-	{"name": "Biker Bar", "likes": [["genre", "Blues"], ["genre", "Classic Rock"]], "dislikes": [["genre", "Indie"]]},
-	{"name": "Festival Tent", "likes": [["genre", "Psychedelic"], ["era", "10s"]], "dislikes": [["era", "60s"]]},
-	{"name": "Record Store Day", "likes": [["genre", "Alternative"], ["era", "70s"]], "dislikes": [["era", "10s"]]},
+	{"name": "Basement Show", "likes": [["genre", "Rock"], ["era", "90s"]], "dislikes": [["genre", "Jazz"]]},
+	{"name": "Wedding Reception", "likes": [["genre", "Pop"], ["era", "80s"]], "dislikes": [["genre", "Hip-Hop"]]},
+	{"name": "Coffeehouse", "likes": [["genre", "Jazz"], ["genre", "Pop"]], "dislikes": [["genre", "Rock"]]},
+	{"name": "Block Party", "likes": [["genre", "Hip-Hop"], ["genre", "Pop"]], "dislikes": [["genre", "Jazz"]]},
+	{"name": "Festival Tent", "likes": [["genre", "Rock"], ["era", "10s"]], "dislikes": [["era", "60s"]]},
+	{"name": "Record Store Day", "likes": [["genre", "Hip-Hop"], ["era", "70s"]], "dislikes": [["era", "10s"]]},
 ]
 
 const USE_FORK := true
@@ -143,7 +143,7 @@ const GEAR := {
 }
 const EQ_MIN := -1
 const EQ_MAX := 3
-const EQ_START: Array[int] = [2, 1, 1, -1, -1, 0, 0]
+const EQ_START: Array[int] = [2, 1, 0, -1]
 const LEVEL_NAMES: Array[String] = ["", "MK II", "MK III"]
 
 const EDITION_CHANCE := 0.08

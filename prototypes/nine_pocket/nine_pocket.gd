@@ -23,8 +23,7 @@ class Disc:
 	var era := 0
 	var label := 0
 	var sound := 3
-	var cond := ""
-	var cond_v := 0
+	var rule := {}
 	var edition := ""
 	var cdr := false
 	var mix_cover := ""
@@ -57,6 +56,7 @@ var last_venue := -1
 var score_tot := 0
 var score_live := 0
 var resolving := false
+var label_title := true
 var sel_slot := -1
 var set_res := {}
 var pending_kit := 0
@@ -238,7 +238,84 @@ func _shuffle(arr: Array) -> void:
 		arr[i] = arr[j]
 		arr[j] = t
 
+func _read_cards() -> Array:
+	if not FileAccess.file_exists(D.CARDS_PATH):
+		return []
+	var data = JSON.parse_string(FileAccess.get_file_as_string(D.CARDS_PATH))
+	return data if data is Array else []
+
+func _card_to_album(c: Dictionary) -> Dictionary:
+	var band := String(c.get("band", ""))
+	var rule := {"condition": String(c.get("condition", "always")), "cparam": String(c.get("cond_param", "")), "effect": String(c.get("effect", "none")), "value": float(c.get("value", 0.0)), "target": String(c.get("target", "self")), "tparam": String(c.get("target_param", ""))}
+	return {"id": String(c.get("id", "")), "title": String(c.get("title", "")), "orig": String(c.get("title", "")), "band": band, "cover": String(c.get("cover", "")), "song": String(c.get("song", "")), "genre": maxi(0, D.GENRES.find(String(c.get("genre", "")))), "era": maxi(0, D.ERAS.find(String(c.get("decade", "")))), "label": (absi(band.hash()) / 7) % D.LABELS.size(), "points": int(c.get("points", 3)), "rule": rule, "rarity": String(c.get("rarity", "common"))}
+
+func _legacy_rule(effect: String, cv: int) -> Dictionary:
+	var p := ""
+	if effect.ends_with("genre") or effect == "fans" or effect == "anthem":
+		p = D.GENRES[clampi(cv, 0, D.GENRES.size() - 1)]
+	elif effect.ends_with("decade"):
+		p = D.ERAS[clampi(cv, 0, D.ERAS.size() - 1)]
+	return _legacy_rule_named(effect, p)
+
+func _legacy_rule_named(effect: String, p: String) -> Dictionary:
+	var r := {"condition": "always", "cparam": "", "effect": "none", "value": 0.0, "target": "self", "tparam": ""}
+	match effect:
+		"set1", "set2":
+			r["condition"] = effect
+			r["effect"] = "points"
+			r["value"] = float(D.SET_BONUS)
+		"odd", "even":
+			r["condition"] = effect
+			r["effect"] = "points"
+			r["value"] = float(D.SIDE_BONUS)
+		"opener":
+			r["condition"] = "first"
+			r["effect"] = "mult"
+			r["value"] = D.OPENER_MULT
+		"closer":
+			r["condition"] = "last"
+			r["effect"] = "mult"
+			r["value"] = D.CLOSER_MULT
+		"after_genre", "after_decade":
+			r["condition"] = "prev_is"
+			r["cparam"] = p
+			r["effect"] = "mult"
+			r["value"] = D.AFTER_MULT
+		"above_genre", "above_decade":
+			r["condition"] = "above_is"
+			r["cparam"] = p
+			r["effect"] = "mult"
+			r["value"] = D.ABOVE_MULT
+		"hype":
+			r["effect"] = "flow_add"
+			r["value"] = D.AMP_ADD
+			r["target"] = "set"
+		"boost":
+			r["effect"] = "flow_mult"
+			r["value"] = D.SURGE_MULT
+			r["target"] = "set"
+		"fans":
+			r["condition"] = "per_before"
+			r["cparam"] = p
+			r["effect"] = "flow_add"
+			r["value"] = D.FANS_FLOW
+			r["target"] = "set"
+		"anthem":
+			r["effect"] = "points"
+			r["value"] = float(D.ANTHEM_ADD)
+			r["target"] = "later_genre"
+			r["tparam"] = p
+		"mirror":
+			r["effect"] = "copy"
+	return r
+
 func _load_albums() -> void:
+	for c in _read_cards():
+		albums.append(_card_to_album(c))
+	if albums.is_empty():
+		_legacy_albums()
+
+func _legacy_albums() -> void:
 	var data = JSON.parse_string(FileAccess.get_file_as_string(D.CATALOG))
 	if not data is Array:
 		push_error("Missing %s: run tools/make_covers.gd" % D.CATALOG)
@@ -270,7 +347,7 @@ func _load_albums() -> void:
 			var rgn := RandomNumberGenerator.new()
 			rgn.seed = absi(String(rc["cover"]).hash())
 			var cr := _roll_cond(rgn, "")
-			albums.append({"title": ca["album"], "orig": rc["album"], "band": rc["band"], "cover": rc["cover"], "genre": g, "era": e0, "label": (h / 7) % D.LABELS.size(), "points": cr["points"], "cond": cr["cond"], "cond_v": cr["cond_v"]})
+			albums.append({"title": ca["album"], "orig": rc["album"], "band": rc["band"], "cover": rc["cover"], "genre": g, "era": e0, "label": (h / 7) % D.LABELS.size(), "points": cr["points"], "rule": _legacy_rule(String(cr["cond"]), int(cr["cond_v"]))})
 
 func _roll_cond(rg: RandomNumberGenerator, cname: String) -> Dictionary:
 	if cname == "":
@@ -310,6 +387,9 @@ func _load_music() -> void:
 	var files: Array = []
 	_music_files(D.MUSIC_DIR, files)
 	for a: Dictionary in albums:
+		if String(a.get("song", "")) != "":
+			album_music[a["cover"]] = String(a["song"])
+			continue
 		var key := _music_key("%s - %s" % [a["band"], a["orig"]])
 		for f: String in files:
 			var base := _music_key(f.get_file().get_basename())
@@ -411,8 +491,7 @@ func _make_disc(a: Dictionary) -> Disc:
 	d.era = a["era"]
 	d.label = a["label"]
 	d.sound = int(a["points"])
-	d.cond = String(a["cond"])
-	d.cond_v = int(a["cond_v"])
+	d.rule = (a["rule"] as Dictionary).duplicate()
 	if rng.randf() < D.EDITION_CHANCE:
 		var eds: Array = D.EDITIONS.keys()
 		d.edition = eds[rng.randi_range(0, eds.size() - 1)]
@@ -445,32 +524,39 @@ func _make_cdr() -> Disc:
 	d.cdr = true
 	return d
 
-func _gen_album(g: int, e: int, cname: String = "", used: Array = []) -> Dictionary:
-	var pool: Array = albums.filter(func(a): return not a["cover"] in used)
+func _roll_rarity() -> String:
+	var tot := 0
+	for k in D.RARITY_WEIGHTS:
+		tot += int(D.RARITY_WEIGHTS[k])
+	var roll := rng.randi_range(0, tot - 1)
+	for k in D.RARITY_WEIGHTS:
+		roll -= int(D.RARITY_WEIGHTS[k])
+		if roll < 0:
+			return String(k)
+	return "common"
+
+func _pick_card(g: int, e: int, rarity: String, used: Array) -> Dictionary:
+	var pool: Array = albums.filter(func(a): return not a.get("id", a["cover"]) in used)
 	if pool.is_empty():
 		pool = albums
-	var near: Array = pool.filter(func(a): return int(a["genre"]) == g and int(a["era"]) == e)
-	if near.is_empty():
-		near = pool.filter(func(a): return int(a["genre"]) == g)
-	if near.is_empty():
-		near = pool
-	var a: Dictionary = (near[rng.randi_range(0, near.size() - 1)] as Dictionary).duplicate()
-	var cr := _roll_cond(rng, cname)
-	a["genre"] = g
-	a["era"] = e
-	a["cond"] = cr["cond"]
-	a["cond_v"] = cr["cond_v"]
-	a["points"] = cr["points"]
-	return a
+	var steps: Array = []
+	if rarity != "":
+		steps = [[g, e, rarity], [g, -1, rarity], [-1, e, rarity], [-1, -1, rarity]]
+	steps.append_array([[g, e, ""], [g, -1, ""], [-1, -1, ""]])
+	for st: Array in steps:
+		var cand: Array = pool.filter(func(a): return (int(st[0]) < 0 or int(a["genre"]) == int(st[0])) and (int(st[1]) < 0 or int(a["era"]) == int(st[1])) and (String(st[2]) == "" or String(a.get("rarity", "")) == String(st[2])))
+		if not cand.is_empty():
+			return (cand[rng.randi_range(0, cand.size() - 1)] as Dictionary).duplicate()
+	return (albums[0] as Dictionary).duplicate()
 
 func _random_albums(n: int, g0: int = -1, e0: int = -1) -> Array:
 	var out: Array = []
 	var used: Array = []
 	for k in n:
-		var g := g0 if k == 0 and g0 >= 0 else rng.randi_range(0, D.GENRES.size() - 1)
-		var e := e0 if k == 0 and e0 >= 0 else rng.randi_range(0, D.ERAS.size() - 1)
-		var a := _gen_album(g, e, "", used)
-		used.append(a["cover"])
+		var g := g0 if k == 0 else -1
+		var e := e0 if k == 0 else -1
+		var a := _pick_card(g, e, _roll_rarity(), used)
+		used.append(a.get("id", a["cover"]))
 		out.append(a)
 	return out
 
@@ -566,11 +652,6 @@ func _decks() -> Array:
 func _deck_discs(deck: Dictionary) -> Array:
 	var gn := D.GENRES.size()
 	var en := D.ERAS.size()
-	var deal: Array = []
-	for ck in D.START_DECK:
-		for k in int(D.START_DECK[ck]):
-			deal.append(ck)
-	_shuffle(deal)
 	var combos: Array = []
 	var eras: Array = range(en)
 	_shuffle(eras)
@@ -592,9 +673,8 @@ func _deck_discs(deck: Dictionary) -> Array:
 	var used: Array = []
 	var out: Array = []
 	for n in combos.size():
-		var a := _gen_album(int(combos[n][0]), int(combos[n][1]), String(deal[n]), used)
-		a["points"] = int(D.START_POINTS[String(a["cond"])])
-		used.append(a["cover"])
+		var a := _pick_card(int(combos[n][0]), int(combos[n][1]), "common", used)
+		used.append(a.get("id", a["cover"]))
 		var d := _make_disc(a)
 		d.edition = ""
 		out.append(d)
@@ -1220,6 +1300,8 @@ func _band_text(c: Vector2, rad: float, d: Disc) -> void:
 		return
 	var label := "%s-%s" % [D.ERAS[d.era], D.GENRES[d.genre]]
 	var split := String(D.ERAS[d.era]).length()
+	if label_title:
+		label = d.title if d.title != "" else "Untitled"
 	var f := _marker_font()
 	var rr := rad * 0.62
 	var fs := maxi(10, int(rad * 0.18))
@@ -1230,7 +1312,7 @@ func _band_text(c: Vector2, rad: float, d: Disc) -> void:
 		total += adv[i]
 	var max_arc := rr * deg_to_rad(140.0)
 	if total > max_arc:
-		fs = maxi(9, int(fs * maxf(0.6, max_arc / total)))
+		fs = maxi(7 if label_title else 9, int(fs * maxf(0.4 if label_title else 0.6, max_arc / total)))
 		total = 0.0
 		for i in adv.size():
 			adv[i] = f.get_string_size(label.substr(i, 1), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
@@ -1255,7 +1337,9 @@ func _band_text(c: Vector2, rad: float, d: Disc) -> void:
 		if ch == " ":
 			continue
 		var ink := base_ink
-		if i < split:
+		if label_title:
+			pass
+		elif i < split:
 			ink = _ring_ink(true, d.era, base_ink)
 		elif i > split:
 			ink = _ring_ink(false, d.genre, base_ink)
@@ -1281,73 +1365,179 @@ func _disc_face(c: Vector2, rad: float, d: Disc, spin: float = 0.0) -> void:
 		return
 	_cd_art(c, rad, _cover_tex(d.mix_cover if d.cdr else d.cover), spin)
 
+func _short_name(n: String) -> String:
+	var gi := D.GENRES.find(n)
+	if gi >= 0:
+		return String(D.GENRE_SHORT[gi])
+	return n.to_upper()
+
 func _cond_label(d: Disc) -> String:
-	match d.cond:
+	var r: Dictionary = d.rule
+	var eff := String(r.get("effect", "none"))
+	if eff == "none":
+		return "NO EFFECT"
+	if eff == "copy":
+		return "COPY PREV"
+	var v := float(r.get("value", 0.0))
+	var tgt := String(r.get("target", "self"))
+	var tp := _short_name(String(r.get("tparam", "")))
+	var p := _short_name(String(r.get("cparam", "")))
+	var sg := ("+$" + _ff(v)) if eff == "cash" else (("+" + _ff(v)) if eff == "points" or eff == "flow_add" else ("x" + _ff(v)))
+	var part := sg
+	if eff == "flow_add" or eff == "flow_mult":
+		part = "FLOW " + sg
+	elif tgt == "next":
+		part = "NEXT " + sg
+	elif tgt == "later":
+		part = "LATER " + sg
+	elif tgt == "later_genre" or tgt == "later_decade":
+		part = "LATER %s %s" % [tp, sg]
+	var cp := ""
+	match String(r.get("condition", "always")):
+		"first":
+			cp = "FIRST"
+		"last":
+			cp = "LAST"
 		"set1":
-			return "SET 1 +%d" % D.SET_BONUS
+			cp = "SET 1"
 		"set2":
-			return "SET 2 +%d" % D.SET_BONUS
+			cp = "SET 2"
 		"odd":
-			return "ODD +%d" % D.SIDE_BONUS
+			cp = "ODD"
 		"even":
-			return "EVEN +%d" % D.SIDE_BONUS
-		"opener":
-			return "FIRST x%d" % int(D.OPENER_MULT)
-		"closer":
-			return "LAST x%d" % int(D.CLOSER_MULT)
-		"after_genre":
-			return "AFTER %s x%d" % [D.GENRE_SHORT[d.cond_v], int(D.AFTER_MULT)]
-		"after_decade":
-			return "AFTER %s x%d" % [String(D.ERAS[d.cond_v]).to_upper(), int(D.AFTER_MULT)]
-		"above_genre":
-			return "ABOVE %s x%d" % [D.GENRE_SHORT[d.cond_v], int(D.ABOVE_MULT)]
-		"above_decade":
-			return "ABOVE %s x%d" % [String(D.ERAS[d.cond_v]).to_upper(), int(D.ABOVE_MULT)]
-		"hype":
-			return "FLOW +%s" % _ff(D.AMP_ADD)
-		"boost":
-			return "FLOW x%s" % _ff(D.SURGE_MULT)
-		"fans":
-			return "FLOW PER %s" % D.GENRE_SHORT[d.cond_v]
-		"anthem":
-			return "LATER %s +%d" % [D.GENRE_SHORT[d.cond_v], D.ANTHEM_ADD]
-		"mirror":
-			return "COPY PREV"
-	return "NO EFFECT"
+			cp = "EVEN"
+		"slot1", "slot2", "slot3", "slot4", "slot5", "slot6":
+			cp = "SLOT " + String(r.get("condition", "")).substr(4)
+		"prev_is":
+			cp = "AFTER " + p
+		"above_is":
+			cp = "ABOVE " + p
+		"next_is":
+			cp = "BEFORE " + p
+		"per_before":
+			return "%s PER %s" % [part, p]
+		"per_hand":
+			return "%s PER %s IN HAND" % [part, p]
+	return part if cp == "" else cp + " " + part
 
 func _cond_text(d: Disc) -> String:
-	match d.cond:
+	var r: Dictionary = d.rule
+	var eff := String(r.get("effect", "none"))
+	if eff == "none":
+		return "No effect. It is just points."
+	if eff == "copy":
+		return "Repeats the effect of the song before it."
+	var half := D.SETLIST / 2
+	var v := _ff(float(r.get("value", 0.0)))
+	var tp := String(r.get("tparam", ""))
+	var p := String(r.get("cparam", ""))
+	var lead := ""
+	match String(r.get("condition", "always")):
+		"first":
+			lead = "If it is played first, "
+		"last":
+			lead = "If it is played last, "
 		"set1":
-			return "+%d points if played in the first set (slots 1 to 4, the top row)." % D.SET_BONUS
+			lead = "In the first set (slots 1 to %d), " % half
 		"set2":
-			return "+%d points if played in the second set (slots 5 to 8, the bottom row)." % D.SET_BONUS
+			lead = "In the second set (slots %d to %d), " % [half + 1, D.SETLIST]
 		"odd":
-			return "+%d points if played in slot 1, 3, 5 or 7." % D.SIDE_BONUS
+			lead = "In an odd slot (1, 3, 5), "
 		"even":
-			return "+%d points if played in slot 2, 4, 6 or 8." % D.SIDE_BONUS
-		"opener":
-			return "Scores x%d if played first (slot 1)." % int(D.OPENER_MULT)
-		"closer":
-			return "Scores x%d if played last (slot 8)." % int(D.CLOSER_MULT)
-		"after_genre":
-			return "Scores x%d if the song before it is %s." % [int(D.AFTER_MULT), D.GENRES[d.cond_v]]
-		"after_decade":
-			return "Scores x%d if the song before it is from the %s." % [int(D.AFTER_MULT), D.ERAS[d.cond_v]]
-		"above_genre":
-			return "Scores x%d if the song above it is %s (slots 5 to 8 only)." % [int(D.ABOVE_MULT), D.GENRES[d.cond_v]]
-		"above_decade":
-			return "Scores x%d if the song above it is from the %s (slots 5 to 8 only)." % [int(D.ABOVE_MULT), D.ERAS[d.cond_v]]
-		"hype":
-			return "After this song plays, your flow goes up by %s, so every later song scores more." % _ff(D.AMP_ADD)
-		"boost":
-			return "After this song plays, your flow is multiplied by %s." % _ff(D.SURGE_MULT)
-		"fans":
-			return "After this song plays, your flow goes up by %s for each %s song played before it." % [_ff(D.FANS_FLOW), D.GENRES[d.cond_v]]
-		"anthem":
-			return "Every later %s song scores +%d points." % [D.GENRES[d.cond_v], D.ANTHEM_ADD]
-		"mirror":
-			return "Repeats the effect of the song before it."
-	return "No effect. It is just points."
+			lead = "In an even slot (2, 4, 6), "
+		"slot1", "slot2", "slot3", "slot4", "slot5", "slot6":
+			lead = "In slot %s, " % String(r.get("condition", "")).substr(4)
+		"prev_is":
+			lead = "If the song before it is %s, " % p
+		"above_is":
+			lead = "If the song above it is %s (slots %d to %d only), " % [p, half + 1, D.SETLIST]
+		"next_is":
+			lead = "If the song after it is %s, " % p
+		"per_before":
+			lead = "For each %s song played before it, " % p
+		"per_hand":
+			lead = "For each %s song left in your hand, " % p
+	var tgt := String(r.get("target", "self"))
+	var amount := ("+%s points" % v) if eff == "points" else ("x%s" % v)
+	var body := ""
+	match eff:
+		"flow_add":
+			body = "your flow goes up by %s after this song plays." % v
+		"flow_mult":
+			body = "your flow is multiplied by %s after this song plays." % v
+		"cash":
+			body = "you earn $%s." % v
+		_:
+			match tgt:
+				"next":
+					body = "the next song scores %s." % amount
+				"later":
+					body = "every later song scores %s." % amount
+				"later_genre", "later_decade":
+					body = "every later %s song scores %s." % [tp, amount]
+				_:
+					body = "this song scores %s." % amount
+	var out := lead + body
+	return out.left(1).to_upper() + out.substr(1)
+
+func _name_matches(d: Disc, nm: String) -> bool:
+	if d.genre < 0 or nm == "":
+		return false
+	var gi := D.GENRES.find(nm)
+	if gi >= 0:
+		return d.genre == gi
+	var ei := D.ERAS.find(nm)
+	return ei >= 0 and _era_near(d.era, ei)
+
+func _cond_part(rule: Dictionary, count: int) -> String:
+	var p := String(rule.get("cparam", ""))
+	match String(rule.get("condition", "always")):
+		"first":
+			return "First"
+		"last":
+			return "Last"
+		"set1":
+			return "Set 1"
+		"set2":
+			return "Set 2"
+		"odd":
+			return "Odd slot"
+		"even":
+			return "Even slot"
+		"slot1", "slot2", "slot3", "slot4", "slot5", "slot6":
+			return "Slot " + String(rule.get("condition", "")).substr(4)
+		"prev_is":
+			return "After %s" % p
+		"above_is":
+			return "Above %s" % p
+		"next_is":
+			return "Before %s" % p
+		"per_before":
+			return "Fans (%d %s)" % [count, p]
+		"per_hand":
+			return "Hand (%d %s)" % [count, p]
+	return ""
+
+func _rule_line(rule: Dictionary, count: int, amt: float) -> String:
+	var cp := _cond_part(rule, count)
+	var eff := String(rule.get("effect", "none"))
+	var tgt := String(rule.get("target", "self"))
+	var tp := String(rule.get("tparam", ""))
+	var sg := ("+$" + _ff(amt)) if eff == "cash" else (("+" + _ff(amt)) if eff == "points" or eff == "flow_add" else ("x" + _ff(amt)))
+	var body := ""
+	if eff == "cash":
+		return (cp + " " + sg) if cp != "" else sg
+	if eff == "flow_add" or eff == "flow_mult":
+		body = "flow %s after this song" % sg
+	elif tgt == "next":
+		body = "next song " + sg
+	elif tgt == "later":
+		body = "later songs " + sg
+	elif tgt == "later_genre" or tgt == "later_decade":
+		body = "later %s songs %s" % [tp, sg]
+	else:
+		return (cp if cp != "" else "Bonus") + " " + sg
+	return (cp + ": " + body) if cp != "" else body.left(1).to_upper() + body.substr(1)
 
 func _era_near(e: int, v: int) -> bool:
 	return e == v or (_bay_of("pitch") >= 0 and absi(e - v) <= 1)
@@ -1360,6 +1550,8 @@ func _disc_marks(c: Vector2, rad: float, d: Disc) -> void:
 		_band_text(c, rad, d)
 		var lab := "MIX" if d.cdr else _cond_label(d)
 		var fs := maxi(10, int(rad * 0.17))
+		while fs > 8 and _heavy_w(lab, fs) + rad * 0.3 > rad * 1.7:
+			fs -= 1
 		var pw := minf(_heavy_w(lab, fs) + rad * 0.3, rad * 1.7)
 		var pr := Rect2(c.x - pw * 0.5, c.y + rad * 0.5, pw, fs * 1.7)
 		_panel(Rect2(pr.position + Vector2(1.0, 2.0), pr.size), Color(0, 0, 0, 0.45), int(fs * 0.8))
@@ -2791,87 +2983,113 @@ func _s_mult(out: Array, st: Dictionary, src: String, text: String, m: float, ci
 	st["mult"] = float(st["mult"]) * m
 	out.append({"src": src, "text": text, "n": 1 if m > 1.0 else -1, "ci": ci, "run": _s_run(st)})
 
-func _apply_effect(src: Disc, s: int, ids: Array, prev: Disc, above: Disc, out: Array, st: Dictionary, fx: Dictionary, depth: int) -> bool:
+func _cond_count(rule: Dictionary, s: int, ids: Array, prev: Disc, above: Disc, nxt: Disc) -> int:
 	var half := D.SETLIST / 2
-	var eb := _bay_of("echo")
-	var echo := D.ECHO_FLOW if eb >= 0 else 1.0
-	match src.cond:
+	var p := String(rule.get("cparam", ""))
+	match String(rule.get("condition", "always")):
+		"always":
+			return 1
+		"first":
+			return 1 if s == 0 else 0
+		"last":
+			return 1 if s == D.SETLIST - 1 else 0
 		"set1":
-			if s < half:
-				_s_add(out, st, "fx", "Set 1 +%d" % D.SET_BONUS, D.SET_BONUS)
-				return true
+			return 1 if s < half else 0
 		"set2":
-			if s >= half:
-				_s_add(out, st, "fx", "Set 2 +%d" % D.SET_BONUS, D.SET_BONUS)
-				return true
+			return 1 if s >= half else 0
 		"odd":
-			if s % 2 == 0:
-				_s_add(out, st, "fx", "Odd slot +%d" % D.SIDE_BONUS, D.SIDE_BONUS)
-				return true
+			return 1 if s % 2 == 0 else 0
 		"even":
-			if s % 2 == 1:
-				_s_add(out, st, "fx", "Even slot +%d" % D.SIDE_BONUS, D.SIDE_BONUS)
-				return true
-		"opener":
-			if s == 0:
-				_s_mult(out, st, "fx", "First x%d" % int(D.OPENER_MULT), D.OPENER_MULT)
-				return true
-		"closer":
-			if s == D.SETLIST - 1:
-				_s_mult(out, st, "fx", "Last x%d" % int(D.CLOSER_MULT), D.CLOSER_MULT)
-				return true
-		"after_genre":
-			if prev != null and prev.genre == src.cond_v:
-				_s_mult(out, st, "fx", "After %s x%d" % [D.GENRES[src.cond_v], int(D.AFTER_MULT)], D.AFTER_MULT)
-				return true
-		"after_decade":
-			if prev != null and prev.genre >= 0 and _era_near(prev.era, src.cond_v):
-				_s_mult(out, st, "fx", "After %s x%d" % [D.ERAS[src.cond_v], int(D.AFTER_MULT)], D.AFTER_MULT)
-				return true
-		"above_genre":
-			if above != null and above.genre == src.cond_v:
-				_s_mult(out, st, "fx", "Above %s x%d" % [D.GENRES[src.cond_v], int(D.ABOVE_MULT)], D.ABOVE_MULT)
-				return true
-		"above_decade":
-			if above != null and above.genre >= 0 and _era_near(above.era, src.cond_v):
-				_s_mult(out, st, "fx", "Above %s x%d" % [D.ERAS[src.cond_v], int(D.ABOVE_MULT)], D.ABOVE_MULT)
-				return true
-		"hype":
-			var n := D.AMP_ADD * echo
-			fx["fadd"] = float(fx["fadd"]) + n
-			out.append({"src": "fx", "text": "Amp: flow +%s after this song" % _ff(n), "n": 0, "ci": eb, "run": _s_run(st)})
-			return true
-		"boost":
-			var m := 1.0 + (D.SURGE_MULT - 1.0) * echo
-			fx["fmul"] = float(fx["fmul"]) * m
-			out.append({"src": "fx", "text": "Surge: flow x%s after this song" % _ff(m), "n": 0, "ci": eb, "run": _s_run(st)})
-			return true
-		"fans":
+			return 1 if s % 2 == 1 else 0
+		"slot1", "slot2", "slot3", "slot4", "slot5", "slot6":
+			return 1 if s == int(String(rule.get("condition", "")).substr(4)) - 1 else 0
+		"prev_is":
+			return 1 if prev != null and _name_matches(prev, p) else 0
+		"above_is":
+			return 1 if above != null and _name_matches(above, p) else 0
+		"next_is":
+			return 1 if nxt != null and _name_matches(nxt, p) else 0
+		"per_before":
 			var c := 0
 			for j in s:
-				if collection[ids[j]].genre == src.cond_v:
+				if _name_matches(collection[ids[j]], p):
 					c += 1
-			if c > 0:
-				var fa := D.FANS_FLOW * c * echo
-				fx["fadd"] = float(fx["fadd"]) + fa
-				out.append({"src": "fx", "text": "Fans (%d %s): flow +%s after this song" % [c, D.GENRES[src.cond_v], _ff(fa)], "n": 0, "ci": eb, "run": _s_run(st)})
-				return true
-		"anthem":
-			var g: Dictionary = fx["gadd"]
-			g[src.cond_v] = int(g.get(src.cond_v, 0)) + D.ANTHEM_ADD
-			out.append({"src": "fx", "text": "Anthem: later %s +%d" % [D.GENRES[src.cond_v], D.ANTHEM_ADD], "n": 0, "ci": -1, "run": _s_run(st)})
-			return true
-		"mirror":
-			if depth == 0 and prev != null and prev.cond != "mirror" and prev.cond != "plain":
-				out.append({"src": "fx", "text": "Copies %s" % prev.title, "n": 0, "ci": -1, "run": _s_run(st)})
-				return _apply_effect(prev, s, ids, prev, above, out, st, fx, 1)
-	return false
+			return c
+		"per_hand":
+			var h := 0
+			for w in wallet:
+				if w >= 0 and _name_matches(collection[w], p):
+					h += 1
+			return h
+	return 0
+
+func _fire_rule(rule: Dictionary, src: Disc, s: int, ids: Array, prev: Disc, above: Disc, nxt: Disc, out: Array, st: Dictionary, fx: Dictionary, depth: int) -> bool:
+	var eff := String(rule.get("effect", "none"))
+	if eff == "none":
+		return false
+	if eff == "copy":
+		if depth == 0 and prev != null and not String(prev.rule.get("effect", "none")) in ["none", "copy"]:
+			var at := out.size()
+			var ok := _fire_rule(prev.rule, prev, s, ids, prev, above, nxt, out, st, fx, 1)
+			if ok:
+				out.insert(at, {"src": "fx", "text": "Copies %s" % prev.title, "n": 0, "ci": -1, "run": _s_run(st)})
+			return ok
+		return false
+	if not eff in ["points", "mult", "flow_add", "flow_mult", "cash"]:
+		return false
+	var count := _cond_count(rule, s, ids, prev, above, nxt)
+	if count <= 0:
+		return false
+	if eff == "cash":
+		var per := count if String(rule.get("condition", "")) in ["per_before", "per_hand"] else 1
+		var gain := int(round(float(rule.get("value", 0.0)) * per))
+		fx["cash"] = int(fx["cash"]) + gain
+		out.append({"src": "fx", "text": _rule_line(rule, count, float(gain)), "n": 0, "ci": -1, "run": _s_run(st)})
+		return true
+	var eb := _bay_of("echo")
+	var echo := D.ECHO_FLOW if eb >= 0 else 1.0
+	var v := float(rule.get("value", 0.0))
+	var tgt := String(rule.get("target", "self"))
+	var cmult := count if String(rule.get("condition", "")) in ["per_before", "per_hand"] else 1
+	if eff == "flow_add":
+		var n := v * cmult * echo
+		fx["fadd"] = float(fx["fadd"]) + n
+		out.append({"src": "fx", "text": _rule_line(rule, count, n), "n": 0, "ci": eb, "run": _s_run(st)})
+		return true
+	if eff == "flow_mult":
+		var m := 1.0 + (v - 1.0) * echo
+		m = pow(m, cmult)
+		fx["fmul"] = float(fx["fmul"]) * m
+		out.append({"src": "fx", "text": _rule_line(rule, count, m), "n": 0, "ci": eb, "run": _s_run(st)})
+		return true
+	var amt := v * cmult if eff == "points" else pow(v, cmult)
+	var line := _rule_line(rule, count, amt)
+	if tgt == "self":
+		if eff == "points":
+			_s_add(out, st, "fx", line, int(round(amt)))
+		else:
+			_s_mult(out, st, "fx", line, amt)
+		return true
+	out.append({"src": "fx", "text": line, "n": 0, "ci": -1, "run": _s_run(st)})
+	if tgt == "next":
+		if s + 1 < D.SETLIST:
+			(fx["nextq"] as Array).append({"slot": s + 1, "kind": eff, "value": amt, "title": src.title})
+	else:
+		var flt := "" if tgt == "later" else String(rule.get("tparam", ""))
+		(fx["later"] as Array).append({"from": s, "kind": eff, "value": amt, "filter": flt, "title": src.title})
+	return true
+
+func _apply_buff(out: Array, st: Dictionary, q: Dictionary) -> void:
+	if String(q["kind"]) == "points":
+		_s_add(out, st, "carry", "From %s +%s" % [q["title"], _ff(float(q["value"]))], int(round(float(q["value"]))))
+	else:
+		_s_mult(out, st, "carry", "From %s x%s" % [q["title"], _ff(float(q["value"]))], float(q["value"]))
 
 func _score_set(ids: Array) -> Dictionary:
 	var half := D.SETLIST / 2
 	var slots: Array = []
 	var total := 0
-	var fx := {"fadd": 0.0, "fmul": 1.0, "gadd": {}}
+	var fx := {"fadd": 0.0, "fmul": 1.0, "cash": 0, "nextq": [], "later": []}
 	var req_done := false
 	var call_tag: Array = call["tag"] if not call.is_empty() else []
 	var fl := 1.0
@@ -2879,6 +3097,7 @@ func _score_set(ids: Array) -> Dictionary:
 		var d: Disc = collection[ids[s]]
 		var prev: Disc = collection[ids[s - 1]] if s > 0 else null
 		var above: Disc = collection[ids[D.SETLIST - 1 - s]] if s >= half else null
+		var nxt: Disc = collection[ids[s + 1]] if s + 1 < ids.size() else null
 		var st := {"base": d.sound, "add": 0, "mult": 1.0}
 		var out: Array = [{"src": "base", "text": "Points %d" % d.sound, "n": d.sound, "ci": -1, "run": d.sound}]
 		var fired := false
@@ -2886,13 +3105,19 @@ func _score_set(ids: Array) -> Dictionary:
 		var fl_start := fl
 		fx["fadd"] = 0.0
 		fx["fmul"] = 1.0
-		var gn := int((fx["gadd"] as Dictionary).get(d.genre, 0))
-		if gn != 0 and d.genre >= 0:
-			_s_add(out, st, "carry", "Anthem +%d" % gn, gn)
-			fired = true
-		if not d.cdr:
-			if _apply_effect(d, s, ids, prev, above, out, st, fx, 0):
+		fx["cash"] = 0
+		for q: Dictionary in fx["nextq"]:
+			if int(q["slot"]) == s:
+				_apply_buff(out, st, q)
 				fired = true
+		for q: Dictionary in fx["later"]:
+			if int(q["from"]) < s and (String(q["filter"]) == "" or _name_matches(d, String(q["filter"]))):
+				_apply_buff(out, st, q)
+				fired = true
+		if not d.cdr:
+			if _fire_rule(d.rule, d, s, ids, prev, above, nxt, out, st, fx, 0):
+				fired = true
+			cash_gain += int(fx["cash"])
 		match d.edition:
 			"holo", "signed", "limited":
 				var en := int(D.EDITIONS[d.edition]["n"])
@@ -2918,7 +3143,7 @@ func _score_set(ids: Array) -> Dictionary:
 					if ee > 0:
 						_s_add(out, st, "rack", "Exciter +%d" % ee, ee, ci)
 				"tube":
-					if d.cond == "plain" and not d.cdr:
+					if String(d.rule.get("effect", "none")) == "none" and not d.cdr:
 						_s_add(out, st, "rack", "Tube +%d" % n, n, ci)
 				"mic":
 					if s == D.SETLIST - 1:
@@ -3032,7 +3257,7 @@ func _finish_song() -> void:
 	score_tot += got
 	score_live = score_tot
 	played.append(i)
-	link_log.append({"met": bool(result["fired"]), "above": String(d.cond).begins_with("above")})
+	link_log.append({"met": bool(result["fired"]), "above": String(d.rule.get("condition", "")) == "above_is"})
 	if _boss_kind() == "destroy" and rng.randf() < D.BOSS_DESTROY:
 		doomed.append(d)
 		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": "Scratched beyond repair!", "col": c_bad.lightened(0.3), "life": 2.0})
