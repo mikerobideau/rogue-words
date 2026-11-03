@@ -21,6 +21,16 @@ const PARAM_INFO := {
 	"genre": ["Genre"],
 	"decade": ["Decade"],
 }
+const WHENS: Array[String] = ["each", "first", "last", "gig_start", "gig_end"]
+const WHEN_NAMES := {"each": "Each song", "first": "The opener", "last": "The closing song", "gig_start": "Start of the gig", "gig_end": "End of the gig"}
+const REQUIRES: Array[String] = ["none", "prev_same_era", "prev2_same_genre", "last_matches_first", "adjacent", "streak", "match_back"]
+const REQUIRE_NAMES := {"none": "Nothing", "prev_same_era": "The song before shares its decade", "prev2_same_genre": "The last two songs share a genre", "last_matches_first": "It shares a genre or decade with the opener", "adjacent": "A neighbor on either side is a genre", "streak": "It is every Nth song in a row of its genre", "match_back": "It shares its genre with the song N back"}
+const APPLIES: Array[String] = ["any", "genre", "decade"]
+const APPLIES_NAMES := {"any": "Any song", "genre": "Songs of a genre", "decade": "Songs of a decade"}
+const EFFECTS: Array[String] = ["points", "mult", "flow", "cash", "discards"]
+const EFFECT_NAMES := {"points": "Add points", "mult": "Multiply the score", "flow": "Raise flow", "cash": "Add cash", "discards": "Add discards"}
+const PERS: Array[String] = ["none", "earlier_same_genre", "others_in_set", "units_left", "unused_discards"]
+const PER_NAMES := {"none": "Nothing (once)", "earlier_same_genre": "Each earlier song of the same genre", "others_in_set": "Each other song of that genre in the set", "units_left": "Each unit to its left", "unused_discards": "Each unused discard"}
 const UTILITY: Array[String] = ["cd_burner", "deep_library", "sneak_peek", "tuner", "audio", "gate", "request", "octave", "sax"]
 const NOTES := {
 	"genre_eq": "Random fader per genre, added to every song of that genre.",
@@ -76,6 +86,8 @@ var preview: Node2D
 var f_search: LineEdit
 var flt_size: OptionButton
 var flt_kind: OptionButton
+var flt_state: OptionButton
+var f_enabled: CheckBox
 var list: ItemList
 var count_label: Label
 var f_id: LineEdit
@@ -89,6 +101,8 @@ var f_note: Label
 var f_shown: Label
 var params_grid: GridContainer
 var param_widgets := {}
+var rule_widgets := {}
+var f_sentence: Label
 var ppd: SpinBox
 var tree: Tree
 var warn_list: ItemList
@@ -96,6 +110,7 @@ var warn_units: Array[int] = []
 var warn_badge: Label
 var warn_badge_panel: PanelContainer
 var status: Label
+var confirm: ConfirmationDialog
 
 func _sb(bg: Color, border: Color, radius: int = 4, pad: float = 6.0) -> StyleBoxFlat:
 	var b := StyleBoxFlat.new()
@@ -269,7 +284,8 @@ func _build_ui() -> void:
 	filters.add_theme_constant_override("separation", 6)
 	flt_size = _opt(_named(SIZES, SIZE_NAMES), "All sizes")
 	flt_kind = _opt(["Active", "Passive"], "All kinds")
-	for o: OptionButton in [flt_size, flt_kind]:
+	flt_state = _opt(["Enabled", "Disabled"], "All states")
+	for o: OptionButton in [flt_size, flt_kind, flt_state]:
 		o.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		o.item_selected.connect(func(_i: int) -> void: _refresh_list())
 		filters.add_child(o)
@@ -278,6 +294,15 @@ func _build_ui() -> void:
 	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	list.item_selected.connect(_on_list_selected)
 	left_box.add_child(list)
+	var lb := HBoxContainer.new()
+	lb.add_theme_constant_override("separation", 6)
+	lb.add_child(_button("New unit", _on_new))
+	lb.add_child(_button("Duplicate", _on_duplicate))
+	lb.add_child(_button("Delete", _on_delete))
+	left_box.add_child(lb)
+	confirm = ConfirmationDialog.new()
+	confirm.confirmed.connect(_delete_selected)
+	add_child(confirm)
 
 	var center := VBoxContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -320,6 +345,10 @@ func _build_ui() -> void:
 	f_name = LineEdit.new()
 	f_name.text_changed.connect(_on_edit)
 	_row(g1, "Name", f_name)
+	f_enabled = CheckBox.new()
+	f_enabled.text = "Appears in the game (untick to keep it as a draft)"
+	f_enabled.toggled.connect(_on_edit)
+	_row(g1, "Enabled", f_enabled)
 	f_kind = _label("", MUTED, 14)
 	_row(g1, "Kind", f_kind)
 	f_note = _label("", Color("a8afb8"), 13)
@@ -334,7 +363,7 @@ func _build_ui() -> void:
 	_row(g2, "Text", f_text)
 	insp.add_child(_label("Write {name} where a number below should appear, for example +{points} points.", MUTED, 12))
 
-	var g3 := _section(insp, "Numbers")
+	var g3 := _section(insp, "Numbers and rule")
 	params_grid = g3
 
 	var g4 := _section(insp, "Shop and look")
@@ -457,8 +486,110 @@ func _refresh_all() -> void:
 	_fill_tree()
 	_refresh_warnings()
 
+func _slug(t: String) -> String:
+	var out := ""
+	for ch in t.to_lower():
+		out += ch if (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9") else "_"
+	while out.contains("__"):
+		out = out.replace("__", "_")
+	out = out.strip_edges().trim_prefix("_").trim_suffix("_")
+	return out if out != "" else "unit"
+
+func _unique_id(name: String) -> String:
+	var base := _slug(name)
+	var id := base
+	var n := 2
+	while preview.gear_defs.has(id):
+		id = "%s_%d" % [base, n]
+		n += 1
+	return id
+
+func _kit_uses(id: String) -> String:
+	for kit: Dictionary in D.KITS:
+		if String(kit["gear"]) == id:
+			return String(kit["name"])
+	return ""
+
+func _add_unit(u: Dictionary) -> void:
+	units.append(u)
+	preview.gear_defs[String(u["id"])] = u
+	f_search.text = ""
+	flt_size.select(0)
+	flt_kind.select(0)
+	flt_state.select(0)
+	sel = units.size() - 1
+	_set_dirty(true)
+	_refresh_list()
+	_load_form()
+	_refresh_one()
+	f_name.grab_focus()
+	f_name.select_all()
+
+func _on_new() -> void:
+	_read_form()
+	var name := "New unit"
+	_add_unit({
+		"id": _unique_id(name),
+		"name": name,
+		"text": "+{amount} points per song.",
+		"enabled": false,
+		"size": "half",
+		"price": 5,
+		"look": "",
+		"active": false,
+		"params": {},
+		"rule": {"when": "each", "requires": "none", "rparam": "", "rn": 0, "applies": "any", "aparam": "", "effect": "points", "amount": 3, "per": "none", "cap": 0, "label": "New"},
+	})
+	_say("Added a new unit. Name it, then set its rule.")
+
+func _on_duplicate() -> void:
+	if sel < 0 or sel >= units.size():
+		return
+	_read_form()
+	var src: Dictionary = units[sel]
+	if not src.has("rule"):
+		_say("%s has behavior written in code, so it can't be duplicated. Duplicate a rule unit instead." % src["name"])
+		return
+	var u: Dictionary = (src as Dictionary).duplicate(true)
+	u["name"] = "%s copy" % src["name"]
+	u["id"] = _unique_id(String(u["name"]))
+	u["enabled"] = false
+	_add_unit(u)
+	_say("Duplicated %s." % src["name"])
+
+func _on_delete() -> void:
+	if sel < 0 or sel >= units.size():
+		return
+	var u: Dictionary = units[sel]
+	var kit := _kit_uses(String(u["id"]))
+	if kit != "":
+		_say("The %s kit starts with %s. Change the kit before deleting it." % [kit, u["name"]])
+		return
+	confirm.dialog_text = "Delete %s? This removes it from the game when you save." % u["name"]
+	confirm.popup_centered()
+
+func _delete_selected() -> void:
+	if sel < 0 or sel >= units.size():
+		return
+	var id := String(units[sel]["id"])
+	var nm := String(units[sel]["name"])
+	units.remove_at(sel)
+	preview.gear_defs.erase(id)
+	lifts.erase(id)
+	sel = mini(sel, units.size() - 1)
+	_set_dirty(true)
+	_refresh_all()
+	_say("Deleted %s." % nm)
+
 func _is_active(u: Dictionary) -> bool:
 	return bool(u.get("active", false))
+
+func _is_enabled(u: Dictionary) -> bool:
+	return bool(u.get("enabled", true))
+
+func _row_text(u: Dictionary) -> String:
+	var t := "%s   ·   %s   ·   $%d" % [u["name"], String(u["size"]).capitalize(), int(u["price"])]
+	return t if _is_enabled(u) else "(draft)  " + t
 
 func _refresh_list() -> void:
 	var q := f_search.text.strip_edges().to_lower()
@@ -474,8 +605,12 @@ func _refresh_list() -> void:
 			continue
 		if flt_kind.selected == 2 and _is_active(u):
 			continue
+		if flt_state.selected == 1 and not _is_enabled(u):
+			continue
+		if flt_state.selected == 2 and _is_enabled(u):
+			continue
 		shown.append(i)
-		list.add_item("%s   ·   %s   ·   $%d" % [u["name"], String(u["size"]).capitalize(), int(u["price"])])
+		list.add_item(_row_text(u))
 		if i == sel:
 			list.select(list.item_count - 1)
 	count_label.text = "%d of %d" % [shown.size(), units.size()]
@@ -510,6 +645,7 @@ func _clear_params() -> void:
 		params_grid.remove_child(c)
 		c.queue_free()
 	param_widgets.clear()
+	rule_widgets.clear()
 
 func _load_form() -> void:
 	loading = true
@@ -524,14 +660,17 @@ func _load_form() -> void:
 	var u: Dictionary = units[sel]
 	f_id.text = String(u["id"])
 	f_name.text = String(u["name"])
+	f_enabled.button_pressed = _is_enabled(u)
 	f_text.text = String(u["text"])
 	f_kind.text = "Active (has a USE button)" if _is_active(u) else "Passive"
-	f_note.text = "Behavior (set in code): " + String(NOTES.get(String(u["id"]), ""))
+	f_note.text = ("Built from a rule, set under Numbers and rule." if u.has("rule") else "Behavior (set in code): " + String(NOTES.get(String(u["id"]), "")))
 	f_size.select(SIZES.find(String(u["size"])))
 	f_price.value = float(u["price"])
 	f_look.select(maxi(0, LOOKS.find(String(u["look"]))))
 	var params: Dictionary = u["params"]
-	if params.is_empty():
+	if u.has("rule"):
+		_build_rule_rows(u["rule"])
+	elif params.is_empty():
 		params_grid.add_child(_label("This unit has no numbers to set.", MUTED, 13))
 		params_grid.add_child(Control.new())
 	for key in params.keys():
@@ -558,17 +697,167 @@ func _load_form() -> void:
 		params_grid.add_child(w)
 		param_widgets[String(key)] = w
 	loading = false
+	_update_sentence()
 	_update_preview()
+
+func _add_row(label: String, w: Control) -> void:
+	var l := _label(label, Color("a8afb8"), 14)
+	l.custom_minimum_size = Vector2(130.0, 0.0)
+	params_grid.add_child(l)
+	w.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	params_grid.add_child(w)
+
+func _rule_opt(keys: Array, names: Dictionary, cur: String) -> OptionButton:
+	var o := _opt(_named(keys, names))
+	o.select(maxi(0, keys.find(cur)))
+	o.item_selected.connect(_on_rule_changed)
+	return o
+
+func _fill_aparam(applies: String, cur: String) -> void:
+	var o: OptionButton = rule_widgets["aparam"]
+	o.clear()
+	var arr: Array = D.GENRES if applies == "genre" else (D.ERAS if applies == "decade" else [])
+	for it in arr:
+		o.add_item(String(it))
+	o.disabled = arr.is_empty()
+	if not arr.is_empty():
+		o.select(maxi(0, arr.find(cur)))
+
+func _build_rule_rows(r: Dictionary) -> void:
+	rule_widgets["when"] = _rule_opt(WHENS, WHEN_NAMES, String(r["when"]))
+	_add_row("When", rule_widgets["when"])
+	rule_widgets["applies"] = _rule_opt(APPLIES, APPLIES_NAMES, String(r["applies"]))
+	_add_row("Fires for", rule_widgets["applies"])
+	rule_widgets["aparam"] = OptionButton.new()
+	rule_widgets["aparam"].item_selected.connect(_on_rule_changed)
+	_add_row("  which one  {aparam}", rule_widgets["aparam"])
+	_fill_aparam(String(r["applies"]), String(r["aparam"]))
+	rule_widgets["requires"] = _rule_opt(REQUIRES, REQUIRE_NAMES, String(r["requires"]))
+	_add_row("Only if", rule_widgets["requires"])
+	rule_widgets["rparam"] = _opt(D.GENRES)
+	rule_widgets["rparam"].select(maxi(0, D.GENRES.find(String(r.get("rparam", "")))))
+	rule_widgets["rparam"].item_selected.connect(_on_rule_changed)
+	_add_row("  which genre  {rparam}", rule_widgets["rparam"])
+	var rn := SpinBox.new()
+	rn.min_value = 1.0
+	rn.max_value = 6.0
+	rn.step = 1.0
+	rn.value = maxf(1.0, float(r.get("rn", 2)))
+	rn.value_changed.connect(_on_edit)
+	rule_widgets["rn"] = rn
+	_add_row("  N  {rn}", rn)
+	_sync_condition_rows()
+	rule_widgets["effect"] = _rule_opt(EFFECTS, EFFECT_NAMES, String(r["effect"]))
+	_add_row("Effect", rule_widgets["effect"])
+	var amt := SpinBox.new()
+	amt.min_value = 0.0
+	amt.max_value = 100.0
+	amt.step = 0.05
+	amt.value = float(r["amount"])
+	amt.value_changed.connect(_on_edit)
+	rule_widgets["amount"] = amt
+	_add_row("Amount  {amount}", amt)
+	rule_widgets["per"] = _rule_opt(PERS, PER_NAMES, String(r["per"]))
+	_add_row("Multiplied by", rule_widgets["per"])
+	var cap := SpinBox.new()
+	cap.min_value = 0.0
+	cap.max_value = 20.0
+	cap.step = 1.0
+	cap.value = float(r["cap"])
+	cap.value_changed.connect(_on_edit)
+	rule_widgets["cap"] = cap
+	_add_row("Count limit  {cap}  (0 = none)", cap)
+	var lab := LineEdit.new()
+	lab.text = String(r["label"])
+	lab.text_changed.connect(_on_edit)
+	rule_widgets["label"] = lab
+	_add_row("Label on the song", lab)
+	f_sentence = _label("", Color("a8afb8"), 13)
+	f_sentence.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_add_row("Reads as", f_sentence)
+
+func _sync_condition_rows() -> void:
+	var req: String = REQUIRES[(rule_widgets["requires"] as OptionButton).selected]
+	(rule_widgets["rparam"] as OptionButton).disabled = req != "adjacent"
+	(rule_widgets["rn"] as SpinBox).editable = req in ["streak", "match_back"]
+
+func _sentence(r: Dictionary) -> String:
+	var who := "any song"
+	if String(r["applies"]) != "any" and String(r["aparam"]) != "":
+		who = "%s songs" % r["aparam"]
+	var when := String(r["when"])
+	var when_text: String = {"each": "", "first": " as the opener", "last": " as the closing song", "gig_start": " at the start of the gig", "gig_end": " at the end of the gig"}[when]
+	var cond := ""
+	var n := int(r.get("rn", 2))
+	match String(r["requires"]):
+		"prev_same_era":
+			cond = " if the song before shares its decade"
+		"prev2_same_genre":
+			cond = " if the last two songs share a genre"
+		"last_matches_first":
+			cond = " if it shares a genre or decade with the opener"
+		"adjacent":
+			cond = " if adjacent to a %s song" % String(r.get("rparam", ""))
+		"streak":
+			cond = " if it is every %s song in a row of its genre" % _ordinal(n)
+		"match_back":
+			cond = " if it shares its genre with the song %d back" % n
+	var amt := float(r["amount"])
+	var amt_text: String = preview._ff(amt)
+	var eff: String = {"points": "+%s points", "mult": "x%s", "flow": "+%s flow", "cash": "+$%s", "discards": "+%s discards"}[String(r["effect"])] % amt_text
+	var per := String(r["per"])
+	if per != "none":
+		eff += " for " + String(PER_NAMES[per]).to_lower()
+	if when == "gig_start" or when == "gig_end":
+		var lead := when_text.trim_prefix(" ")
+		return "%s%s: %s." % [lead.left(1).to_upper(), lead.substr(1), eff]
+	return "Fires for %s%s%s: %s." % [who, when_text, cond, eff]
+
+func _ordinal(n: int) -> String:
+	return "%d%s" % [n, "th" if n % 100 in [11, 12, 13] else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")]
+
+func _update_sentence() -> void:
+	if f_sentence == null or rule_widgets.is_empty() or sel < 0 or sel >= units.size() or not units[sel].has("rule"):
+		return
+	f_sentence.text = _sentence(units[sel]["rule"])
+
+func _on_rule_changed(_i: int) -> void:
+	if loading:
+		return
+	_sync_condition_rows()
+	var applies: String = APPLIES[(rule_widgets["applies"] as OptionButton).selected]
+	var o: OptionButton = rule_widgets["aparam"]
+	var cur := o.get_item_text(o.selected) if o.item_count > 0 and o.selected >= 0 else ""
+	loading = true
+	_fill_aparam(applies, cur)
+	loading = false
+	_on_edit()
 
 func _read_form() -> void:
 	if loading or sel < 0 or sel >= units.size():
 		return
 	var u: Dictionary = units[sel]
 	u["name"] = f_name.text
+	u["enabled"] = f_enabled.button_pressed
 	u["text"] = f_text.text
 	u["size"] = SIZES[f_size.selected]
 	u["price"] = int(f_price.value)
 	u["look"] = LOOKS[f_look.selected]
+	if u.has("rule") and not rule_widgets.is_empty():
+		var r: Dictionary = u["rule"]
+		r["when"] = WHENS[(rule_widgets["when"] as OptionButton).selected]
+		r["requires"] = REQUIRES[(rule_widgets["requires"] as OptionButton).selected]
+		var ro: OptionButton = rule_widgets["rparam"]
+		r["rparam"] = ro.get_item_text(ro.selected) if r["requires"] == "adjacent" else ""
+		r["rn"] = int((rule_widgets["rn"] as SpinBox).value) if r["requires"] in ["streak", "match_back"] else 0
+		r["applies"] = APPLIES[(rule_widgets["applies"] as OptionButton).selected]
+		var ao: OptionButton = rule_widgets["aparam"]
+		r["aparam"] = "" if String(r["applies"]) == "any" or ao.item_count == 0 else ao.get_item_text(ao.selected)
+		r["effect"] = EFFECTS[(rule_widgets["effect"] as OptionButton).selected]
+		r["amount"] = (rule_widgets["amount"] as SpinBox).value
+		r["per"] = PERS[(rule_widgets["per"] as OptionButton).selected]
+		r["cap"] = int((rule_widgets["cap"] as SpinBox).value)
+		r["label"] = (rule_widgets["label"] as LineEdit).text
 	var params: Dictionary = u["params"]
 	for key in param_widgets.keys():
 		var w: Control = param_widgets[key]
@@ -581,6 +870,7 @@ func _on_edit(_v = null) -> void:
 	if loading:
 		return
 	_read_form()
+	_update_sentence()
 	_set_dirty(true)
 	_update_preview()
 	_refresh_one()
@@ -593,7 +883,9 @@ func _refresh_one() -> void:
 	_refresh_warnings()
 	var row := shown.find(sel)
 	if row >= 0:
-		list.set_item_text(row, "%s   ·   %s   ·   $%d" % [units[sel]["name"], String(units[sel]["size"]).capitalize(), int(units[sel]["price"])])
+		list.set_item_text(row, _row_text(units[sel]))
+	if flt_state.selected > 0:
+		_refresh_list()
 
 func _update_preview() -> void:
 	if sel < 0 or sel >= units.size():
@@ -604,11 +896,13 @@ func _update_preview() -> void:
 
 func _gig_cash(u: Dictionary) -> float:
 	var p: Dictionary = u["params"]
-	match String(u["id"]):
-		"merch", "piggy":
-			return float(p.get("cash", 0.0))
-		"tip_jar":
-			return float(p.get("cash", 0.0)) * 2.0
+	var r: Dictionary = u.get("rule", {})
+	if not r.is_empty():
+		if String(r["when"]) == "gig_end" and String(r["effect"]) == "cash":
+			return float(r["amount"]) * (2.0 if String(r["per"]) == "unused_discards" else 1.0)
+		return 0.0
+	if String(u["id"]) == "piggy":
+		return float(p.get("cash", 0.0))
 	return 0.0
 
 func _value(id: String, u: Dictionary) -> float:
@@ -683,16 +977,30 @@ func _validate() -> Array:
 		var u: Dictionary = units[i]
 		var nm := String(u["name"]).strip_edges()
 		var id := String(u["id"])
+		if not _is_enabled(u) and _kit_uses(id) != "":
+			out.append({"text": "%s: disabled, but the %s kit starts with it" % [nm, _kit_uses(id)], "idx": i})
 		if nm == "":
 			out.append({"text": "%s has no name" % id, "idx": i})
 		elif names.has(nm.to_lower()):
 			out.append({"text": "%s has the same name as another unit" % nm, "idx": i})
 		names[nm.to_lower()] = true
 		var params: Dictionary = u["params"]
+		var rule: Dictionary = u.get("rule", {})
 		var used := _placeholders(String(u["text"]))
 		for ph in used:
-			if not params.has(ph):
+			if not params.has(ph) and not (not rule.is_empty() and ph in ["amount", "cap", "aparam", "rparam", "rn"]):
 				out.append({"text": "%s: text uses {%s} but the unit has no such number" % [nm, ph], "idx": i})
+		if not rule.is_empty():
+			for pr in _rule_problems(u):
+				out.append({"text": "%s: %s" % [nm, pr], "idx": i})
+			if not "amount" in used:
+				out.append({"text": "%s: the amount is not shown in the text" % nm, "idx": i})
+			if String(rule.get("requires", "")) == "adjacent" and not "rparam" in used:
+				out.append({"text": "%s: the neighbor genre is not shown in the text" % nm, "idx": i})
+			if String(rule.get("requires", "")) in ["streak", "match_back"] and not "rn" in used:
+				out.append({"text": "%s: the number N is not shown in the text" % nm, "idx": i})
+			if int(rule["cap"]) > 0 and not "cap" in used:
+				out.append({"text": "%s: the count limit is not shown in the text" % nm, "idx": i})
 		for key in params.keys():
 			if not key in used and key != "genre" and key != "decade":
 				out.append({"text": "%s: the number %s is not shown in the text" % [nm, key], "idx": i})
@@ -703,9 +1011,18 @@ func _validate() -> Array:
 			out.append({"text": "%s: a long name shrinks to fit a Half unit" % nm, "idx": i})
 		if String(u["size"]) == "full" and String(u["look"]) == "":
 			out.append({"text": "%s: a Full unit has no panel look, so its right side is blank" % nm, "idx": i})
+		var wanted: Array = []
 		for key in ["genre"]:
-			if params.has(key) and not genres_with_cards.has(String(params[key])):
-				out.append({"text": "%s: the catalog has no %s cards yet, so its lift is 0" % [nm, params[key]], "idx": i})
+			if params.has(key):
+				wanted.append(String(params[key]))
+		if not rule.is_empty():
+			if String(rule["applies"]) == "genre":
+				wanted.append(String(rule["aparam"]))
+			if String(rule.get("requires", "")) == "adjacent":
+				wanted.append(String(rule.get("rparam", "")))
+		for gname: String in wanted:
+			if gname != "" and not genres_with_cards.has(gname):
+				out.append({"text": "%s: the catalog has no %s cards yet, so its lift is 0" % [nm, gname], "idx": i})
 		if not id in UTILITY and med > 0.0:
 			var r := _ratio(u)
 			if r > med * 2.0:
@@ -714,6 +1031,40 @@ func _validate() -> Array:
 				out.append({"text": "%s: value per $ is %.1fx the median (weak for its price)" % [nm, r / med], "idx": i})
 			elif _value(id, u) <= 0.0:
 				out.append({"text": "%s: no measured value in the test hands" % nm, "idx": i})
+	return out
+
+func _rule_problems(u: Dictionary) -> Array:
+	var r: Dictionary = u["rule"]
+	var out: Array = []
+	var when := String(r["when"])
+	var eff := String(r["effect"])
+	var gig := when == "gig_start" or when == "gig_end"
+	if when == "gig_start" and not eff in ["discards", "cash"]:
+		out.append("at the start of a gig a rule can only add discards or cash")
+	elif when == "gig_end" and eff != "cash":
+		out.append("at the end of a gig a rule can only add cash")
+	elif not gig and eff == "discards":
+		out.append("adding discards only works at the start of a gig")
+	if eff == "mult" and float(r["amount"]) < 1.0:
+		out.append("a multiplier below 1 makes songs score less")
+	if String(r["per"]) == "unused_discards" and when != "gig_end":
+		out.append("'each unused discard' only works at the end of a gig")
+	if gig and String(r["per"]) in ["earlier_same_genre", "others_in_set", "units_left"]:
+		out.append("that scaling needs songs, so it only works on song rules")
+	if gig and (String(r["requires"]) != "none" or String(r["applies"]) != "any"):
+		out.append("'only if' and 'fires for' are ignored at the start or end of a gig")
+	if String(r["applies"]) != "any" and String(r["aparam"]) == "":
+		out.append("pick which genre or decade it fires for")
+	if String(r["requires"]) == "adjacent" and String(r.get("rparam", "")) == "":
+		out.append("pick the neighbor genre")
+	if String(r["requires"]) == "streak" and int(r.get("rn", 0)) < 2:
+		out.append("a run needs N of at least 2")
+	if String(r["requires"]) == "match_back" and int(r.get("rn", 0)) < 1:
+		out.append("pick how many songs back to look")
+	if eff == "mult" and String(r["per"]) != "none":
+		out.append("a multiplier ignores the scaling")
+	if not gig and String(r["label"]).strip_edges() == "":
+		out.append("the label shown on the song is empty")
 	return out
 
 func _refresh_warnings() -> void:

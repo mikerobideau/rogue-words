@@ -42,6 +42,7 @@ var gig_n := 1
 var cash := 0
 var rack: Array = []
 var gear_defs := {}
+var deck_defs: Array = []
 var shop_items: Array = []
 var pack := {}
 var pack_sel: Array[int] = []
@@ -150,6 +151,7 @@ func _ready() -> void:
 	rng.randomize()
 	_load_gear()
 	_load_albums()
+	_load_decks()
 	_load_music()
 	_to_title()
 
@@ -273,8 +275,13 @@ func _gs(id: String, key: String) -> String:
 
 func _gear_fmt(def: Dictionary) -> String:
 	var t := String(def["text"])
-	for k in (def["params"] as Dictionary).keys():
-		var v = def["params"][k]
+	var vals: Dictionary = (def["params"] as Dictionary).duplicate()
+	var rl: Dictionary = def.get("rule", {})
+	for k in ["amount", "cap", "aparam", "rparam", "rn"]:
+		if rl.has(k):
+			vals[k] = rl[k]
+	for k in vals.keys():
+		var v = vals[k]
 		t = t.replace("{%s}" % k, v if v is String else _ff(float(v)))
 	return t
 
@@ -669,9 +676,12 @@ func _owned_gear() -> Array:
 		out.append(g["id"])
 	return out
 
+func _gear_pool() -> Array:
+	return gear_defs.keys().filter(func(id): return bool(gear_defs[id].get("enabled", true)))
+
 func _random_gear_ids(n: int, exclude: Array = []) -> Array:
 	var owned := _owned_gear()
-	var ids: Array = gear_defs.keys().filter(func(id): return not id in owned and not id in exclude)
+	var ids: Array = _gear_pool().filter(func(id): return not id in owned and not id in exclude)
 	_shuffle(ids)
 	return ids.slice(0, n)
 
@@ -805,6 +815,10 @@ func _gear_status(g: Dictionary, slot: int) -> String:
 	var gm := _gear_map()
 	var id := String(g["id"])
 	var m: int = int(gm[id]["m"]) if gm.has(id) else 1
+	var rl: Dictionary = gear_defs[id].get("rule", {})
+	if String(rl.get("per", "")) == "units_left" and String(rl.get("effect", "")) == "flow":
+		var left := int(gm[id]["left"]) if gm.has(id) else 0
+		return "+%s flow per song" % _ff(float(rl["amount"]) * left * m)
 	match id:
 		"vintage", "feedback":
 			return "Stored: +%s flow" % _ff(float(g.get("count", 0)) * _gp(id, "store") * m)
@@ -825,9 +839,6 @@ func _gear_status(g: Dictionary, slot: int) -> String:
 			if at >= 0 and at + 1 < ch.size():
 				return "Copying: " + String(gear_defs[rack[ch[at + 1]]["id"]]["name"])
 			return "Nothing to its right"
-		"wah":
-			var left := int(gm[id]["left"]) if gm.has(id) else 0
-			return "+%s flow per song" % _ff(_gp("wah", "flow") * left * m)
 		"octave", "sampler":
 			if m > 1 and g.has("pairs"):
 				var pr: Array = g["pairs"][1]
@@ -864,43 +875,62 @@ func _new_run(kit_i: int = 0, deck: Dictionary = {}) -> void:
 	else:
 		phase = "map"
 
+func _load_decks() -> void:
+	deck_defs.clear()
+	if FileAccess.file_exists(D.DECKS_PATH):
+		var data = JSON.parse_string(FileAccess.get_file_as_string(D.DECKS_PATH))
+		if data is Array:
+			for dk: Dictionary in data:
+				if bool(dk.get("enabled", true)):
+					deck_defs.append(dk)
+	if deck_defs.is_empty():
+		var all := {}
+		for a: Dictionary in albums:
+			all[String(a.get("id", ""))] = 1
+		deck_defs.append({"id": "all", "name": "Every card", "idea": "One of every card.", "mixes": 0, "cards": all})
+	deck_defs = deck_defs.slice(0, D.DECKS_SHOWN)
+
 func _decks() -> Array:
-	var out: Array = []
-	for g in D.GENRES.size():
-		out.append({"kind": "genre", "v": g, "name": D.GENRES[g]})
-	for e in D.ERAS.size():
-		out.append({"kind": "era", "v": e, "name": D.ERAS[e]})
-	return out
+	return deck_defs
+
+func _album_by_id(id: String) -> Dictionary:
+	for a: Dictionary in albums:
+		if String(a.get("id", "")) == id:
+			return a
+	return {}
+
+func _deck_size(deck: Dictionary) -> int:
+	var n := 0
+	var cards: Dictionary = deck.get("cards", {})
+	for id in cards.keys():
+		if not _album_by_id(String(id)).is_empty():
+			n += int(cards[id])
+	return n
+
+func _deck_lead(deck: Dictionary) -> Dictionary:
+	var best := {}
+	var top := 0
+	var cards: Dictionary = deck.get("cards", {})
+	for id in cards.keys():
+		var a := _album_by_id(String(id))
+		if not a.is_empty() and int(cards[id]) > top:
+			best = a
+			top = int(cards[id])
+	return best
 
 func _deck_discs(deck: Dictionary) -> Array:
-	var gn := D.GENRES.size()
-	var en := D.ERAS.size()
-	var combos: Array = []
-	var eras: Array = range(en)
-	_shuffle(eras)
-	for g in gn:
-		combos.append([g, int(eras[g % en])])
-	var tv := int(deck["v"])
-	if String(deck["kind"]) == "genre":
-		var te: Array = range(en)
-		_shuffle(te)
-		for k in D.DECK_THEME:
-			combos.append([tv, int(te[k % en])])
-	else:
-		var tg: Array = range(gn)
-		_shuffle(tg)
-		for k in D.DECK_THEME:
-			combos.append([int(tg[k % gn]), tv])
-	while combos.size() < D.DECK_SIZE:
-		combos.append([rng.randi_range(0, gn - 1), rng.randi_range(0, en - 1)])
-	var used: Array = []
 	var out: Array = []
-	for n in combos.size():
-		var a := _pick_card(int(combos[n][0]), int(combos[n][1]), "common", used)
-		used.append(a.get("id", a["cover"]))
-		var d := _make_disc(a)
-		d.edition = ""
-		out.append(d)
+	var cards: Dictionary = deck.get("cards", {})
+	for id in cards.keys():
+		var a := _album_by_id(String(id))
+		if a.is_empty():
+			continue
+		for n in int(cards[id]):
+			var d := _make_disc(a)
+			d.edition = ""
+			out.append(d)
+	for n in int(deck.get("mixes", 0)):
+		out.append(_make_cdr())
 	return out
 
 func _refill() -> void:
@@ -3546,6 +3576,120 @@ func _gear_cash(out: Array, st: Dictionary, text: String, amt: int, ci: int) -> 
 	out.append({"src": "fx", "text": text, "n": 0, "ci": ci, "run": _s_run(st)})
 	return amt
 
+func _rule_applies(r: Dictionary, d: Disc) -> bool:
+	match String(r.get("applies", "any")):
+		"genre":
+			return d.genre >= 0 and _in_genre(d, D.GENRES.find(String(r.get("aparam", ""))))
+		"decade":
+			return d.era >= 0 and d.era == D.ERAS.find(String(r.get("aparam", "")))
+	return true
+
+func _rule_requires(r: Dictionary, s: int, ids: Array, prev: Disc, d: Disc) -> bool:
+	match String(r.get("requires", "none")):
+		"prev_same_era":
+			return s > 0 and prev != null and d.era >= 0 and prev.era == d.era
+		"prev2_same_genre":
+			if s < 2:
+				return false
+			var p1: Disc = collection[ids[s - 1]]
+			var p2: Disc = collection[ids[s - 2]]
+			return p1.genre >= 0 and p1.genre == p2.genre
+		"last_matches_first":
+			if s == 0:
+				return false
+			var first: Disc = collection[ids[0]]
+			return (d.genre >= 0 and _in_genre(first, d.genre)) or (d.era >= 0 and first.era == d.era)
+		"adjacent":
+			var gi := D.GENRES.find(String(r.get("rparam", "")))
+			for o in [s - 1, s + 1]:
+				if o >= 0 and o < ids.size() and _in_genre(collection[ids[o]], gi):
+					return true
+			return false
+		"streak":
+			if d.genre < 0:
+				return false
+			var run := 1
+			var k := s - 1
+			while k >= 0 and (collection[ids[k]] as Disc).genre == d.genre:
+				run += 1
+				k -= 1
+			return run % maxi(1, int(r.get("rn", 2))) == 0
+		"match_back":
+			var n := maxi(1, int(r.get("rn", 2)))
+			return s >= n and d.genre >= 0 and _in_genre(collection[ids[s - n]], d.genre)
+	return true
+
+func _rule_count(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array) -> int:
+	var c := 1
+	match String(r.get("per", "none")):
+		"earlier_same_genre":
+			c = 0
+			if d.genre >= 0:
+				for j in s:
+					if _in_genre(collection[ids[j]], d.genre):
+						c += 1
+		"others_in_set":
+			var gi := D.GENRES.find(String(r.get("aparam", ""))) if String(r.get("applies", "any")) == "genre" else d.genre
+			c = 0
+			if gi >= 0:
+				for j in ids.size():
+					if _in_genre(collection[ids[j]], gi):
+						c += 1
+				if _in_genre(d, gi):
+					c -= 1
+				c = maxi(0, c)
+		"units_left":
+			c = int(e["left"])
+		"unused_discards":
+			c = maxi(0, digs)
+	var cap := int(r.get("cap", 0))
+	if cap > 0:
+		c = mini(c, cap)
+	return c
+
+func _rule_song(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, out: Array, st: Dictionary, fx: Dictionary) -> int:
+	var when := String(r.get("when", "each"))
+	if when == "gig_start" or when == "gig_end":
+		return 0
+	if (when == "first" and s != 0) or (when == "last" and s != ids.size() - 1):
+		return 0
+	if not _rule_applies(r, d) or not _rule_requires(r, s, ids, prev, d):
+		return 0
+	var count := _rule_count(r, e, d, s, ids)
+	if count <= 0:
+		return 0
+	var m: int = e["m"]
+	var ci: int = e["ci"]
+	var amt := float(r.get("amount", 0.0))
+	var label := String(r.get("label", ""))
+	match String(r.get("effect", "points")):
+		"points":
+			var v := int(round(amt * count * m))
+			_s_add(out, st, "rack", "%s +%d" % [label, v], v, ci)
+		"mult":
+			var lm := 1.0 + (amt - 1.0) * m
+			_s_mult(out, st, "rack", "%s x%s" % [label, _ff(lm)], lm, ci)
+		"flow":
+			var f := amt * count * m
+			_gear_flow(out, st, fx, "%s +%s flow" % [label, _ff(f)], f, ci)
+		"cash":
+			var c := int(round(amt * count * m))
+			return _gear_cash(out, st, "%s +$%d" % [label, c], c, ci)
+	return 0
+
+func _rule_gig(when: String, effect: String) -> int:
+	var gm := _gear_map()
+	var total := 0.0
+	for id: String in gm:
+		var r: Dictionary = gear_defs[id].get("rule", {})
+		if String(r.get("when", "")) != when or String(r.get("effect", "")) != effect:
+			continue
+		var count := 1
+		if String(r.get("per", "none")) == "unused_discards" and when == "gig_end":
+			count = maxi(0, digs)
+		total += float(r.get("amount", 0.0)) * count * int(gm[id]["m"])
+	return int(round(total))
+
 func _gear_song(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, hand_g: int, out: Array, st: Dictionary, fx: Dictionary) -> int:
 	var cash_gain := 0
 	var gi := d.genre
@@ -3555,6 +3699,10 @@ func _gear_song(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, hand_g:
 		var g: Dictionary = e["g"]
 		var m: int = e["m"]
 		var ci: int = e["ci"]
+		var rule: Dictionary = gear_defs[id].get("rule", {})
+		if not rule.is_empty():
+			cash_gain += _rule_song(rule, e, d, s, ids, prev, out, st, fx)
+			continue
 		match id:
 			"genre_eq":
 				if gi >= 0:
@@ -3566,76 +3714,20 @@ func _gear_song(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, hand_g:
 					var lv2 := int((g["levels"] as Array)[d.era]) * int(_gp("decade_eq", "step")) * m
 					if lv2 != 0:
 						_s_add(out, st, "rack", "Decade EQ %+d" % lv2, lv2, ci)
-			"overdrive":
-				var op := int(_gp("overdrive", "points")) * m
-				_s_add(out, st, "rack", "Overdrive +%d" % op, op, ci)
-			"noise":
-				var np := int(_gp("noise", "points")) * m
-				_s_add(out, st, "rack", "Noise +%d" % np, np, ci)
 			"tube":
 				var tn := mini(hand_g, int(_gp("tube", "max"))) * m
 				if tn > 0:
 					_s_add(out, st, "rack", "Tube +%d" % tn, tn, ci)
-			"reverb":
-				var rc := 0
-				for j in s:
-					var o: Disc = collection[ids[j]]
-					if gi >= 0 and (o.genre == gi or _in_genre(o, gi)):
-						rc += 1
-				rc = mini(rc, int(_gp("reverb", "max"))) * m
-				if rc > 0:
-					_s_add(out, st, "rack", "Reverb +%d" % rc, rc, ci)
-			"looper":
-				if s == last and s > 0:
-					var first: Disc = collection[ids[0]]
-					if (gi >= 0 and (first.genre == gi or _in_genre(first, gi))) or (d.era >= 0 and first.era == d.era):
-						var lm := 1.0 + (_gp("looper", "mult") - 1.0) * m
-						_s_mult(out, st, "rack", "Looper x%s" % _ff(lm), lm, ci)
-			"delay":
-				if s >= 2:
-					var p1: Disc = collection[ids[s - 1]]
-					var p2: Disc = collection[ids[s - 2]]
-					if p1.genre >= 0 and p1.genre == p2.genre:
-						var dm := 1.0 + (_gp("delay", "mult") - 1.0) * m
-						_s_mult(out, st, "rack", "Delay x%s" % _ff(dm), dm, ci)
-			"stack_amp":
-				var rock := D.GENRES.find(_gs("stack_amp", "genre"))
-				if gi >= 0 and _in_genre(d, rock):
-					var others := -1
-					for j in ids.size():
-						if _in_genre(collection[ids[j]], rock):
-							others += 1
-					var sn := maxi(0, others) * int(_gp("stack_amp", "points")) * m
-					if sn > 0:
-						_s_add(out, st, "rack", "Stack +%d" % sn, sn, ci)
 			"tshirt":
 				if s == 2:
 					_s_mult(out, st, "rack", "Slot 3: no points", 0.0, ci)
 					cash_gain += _gear_cash(out, st, "Merch +$%d" % (d.sound * m), d.sound * m, ci)
-			"radio":
-				if gi >= 0 and _in_genre(d, D.GENRES.find(_gs("radio", "genre"))):
-					var rcash := int(_gp("radio", "cash")) * m
-					cash_gain += _gear_cash(out, st, "Radio +$%d" % rcash, rcash, ci)
 			"sampler":
 				if s > 0 and prev != null and gi >= 0 and prev.genre >= 0:
 					for pi in m:
 						var pr: Array = (g["pairs"] as Array)[pi]
 						if d.genre == int(pr[0]) and prev.genre == int(pr[1]):
 							cash_gain += _gear_cash(out, st, "Sampler +$%d" % int(_gp("sampler", "cash")), int(_gp("sampler", "cash")), ci)
-			"fog":
-				if s == 0:
-					_gear_flow(out, st, fx, "Fog +%s flow" % _ff(_gp("fog", "flow") * m), _gp("fog", "flow") * m, ci)
-			"phaser":
-				if s > 0 and prev != null and d.era >= 0 and prev.era == d.era:
-					_gear_flow(out, st, fx, "Phaser +%s flow" % _ff(_gp("phaser", "flow") * m), _gp("phaser", "flow") * m, ci)
-			"turntables":
-				if gi >= 0 and _in_genre(d, D.GENRES.find(_gs("turntables", "genre"))):
-					_gear_flow(out, st, fx, "Turntables +%s flow" % _ff(_gp("turntables", "flow") * m), _gp("turntables", "flow") * m, ci)
-			"wah":
-				var wl := int(e["left"])
-				if wl > 0:
-					var wf := _gp("wah", "flow") * wl * m
-					_gear_flow(out, st, fx, "Wah +%s flow" % _ff(wf), wf, ci)
 	return cash_gain
 
 func _score_set(ids: Array) -> Dictionary:
@@ -3840,7 +3932,7 @@ func _restore_gear() -> void:
 			g["broken"] = false
 
 func _sync_tuner() -> void:
-	var nb := _gear_m("tuner") * int(_gp("tuner", "discards"))
+	var nb := _rule_gig("gig_start", "discards")
 	digs += nb - tuner_bonus
 	tuner_bonus = nb
 
@@ -3861,10 +3953,7 @@ func _end_show() -> void:
 	var pay := D.PAY_BOOED if booed else (D.PAY_ENCORE if ratio >= D.TIER_GREAT else (D.PAY_APPLAUSE if ratio >= D.TIER_GOOD else D.PAY_BASE))
 	var gm := _gear_map()
 	var gear_pay := 0
-	if gm.has("merch"):
-		gear_pay += int(_gp("merch", "cash")) * int(gm["merch"]["m"])
-	if gm.has("tip_jar"):
-		gear_pay += int(_gp("tip_jar", "cash")) * maxi(0, digs) * int(gm["tip_jar"]["m"])
+	gear_pay += _rule_gig("gig_end", "cash")
 	if gm.has("piggy"):
 		var pg: Dictionary = gm["piggy"]["g"]
 		pg["pot"] = int(pg["pot"]) + int(_gp("piggy", "cash"))
@@ -4026,7 +4115,7 @@ func _random_stamp() -> Array:
 
 func _shop_hint() -> Dictionary:
 	var a: Dictionary = albums[rng.randi_range(0, albums.size() - 1)]
-	var ids: Array = gear_defs.keys()
+	var ids: Array = _gear_pool()
 	return {"show": "album" if rng.randf() < 0.5 else "gear", "genre": int(a["genre"]), "era": int(a["era"]), "gear": String(ids[rng.randi_range(0, ids.size() - 1)])}
 
 func _gig_hint(v: Dictionary) -> Dictionary:
@@ -4129,7 +4218,7 @@ func _make_road(theme: Array, combo: Array, avoid: String) -> Dictionary:
 			nd["stamp"] = stamp
 		elif kind == "shop":
 			var a: Dictionary = matching[rng.randi_range(0, matching.size() - 1)]
-			var ids: Array = gear_defs.keys()
+			var ids: Array = _gear_pool()
 			nd["hint"] = {"show": "album", "genre": int(a["genre"]), "era": int(a["era"]), "gear": String(ids[rng.randi_range(0, ids.size() - 1)])}
 		stops.append(nd)
 	var v := _themed_venue(theme, avoid)
@@ -4481,29 +4570,26 @@ func _draw_decks() -> void:
 	var w := 300.0
 	var h := 400.0
 	var gap := 24.0
-	var rows := [[0, D.GENRES.size(), 270.0, "GENRE DECKS"], [D.GENRES.size(), ds.size(), 740.0, "DECADE DECKS"]]
-	for row: Array in rows:
-		var n: int = int(row[1]) - int(row[0])
+	var per := 6
+	for di in ds.size():
+		var dk: Dictionary = ds[di]
+		var row := di / per
+		var n := mini(per, ds.size() - row * per)
 		var x0 := (UI_W - (n * w + (n - 1) * gap)) * 0.5
-		_silk(Vector2(x0, float(row[2]) - 18.0), String(row[3]), 16, Color("b8c0cc"))
-		for k in n:
-			var di: int = int(row[0]) + k
-			var dk: Dictionary = ds[di]
-			var r := Rect2(x0 + k * (w + gap), float(row[2]), w, h)
-			var hot := ui_live and r.has_point(mouse)
-			if hot:
-				_panel(r.grow(8.0), Color("f2c14e"), 22)
-			_shadow(r, 18, 10.0)
-			_panel(r, Color("f4efe4"), 18)
-			var ca := _theme_albums(["genre" if String(dk["kind"]) == "genre" else "era", String(dk["name"])])
-			var tex: Texture2D = _cover_tex(String(ca[0]["cover"])) if not ca.is_empty() else null
-			_cd_art(Vector2(r.get_center().x, r.position.y + 118.0), 84.0, tex, clock * 0.6 if hot else 0.0)
-			_heavy_center(Rect2(r.position.x, r.position.y + 224.0, w, 44.0), String(dk["name"]), T_LG, c_ink)
-			_text_center(Rect2(r.position.x, r.position.y + 268.0, w, 24.0), "GENRE DECK" if String(dk["kind"]) == "genre" else "DECADE DECK", 13, c_muted, true)
-			var blurb := "One CD of every %s, %d more %s CDs, and %d basic CDs." % ["genre" if String(dk["kind"]) == "genre" else "genre and decade", D.DECK_THEME, String(dk["name"]), D.DECK_SIZE - D.GENRES.size() - D.DECK_THEME]
-			_wrap(Vector2(r.position.x + 22.0, r.position.y + 322.0), blurb, w - 44.0, 15, c_body, true)
-			if ui_live:
-				_register(r, _pick_deck.bind(di))
+		var r := Rect2(x0 + (di % per) * (w + gap), 270.0 + row * (h + 60.0), w, h)
+		var hot := ui_live and r.has_point(mouse)
+		if hot:
+			_panel(r.grow(8.0), Color("f2c14e"), 22)
+		_shadow(r, 18, 10.0)
+		_panel(r, Color("f4efe4"), 18)
+		var lead := _deck_lead(dk)
+		var tex: Texture2D = _cover_tex(String(lead["cover"])) if not lead.is_empty() else null
+		_cd_art(Vector2(r.get_center().x, r.position.y + 118.0), 84.0, tex, clock * 0.6 if hot else 0.0)
+		_heavy_center(Rect2(r.position.x, r.position.y + 224.0, w, 44.0), String(dk["name"]), T_LG, c_ink)
+		_text_center(Rect2(r.position.x, r.position.y + 268.0, w, 24.0), "%d CDs  ·  %d MIX" % [_deck_size(dk), int(dk.get("mixes", 0))], 13, c_muted, true)
+		_wrap(Vector2(r.position.x + 22.0, r.position.y + 322.0), String(dk.get("idea", "")), w - 44.0, 15, c_body, true)
+		if ui_live:
+			_register(r, _pick_deck.bind(di))
 	_hw_button(Rect2(70.0, 1336.0, 260.0, 84.0), "Back", _to_kits, true, Color("6a6f77"), T_MD)
 
 func _draw_title() -> void:

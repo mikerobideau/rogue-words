@@ -9,7 +9,8 @@
 		"active": false,
 		"params": {
 			"step": 3
-		}
+		},
+		"enabled": true
 	},
 	{
 		"id": "decade_eq",
@@ -21,7 +22,8 @@
 		"active": false,
 		"params": {
 			"step": 3
-		}
+		},
+		"enabled": true
 	},
 	{
 		"id": "cd_burner",
@@ -31,31 +33,56 @@
 		"price": 8,
 		"look": "knobs",
 		"active": true,
-		"params": {}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "looper",
 		"name": "Looper",
-		"text": "Your final song scores x{mult} if it shares a genre or decade with the slot 1 song.",
+		"text": "Your final song scores x{amount} if it shares a genre or decade with the slot 1 song.",
 		"size": "half",
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {
-			"mult": 2
-		}
+		"params": {},
+		"rule": {
+			"when": "last",
+			"requires": "last_matches_first",
+			"applies": "any",
+			"aparam": "",
+			"effect": "mult",
+			"amount": 2,
+			"per": "none",
+			"cap": 0,
+			"label": "Looper",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "overdrive",
 		"name": "Overdrive",
-		"text": "+{points} points per song.",
+		"text": "+{amount} points per song.",
 		"size": "half",
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {
-			"points": 3
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "points",
+			"amount": 3,
+			"per": "none",
+			"cap": 0,
+			"label": "Overdrive",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": false
 	},
 	{
 		"id": "tube",
@@ -67,91 +94,176 @@
 		"active": false,
 		"params": {
 			"max": 5
-		}
+		},
+		"enabled": false
 	},
 	{
 		"id": "phaser",
 		"name": "Phaser",
-		"text": "+{flow} flow if the song before has the same decade.",
-		"size": "full",
+		"text": "+{amount} flow if the song before has the same decade.",
+		"size": "half",
 		"price": 7,
 		"look": "knobs",
 		"active": false,
-		"params": {
-			"flow": 0.5
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "prev_same_era",
+			"applies": "any",
+			"aparam": "",
+			"effect": "flow",
+			"amount": 0.5,
+			"per": "none",
+			"cap": 0,
+			"label": "Phaser",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "tuner",
 		"name": "Tuner",
-		"text": "+{discards} discard each gig.",
+		"text": "+{amount} discard each gig.",
 		"size": "half",
 		"price": 5,
 		"look": "",
 		"active": false,
-		"params": {
-			"discards": 1
-		}
+		"params": {},
+		"rule": {
+			"when": "gig_start",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "discards",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Tuner",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "noise",
-		"name": "Make Some Noise",
-		"text": "Every song scores +{points}.",
+		"name": "Mini Amp",
+		"text": "Every song scores +{amount}.",
 		"size": "half",
 		"price": 4,
 		"look": "",
 		"active": false,
-		"params": {
-			"points": 1
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "points",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Noise",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "fog",
 		"name": "Fog Machine",
-		"text": "Your opener raises flow by {flow}.",
+		"text": "Your opener raises flow by {amount}.",
 		"size": "half",
 		"price": 5,
 		"look": "",
 		"active": false,
-		"params": {
-			"flow": 1
-		}
+		"params": {},
+		"rule": {
+			"when": "first",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "flow",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Fog",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "delay",
 		"name": "Delay Pedal",
-		"text": "Two songs of the same genre back to back: the next song scores x{mult}.",
+		"text": "+{amount} flow when a song shares its genre with the song {rn} back.",
 		"size": "half",
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {
-			"mult": 2
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "match_back",
+			"applies": "any",
+			"aparam": "",
+			"effect": "flow",
+			"amount": 0.5,
+			"per": "none",
+			"cap": 0,
+			"label": "Delay",
+			"rparam": "",
+			"rn": 2
+		},
+		"enabled": true
 	},
 	{
 		"id": "merch",
 		"name": "Merch Table",
-		"text": "${cash} at the end of each gig.",
+		"text": "${amount} at the end of each gig.",
 		"size": "full",
 		"price": 7,
 		"look": "knobs",
 		"active": false,
-		"params": {
-			"cash": 5
-		}
+		"params": {},
+		"rule": {
+			"when": "gig_end",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "cash",
+			"amount": 5,
+			"per": "none",
+			"cap": 0,
+			"label": "Merch Table",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "tip_jar",
 		"name": "Tip Jar",
-		"text": "${cash} per unused discard when the show ends.",
+		"text": "${amount} per unused discard when the show ends.",
 		"size": "half",
 		"price": 4,
 		"look": "",
 		"active": false,
-		"params": {
-			"cash": 2
-		}
+		"params": {},
+		"rule": {
+			"when": "gig_end",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "cash",
+			"amount": 2,
+			"per": "unused_discards",
+			"cap": 0,
+			"label": "Tip Jar",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "tshirt",
@@ -161,7 +273,8 @@
 		"price": 5,
 		"look": "",
 		"active": false,
-		"params": {}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "octave",
@@ -171,31 +284,32 @@
 		"price": 7,
 		"look": "knobs",
 		"active": false,
-		"params": {}
-	},
-	{
-		"id": "sampler",
-		"name": "Sampler",
-		"text": "Songs of one genre pay ${cash} when they follow another.",
-		"size": "half",
-		"price": 5,
-		"look": "",
-		"active": false,
-		"params": {
-			"cash": 1
-		}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "reverb",
 		"name": "Reverb",
-		"text": "+1 point per earlier song of the same genre (max +{max}).",
+		"text": "+{amount} point per earlier song of the same genre (max +{cap}).",
 		"size": "half",
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {
-			"max": 5
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "points",
+			"amount": 1,
+			"per": "earlier_same_genre",
+			"cap": 5,
+			"label": "Reverb",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "audio",
@@ -205,7 +319,8 @@
 		"price": 5,
 		"look": "",
 		"active": false,
-		"params": {}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "gate",
@@ -217,7 +332,8 @@
 		"active": false,
 		"params": {
 			"count": 1
-		}
+		},
+		"enabled": true
 	},
 	{
 		"id": "request",
@@ -229,7 +345,8 @@
 		"active": false,
 		"params": {
 			"pays": 20
-		}
+		},
+		"enabled": true
 	},
 	{
 		"id": "vintage",
@@ -242,11 +359,12 @@
 		"params": {
 			"store": 0.1,
 			"decade": "60s"
-		}
+		},
+		"enabled": true
 	},
 	{
 		"id": "feedback",
-		"name": "Feedback",
+		"name": "Big Bass",
 		"text": "Gains +{store} flow each time a {genre} song is played. Adds to your starting flow.",
 		"size": "half",
 		"price": 6,
@@ -254,8 +372,9 @@
 		"active": false,
 		"params": {
 			"store": 0.1,
-			"genre": "Rock"
-		}
+			"genre": "Hip-Hop"
+		},
+		"enabled": true
 	},
 	{
 		"id": "piggy",
@@ -267,7 +386,8 @@
 		"active": false,
 		"params": {
 			"cash": 1
-		}
+		},
+		"enabled": true
 	},
 	{
 		"id": "deep_library",
@@ -277,7 +397,8 @@
 		"price": 6,
 		"look": "",
 		"active": true,
-		"params": {}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "sneak_peek",
@@ -288,47 +409,57 @@
 		"look": "",
 		"active": true,
 		"params": {
-			"count": 5
-		}
-	},
-	{
-		"id": "stack_amp",
-		"name": "Stack Amp",
-		"text": "Each {genre} song scores +{points} per other {genre} song in the set.",
-		"size": "half",
-		"price": 6,
-		"look": "",
-		"active": false,
-		"params": {
-			"points": 1,
-			"genre": "Rock"
-		}
+			"count": 3
+		},
+		"enabled": true
 	},
 	{
 		"id": "turntables",
 		"name": "Turntables",
-		"text": "After each {genre} song, flow rises by {flow}.",
+		"text": "After each {aparam} song this gig, flow rises by {amount}.",
 		"size": "half",
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {
-			"flow": 0.25,
-			"genre": "Hip-Hop"
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "genre",
+			"aparam": "Hip-Hop",
+			"effect": "flow",
+			"amount": 0.25,
+			"per": "none",
+			"cap": 0,
+			"label": "Turntables",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "radio",
 		"name": "Radio",
-		"text": "Each {genre} song pays ${cash}.",
+		"text": "Each {aparam} song pays ${amount}.",
 		"size": "half",
 		"price": 5,
 		"look": "",
 		"active": false,
-		"params": {
-			"cash": 1,
-			"genre": "Pop"
-		}
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "genre",
+			"aparam": "Pop",
+			"effect": "cash",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Radio",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
 	},
 	{
 		"id": "sax",
@@ -338,28 +469,162 @@
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "splitter",
 		"name": "Splitter",
 		"text": "Duplicates the unit to its right.",
-		"size": "full",
+		"size": "half",
 		"price": 8,
-		"look": "knobs",
+		"look": "",
 		"active": false,
-		"params": {}
+		"params": {},
+		"enabled": true
 	},
 	{
 		"id": "wah",
 		"name": "Wah Pedal",
-		"text": "After every song, flow rises by {flow} for each unit to its left.",
+		"text": "After every song, flow rises by {amount} for each unit to its left.",
 		"size": "half",
 		"price": 6,
 		"look": "",
 		"active": false,
-		"params": {
-			"flow": 0.05
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "flow",
+			"amount": 0.05,
+			"per": "units_left",
+			"cap": 0,
+			"label": "Wah",
+			"rparam": "",
+			"rn": 0
+		},
+		"enabled": true
+	},
+	{
+		"id": "blues_drive",
+		"name": "Blues Drive",
+		"text": "{aparam} songs next to a {rparam} song score +{amount} points.",
+		"enabled": true,
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "adjacent",
+			"rparam": "Jazz",
+			"rn": 0,
+			"applies": "genre",
+			"aparam": "Rock",
+			"effect": "points",
+			"amount": 5,
+			"per": "none",
+			"cap": 0,
+			"label": "Blues Drive"
+		}
+	},
+	{
+		"id": "chorus",
+		"name": "Chorus",
+		"text": "{aparam} songs next to a {rparam} song score +{amount} points.",
+		"enabled": true,
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "adjacent",
+			"rparam": "Rock",
+			"rn": 0,
+			"applies": "genre",
+			"aparam": "Pop",
+			"effect": "points",
+			"amount": 5,
+			"per": "none",
+			"cap": 0,
+			"label": "Chorus"
+		}
+	},
+	{
+		"id": "funky_groove",
+		"name": "Funky Groove",
+		"text": "+{amount} flow after a {aparam} song next to a {rparam} song.",
+		"enabled": true,
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "adjacent",
+			"rparam": "Hip-Hop",
+			"rn": 0,
+			"applies": "genre",
+			"aparam": "Rock",
+			"effect": "flow",
+			"amount": 0.5,
+			"per": "none",
+			"cap": 0,
+			"label": "Funky Groove"
+		}
+	},
+	{
+		"id": "showtune",
+		"name": "Showtune",
+		"text": "{aparam} songs next to a {rparam} song pay ${amount}.",
+		"enabled": true,
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "adjacent",
+			"rparam": "Jazz",
+			"rn": 0,
+			"applies": "genre",
+			"aparam": "Pop",
+			"effect": "cash",
+			"amount": 2,
+			"per": "none",
+			"cap": 0,
+			"label": "Showtune"
+		}
+	},
+	{
+		"id": "shred",
+		"name": "Shred",
+		"text": "Every {rn} {aparam} songs in a row, the last one scores x{amount}.",
+		"enabled": true,
+		"size": "half",
+		"price": 7,
+		"look": "",
+		"active": false,
+		"params": {},
+		"rule": {
+			"when": "each",
+			"requires": "streak",
+			"rparam": "",
+			"rn": 3,
+			"applies": "genre",
+			"aparam": "Rock",
+			"effect": "mult",
+			"amount": 3,
+			"per": "none",
+			"cap": 0,
+			"label": "Shred"
 		}
 	}
 ]

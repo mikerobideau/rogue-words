@@ -1,0 +1,57 @@
+[
+	{
+		"id": "rock",
+		"name": "Rock Deck",
+		"idea": "Two copies of every Rock CD and two Mixes.",
+		"enabled": true,
+		"mixes": 2,
+		"cards": {
+			"unknown-new-card": 2,
+			"unknown-new-card-2": 2,
+			"unknown-new-card-3": 2,
+			"unknown-new-card-4": 2,
+			"unknown-new-card-5": 2,
+			"unknown-new-card-6": 2,
+			"unknown-new-card-7": 2
+		}
+	},
+	{
+		"id": "pop",
+		"name": "Pop Deck",
+		"idea": "Two copies of every Pop CD and two Mixes.",
+		"enabled": true,
+		"mixes": 2,
+		"cards": {
+			"unknown-new-card-9": 2,
+			"unknown-new-card-10": 2,
+			"unknown-new-card-11": 2,
+			"unknown-new-card-12": 2,
+			"unknown-new-card-13": 2,
+			"unknown-new-card-14": 2,
+			"unknown-new-card-15": 2
+		}
+	},
+	{
+		"id": "mixed",
+		"name": "Mixed Bag",
+		"idea": "One of every CD and three Mixes.",
+		"enabled": true,
+		"mixes": 3,
+		"cards": {
+			"unknown-new-card": 1,
+			"unknown-new-card-2": 1,
+			"unknown-new-card-3": 1,
+			"unknown-new-card-4": 1,
+			"unknown-new-card-5": 1,
+			"unknown-new-card-6": 1,
+			"unknown-new-card-7": 1,
+			"unknown-new-card-9": 1,
+			"unknown-new-card-10": 1,
+			"unknown-new-card-11": 1,
+			"unknown-new-card-12": 1,
+			"unknown-new-card-13": 1,
+			"unknown-new-card-14": 1,
+			"unknown-new-card-15": 1
+		}
+	}
+]

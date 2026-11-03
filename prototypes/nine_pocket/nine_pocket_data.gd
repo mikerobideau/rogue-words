@@ -13,6 +13,8 @@ const COND_WEIGHTS := {"plain": 6, "set1": 3, "set2": 3, "odd": 2, "even": 2, "o
 const RARITY_WEIGHTS := {"common": 20, "uncommon": 55, "rare": 25}
 const GEAR_PATH := "res://prototypes/nine_pocket/data/gear.json"
 const CARDS_PATH := "res://prototypes/nine_pocket/data/cards.json"
+const DECKS_PATH := "res://prototypes/nine_pocket/data/decks.json"
+const DECKS_SHOWN := 12
 const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
 const SET_BONUS := 10
 const SIDE_BONUS := 8
@@ -54,8 +56,6 @@ const BOSS_TARGET := 1.3
 const TIER_GOOD := 1.5
 const TIER_GREAT := 2.0
 const EQ_UNIT := 3
-const DECK_SIZE := 24
-const DECK_THEME := 6
 const KITS := [
 	{"name": "Chain Gang", "idea": "Buff the next song and build long chains.", "gear": "sax", "lean": ["genre", "Jazz"]},
 	{"name": "Showstopper", "idea": "Open big and close bigger.", "gear": "fog", "lean": ["genre", "Rock"]},
