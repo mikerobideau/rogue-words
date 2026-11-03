@@ -4,16 +4,16 @@ You're a DJ playing shows against the crowd. Draw a hand of CDs, lay out a set o
 
 **Prototype:** run `nine_pocket.tscn` (F6). Venues, points, effects, targets, gear and editions are in `nine_pocket_data.gd`. Rules are in `nine_pocket.gd`: show flow in `_start_show` / `_on_pocket` / `_on_slot` / `_play` / `_start_slot` / `_finish_song` / `_confirm_dig` / `_end_show`, scoring in `_score_set` and `_apply_effect`, call-outs in `_new_call`. Shared drawing helpers are in `nine_pocket_ui.gd`. Earlier versions are in git history.
 
-Loop: **fork in the road** (the old tour map is kept behind a flag) → pick a road → two reward stops and a gig → pay and the record shop → next fork, until the headliner. Getting booed off ends the tour.
+Loop: **choose a lane** (the old tour map is kept behind a flag) → gig → record shop → gig → record shop → headliner → record shop → next tour's fork. Every 3 gigs is a tour; the run is `TOURS` tours (2, six gigs). Getting booed off ends the run.
 
 ## Fork in the road
-The map is switched off by `USE_FORK` in the data file (set it false to bring the map and `_make_tour` back; their code is intact). The tour is now six gigs: two forks, a boss, two forks, a boss (see Boss gigs and fatigue). Each fork is followed by its road's three stops. A run starts at the first fork after you pick a kit.
+The map is switched off by `USE_FORK` in the data file (set it false to bring the map and `_make_tour` back; their code is intact). A run starts at the first fork after you pick a kit. A tour is one fork and `LANE_GIGS` (3) gigs; after the last headliner of the last tour the run is won.
 
-- **A fork** is two road signs side by side on a dusk highway. Click a sign to take that road.
-- **A road** has a **theme** (a genre or a decade, e.g. "Blues Road", "80s Road", with a town it heads toward) and three stops in order: two reward stops, then a gig. You must play all three. The two roads in a fork have different themes (usually one genre and one decade).
-- **Reward stops** come from `ROAD_COMBOS`: pickup+pickup, pickup+shop, shop+pickup or tip jar+pickup. Every road has at least one pickup, a tip jar is always first (so cash never comes twice in a row), and the two roads in a fork don't share a combo. Pickups are stamped with the road's theme (one option always matches); a shop road guarantees an album from the theme on the shelf, and the sign shows its genre and decade.
-- **The gig** is a random venue (the two roads never share one) changed so it **likes the road's theme** and never hates it. The sign shows one liked and one hated tag; hover the gig row for the full likes and hates.
-- Gear pity, target growth and pay work as before. Gig number rises with each gig played, so the final boss is gig 6.
+- **A fork** is two lane signs side by side on a dusk highway, shown at the start of each tour. Click a sign to take that lane.
+- **A lane** is three gigs in order, with a record shop after every gig, including the headliner. Lanes are not themed: the gigs are random venues (no venue repeats across the two lanes) and the third gig is the headliner. The sign lists each gig with one liked and one hated tag (hover for the full likes and hates) and the headliner's challenge.
+- **The headliner** is a boss gig (see Boss gigs and fatigue) with its own challenge from `BOSS_KINDS`; the two lanes get different challenges.
+- **Pickups and tip jars are off** (`PICKUPS_ENABLED` is false). Their code is intact; setting it true adds rolled pickup / tip jar stops before each gig in a lane, though the fork sign does not list them.
+- Target growth and pay work as before. Gig number rises with each gig played, so the final headliner is gig 6.
 
 ## Tour map
 Modeled on Wildfrost: gig → a couple of rewards → gig. You start on the map (titled "Tour Map", with a legend using the real pin symbols), a worn road atlas spread on the desk (fold creases, lake and river, state lines, coffee ring, tape). Generated fresh each run in `_make_tour`:
@@ -64,7 +64,7 @@ Black screen, a spotlight from above, and the reward on a pool of light.
 - **Console strip** (bottom, brushed metal like the rack units), left to right: a black *View binder* button; a black *Discard* button with three amber lights for discards left (while choosing, it becomes *Discard* and *Cancel*); the **draw pile table** (see Discard); and **Sort** as five amp-style toggle switches (Genre, Decade, Points, Band) whose lights use the same amber. All console buttons share the black style.
 
 ## Boss gigs
-**Every third gig is a boss** (boss and headliner mean the same thing): gigs 3 and 6, with the fork roads covering the gigs between. Beating gig 6 completes the tour. Bosses use the headliner's venue and ×1.25 targets, and carry one **challenge**, different for each boss in a run. The fork screen warns which challenge the next boss will have, a boss screen spells it out, and the crowd panel keeps a red reminder. The challenges (`BOSS_KINDS`):
+**The third gig of every lane is a boss** (boss and headliner mean the same thing): gigs 3 and 6. Beating gig 6 completes the run. Bosses use the headliner's venue and ×1.25 targets, and carry one **challenge**; the two lanes in a fork get different ones. The fork sign names each lane's challenge, a boss screen spells it out, and the crowd panel keeps a red reminder. The challenges (`BOSS_KINDS`):
 - **Genre debuffed / Decade debuffed:** songs of your most common genre (or decade) score half all night.
 - **Crowd request:** one of slots 2-5 only takes a chosen genre or decade; anything else scores nothing. A red tag marks the slot.
 - **Angry crowd:** an extra hated genre (one of your common ones), and hated songs score nothing.

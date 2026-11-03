@@ -79,8 +79,9 @@ const VENUES := [
 ]
 
 const USE_FORK := true
-const BOSS_EVERY := 3
-const TOUR_BOSSES := 2
+const TOURS := 2
+const LANE_GIGS := 3
+const PICKUPS_ENABLED := false
 const BOSS_DEBUFF_MULT := 0.5
 const BOSS_DESTROY := 0.2
 const BOSS_DIGS := 1
