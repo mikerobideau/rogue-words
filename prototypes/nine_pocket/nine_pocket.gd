@@ -29,6 +29,7 @@ class Disc:
 	var edition := ""
 	var cdr := false
 	var mix_cover := ""
+	var rarity := "common"
 
 var rng := RandomNumberGenerator.new()
 var albums: Array = []
@@ -58,6 +59,19 @@ var deck_defs: Array = []
 var shop_items: Array = []
 var pack := {}
 var pack_sel: Array[int] = []
+var pack_t := 0.0
+var pack_slide := 0.0
+var pack_rig_open := false
+var hold_key := ""
+var hold_t := 0.0
+var hold_rect := Rect2()
+var hold_cb: Callable
+var hold_targets: Array = []
+var pack_burst := false
+var pack_skipped := false
+var pack_revealed: Array[int] = []
+var pack_sparks: Array = []
+var pack_fx: Array = []
 var install_queue: Array = []
 var install_price := 0
 var install_src := -1
@@ -187,8 +201,9 @@ var r_changer := Rect2(820.0, 40.0, 1020.0, 660.0)
 var r_score := Rect2(60.0, 40.0, 736.0, 1260.0)
 var r_wallet := Rect2(820.0, 720.0, 1020.0, 580.0)
 var r_side := Rect2(1350.0, 796.0, 490.0, 500.0)
-var r_rack := Rect2(1880.0, 40.0, 620.0, 1050.0)
-var r_actions := Rect2(1880.0, 1112.0, 620.0, 288.0)
+var r_cash := Rect2(1880.0, 40.0, 620.0, 100.0)
+var r_rack := Rect2(1880.0, 160.0, 620.0, 1030.0)
+var r_actions := Rect2(1880.0, 1210.0, 620.0, 190.0)
 var r_bin := Rect2(70.0, 200.0, 1000.0, 420.0)
 var r_counter := Rect2(70.0, 690.0, 1000.0, 690.0)
 var r_shelf := Rect2(1110.0, 180.0, 730.0, 1200.0)
@@ -424,6 +439,8 @@ func _process(delta: float) -> void:
 	_tick_drag(delta)
 	_tick_bg(delta)
 	_tick_count(delta)
+	_tick_pack(delta)
+	_tick_hold(delta)
 	_tick_audition(delta)
 	rec_pop = maxf(0.0, rec_pop - delta * 4.0)
 	flow_pulse = maxf(0.0, flow_pulse - delta * 2.5)
@@ -474,6 +491,10 @@ func _process(delta: float) -> void:
 func _unhandled_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton:
 		var mb := ev as InputEventMouseButton
+		if not pack.is_empty() and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and not _pack_ready():
+			pack_skipped = true
+			pack_t = _pack_ready_time()
+			return
 		if fin_t >= 0.0 and mb.pressed and not fin_boomed:
 			fin_t = (D.FIN_WIND * _anim()) + (D.FIN_STREAM * _anim())
 			return
@@ -918,6 +939,7 @@ func _make_disc(a: Dictionary) -> Disc:
 	d.label = a["label"]
 	d.sound = int(a["points"])
 	d.rule = (a["rule"] as Dictionary).duplicate()
+	d.rarity = String(a.get("rarity", "common"))
 	if rng.randf() < D.EDITION_CHANCE:
 		var eds: Array = D.EDITIONS.keys()
 		d.edition = eds[rng.randi_range(0, eds.size() - 1)]
@@ -2127,6 +2149,7 @@ func _pocket_rect(p: int) -> Rect2:
 func _draw() -> void:
 	_begin_draw()
 	audition_target = null
+	hold_targets.clear()
 	if fin_shake > 0.0:
 		draw_set_transform(screen_origin + Vector2(sin(clock * 91.0), cos(clock * 77.0)) * 16.0 * fin_shake * ui_scale, 0.0, Vector2(ui_scale, ui_scale))
 	var modal := phase in ["result", "over", "won", "end"] or not pack.is_empty() or binder_open or settings_open
@@ -2184,6 +2207,7 @@ func _draw() -> void:
 		_draw_binder_overlay()
 	elif (phase == "shop" and install_queue.is_empty()) or phase in ["map", "fork"]:
 		_draw_binder_button()
+	_draw_hold()
 	if held < 0 and not drag_active and hover_disc != null:
 		_draw_disc_tip(hover_disc)
 	_end_draw()
@@ -2761,8 +2785,7 @@ func _draw_wallet() -> void:
 	_draw_console()
 	_draw_actions()
 
-func _draw_actions() -> void:
-	var r := r_actions
+func _nav_bg(r: Rect2) -> void:
 	_shadow(r, 8, 12.0)
 	_brushed(r, 8.0, Color("b4b9bf"), 71)
 	draw_line(r.position + Vector2(8.0, 1.0), Vector2(r.end.x - 8.0, r.position.y + 1.0), Color(1, 1, 1, 0.35), 2.0)
@@ -2770,26 +2793,52 @@ func _draw_actions() -> void:
 	for ex in [r.position.x + 14.0, r.end.x - 14.0]:
 		for ey in [r.position.y + 14.0, r.end.y - 14.0]:
 			_screw(Vector2(ex, ey), 6.0)
+
+func _draw_cash() -> void:
+	var r := r_cash
+	_shadow(r, 8, 10.0)
+	_surface(r, 8.0, "metal_dark", Color("2b2e33"), Color("1a1c20"))
+	_panel(r, Color(0, 0, 0, 0), 8, Color(0, 0, 0, 0.6), 2)
+	_silk(Vector2(r.position.x + 28.0, r.position.y + 62.0), "CASH", T_MD, Color("8d939b"))
+	var lr := Rect2(r.position.x + 160.0, r.position.y + 14.0, r.size.x - 190.0, 72.0)
+	_lcd(lr, "$" + _fmt_int(cash), Color("7fe0a0"), _lcd_size(lr, 56), "$888,888")
+
+func _draw_actions() -> void:
+	var r := r_actions
+	_nav_bg(r)
 	var x := r.position.x
 	var y := r.position.y
 	var black := Color("1a1c20")
 	var ink := Color("23262b")
-	_hw_button(Rect2(x + 28.0, y + 24.0, 564.0, 118.0), "PLAY SET" if not resolving else "PLAYING", _play, _can_play(), Color("3f9b5a"), T_XL + 12)
+	_hw_button(Rect2(x + 24.0, y + 16.0, 572.0, 84.0), "PLAY SET" if not resolving else "PLAYING", _play, _can_play(), Color("3f9b5a"), T_XL)
 	var red := Color("c23a2e")
 	if dig_mode:
 		var n := dig_marks.size()
-		_hw_button(Rect2(x + 28.0, y + 162.0, 400.0, 88.0), "Discard" if n > 0 else "Pick", _confirm_dig, n > 0, red, T_LG)
-		_hw_button(Rect2(x + 440.0, y + 162.0, 152.0, 88.0), "Cancel", _cancel, true, black, T_SM)
+		_hw_button(Rect2(x + 24.0, y + 112.0, 400.0, 62.0), "Discard" if n > 0 else "Pick", _confirm_dig, n > 0, red, T_LG)
+		_hw_button(Rect2(x + 436.0, y + 112.0, 160.0, 62.0), "Cancel", _cancel, true, black, T_SM)
 	else:
 		var can := ui_live and phase == "show" and not resolving and dig_offer.is_empty() and digs > 0 and draw_pile.size() + discard.size() > 0
-		_hw_button(Rect2(x + 28.0, y + 162.0, 564.0, 88.0), "Discard", _start_dig, can, red, T_LG)
+		_hw_button(Rect2(x + 24.0, y + 112.0, 400.0, 62.0), "Discard", _start_dig, can, red, T_LG)
 		var lamps := maxi(D.DIGS, digs)
 		for k in lamps:
-			_led(Vector2(x + 548.0 - (lamps - 1 - k) * 28.0, y + 206.0), 8.0, Color("ffb347"), 1.0 if k < digs else 0.0)
-	var left := ("SLOT %d / %d" % [mini(played.size() + 1, D.SETLIST), D.SETLIST]) if resolving else ("%d / %d LOADED" % [_placed(), D.SETLIST])
-	_silk(Vector2(x + 30.0, y + 272.0), left, 14, ink)
-	var help := "PICK 1 CD TO DISCARD" if dig_mode else ("PICK 1 OF %d" % D.DIG_OFFERS if D.DIG_PICK else "DISCARD REDRAWS YOUR HAND")
-	_text_right(x + 592.0, y + 272.0, help, 14, ink, true)
+			_led(Vector2(x + 392.0 - (lamps - 1 - k) * 28.0, y + 143.0), 8.0, Color("ffb347"), 1.0 if k < digs else 0.0)
+	var count := ("%d / %d" % [mini(played.size() + 1, D.SETLIST), D.SETLIST]) if resolving else ("%d / %d" % [_placed(), D.SETLIST])
+	_text_center(Rect2(x + 440.0, y + 112.0, 156.0, 40.0), count, T_LG, ink, true)
+	_silk(Vector2(x + 518.0 - _text_w("SLOT" if resolving else "LOADED", 14, true) * 0.5, y + 166.0), "SLOT" if resolving else "LOADED", 14, ink)
+
+func _draw_shop_nav() -> void:
+	var r := r_actions
+	_nav_bg(r)
+	var x := r.position.x
+	var y := r.position.y
+	var enabled := ui_live and install_queue.is_empty() and bench < 0
+	_hw_button(Rect2(x + 24.0, y + 16.0, 572.0, 84.0), "Exit shop", _leave_shop, enabled, Color("3f9b5a"), T_XL)
+	_hw_button(Rect2(x + 24.0, y + 112.0, 572.0, 62.0), "View binder (%d)" % collection.size(), _toggle_binder, install_queue.is_empty(), Color("1a1c20"), T_MD)
+
+func _aisle_label(w: Rect2, text: String) -> void:
+	var lr := Rect2(w.position.x + 30.0, w.position.y + 18.0, w.size.x - 60.0, 50.0)
+	_panel(lr, Color("0d0e10"), 8, Color(c_gold, 0.7), 2)
+	_heavy_center(lr, text, T_MD, c_gold)
 
 func _draw_console() -> void:
 	var r := Rect2(60.0, 1302.0, r_side.end.x - 60.0, 108.0)
@@ -2948,7 +2997,7 @@ func _draw_side() -> void:
 		_hw_button(Rect2(x, by, w, 76.0), "Dig through the binder", _start_dig, digs > 0 and ui_live, Color("c9a227"), T_LG)
 
 func _rack_idle() -> bool:
-	return not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and install_queue.is_empty() and bench < 0 and pack.is_empty() and not binder_open and (phase == "show" or phase == "shop")
+	return not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and install_queue.is_empty() and bench < 0 and (pack.is_empty() or pack_rig_open) and not binder_open and (phase == "show" or phase == "shop")
 
 func _gear_click(i: int) -> void:
 	if not _rack_idle():
@@ -3164,7 +3213,7 @@ func _rack_unit(r: Rect2, title: String, sub: String, seed_n: int, flash: float,
 	_silk(Vector2(r.position.x + tx + 28.0, r.end.y - 28.0), "ACTIVE", 12, Color("3d4148"))
 
 func _bay_rect(k: int) -> Rect2:
-	return Rect2(1912.0, 76.0 + k * 330.0, 556.0, 316.0)
+	return Rect2(1912.0, 196.0 + k * 330.0, 556.0, 316.0)
 
 func _slot_rect(i: int) -> Rect2:
 	var b := _bay_rect(i / 2)
@@ -3177,6 +3226,7 @@ func _unit_rect(i: int) -> Rect2:
 	return _slot_rect(i)
 
 func _draw_rack() -> void:
+	_draw_cash()
 	var r := r_rack
 	_shadow(r, 10, 14.0)
 	_surface(r, 10.0, "metal_dark", Color("1d1f23"), Color("121316"))
@@ -3214,7 +3264,10 @@ func _draw_rack() -> void:
 				var lr := Rect2(tr.get_center().x - lw * 0.5, tr.get_center().y - 28.0, lw, 56.0)
 				_panel(lr, Color(0.06, 0.07, 0.09, 0.92), 28)
 				_text_center(lr, label, T_MD, c_gold, true)
-			_register(tr, _install.bind(i))
+			if install_price > 0:
+				_hold(tr, "inst%d" % i, "Hold to buy", _install.bind(i))
+			else:
+				_register(tr, _install.bind(i))
 			continue
 		if idle and bk == "":
 			_register(br, _gear_click.bind(i))
@@ -3607,8 +3660,8 @@ func _draw_toast() -> void:
 		return
 	var a := clampf(message_t / 0.4, 0.0, 1.0)
 	var w := _text_w(message, T_LG, true) + 60.0
-	var cx := r_bin.get_center().x if phase == "shop" else r_wallet.get_center().x
-	var cy := r_bin.end.y + 30.0 if phase == "shop" else r_wallet.position.y - 30.0
+	var cx := 950.0 if phase == "shop" else r_wallet.get_center().x
+	var cy := 1330.0 if phase == "shop" else r_wallet.position.y - 30.0
 	var r := Rect2(cx - w * 0.5, cy, w, 60.0)
 	_panel(r, Color(0.08, 0.1, 0.14, 0.92 * a), 30)
 	_text_center(r, message, T_LG, Color(1, 1, 1, a), true)
@@ -3785,6 +3838,7 @@ func _buy(i: int) -> void:
 				items.append(_make_disc(a))
 			pack = {"kind": "album", "title": ap["name"], "pick": int(ap["pick"]), "items": items}
 			pack_sel.clear()
+			_pack_start()
 		"gear":
 			install_queue = [it["gear"]]
 			install_price = int(it["price"])
@@ -3808,6 +3862,7 @@ func _buy(i: int) -> void:
 				return
 			pack = {"kind": "gear", "title": gp["name"], "pick": mini(int(gp["pick"]), items.size()), "items": items}
 			pack_sel.clear()
+			_pack_start()
 
 func _toggle_pick(k: int) -> void:
 	if k in pack_sel:
@@ -3914,17 +3969,127 @@ func _draw_shop() -> void:
 	while x < r_rack.position.x:
 		draw_line(Vector2(x, -800.0), Vector2(x, UI_H + 800.0), Color(0, 0, 0, 0.08), 3.0)
 		x += 120.0
-	var sign := Rect2(r_bin.position.x + 120.0, 50.0, r_bin.size.x - 240.0, 100.0)
+	var sign := Rect2(450.0, 50.0, 1000.0, 130.0)
 	for sx: float in [sign.position.x + 90.0, sign.end.x - 90.0]:
 		draw_line(Vector2(sx, -40.0), Vector2(sx, sign.position.y), Color("5f5e5a"), 4.0)
 	_shadow(sign, 12, 8.0)
 	_panel(sign, Color("1d1a17"), 12, c_gold, 3)
 	_panel(sign.grow(-10.0), Color(c_gold, 0.08), 8)
-	_heavy_center(Rect2(sign.position.x, sign.position.y + 4.0, sign.size.x, 60.0), "THE B-SIDE", T_XL, c_gold)
-	_text_center(Rect2(sign.position.x, sign.position.y + 58.0, sign.size.x, 30.0), "USED CDs  ·  AUDIO GEAR", T_XS, Color(c_gold, 0.75), true)
-	_draw_bin()
-	_draw_counter()
-	_draw_gear_wall()
+	_heavy_center(Rect2(sign.position.x, sign.position.y + 8.0, sign.size.x, 70.0), "THE B-SIDE", T_XL + 16, c_gold)
+	var sub := "USED CDs  ·  AUDIO GEAR"
+	var sub_col := Color(c_gold, 0.75)
+	if not install_queue.is_empty():
+		sub = "Choose a rack bay for the %s" % gear_defs[(install_queue[0] as Dictionary)["id"]]["name"]
+		sub_col = Color("f4efe4")
+	_text_center(Rect2(sign.position.x, sign.position.y + 80.0, sign.size.x, 36.0), sub, T_SM, sub_col, true)
+	_draw_records_aisle(Rect2(60.0, 210.0, 580.0, 1190.0))
+	_draw_gear_aisle(Rect2(660.0, 210.0, 580.0, 1190.0))
+	_draw_work_aisle(Rect2(1260.0, 210.0, 580.0, 1190.0))
+	_draw_shop_nav()
+
+func _draw_records_aisle(w: Rect2) -> void:
+	_shadow(w, 10, 12.0)
+	_panel(w, Color("1c1714"), 10)
+	_grad_panel(Rect2(w.position.x, w.position.y, w.size.x, 70.0), 10.0, Color(0, 0, 0, 0.5), Color(0, 0, 0, 0.0))
+	_aisle_label(w, "RECORDS")
+	for k in 3:
+		var it: Dictionary = shop_items[k]
+		var cr := Rect2(w.get_center().x - 170.0, w.position.y + 100.0 + k * 360.0, 340.0, 301.0)
+		_crate_wood(Rect2(cr.position.x - 20.0, cr.end.y + 24.0, cr.size.x + 40.0, 22.0), 7 + k)
+		if bool(it["sold"]):
+			_heavy_center(cr, "SOLD", T_XL, Color(1, 1, 1, 0.1))
+			continue
+		var afford := cash >= int(it["price"])
+		var hot := ui_live and afford and cr.has_point(mouse)
+		var rr := Rect2(cr.position - Vector2(0.0, 10.0 if hot else 0.0), cr.size)
+		if it["kind"] == "album":
+			var d: Disc = it["disc"]
+			_draw_case(rr, d, int(it["price"]))
+			_tip_disc(cr, d)
+			if ui_live and cr.has_point(mouse):
+				_audition(d)
+		else:
+			_draw_case_pack(rr, it["pack"], int(it["price"]))
+			var ap: Dictionary = it["pack"]
+			_tip(cr, "%s: open it and pick %d of %d albums for your binder." % [ap["name"], int(ap["pick"]), int(ap["show"])])
+		if not afford:
+			_panel(rr, Color(0, 0, 0, 0.5), 6)
+		if ui_live and afford:
+			_hold(cr, "buy%d" % k, "Hold to buy", _buy.bind(k))
+
+func _draw_gear_aisle(w: Rect2) -> void:
+	_shadow(w, 8, 10.0)
+	_surface(w, 8.0, "pegboard", Color("b89a72"), Color("a08360"), 400.0)
+	if _tex("pegboard") == null:
+		var y := w.position.y + 20.0
+		while y < w.end.y - 10.0:
+			var x := w.position.x + 20.0
+			while x < w.end.x - 10.0:
+				draw_circle(Vector2(x, y), 3.5, Color("4a3a2a"))
+				x += 32.0
+			y += 32.0
+	_panel(w, Color(0, 0, 0, 0), 8, Color(0, 0, 0, 0.5), 2)
+	_aisle_label(w, "GEAR")
+	var ux := w.position.x + 30.0
+	for k in 2:
+		var it: Dictionary = shop_items[3 + k]
+		var ur := Rect2(ux, w.position.y + 100.0 + k * 330.0, 520.0, 220.0)
+		_shelf(Rect2(w.position.x + 10.0, ur.end.y + 8.0, w.size.x - 20.0, 16.0))
+		if bool(it["sold"]):
+			_heavy_center(ur, "SOLD", T_XL, Color(0, 0, 0, 0.25))
+			continue
+		var afford := cash >= int(it["price"])
+		_draw_gear(ur, it["gear"], 0.0)
+		var vr := ur if _gear_full(it["gear"]) else Rect2(ur.position, Vector2((ur.size.x - 12.0) * 0.5, ur.size.y))
+		var picked := install_src == 3 + k
+		if picked:
+			_panel(vr.grow(6.0), Color(0, 0, 0, 0), 10, c_gold, 5)
+		if not afford:
+			_panel(vr, Color(0, 0, 0, 0.45), 6)
+		_hang_tag(Vector2(ur.end.x - 70.0, ur.end.y + 38.0), "$%d" % int(it["price"]))
+		if ui_live and afford and install_queue.is_empty():
+			if vr.has_point(mouse):
+				_panel(vr.grow(4.0), Color(0, 0, 0, 0), 10, Color(c_gold, 0.8), 3)
+			_register(ur, _buy.bind(3 + k))
+	var it5: Dictionary = shop_items[5]
+	var bx := Rect2(ux + 30.0, w.position.y + 100.0 + 660.0, 440.0, 250.0)
+	_shelf(Rect2(w.position.x + 10.0, bx.end.y + 8.0, w.size.x - 20.0, 16.0))
+	if bool(it5["sold"]):
+		_heavy_center(bx, "SOLD", T_XL, Color(0, 0, 0, 0.25))
+	else:
+		var gp: Dictionary = it5["pack"]
+		var afford5 := cash >= int(it5["price"])
+		var hot := ui_live and afford5 and install_queue.is_empty() and bx.has_point(mouse)
+		_cardboard_box(Rect2(bx.position - Vector2(0.0, 8.0 if hot else 0.0), bx.size), String(gp["name"]), "PICK %d OF %d" % [int(gp["pick"]), int(gp["show"])])
+		if not afford5:
+			_panel(bx, Color(0, 0, 0, 0.45), 4)
+		_hang_tag(Vector2(bx.end.x - 20.0, bx.end.y + 38.0), "$%d" % int(it5["price"]))
+		_tip(bx, "%s: open it and keep %d of %d pieces of gear." % [gp["name"], int(gp["pick"]), int(gp["show"])])
+		if ui_live and afford5 and install_queue.is_empty():
+			_hold(bx, "buy5", "Hold to buy", _buy.bind(5))
+
+func _draw_work_aisle(w: Rect2) -> void:
+	_shadow(w, 8, 10.0)
+	_surface(w, 8.0, "wood", Color("5e412c"), Color("3e2a1c"), 700.0)
+	if _tex("wood") == null:
+		_grain(w, 23, 900.0)
+	_panel(w, Color(0, 0, 0, 0), 8, Color(0, 0, 0, 0.5), 2)
+	_aisle_label(w, "WORK ORDERS")
+	_draw_services(Rect2(w.position.x + 30.0, w.position.y + 100.0, w.size.x - 60.0, 640.0))
+	var led := Rect2(w.position.x + 30.0, w.end.y - 250.0, w.size.x - 60.0, 220.0)
+	_shadow(led, 10, 8.0)
+	_surface(led, 10.0, "metal_dark", Color("2b2e33"), Color("1a1c20"))
+	_panel(led, Color(0, 0, 0, 0), 10, Color(0, 0, 0, 0.6), 2)
+	_silk(Vector2(led.position.x + 30.0, led.position.y + 70.0), "BINDER", T_SM, Color("8d939b"))
+	_text_right(led.end.x - 30.0, led.position.y + 70.0, "%d albums" % collection.size(), T_LG, Color("e6e9ed"), true)
+	_silk(Vector2(led.position.x + 30.0, led.position.y + 130.0), "SHOWS PLAYED", T_SM, Color("8d939b"))
+	_text_right(led.end.x - 30.0, led.position.y + 130.0, str(gig_n), T_LG, Color("e6e9ed"), true)
+	_silk(Vector2(led.position.x + 30.0, led.position.y + 190.0), "RIG", T_SM, Color("8d939b"))
+	var used := 0
+	for g: Dictionary in rack:
+		if not g.is_empty():
+			used += 1
+	_text_right(led.end.x - 30.0, led.position.y + 190.0, ("%d unit" if used == 1 else "%d units") % used, T_LG, Color("e6e9ed"), true)
 
 func _crate_wood(r: Rect2, seed_n: int) -> void:
 	_surface(r, 4.0, "crate_wood", Color("a07a52"), Color("7d5c3c"), 500.0)
@@ -3939,56 +4104,6 @@ func _crate_wood(r: Rect2, seed_n: int) -> void:
 			y += g.randf_range(4.0, 9.0)
 	draw_line(r.position + Vector2(4.0, 1.0), Vector2(r.end.x - 4.0, r.position.y + 1.0), Color(1, 1, 1, 0.25), 2.0)
 	_panel(r, Color(0, 0, 0, 0), 4, Color(0, 0, 0, 0.5), 1)
-
-func _draw_bin() -> void:
-	var b := r_bin
-	_shadow(b, 8, 14.0)
-	_panel(Rect2(b.position.x, b.position.y, b.size.x, b.size.y - 60.0), Color("1c1714"), 6)
-	_grad_panel(Rect2(b.position.x, b.position.y, b.size.x, 40.0), 6.0, Color(0, 0, 0, 0.5), Color(0, 0, 0, 0.0))
-	var cw := (b.size.x - 40.0) / 3.0
-	for k in 3:
-		var cell := Rect2(b.position.x + 20.0 + k * cw, b.position.y + 34.0, cw, 260.0)
-		if k > 0:
-			_crate_wood(Rect2(cell.position.x - 6.0, b.position.y + 10.0, 12.0, 290.0), 90 + k)
-		var it: Dictionary = shop_items[k]
-		var cr := Rect2(cell.get_center().x - 132.0, cell.position.y - 4.0, 264.0, 234.0)
-		if bool(it["sold"]):
-			_heavy_center(cr, "SOLD", T_XL, Color(1, 1, 1, 0.1))
-			continue
-		var afford := cash >= int(it["price"])
-		var hot := ui_live and afford and cr.has_point(mouse)
-		var lift := 10.0 if hot else 0.0
-		var rr := Rect2(cr.position - Vector2(0.0, lift), cr.size)
-		if it["kind"] == "album":
-			var d: Disc = it["disc"]
-			_draw_case(rr, d, int(it["price"]))
-			_tip_disc(cr, d)
-			if ui_live and cr.has_point(mouse):
-				_audition(d)
-		else:
-			_draw_case_pack(rr, it["pack"], int(it["price"]))
-			var ap: Dictionary = it["pack"]
-			_tip(cr, "%s: open it and pick %d of %d albums for your binder." % [ap["name"], int(ap["pick"]), int(ap["show"])])
-		if not afford:
-			_panel(rr, Color(0, 0, 0, 0.5), 6)
-		if ui_live and afford:
-			_register(cr, _buy.bind(k))
-	var lip := Rect2(b.position.x - 10.0, b.position.y + 286.0, b.size.x + 20.0, 74.0)
-	_crate_wood(lip, 7)
-	for k in 3:
-		var it: Dictionary = shop_items[k]
-		var card := Rect2(b.position.x + 20.0 + k * cw + 30.0, lip.position.y + 12.0, cw - 60.0, 50.0)
-		_panel(card, Color("f6f1e3"), 3)
-		draw_circle(card.position + Vector2(10, 10), 3.0, Color("9aa0a6"))
-		if bool(it["sold"]):
-			continue
-		if it["kind"] == "album":
-			_text_center(card, (it["disc"] as Disc).title, 15, c_ink, true)
-		else:
-			var ap: Dictionary = it["pack"]
-			_text_center(card, "PICK %d OF %d" % [int(ap["pick"]), int(ap["show"])], T_SM, c_ink, true)
-	draw_rect(Rect2(b.position.x + 20.0, b.end.y - 60.0, 26.0, 60.0), Color("2a2420"))
-	draw_rect(Rect2(b.end.x - 46.0, b.end.y - 60.0, 26.0, 60.0), Color("2a2420"))
 
 func _draw_case(r: Rect2, d: Disc, price: int = -1) -> void:
 	_draw_jewel(r, d, 0.0, price)
@@ -4014,90 +4129,13 @@ func _draw_case_pack(r: Rect2, ap: Dictionary, price: int) -> void:
 		_grad_panel(ins, 2.0, Color("2c3e50").lerp(Color("8e44ad"), j * 0.3), Color("1a252f"))
 		if j == 0:
 			_heavy_center(Rect2(ins.position.x, ins.position.y + ins.size.y * 0.25, ins.size.x, 50.0), String(ap["name"]).to_upper(), T_LG, Color("f4efe4"))
-			_text_center(Rect2(ins.position.x, ins.position.y + ins.size.y * 0.25 + 46.0, ins.size.x, 30.0), "VARIOUS ARTISTS", T_XS, Color(1, 1, 1, 0.6), true)
+			_text_center(Rect2(ins.position.x, ins.position.y + ins.size.y * 0.25 + 46.0, ins.size.x, 30.0), "PICK %d OF %d" % [int(ap["pick"]), int(ap["show"])], T_XS, Color(1, 1, 1, 0.6), true)
 	var wrap := r.grow(-4.0)
 	_panel(wrap, Color(1, 1, 1, 0.06), 10, Color(1, 1, 1, 0.3), 2)
 	draw_line(wrap.position + Vector2(30, 6), wrap.position + Vector2(8, 60), Color(1, 1, 1, 0.35), 3.0)
 	draw_line(Vector2(wrap.end.x - 40.0, wrap.end.y - 8.0), Vector2(wrap.end.x - 8.0, wrap.end.y - 50.0), Color(1, 1, 1, 0.25), 2.0)
-	_price_sticker(Vector2(r.end.x - 4.0, r.position.y + 4.0), "$%d" % price, k)
-
-func _draw_counter() -> void:
-	var c := r_counter
-	var top := Rect2(c.position.x - 20.0, c.position.y, c.size.x + 40.0, 30.0)
-	var front := Rect2(c.position.x, c.position.y + 30.0, c.size.x, c.size.y)
-	_surface(front, 0.0, "wood", Color("5e412c"), Color("3e2a1c"), 700.0)
-	if _tex("wood") == null:
-		_grain(front, 23, 900.0)
-	_surface(top, 6.0, "wood", Color("8a6446"), Color("6b4a32"), 700.0)
-	draw_line(Vector2(top.position.x, top.end.y), Vector2(top.end.x, top.end.y), Color(0, 0, 0, 0.4), 4.0)
-	var reg := Rect2(c.position.x + 40.0, c.position.y + 70.0, 440.0, 250.0)
-	_shadow(reg, 10, 8.0)
-	_surface(reg, 10.0, "metal_dark", Color("2b2e33"), Color("1a1c20"))
-	_panel(reg, Color(0, 0, 0, 0), 10, Color(0, 0, 0, 0.6), 2)
-	_silk(Vector2(reg.position.x + 30.0, reg.position.y + 44.0), "CASH", T_SM, Color("8d939b"))
-	_lcd(Rect2(reg.position.x + 30.0, reg.position.y + 60.0, reg.size.x - 60.0, 90.0), "$%d" % cash, Color("7fe0a0"), T_HERO, "$888")
-	_silk(Vector2(reg.position.x + 30.0, reg.end.y - 60.0), "BINDER", T_XS, Color("8d939b"))
-	_text_right(reg.end.x - 30.0, reg.end.y - 60.0, "%d albums" % collection.size(), T_SM, Color("e6e9ed"), true)
-	_silk(Vector2(reg.position.x + 30.0, reg.end.y - 28.0), "SHOWS PLAYED", T_XS, Color("8d939b"))
-	_text_right(reg.end.x - 30.0, reg.end.y - 28.0, str(gig_n), T_SM, Color("e6e9ed"), true)
-	var nb := Rect2(c.end.x - 420.0, c.position.y + 110.0, 380.0, 120.0)
-	_hw_button(nb, "Back on the road", _leave_shop, ui_live and install_queue.is_empty() and bench < 0, Color("3f9b5a"), T_XL)
-	_draw_services(Rect2(c.position.x + 40.0, c.position.y + 350.0, c.size.x - 80.0, 222.0))
-	if not install_queue.is_empty():
-		var g: Dictionary = install_queue[0]
-		_wrap(Vector2(nb.position.x, nb.end.y + 24.0), "Choose a rack bay for the %s." % gear_defs[g["id"]]["name"], nb.size.x, T_SM, Color("f4efe4"), true)
-
-func _draw_gear_wall() -> void:
-	var w := r_shelf
-	_shadow(w, 8, 10.0)
-	_surface(w, 8.0, "pegboard", Color("b89a72"), Color("a08360"), 400.0)
-	if _tex("pegboard") == null:
-		var y := w.position.y + 20.0
-		while y < w.end.y - 10.0:
-			var x := w.position.x + 20.0
-			while x < w.end.x - 10.0:
-				draw_circle(Vector2(x, y), 3.5, Color("4a3a2a"))
-				x += 32.0
-			y += 32.0
-	_panel(w, Color(0, 0, 0, 0), 8, Color(0, 0, 0, 0.5), 2)
-	var ux := w.position.x + 24.0
-	var rows := [w.position.y + 50.0, w.position.y + 350.0]
-	for k in 2:
-		var it: Dictionary = shop_items[3 + k]
-		var ur := Rect2(ux, rows[k], 556.0, 236.0)
-		_shelf(Rect2(w.position.x + 10.0, ur.end.y + 6.0, w.size.x - 20.0, 16.0))
-		if bool(it["sold"]):
-			_heavy_center(ur, "SOLD", T_XL, Color(0, 0, 0, 0.25))
-			continue
-		var afford := cash >= int(it["price"])
-		_draw_gear(ur, it["gear"], 0.0)
-		var vr := ur if _gear_full(it["gear"]) else Rect2(ur.position, Vector2((ur.size.x - 12.0) * 0.5, ur.size.y))
-		var picked := install_src == 3 + k
-		if picked:
-			_panel(vr.grow(6.0), Color(0, 0, 0, 0), 10, c_gold, 5)
-		if not afford:
-			_panel(vr, Color(0, 0, 0, 0.45), 6)
-		_hang_tag(Vector2(ur.end.x + 70.0, ur.position.y + 20.0), "$%d" % int(it["price"]))
-		if ui_live and afford and install_queue.is_empty():
-			if vr.has_point(mouse):
-				_panel(vr.grow(4.0), Color(0, 0, 0, 0), 10, Color(c_gold, 0.8), 3)
-			_register(ur, _buy.bind(3 + k))
-	var it: Dictionary = shop_items[5]
-	var bx := Rect2(ux, w.position.y + 700.0, 460.0, 270.0)
-	_shelf(Rect2(w.position.x + 10.0, bx.end.y + 6.0, w.size.x - 20.0, 16.0))
-	if bool(it["sold"]):
-		_heavy_center(bx, "SOLD", T_XL, Color(0, 0, 0, 0.25))
-	else:
-		var gp: Dictionary = it["pack"]
-		var afford := cash >= int(it["price"])
-		var hot := ui_live and afford and install_queue.is_empty() and bx.has_point(mouse)
-		_cardboard_box(Rect2(bx.position - Vector2(0.0, 8.0 if hot else 0.0), bx.size), String(gp["name"]), "PICK %d OF %d" % [int(gp["pick"]), int(gp["show"])])
-		if not afford:
-			_panel(bx, Color(0, 0, 0, 0.45), 4)
-		_hang_tag(Vector2(bx.end.x + 70.0, bx.position.y + 20.0), "$%d" % int(it["price"]))
-		_tip(bx, "%s: open it and keep %d of %d pieces of gear." % [gp["name"], int(gp["pick"]), int(gp["show"])])
-		if ui_live and afford and install_queue.is_empty():
-			_register(bx, _buy.bind(5))
+	if price >= 0:
+		_price_sticker(Vector2(r.end.x - 4.0, r.position.y + 4.0), "$%d" % price, k)
 
 func _shelf(r: Rect2) -> void:
 	_shadow(r, 2, 6.0)
@@ -4137,43 +4175,337 @@ func _cardboard_box(r: Rect2, title: String, sub: String) -> void:
 		draw_line(Vector2(ax, r.end.y - 20.0), Vector2(ax, r.end.y - 50.0), Color(0, 0, 0, 0.45), 3.0)
 		draw_colored_polygon(PackedVector2Array([Vector2(ax - 7.0, r.end.y - 44.0), Vector2(ax + 7.0, r.end.y - 44.0), Vector2(ax, r.end.y - 56.0)]), Color(0, 0, 0, 0.45))
 
+func _spring(u: float, damp: float, freq: float) -> float:
+	if u <= 0.0:
+		return 0.0
+	return 1.0 - exp(-damp * u) * cos(freq * u)
+
+func _pack_item_pos(k: int, n: int, albums: bool) -> Vector2:
+	if albums:
+		return Vector2(_pack_cx() + (k - (n - 1) * 0.5) * 410.0, 730.0)
+	var items: Array = pack["items"]
+	var widths: Array = []
+	var total := 60.0 * (n - 1)
+	for it in items:
+		var w := 560.0 if _gear_full(it) else 274.0
+		widths.append(w)
+		total += w
+	var x := _pack_cx() - total * 0.5
+	for i in k:
+		x += float(widths[i]) + 60.0
+	return Vector2(x + float(widths[k]) * 0.5, 730.0)
+
+func _pack_item_rarity(it) -> String:
+	if it is Disc:
+		return String((it as Disc).rarity)
+	var pr := int(gear_defs[String(it["id"])]["price"])
+	return "rare" if pr >= 7 else ("uncommon" if pr == 6 else "common")
+
+func _pack_time_item(k: int) -> float:
+	return D.PACK_BUILD + D.PACK_BURST_WAIT + k * D.PACK_GAP
+
+func _pack_ready_time() -> float:
+	var n := (pack["items"] as Array).size()
+	return _pack_time_item(n - 1) + D.PACK_ANIM * 0.8
+
+func _pack_ready() -> bool:
+	return not pack.is_empty() and pack_t >= _pack_ready_time()
+
+func _pack_cx() -> float:
+	return lerpf(UI_W * 0.5, 950.0, pack_slide)
+
+func _pack_c() -> Vector2:
+	return Vector2(_pack_cx(), 720.0)
+
+func _pack_start() -> void:
+	pack_t = 0.0
+	pack_slide = 0.0
+	pack_rig_open = false
+	pack_burst = false
+	pack_skipped = false
+	pack_revealed.clear()
+	pack_sparks.clear()
+	pack_fx.clear()
+	for i in 90:
+		pack_fx.append({"a0": rng.randf_range(0.0, TAU), "w": rng.randf_range(0.7, 2.2) * (1.0 if rng.randf() < 0.5 else -1.0), "r0": rng.randf_range(160.0, 440.0), "sz": rng.randf_range(2.0, 5.5), "ph": rng.randf_range(0.0, TAU)})
+
+func _pack_spark(p: Vector2, v: Vector2, life: float, col: Color, r: float, drag: float = 1.6) -> void:
+	pack_sparks.append({"p": p, "v": v, "t": 0.0, "life": life, "col": col, "r": r, "drag": drag})
+
+func _pack_burst_fx() -> void:
+	fin_shake = maxf(fin_shake, 0.35)
+	_sfx("boom")
+	var cols := [Color("ffd24a"), Color("ffffff"), Color("8fe9ff"), Color("ff9ec4")]
+	for i in 150:
+		_pack_spark(_pack_c(), Vector2.from_angle(rng.randf_range(0.0, TAU)) * rng.randf_range(400.0, 2000.0), rng.randf_range(0.9, 1.9), cols[rng.randi_range(0, cols.size() - 1)], rng.randf_range(3.0, 9.0))
+
+func _pack_reveal_fx(k: int, n: int, albums: bool, rar: String) -> void:
+	var rp: Dictionary = D.PACK_RARITY[rar]
+	var col := Color(String(rp["col"]))
+	var pos := _pack_item_pos(k, n, albums)
+	var cnt := 18 if rar == "common" else (44 if rar == "uncommon" else 110)
+	for i in cnt:
+		_pack_spark(pos, Vector2.from_angle(rng.randf_range(0.0, TAU)) * rng.randf_range(150.0, 450.0 if rar == "common" else (800.0 if rar == "uncommon" else 1400.0)), rng.randf_range(0.6, 1.4), col.lerp(Color.WHITE, rng.randf_range(0.0, 0.6)), rng.randf_range(2.0, 6.0 if rar != "rare" else 9.0))
+	if rar == "rare":
+		fin_shake = maxf(fin_shake, 0.22)
+		_sfx("boom")
+	elif rar == "uncommon":
+		if tick_player != null:
+			tick_player.pitch_scale = 1.7
+			tick_player.play()
+	else:
+		_sfx("page_turn")
+
+func _tick_pack(delta: float) -> void:
+	if pack.is_empty():
+		return
+	var before := pack_t
+	pack_t += delta
+	pack_slide = move_toward(pack_slide, 1.0 if pack_rig_open else 0.0, delta * 5.0)
+	var items: Array = pack["items"]
+	var n := items.size()
+	var albums: bool = pack["kind"] == "album"
+	if pack_t < D.PACK_BUILD:
+		var step := int(pack_t * 7.0)
+		if step != int(before * 7.0) and tick_player != null:
+			tick_player.pitch_scale = lerpf(0.8, 2.4, pack_t / D.PACK_BUILD)
+			tick_player.play()
+	if not pack_burst and pack_t >= D.PACK_BUILD:
+		pack_burst = true
+		if not pack_skipped:
+			_pack_burst_fx()
+	for k in n:
+		if not (k in pack_revealed) and pack_t >= _pack_time_item(k):
+			pack_revealed.append(k)
+			if not pack_skipped:
+				_pack_reveal_fx(k, n, albums, _pack_item_rarity(items[k]))
+	for i in range(pack_sparks.size() - 1, -1, -1):
+		var f: Dictionary = pack_sparks[i]
+		f["t"] = float(f["t"]) + delta
+		var v: Vector2 = f["v"]
+		v *= exp(-float(f["drag"]) * delta)
+		f["v"] = v
+		f["p"] = Vector2(f["p"]) + v * delta
+		if float(f["t"]) >= float(f["life"]):
+			pack_sparks.remove_at(i)
+
+func _pack_glow(c: Vector2, base: float, col: Color, power: float) -> void:
+	for k in 9:
+		var f := float(k) / 9.0
+		draw_circle(c, base * (1.0 + 0.7 * power * (1.0 - f)), Color(col, minf(0.5, 0.06 * power * (k + 1) / 9.0)))
+
+func _base_origin() -> Vector2:
+	if fin_shake > 0.0:
+		return screen_origin + Vector2(sin(clock * 91.0), cos(clock * 77.0)) * 16.0 * fin_shake * ui_scale
+	return screen_origin
+
+func _hold(r: Rect2, key: String, label: String, cb: Callable) -> void:
+	if not ui_live:
+		return
+	hold_targets.append({"rect": r, "key": key, "label": label})
+	_register(r, _hold_begin.bind(key, cb, r))
+
+func _hold_begin(key: String, cb: Callable, r: Rect2) -> void:
+	hold_key = key
+	hold_cb = cb
+	hold_rect = r
+	hold_t = 0.0
+
+func _tick_hold(delta: float) -> void:
+	if hold_key == "":
+		return
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or not hold_rect.has_point(_ui_mouse()):
+		hold_key = ""
+		hold_t = 0.0
+		return
+	hold_t += delta
+	if hold_t >= D.HOLD_TIME:
+		var cb := hold_cb
+		hold_key = ""
+		hold_t = 0.0
+		cb.call()
+
+func _draw_hold() -> void:
+	for tg: Dictionary in hold_targets:
+		var r: Rect2 = tg["rect"]
+		if hold_key == String(tg["key"]):
+			var f := clampf(hold_t / D.HOLD_TIME, 0.0, 1.0)
+			draw_rect(Rect2(r.position.x, r.end.y - r.size.y * f, r.size.x, r.size.y * f), Color(c_gold, 0.26))
+			draw_rect(Rect2(r.position.x, r.end.y - 10.0, r.size.x * f, 10.0), c_gold)
+			_panel(r.grow(4.0), Color(0, 0, 0, 0), 10, c_gold, 4)
+		elif hold_key == "" and r.has_point(mouse):
+			var lab := String(tg["label"])
+			var w := _text_w(lab, T_SM, true) + 36.0
+			var pr := Rect2(r.get_center().x - w * 0.5, minf(r.end.y + 8.0, UI_H - 56.0), w, 42.0)
+			_panel(pr, Color(0.06, 0.07, 0.09, 0.94), 21, Color(c_gold, 0.6), 2)
+			_text_center(pr, lab, T_SM, c_gold, true)
+
+func _toggle_rig() -> void:
+	pack_rig_open = not pack_rig_open
+
+func _draw_rig_handle() -> void:
+	var hr := Rect2(1784.0 if pack_rig_open else 2496.0, 650.0, 60.0, 120.0)
+	var hot := hr.has_point(mouse)
+	_panel(hr, Color("26292e") if not hot else Color("33373d"), 14, Color(c_gold, 0.7), 2)
+	var cx := hr.get_center().x
+	var cy := hr.get_center().y
+	var dir := 1.0 if pack_rig_open else -1.0
+	draw_polyline(PackedVector2Array([Vector2(cx - 9.0 * dir, cy - 18.0), Vector2(cx + 9.0 * dir, cy), Vector2(cx - 9.0 * dir, cy + 18.0)]), c_gold, 6.0, true)
+	_register(hr, _toggle_rig)
+
+func _pack_take(k: int) -> void:
+	if pack.is_empty() or k in pack_sel:
+		return
+	pack_sel.append(k)
+	_sfx("page_turn")
+	if pack_sel.size() >= int(pack["pick"]):
+		_take_pack()
+
+func _skip_pack() -> void:
+	if not pack.is_empty() and not pack_sel.is_empty():
+		_take_pack()
+		return
+	pack = {}
+	pack_sel.clear()
+
 func _draw_pack() -> void:
 	var items: Array = pack["items"]
 	var pick := int(pack["pick"])
-	var albums_mode: bool = pack["kind"] == "album"
+	var albums: bool = pack["kind"] == "album"
 	var n := items.size()
-	var w := maxf(900.0, n * 320.0 + 120.0) if albums_mode else 760.0
-	var h := 760.0 if albums_mode else 360.0 + n * 256.0
-	var r := _modal_panel(w, h)
-	_heavy_center(Rect2(r.position.x, r.position.y + 30.0, r.size.x, 70.0), String(pack["title"]), T_XL + 8, c_ink)
-	_text_center(Rect2(r.position.x, r.position.y + 96.0, r.size.x, 34.0), "Pick %d. %d of %d chosen." % [pick, pack_sel.size(), pick], T_MD, c_body, true)
-	for k in n:
-		var sel := k in pack_sel
-		var cell: Rect2
-		if albums_mode:
-			var x0 := r.get_center().x - n * 160.0
-			cell = Rect2(x0 + k * 320.0 + 20.0, r.position.y + 160.0, 280.0, 430.0)
-			var d: Disc = items[k]
-			_draw_case(Rect2(cell.position, Vector2(280.0, 248.0)), d)
-			_tip_disc(Rect2(cell.position, Vector2(280.0, 248.0)), d)
-			if cell.has_point(mouse):
-				_audition(d)
+	var t := pack_t
+	var ready := _pack_ready()
+	var full := Rect2(Vector2(-800, -800), Vector2(UI_W, UI_H) + Vector2(1600, 1600))
+	var a_bg := clampf(t / 0.5, 0.0, 1.0)
+	draw_rect(full, Color(0, 0, 0, a_bg))
+	_register(full, func(): pass)
+	if pack_rig_open:
+		var dr := Rect2(1850.0, -20.0, 730.0, UI_H + 40.0)
+		_surface(dr, 0.0, "metal_dark", Color("1d1f23"), Color("121316"))
+		draw_line(Vector2(dr.position.x, 0.0), Vector2(dr.position.x, UI_H), Color(0, 0, 0, 0.7), 5.0)
+		_draw_rack()
+	_draw_rig_handle()
+	var u_b := clampf(t / D.PACK_BUILD, 0.0, 1.0)
+	if t < D.PACK_BUILD + 0.1:
+		var pulse := 0.5 + 0.5 * sin(t * (6.0 + 10.0 * u_b))
+		for k in 8:
+			var f := float(k) / 8.0
+			draw_circle(_pack_c(), (170.0 + f * 330.0) * (0.85 + 0.3 * pulse * u_b), Color(1.0, 0.86, 0.55, 0.05 * (1.0 - f) * (0.3 + u_b * 1.4)))
+		for arm in 3:
+			var pts := PackedVector2Array()
+			for j in 28:
+				var tt := j / 27.0
+				var ang := arm * TAU / 3.0 + t * 2.6 * (1.0 + u_b * 1.5) + tt * 3.4
+				var rad := lerpf(150.0, 430.0 * (1.0 - 0.45 * u_b), tt)
+				pts.append(_pack_c() + Vector2(cos(ang) * rad, sin(ang) * rad * 0.82))
+			draw_polyline(pts, Color(1.0, 0.92, 0.7, 0.18 + 0.4 * u_b), 3.0 + 3.0 * u_b, true)
+		var cols := [Color("ffd24a"), Color("ffffff"), Color("8fe9ff"), Color("ff9ec4")]
+		for i in pack_fx.size():
+			var m: Dictionary = pack_fx[i]
+			var ang2 := float(m["a0"]) + float(m["w"]) * t * (1.0 + 2.0 * u_b)
+			var rad2 := float(m["r0"]) * (1.0 - 0.6 * u_b * u_b)
+			var mp := _pack_c() + Vector2(cos(ang2) * rad2, sin(ang2) * rad2 * 0.82)
+			var tw := 0.35 + 0.65 * pow(sin(t * 6.0 + float(m["ph"])), 2.0)
+			var mc: Color = cols[i % cols.size()]
+			draw_circle(mp, float(m["sz"]) * (1.0 + u_b) * 2.4, Color(mc, 0.12 * tw))
+			draw_circle(mp, float(m["sz"]) * (1.0 + 0.5 * u_b), Color(mc, 0.85 * tw))
+		var amp := 2.0 + 16.0 * u_b * u_b
+		var sh := Vector2(sin(t * 63.0), cos(t * 79.0)) * amp
+		var ps := lerpf(0.55, 1.0, _spring(t / 0.6, 6.0, 9.0))
+		if albums:
+			var pr := Rect2(_pack_c() + sh - Vector2(255.0, 226.0) * ps, Vector2(510.0, 452.0) * ps)
+			_draw_case_pack(pr, {"name": pack["title"], "pick": pick, "show": n}, -1)
 		else:
-			cell = Rect2(r.get_center().x - 278.0, r.position.y + 150.0 + k * 256.0, 556.0, 236.0)
-			_draw_gear(cell, items[k], 0.0)
-		if sel:
-			_panel(cell.grow(10.0), Color(c_gold, 0.12), 14, c_gold, 5)
-		elif cell.has_point(mouse) and pack_sel.size() < pick:
-			_panel(cell.grow(10.0), Color(0, 0, 0, 0), 14, Color(c_gold, 0.5), 3)
-		_register(cell, _toggle_pick.bind(k))
-	var n_sel := pack_sel.size()
-	var label := ("Add to binder" if albums_mode else "Take gear") + (" (%d)" % n_sel if n_sel > 0 else "")
-	_hw_button(Rect2(r.get_center().x - 230.0, r.end.y - 110.0, 300.0, 80.0), label, _take_pack, n_sel > 0, Color("3f9b5a"), T_MD)
-	_hw_button(Rect2(r.get_center().x + 90.0, r.end.y - 110.0, 160.0, 80.0), "Skip", _skip_pack, true, Color("8a8f98"), T_MD)
-
-func _skip_pack() -> void:
-	pack = {}
-	pack_sel.clear()
+			var gr := Rect2(_pack_c() + sh - Vector2(300.0, 160.0) * ps, Vector2(600.0, 320.0) * ps)
+			_cardboard_box(gr, String(pack["title"]), "PICK %d OF %d" % [pick, n])
+	var tb := t - D.PACK_BUILD
+	if tb > 0.0:
+		for k in 14:
+			var a := k * TAU / 14.0 + tb * 0.4
+			var al := clampf(1.0 - tb / 1.0, 0.0, 1.0)
+			draw_colored_polygon(PackedVector2Array([_pack_c(), _pack_c() + Vector2.from_angle(a - 0.05) * 1800.0, _pack_c() + Vector2.from_angle(a + 0.05) * 1800.0]), Color(1.0, 0.92, 0.65, 0.2 * al))
+		for k in 3:
+			var rt := tb - k * 0.1
+			if rt > 0.0 and rt < 0.9:
+				draw_arc(_pack_c(), rt * 2200.0, 0.0, TAU, 120, Color(1.0, 0.9, 0.55, 0.8 * (1.0 - rt / 0.9)), 18.0 * (1.0 - rt / 0.9) + 2.0, true)
+	for k in n:
+		var tk0 := _pack_time_item(k)
+		if t < tk0:
+			continue
+		var rar0 := _pack_item_rarity(items[k])
+		var rp0: Dictionary = D.PACK_RARITY[rar0]
+		var col0 := Color(String(rp0["col"]))
+		var pos0 := _pack_item_pos(k, n, albums)
+		var u0 := (t - tk0) / D.PACK_ANIM
+		var base0 := Vector2(370.0, 328.0) if albums else Vector2(560.0, 238.0)
+		if not albums and not _gear_full(items[k]):
+			base0 = Vector2(base0.x * 0.5 - 6.0, base0.y)
+		var sc0 := _spring(u0, float(rp0["damp"]), float(rp0["freq"]))
+		var beat := 1.0 + float(rp0["pulse"]) * sin(clock * float(rp0["speed"]) + k * 1.7)
+		var ramp := clampf(u0 * 2.0, 0.0, 1.0)
+		if rar0 == "rare":
+			for r in 12:
+				var ra := r * TAU / 12.0 + clock * 0.35
+				draw_colored_polygon(PackedVector2Array([pos0, pos0 + Vector2.from_angle(ra - 0.07) * 480.0 * beat, pos0 + Vector2.from_angle(ra + 0.07) * 480.0 * beat]), Color(col0, 0.18 * ramp * beat))
+		var glow0 := float(rp0["glow"]) * ramp * beat
+		if glow0 > 0.0:
+			_pack_glow(pos0, maxf(base0.x, base0.y) * 0.5 * maxf(sc0, 0.4) * beat, col0, glow0)
+	for k in n:
+		var tk := _pack_time_item(k)
+		if t < tk:
+			continue
+		var it = items[k]
+		var rar := _pack_item_rarity(it)
+		var rp: Dictionary = D.PACK_RARITY[rar]
+		var col := Color(String(rp["col"]))
+		var pos := _pack_item_pos(k, n, albums)
+		var u := (t - tk) / D.PACK_ANIM
+		var sc := _spring(u, float(rp["damp"]), float(rp["freq"]))
+		if sc < 0.06:
+			continue
+		var base := Vector2(370.0, 328.0) if albums else Vector2(560.0, 238.0)
+		var half := not albums and not _gear_full(it)
+		if half:
+			base = Vector2(base.x * 0.5 - 6.0, base.y)
+		var taken := k in pack_sel
+		if u < 0.5:
+			var ring := u / 0.5
+			draw_arc(pos, maxf(base.x, base.y) * (0.4 + 1.4 * ring), 0.0, TAU, 80, Color(col, 0.6 * (1.0 - ring)), 8.0 * (1.0 - ring) + 1.0, true)
+		draw_set_transform(_base_origin() + pos * ui_scale, 0.0, Vector2(ui_scale, ui_scale) * sc)
+		if albums:
+			_draw_case(Rect2(-Vector2(base.x, base.x * 0.886) * 0.5, Vector2(base.x, base.x * 0.886)), it as Disc)
+		elif half:
+			_draw_gear(Rect2(-base * 0.5, Vector2((base.x + 6.0) * 2.0, base.y)), it, 0.0)
+		else:
+			_draw_gear(Rect2(-base * 0.5, base), it, 0.0)
+		draw_set_transform(_base_origin(), 0.0, Vector2(ui_scale, ui_scale))
+		var rect := Rect2(pos - base * sc * 0.5, base * sc)
+		if taken:
+			draw_rect(rect, Color(0, 0, 0, 0.55))
+			_heavy_center(rect, "TAKEN", T_XL, c_gold)
+			_panel(rect.grow(6.0), Color(0, 0, 0, 0), 12, c_gold, 5)
+		elif ready:
+			var cell := Rect2(pos - base * 0.5, base)
+			if albums:
+				_tip_disc(Rect2(cell.position, Vector2(base.x, base.x * 0.886)), it as Disc)
+				if cell.has_point(mouse):
+					_audition(it as Disc)
+			if pack_sel.size() < pick:
+				_hold(cell, "pk%d" % k, "Hold to take", _pack_take.bind(k))
+	for f: Dictionary in pack_sparks:
+		var fa := clampf(1.0 - float(f["t"]) / float(f["life"]), 0.0, 1.0)
+		var fc: Color = f["col"]
+		draw_circle(f["p"], float(f["r"]) * 2.4, Color(fc, 0.18 * fa))
+		draw_circle(f["p"], float(f["r"]) * fa + 0.5, Color(fc, 0.9 * fa))
+	if tb > 0.0 and tb < 0.7:
+		var fl := pow(clampf(1.0 - tb / 0.7, 0.0, 1.0), 1.6)
+		draw_rect(full, Color(1.0, 0.97, 0.88, fl))
+	var ta := clampf((t - D.PACK_BUILD - 0.2) / 0.5, 0.0, 1.0)
+	if ta > 0.0:
+		_heavy_center(Rect2(_pack_cx() - 800.0, 110.0, 1600.0, 110.0), String(pack["title"]).to_upper(), T_XL + 24, Color(c_gold, ta))
+	if ready:
+		_text_center(Rect2(_pack_cx() - 600.0, 236.0, 1200.0, 44.0), "Hold to take  ·  %d of %d taken" % [pack_sel.size(), pick], T_MD, Color(1, 1, 1, 0.85), true)
+		_hw_button(Rect2(_pack_cx() - 110.0, 1180.0, 220.0, 92.0), "Skip", _skip_pack, true, Color("6a6f77"), T_LG)
 
 func _toggle_binder() -> void:
 	binder_open = not binder_open
@@ -4209,7 +4541,7 @@ func _binder_status(i: int) -> Array:
 func _draw_binder_button() -> void:
 	var r := Rect2(60.0, 1312.0, 290.0, 84.0)
 	if phase == "shop":
-		r = Rect2(r_counter.end.x - 420.0, r_counter.position.y + 256.0, 380.0, 76.0)
+		return
 	elif phase in ["map", "fork"]:
 		r = Rect2(70.0, 1336.0, 340.0, 84.0)
 	_hw_button(r, "View binder (%d)" % collection.size(), _toggle_binder, true, C_LEATHER.lightened(0.15), T_MD)
@@ -4319,12 +4651,12 @@ func _edition_marks(c: Vector2, rad: float, e: String) -> void:
 
 func _draw_services(r: Rect2) -> void:
 	if services.is_empty():
-		_text_i(Vector2(r.position.x, r.position.y + 40.0), "No work orders today.", T_SM, Color(1, 1, 1, 0.35))
+		_text_i(Vector2(r.position.x + 10.0, r.position.y + 60.0), "No work orders today.", T_MD, Color(1, 1, 1, 0.45))
 		return
-	var tw := (r.size.x - 30.0) / 2.0
+	var th := 300.0
 	for i in services.size():
 		var sv: Dictionary = services[i]
-		var t := Rect2(r.position.x + i * (tw + 30.0), r.position.y, tw, r.size.y)
+		var t := Rect2(r.position.x, r.position.y + i * (th + 40.0), r.size.x, th)
 		_shadow(t, 4, 6.0)
 		_panel(t, Color("f6e7dc"), 3)
 		var x := t.position.x + 14.0
@@ -4332,7 +4664,7 @@ func _draw_services(r: Rect2) -> void:
 			draw_circle(Vector2(x, t.position.y + 10.0), 3.0, Color("3e2a1c"))
 			x += 18.0
 		draw_line(Vector2(t.position.x + 10.0, t.position.y + 20.0), Vector2(t.end.x - 10.0, t.position.y + 20.0), Color(0, 0, 0, 0.12), 1.0)
-		_text(Vector2(t.position.x + 20.0, t.position.y + 48.0), "WORK ORDER  №%03d" % (gig_n * 10 + i + 1), T_XS, Color("b03a2e"), true)
+		_text(Vector2(t.position.x + 20.0, t.position.y + 52.0), "WORK ORDER  №%03d" % (gig_n * 10 + i + 1), T_XS, Color("b03a2e"), true)
 		var title := ""
 		var desc := ""
 		match String(sv["kind"]):
@@ -4346,9 +4678,9 @@ func _draw_services(r: Rect2) -> void:
 			"upgrade":
 				title = "Unit upgrade"
 				desc = "Take one rack unit to its next level (MK II, MK III)."
-		_heavy(Vector2(t.position.x + 20.0, t.position.y + 92.0), title, T_LG, Color("22252a"))
-		_wrap(Vector2(t.position.x + 20.0, t.position.y + 104.0), desc, tw - 150.0, 17, Color("4c5058"))
-		var pr := Rect2(t.end.x - 112.0, t.end.y - 76.0, 92.0, 56.0)
+		_heavy(Vector2(t.position.x + 20.0, t.position.y + 110.0), title, T_LG, Color("22252a"))
+		_wrap(Vector2(t.position.x + 20.0, t.position.y + 130.0), desc, t.size.x - 40.0, 20, Color("4c5058"))
+		var pr := Rect2(t.end.x - 130.0, t.end.y - 80.0, 108.0, 58.0)
 		_panel(pr, Color(0, 0, 0, 0), 6, Color("b03a2e"), 3)
 		_heavy_center(pr, "$%d" % int(sv["price"]), T_LG, Color("b03a2e"))
 		var active := bench == i or binder_pick == i

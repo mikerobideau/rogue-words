@@ -10,6 +10,16 @@ const BG_DB := -8.0
 const BG_FADE_IN := 1.0
 const BG_FADE_OUT := 0.4
 const COUNT_STEP := 0.6
+const PACK_BUILD := 2.3
+const PACK_BURST_WAIT := 0.45
+const PACK_GAP := 0.85
+const PACK_ANIM := 1.1
+const HOLD_TIME := 0.6
+const PACK_RARITY := {
+	"common": {"glow": 0.3, "col": "ffffff", "damp": 7.5, "freq": 11.0, "pulse": 0.0, "speed": 0.0},
+	"uncommon": {"glow": 0.9, "col": "5fd4ff", "damp": 5.0, "freq": 12.0, "pulse": 0.25, "speed": 3.0},
+	"rare": {"glow": 1.7, "col": "ffd24a", "damp": 3.2, "freq": 13.0, "pulse": 0.5, "speed": 4.5},
+}
 const AUDITION_DB := -4.0
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Pop", "Rock", "Hip-Hop", "Jazz"]
