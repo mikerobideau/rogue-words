@@ -68,6 +68,9 @@ var gate_pool: Array = []
 var burn_mode := false
 var burn_marks: Array[int] = []
 var peek_open := false
+var settings_open := false
+var settings_tab := "scoring"
+var anim_idx := 1
 var peek_ids: Array[int] = []
 var tuner_bonus := 0
 var booed := false
@@ -78,6 +81,29 @@ var map_seed := 0
 var forks_done := 0
 var boss_venue: Dictionary = {}
 var doomed: Array = []
+var score_mode := "song"
+var finale := 0
+var finale_flow := 1.0
+var song_pts := 0
+const EQ_COLS := 16
+const EQ_SEGS := 8
+var eq_level: Array = []
+var eq_peak: Array = []
+var eq_hue: Array = []
+var eq_prev_run := 0
+var fin_t := -1.0
+var fin_from := 0
+var fin_to := 0
+var fin_boomed := false
+var fin_boom_t := 0.0
+var fin_accum := 0.0
+var fin_tick_t := 0.0
+var fin_shake := 0.0
+var fin_flash := 0.0
+var pts_pulse := 0.0
+var flow_pulse := 0.0
+var sparks: Array = []
+var tick_player: AudioStreamPlayer
 var fork_gigs := 0
 var fork_roads: Array = []
 var road_stops: Array = []
@@ -134,8 +160,7 @@ var covers := {}
 var textures := {}
 
 var r_changer := Rect2(60.0, 40.0, 1020.0, 720.0)
-var r_score := Rect2(1104.0, 40.0, 736.0, 720.0)
-var r_clip := Rect2(1104.0, 790.0, 736.0, 510.0)
+var r_score := Rect2(1104.0, 40.0, 736.0, 1260.0)
 var r_wallet := Rect2(60.0, 790.0, 1020.0, 510.0)
 var r_side := Rect2(1350.0, 796.0, 490.0, 500.0)
 var r_rack := Rect2(1880.0, 40.0, 620.0, 1360.0)
@@ -152,9 +177,234 @@ func _ready() -> void:
 	_load_albums()
 	_load_decks()
 	_load_music()
+	_load_prefs()
+	_load_finale_sounds()
 	_to_title()
 
+func _load_prefs() -> void:
+	var cf := ConfigFile.new()
+	if cf.load(D.PREFS_PATH) == OK:
+		var m := String(cf.get_value("game", "score_mode", "song"))
+		score_mode = m if m in ["song", "end"] else "song"
+		anim_idx = clampi(int(cf.get_value("game", "anim_speed", 1)), 0, D.ANIM_SCALE.size() - 1)
+
+func _save_prefs() -> void:
+	var cf := ConfigFile.new()
+	cf.load(D.PREFS_PATH)
+	cf.set_value("game", "score_mode", score_mode)
+	cf.set_value("game", "anim_speed", anim_idx)
+	cf.save(D.PREFS_PATH)
+
+func _anim() -> float:
+	return float(D.ANIM_SCALE[anim_idx])
+
+func _set_score_mode(m: String) -> void:
+	score_mode = m
+	_save_prefs()
+
+func _set_anim(i: int) -> void:
+	anim_idx = i
+	_save_prefs()
+
+func _open_settings() -> void:
+	settings_open = true
+
+func _close_settings() -> void:
+	settings_open = false
+
+func _load_finale_sounds() -> void:
+	if sfx.has("click"):
+		tick_player = AudioStreamPlayer.new()
+		tick_player.stream = (sfx["click"] as AudioStreamPlayer).stream
+		tick_player.volume_db = -8.0
+		add_child(tick_player)
+	var rate := 22050
+	var n := int(rate * 0.7)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	var ph := 0.0
+	var nr := RandomNumberGenerator.new()
+	nr.seed = 3
+	for i in n:
+		var t := float(i) / rate
+		ph += TAU * (36.0 + 60.0 * exp(-t * 16.0)) / rate
+		var v := sin(ph) * 0.95 * exp(-t * 6.5) * minf(1.0, t * 300.0) + nr.randf_range(-1.0, 1.0) * 0.08 * exp(-t * 45.0)
+		data.encode_s16(i * 2, int(clampf(v, -1.0, 1.0) * 30000.0))
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = rate
+	w.stereo = false
+	w.data = data
+	var pl := AudioStreamPlayer.new()
+	pl.stream = w
+	pl.volume_db = -1.0
+	add_child(pl)
+	sfx["boom"] = pl
+
+func _score_lcd() -> Rect2:
+	return Rect2(r_score.position.x + 40.0, r_score.position.y + 50.0, r_score.size.x - 80.0, 130.0)
+
+func _pts_lcd() -> Rect2:
+	var ew := (r_score.size.x - 80.0 - 64.0) * 0.5
+	return Rect2(r_score.position.x + 40.0, r_score.position.y + 540.0, ew, 100.0)
+
+func _flow_lcd() -> Rect2:
+	var ew := (r_score.size.x - 80.0 - 64.0) * 0.5
+	return Rect2(r_score.position.x + 40.0 + ew + 64.0, r_score.position.y + 540.0, ew, 100.0)
+
+func _tick_eq(delta: float) -> void:
+	if eq_level.is_empty():
+		for i in EQ_COLS:
+			eq_level.append(0.0)
+			eq_peak.append(0.0)
+			eq_hue.append(0.0)
+	for i in EQ_COLS:
+		eq_level[i] = maxf(0.0, float(eq_level[i]) - delta * 1.5)
+		eq_peak[i] = maxf(float(eq_level[i]), float(eq_peak[i]) - delta * 0.6)
+
+func _kick_eq(power: float, flow: bool = false) -> void:
+	if eq_level.is_empty():
+		_tick_eq(0.0)
+	for i in EQ_COLS:
+		var bell := 1.0 - absf(float(i) - (EQ_COLS - 1) * 0.5) / EQ_COLS * 0.9
+		var v := clampf(power * bell * rng.randf_range(0.55, 1.0), 0.0, 1.0)
+		if v >= float(eq_level[i]):
+			eq_hue[i] = 1.0 if flow else 0.0
+		eq_level[i] = maxf(float(eq_level[i]), v)
+		eq_peak[i] = maxf(float(eq_peak[i]), v)
+
+func _eq_strip(r: Rect2) -> void:
+	_inset(r, 6.0, Color("0b0c0e"))
+	if eq_level.is_empty():
+		return
+	var cw := (r.size.x - 24.0) / EQ_COLS
+	var sh := (r.size.y - 16.0) / EQ_SEGS
+	for i in EQ_COLS:
+		var lv := float(eq_level[i]) * EQ_SEGS
+		var pk := int(ceil(float(eq_peak[i]) * EQ_SEGS)) - 1
+		for k in EQ_SEGS:
+			var t := float(k) / (EQ_SEGS - 1)
+			var col := (Color(D.FLOW_COLOR) if float(eq_hue[i]) > 0.5 else Color(D.SOUND_COLOR)).lightened(t * 0.35)
+			var on := float(k) < lv
+			var sr := Rect2(r.position.x + 12.0 + i * cw, r.end.y - 8.0 - (k + 1) * sh + 2.0, cw - 4.0, sh - 3.0)
+			_panel(sr, col if on else (Color(col.lightened(0.3), 0.9) if k == pk and pk >= 0 else Color(col, 0.1)), 2)
+
+func _tick() -> void:
+	if tick_player != null:
+		tick_player.pitch_scale = rng.randf_range(1.0, 1.5)
+		tick_player.play()
+
+func _fin_u() -> float:
+	return clampf((fin_t - (D.FIN_WIND * _anim())) / (D.FIN_STREAM * _anim()), 0.0, 1.0)
+
+func _fin_value() -> int:
+	if fin_boomed:
+		return fin_to
+	return fin_from + int(round((fin_to - fin_from) * pow(_fin_u(), 2.2)))
+
+func _spawn_stream() -> void:
+	var a := (_flow_lcd().get_center() + _pts_lcd().get_center()) * 0.5
+	var b := _score_lcd().get_center()
+	sparks.append({"kind": "stream", "a": a, "b": b, "t": 0.0, "life": 0.42, "bend": rng.randf_range(-160.0, 160.0), "col": Color(D.FLOW_COLOR).lightened(0.4), "r": rng.randf_range(5.0, 9.0), "p": a})
+
+func _boom() -> void:
+	fin_boomed = true
+	fin_boom_t = fin_t
+	score_tot = fin_to
+	score_live = fin_to
+	pts_pulse = 1.0
+	if fin_to >= _gig_target():
+		fin_shake = 0.3
+	_sfx("boom")
+
+func _tick_finale(delta: float) -> void:
+	fin_t += delta
+	var wind: float = (D.FIN_WIND * _anim())
+	var end_stream: float = (D.FIN_WIND * _anim()) + (D.FIN_STREAM * _anim())
+	if fin_t < wind:
+		flow_pulse = maxf(flow_pulse, 0.5 + 0.5 * sin(fin_t * 14.0))
+	elif fin_t < end_stream:
+		var u := _fin_u()
+		if fin_to >= _gig_target():
+			fin_shake = maxf(fin_shake, 0.04 + 0.1 * u)
+		fin_accum += delta * lerpf(10.0, 34.0, u)
+		while fin_accum >= 1.0:
+			fin_accum -= 1.0
+			if fin_t < end_stream - 0.4:
+				_spawn_stream()
+		fin_tick_t -= delta
+		if fin_tick_t <= 0.0 and tick_player != null:
+			fin_tick_t = lerpf(0.12, 0.06, u)
+			tick_player.pitch_scale = lerpf(0.9, 1.7, u)
+			tick_player.play()
+	elif not fin_boomed:
+		_boom()
+	if fin_boomed and fin_t - fin_boom_t >= (D.FIN_HOLD * _anim()):
+		fin_t = -1.0
+		resolving = false
+		_end_show()
+
+func _tick_sparks(delta: float) -> void:
+	for i in range(sparks.size() - 1, -1, -1):
+		var f: Dictionary = sparks[i]
+		f["t"] = float(f["t"]) + delta
+		if String(f["kind"]) == "stream":
+			var u := clampf(float(f["t"]) / float(f["life"]), 0.0, 1.0)
+			var a: Vector2 = f["a"]
+			var b: Vector2 = f["b"]
+			f["p"] = a.lerp(b, u) + Vector2(0.0, sin(u * PI) * float(f["bend"]))
+			if u >= 1.0:
+				pts_pulse = maxf(pts_pulse, 0.7)
+				sparks.remove_at(i)
+		else:
+			var v: Vector2 = f["v"]
+			v.y += 1800.0 * delta
+			f["v"] = v
+			f["p"] = Vector2(f["p"]) + v * delta
+			if float(f["t"]) >= float(f["life"]):
+				sparks.remove_at(i)
+
+func _draw_finale() -> void:
+	if fin_flash > 0.0:
+		draw_rect(Rect2(-800.0, -800.0, UI_W + 1600.0, UI_H + 1600.0), Color(1, 0.97, 0.85, 0.7 * fin_flash))
+	for f: Dictionary in sparks:
+		var p: Vector2 = f["p"]
+		var col: Color = f["col"]
+		if String(f["kind"]) == "stream":
+			draw_circle(p, float(f["r"]) * 1.8, Color(col, 0.25))
+			draw_circle(p, float(f["r"]), col)
+		else:
+			var a := clampf(1.0 - float(f["t"]) / float(f["life"]), 0.0, 1.0)
+			var v: Vector2 = f["v"]
+			draw_line(p, p - v * 0.02, Color(col, a), float(f["r"]))
+	if fin_t < 0.0:
+		return
+	var c := _score_lcd().get_center()
+	var mid := Vector2(r_score.get_center().x, r_score.position.y + 1000.0)
+	var txt := "FLOW x%s" % _ff(finale_flow)
+	var col2 := Color(D.FLOW_COLOR).lightened(0.4)
+	var pop := 1.0 + 0.1 * sin(fin_t * 10.0) * (1.0 if not fin_boomed else 0.0)
+	if fin_boomed:
+		var ratio := float(fin_to) / float(_gig_target())
+		var tier := 3 if ratio >= D.TIER_GREAT else (2 if ratio >= D.TIER_GOOD else (1 if ratio >= 1.0 else 0))
+		txt = ["FALLING SHORT", "TARGET CLEARED", "BIG APPLAUSE!", "ENCORE!"][tier]
+		col2 = [c_bad.lightened(0.3), Color("7fe0a0"), Color("f2c14e"), Color("ffd96a")][tier]
+		pop = 1.0 + 0.12 * maxf(0.0, 1.0 - (fin_t - fin_boom_t) * 3.0)
+	var fs := int(T_HERO * pop)
+	var w := _heavy_w(txt, fs)
+	_panel(Rect2(mid.x - w * 0.5 - 30.0, mid.y - fs * 0.9, w + 60.0, fs * 1.5), Color(0.05, 0.06, 0.08, 0.85), int(fs * 0.4))
+	_heavy_center(Rect2(mid.x - w * 0.5 - 30.0, mid.y - fs * 0.9, w + 60.0, fs * 1.5), txt, fs, col2)
+
 func _process(delta: float) -> void:
+	pts_pulse = maxf(0.0, pts_pulse - delta * 2.5)
+	_tick_eq(delta)
+	flow_pulse = maxf(0.0, flow_pulse - delta * 2.5)
+	fin_flash = maxf(0.0, fin_flash - delta * 2.2)
+	fin_shake = maxf(0.0, fin_shake - delta * (0.5 if fin_t >= 0.0 and not fin_boomed else 2.2))
+	if not sparks.is_empty():
+		_tick_sparks(delta)
+	if fin_t >= 0.0:
+		_tick_finale(delta)
 	message_t = maxf(0.0, message_t - delta)
 	pickup_shake = maxf(0.0, pickup_shake - delta)
 	for i in comp_flash.size():
@@ -175,10 +425,11 @@ func _process(delta: float) -> void:
 			if step_i < steps.size():
 				_play_step(steps[step_i])
 				step_i += 1
-				step_t = 0.42
+				step_t = maxf(D.STEP_MIN, D.STEP_FIRST - D.STEP_RAMP * step_i) * _anim()
 			elif step_i == steps.size():
 				step_i += 1
-				step_t = 0.9
+				step_t = D.SONG_TAIL * _anim()
+				music_t = minf(music_t, D.SONG_TAIL * _anim())
 			elif music_t <= 0.0:
 				_finish_song()
 		music_t = maxf(0.0, music_t - delta)
@@ -195,6 +446,9 @@ func _process(delta: float) -> void:
 func _unhandled_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton:
 		var mb := ev as InputEventMouseButton
+		if fin_t >= 0.0 and mb.pressed and not fin_boomed:
+			fin_t = (D.FIN_WIND * _anim()) + (D.FIN_STREAM * _anim())
+			return
 		if binder_open and mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 			_flip_binder(-1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
@@ -1086,7 +1340,39 @@ func _sort_less(a: Disc, b: Disc) -> bool:
 			return ka[i] < kb[i]
 	return false
 
+func _discard_hand() -> void:
+	if digs <= 0 or playing or resolving:
+		return
+	_return_held()
+	var old: Array[int] = []
+	for p in wallet.size():
+		if wallet[p] >= 0:
+			old.append(wallet[p])
+			wallet[p] = -1
+	if old.is_empty() and draw_pile.is_empty() and discard.is_empty():
+		return
+	for p in wallet.size():
+		if draw_pile.is_empty() and not discard.is_empty():
+			draw_pile = discard.duplicate()
+			discard.clear()
+			_shuffle(draw_pile)
+		if not draw_pile.is_empty():
+			wallet[p] = draw_pile.pop_back()
+	var kept := 0
+	for p in wallet.size():
+		if wallet[p] < 0 and not old.is_empty():
+			wallet[p] = old.pop_back()
+			kept += 1
+	discard.append_array(old)
+	digs -= 1
+	_apply_sort()
+	_sfx("page_turn")
+	_say("Discarded your hand and drew %d new CDs." % (wallet.size() - kept))
+
 func _start_dig() -> void:
+	if not D.DIG_PICK:
+		_discard_hand()
+		return
 	if digs <= 0 or playing:
 		return
 	_return_held()
@@ -1247,7 +1533,9 @@ func _pocket_rect(p: int) -> Rect2:
 
 func _draw() -> void:
 	_begin_draw()
-	var modal := phase in ["result", "over", "won", "end"] or not pack.is_empty() or binder_open
+	if fin_shake > 0.0:
+		draw_set_transform(screen_origin + Vector2(sin(clock * 91.0), cos(clock * 77.0)) * 16.0 * fin_shake * ui_scale, 0.0, Vector2(ui_scale, ui_scale))
+	var modal := phase in ["result", "over", "won", "end"] or not pack.is_empty() or binder_open or settings_open
 	ui_live = not modal and not playing
 	hover_disc = null
 	if phase == "map":
@@ -1273,9 +1561,9 @@ func _draw() -> void:
 		_draw_changer()
 		_draw_score_panel()
 		_draw_wallet()
-		_draw_crowd()
 		_draw_rack()
 	_draw_floats()
+	_draw_finale()
 	_draw_toast()
 	_draw_held()
 	ui_live = true
@@ -1285,6 +1573,8 @@ func _draw() -> void:
 		_draw_dig_offer()
 	if peek_open:
 		_draw_peek()
+	if settings_open:
+		_draw_settings()
 	match phase:
 		"result":
 			_draw_result()
@@ -1357,12 +1647,21 @@ func _led(c: Vector2, rad: float, col: Color, on: float) -> void:
 	draw_circle(c, rad, col.darkened(0.78).lerp(col.lightened(0.2), on))
 	draw_circle(c - Vector2(rad, rad) * 0.3, rad * 0.35, Color(1, 1, 1, 0.18 + 0.45 * on))
 
-func _lcd(r: Rect2, text: String, col: Color, size: int, ghost: String = "") -> void:
+func _lcd(r: Rect2, text: String, col: Color, size: int, ghost: String = "", align: String = "right") -> void:
 	_panel(r.grow(5.0), Color("0a0b0d"), 9)
 	_grad_panel(r, 6.0, col.darkened(0.9).lerp(Color("0d1210"), 0.4), Color("06080a"))
 	var g := ghost if ghost != "" else "8".repeat(text.length())
-	_text_right(r.end.x - 14.0, r.get_center().y + _vc(font_bold, size), g, size, Color(col, 0.04), true)
-	_text_right(r.end.x - 14.0, r.get_center().y + _vc(font_bold, size), text, size, col, true)
+	var yb := r.get_center().y + _vc(font_bold, size)
+	var gx := r.end.x - 14.0 - _text_w(g, size, true)
+	var tx := r.end.x - 14.0 - _text_w(text, size, true)
+	if align == "center":
+		gx = r.get_center().x - _text_w(g, size, true) * 0.5
+		tx = r.get_center().x - _text_w(text, size, true) * 0.5
+	elif align == "left":
+		gx = r.position.x + 14.0
+		tx = r.position.x + 14.0
+	_text(Vector2(gx, yb), g, size, Color(col, 0.04), true)
+	_text(Vector2(tx, yb), text, size, col, true)
 	draw_colored_polygon(PackedVector2Array([r.position + Vector2(6, 4), r.position + Vector2(r.size.x * 0.45, 4), r.position + Vector2(r.size.x * 0.3, r.size.y * 0.5), r.position + Vector2(6, r.size.y * 0.5)]), Color(1, 1, 1, 0.04))
 
 func _silk(pos: Vector2, s: String, size: int, col: Color = Color("d9dde2")) -> void:
@@ -1913,7 +2212,7 @@ func _draw_console() -> void:
 		_hw_button(Rect2(x, cy, 198.0, bh), "Discard", _start_dig, can, black, T_SM)
 	for k in maxi(D.DIGS, digs):
 		_led(Vector2(x + 224.0 + k * (30.0 if digs <= D.DIGS else 22.0), cy + bh * 0.5), 7.0, led, 1.0 if k < digs else 0.0)
-	var help := "PICK 1 CD TO DISCARD" if dig_mode else "PICK 1 OF %d" % D.DIG_OFFERS
+	var help := "PICK 1 CD TO DISCARD" if dig_mode else ("PICK 1 OF %d" % D.DIG_OFFERS if D.DIG_PICK else "REDRAW YOUR HAND")
 	_silk(Vector2(x, r.end.y - 10.0), help, 13, ink)
 	x += 296.0
 	_console_divider(r, x)
@@ -2023,7 +2322,7 @@ func _draw_side() -> void:
 	for k in D.DIGS:
 		_led(Vector2(x + w - 10.0 - (D.DIGS - 1 - k) * 30.0, dy + 44.0), 7.0, Color("ffb347"), 1.0 if k < digs else 0.0)
 	var left := draw_pile.size()
-	var help := "Pick an album to discard." if dig_mode else "Discard 1 wallet album, then pick 1 of %d from your binder (%d left)." % [D.DIG_OFFERS, left]
+	var help := "Pick an album to discard." if dig_mode else ("Discard 1 wallet album, then pick 1 of %d from your binder (%d left)." % [D.DIG_OFFERS, left] if D.DIG_PICK else "Discard every album in your wallet and draw a fresh hand (%d left in the binder)." % left)
 	_wrap(Vector2(x, dy + 70.0), help, w, T_SM, Color("2b2e33"))
 	var by := r.end.y - 116.0
 	if dig_mode:
@@ -2191,6 +2490,34 @@ func _close_peek() -> void:
 	peek_open = false
 	peek_ids.clear()
 
+func _choice(r: Rect2, label: String, on: bool, cb: Callable) -> void:
+	_hw_button(r, label, cb, true, Color("3f9b5a") if on else Color("5a5f67"), T_MD)
+
+func _draw_settings() -> void:
+	var r := _modal_panel(1200.0, 760.0)
+	_register(Rect2(Vector2(-800, -800), Vector2(UI_W, UI_H) + Vector2(1600, 1600)), func(): pass)
+	_heavy_center(Rect2(r.position.x, r.position.y + 26.0, r.size.x, 70.0), "Settings", T_XL, c_ink)
+	var tab := Rect2(r.position.x + 60.0, r.position.y + 120.0, 220.0, 56.0)
+	_panel(tab, Color("2b2e33"), 12)
+	_text_center(tab, "Scoring", T_MD, Color("f4efe4"), true)
+	draw_line(Vector2(r.position.x + 40.0, tab.end.y + 8.0), Vector2(r.end.x - 40.0, tab.end.y + 8.0), Color("2b2e33"), 4.0)
+	var x := r.position.x + 60.0
+	var w := r.size.x - 120.0
+	var y := r.position.y + 220.0
+	_text(Vector2(x, y), "SCORING SYSTEM", 16, c_muted, true)
+	var half := (w - 24.0) * 0.5
+	_choice(Rect2(x, y + 20.0, half, 76.0), "Flow each song", score_mode == "song", _set_score_mode.bind("song"))
+	_choice(Rect2(x + half + 24.0, y + 20.0, half, 76.0), "Flow at end", score_mode == "end", _set_score_mode.bind("end"))
+	_text(Vector2(x, y + 134.0), "Flow multiplies each song as it plays." if score_mode == "song" else "Flow multiplies the whole set once at the end.", T_SM, c_body, true)
+	var y2 := y + 210.0
+	_text(Vector2(x, y2), "ANIMATION SPEED", 16, c_muted, true)
+	var n: int = D.ANIM_NAMES.size()
+	var bw := (w - 16.0 * (n - 1)) / n
+	for i in n:
+		_choice(Rect2(x + i * (bw + 16.0), y2 + 20.0, bw, 76.0), String(D.ANIM_NAMES[i]), anim_idx == i, _set_anim.bind(i))
+	_text(Vector2(x, y2 + 134.0), "How fast the score sequence plays out.", T_SM, c_body, true)
+	_hw_button(Rect2(r.get_center().x - 160.0, r.end.y - 110.0, 320.0, 80.0), "Close", _close_settings, true, Color("3f9b5a"), T_LG)
+
 func _draw_peek() -> void:
 	var r := _modal_panel(1300.0, 620.0)
 	_register(Rect2(Vector2(-800, -800), Vector2(UI_W, UI_H) + Vector2(1600, 1600)), func(): pass)
@@ -2296,6 +2623,103 @@ func _draw_rack() -> void:
 		_panel(tr2, Color(0.06, 0.07, 0.09, 0.92), 20)
 		_text_center(tr2, nm, T_SM, c_gold, true)
 
+func _marker_w(s: String, size: int) -> float:
+	return _marker_font().get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+
+func _marker_fit(s: String, size: int, maxw: float) -> int:
+	var w := _marker_w(s, size)
+	return size if w <= maxw else maxi(10, int(floor(size * maxw / w)))
+
+func _marker_l(x: float, y: float, s: String, size: int, col: Color, rot: float = 0.0) -> void:
+	_marker(Vector2(x + _marker_w(s, size) * 0.5, y), s, size, col, rot)
+
+func _marker_lines(s: String, size: int, maxw: float) -> Array:
+	var lines: Array = []
+	var cur := ""
+	for word in s.split(" "):
+		var t := word if cur == "" else cur + " " + word
+		if cur != "" and _marker_w(t, size) > maxw:
+			lines.append(cur)
+			cur = word
+		else:
+			cur = t
+	if cur != "":
+		lines.append(cur)
+	return lines
+
+func _tag_names(tags: Array) -> String:
+	var out: Array = []
+	for t: Array in tags:
+		out.append(String(t[1]))
+	return ", ".join(out)
+
+func _draw_paper(p: Rect2, tgt: int) -> void:
+	_shadow(p, 2, 6.0)
+	_panel(p, Color("f4efe4"), 6)
+	draw_rect(Rect2(p.get_center().x - 50.0, p.position.y - 12.0, 100.0, 26.0), Color(1, 1, 1, 0.55))
+	var ink := Color("15171b")
+	var red := Color("c4161c")
+	var nm := String(venue.get("name", ""))
+	_marker(Vector2(p.get_center().x, p.position.y + 54.0), nm, _marker_fit(nm, 34, p.size.x - 60.0), ink, -0.012)
+	var big := _fmt_int(tgt)
+	_marker(Vector2(p.get_center().x, p.position.y + 130.0), big, _marker_fit(big, 92, p.size.x - 40.0), red, 0.01)
+	var row := p.position.y + 196.0
+	if _boss_kind() != "":
+		_marker(Vector2(p.get_center().x, p.position.y + 180.0), "BOSS  ·  " + String(_boss_info(venue["challenge"])["short"]), 20, red.darkened(0.2), 0.0)
+	var left := p.position.x + 26.0
+	var colw := (p.size.x - 250.0 - 26.0 - 20.0) * 0.5
+	var hates_zero := _boss_kind() == "hates"
+	var like_head := "+%d points" % D.LIKE
+	var hate_head := "No points" if hates_zero else "Half points"
+	var like_names := _tag_names(venue.get("likes", []))
+	var hate_names := _tag_names(venue.get("dislikes", []))
+	var hx := left + colw + 20.0
+	_marker_l(left, row + 36.0, like_head, _marker_fit(like_head, 34, colw), ink, -0.01)
+	_marker_l(left, row + 100.0, like_names, _marker_fit(like_names, 30, colw), Color("1f7a3a"), 0.0)
+	_marker_l(hx, row + 36.0, hate_head, _marker_fit(hate_head, 34, colw), red, -0.01)
+	_marker_l(hx, row + 100.0, hate_names, _marker_fit(hate_names, 30, colw), red, 0.0)
+	var note := Rect2(p.end.x - 236.0, row - 10.0, 212.0, 214.0)
+	_shadow(note, 2, 5.0)
+	_panel(note, Color("fff3a8") if not call.is_empty() else Color("e9e4d2"), 2)
+	draw_rect(Rect2(note.get_center().x - 36.0, note.position.y - 8.0, 72.0, 20.0), Color(1, 1, 1, 0.55))
+	if call.is_empty():
+		var idle := _marker_lines("No requests right now", 22, note.size.x - 30.0)
+		for k in idle.size():
+			_marker(Vector2(note.get_center().x, note.get_center().y - 20.0 + k * 30.0), String(idle[k]), 22, Color("6f7378"), 0.0)
+		return
+	_marker(Vector2(note.get_center().x, note.position.y + 36.0), "REQUEST", 18, Color("6f6a3a"), 0.0)
+	var lines := _marker_lines(_call_text(call), 32, note.size.x - 28.0)
+	for k in lines.size():
+		_marker(Vector2(note.get_center().x, note.position.y + 92.0 + k * 40.0), String(lines[k]), 32, ink, 0.02)
+	_marker(Vector2(note.get_center().x, note.end.y - 34.0), "+%d points" % _request_pts(), 26, Color("1f7a3a"), -0.02)
+
+func _song_display(r: Rect2, text: String, moving: bool) -> void:
+	_panel(r.grow(5.0), Color("0a0b0d"), 9)
+	_grad_panel(r, 6.0, Color("dfe7d2"), Color("b9c6aa"))
+	draw_colored_polygon(PackedVector2Array([r.position + Vector2(6, 4), r.position + Vector2(r.size.x * 0.45, 4), r.position + Vector2(r.size.x * 0.3, r.size.y * 0.5), r.position + Vector2(6, r.size.y * 0.5)]), Color(1, 1, 1, 0.12))
+	var ink := Color("1c2a1e")
+	var size := 40
+	var tw := _text_w(text, size, true)
+	var pad := 22.0
+	var yb := r.get_center().y + _vc(font_bold, size)
+	if not moving:
+		_text(Vector2(r.get_center().x - tw * 0.5, yb), text, size, Color(ink, 0.55), true)
+		return
+	var period := tw + 220.0
+	var off := fmod(float(Time.get_ticks_msec()) * 0.001 * 110.0, period)
+	var copies := int(ceil(r.size.x / period)) + 1
+	var xs: Array = []
+	for i in text.length():
+		xs.append(_text_w(text.substr(0, i), size, true))
+	for c in range(-copies, 2):
+		var base := r.end.x - pad - off + c * period
+		for i in text.length():
+			var cx: float = base + float(xs[i])
+			var cw := _text_w(text.substr(i, 1), size, true)
+			var a := clampf((cx - (r.position.x + pad)) / 36.0, 0.0, 1.0) * clampf(((r.end.x - pad) - (cx + cw)) / 36.0, 0.0, 1.0)
+			if a > 0.0:
+				_text(Vector2(cx, yb), text.substr(i, 1), size, Color(ink, a), true)
+
 func _draw_score_panel() -> void:
 	var r := r_score
 	_shadow(r, 16, 12.0)
@@ -2307,62 +2731,71 @@ func _draw_score_panel() -> void:
 	var x := r.position.x + 40.0
 	var w := r.size.x - 80.0
 	var y := r.position.y
-	var shown := score_live if playing else score_tot
+	var shown := 0
+	if score_mode == "song":
+		shown = score_live if playing else score_tot
+	elif fin_t >= 0.0:
+		shown = _fin_value()
+	elif phase == "end":
+		shown = score_tot
+	var pts_v := song_pts
+	if score_mode == "end":
+		pts_v = fin_from if fin_t >= 0.0 else (score_live if playing else score_tot)
 	var tgt := _gig_target()
-	var o := _focus_slot()
 	var fc := Color(D.FLOW_COLOR).lightened(0.3)
+	var pc := Color(D.SOUND_COLOR).lightened(0.25)
 	var dim := Color("8d939b")
-	_silk(Vector2(x, y + 54.0), "SCORE", 14, dim)
-	_lcd(Rect2(x, y + 66.0, w, 96.0), _fmt_int(shown), _score_color(float(shown)), T_XL, "88888")
-	_silk(Vector2(x, y + 196.0), "TARGET", 14, dim)
-	_silk(Vector2(x + w * 0.5 + 10.0, y + 196.0), "FLOW", 14, dim)
-	_lcd(Rect2(x, y + 208.0, w * 0.5 - 10.0, 64.0), _fmt_int(tgt), Color("ff9a6b"), T_LG, "8888")
-	_lcd(Rect2(x + w * 0.5 + 10.0, y + 208.0, w * 0.5 - 10.0, 64.0), "x" + _ff(flow_live), fc, T_LG, "x8.88")
-	var meter := Rect2(x, y + 298.0, w, 48.0)
+	_draw_paper(Rect2(x, y + 818.0, w, 410.0), tgt)
+	_silk(Vector2(x, y + 322.0), "NOW PLAYING", 15, Color(1, 1, 1, 0.9))
+	var cur := _playing_disc()
+	var song := "READY"
+	var moving := false
+	if cur != null:
+		song = "%s  -  %s" % [cur.title, cur.band]
+		moving = true
+	elif resolving:
+		song = "SET COMPLETE"
+	_song_display(Rect2(x, y + 334.0, w, 76.0), song, moving)
+	_eq_strip(Rect2(x, y + 424.0, w, 62.0))
+	var meter := Rect2(x, y + 206.0, w, 56.0)
 	_inset(meter, 6.0, Color("0b0c0e"))
 	var frac := clampf(float(shown) / (2.0 * tgt), 0.0, 1.0)
+	var gfrac := 0.0
+	if score_mode == "end" and resolving and fin_t < 0.0:
+		gfrac = clampf(float(pts_v) * flow_live / (2.0 * tgt), 0.0, 1.0)
 	var bars := 28
 	var bw := (meter.size.x - 24.0) / bars
 	for k in bars:
 		var on := float(k) / bars < frac
+		var ghost := not on and float(k) / bars < gfrac
 		var col := _score_color(float(k) / bars * 2.0 * tgt)
 		var br := Rect2(meter.position.x + 12.0 + k * bw, meter.position.y + 10.0, bw - 4.0, meter.size.y - 20.0)
-		_panel(br, col if on else Color(col, 0.08), 2)
-	for tk: float in [0.5, 0.75]:
-		var tx := meter.position.x + 12.0 + (meter.size.x - 24.0) * tk
+		_panel(br, col if on else (Color(col, 0.38) if ghost else Color(col, 0.08)), 2)
+	var span := meter.size.x - 24.0
+	for tier: Array in [[0.5, "TARGET", tgt], [0.75, "APPLAUSE", int(round(tgt * D.TIER_GOOD))], [1.0, "ENCORE", int(round(tgt * D.TIER_GREAT))]]:
+		var tx := meter.position.x + 12.0 + span * float(tier[0])
+		var hit := float(shown) >= float(tier[2])
 		draw_line(Vector2(tx, meter.position.y + 4.0), Vector2(tx, meter.end.y - 4.0), Color(1, 1, 1, 0.55), 2.0)
-	_text_right(x + w, meter.end.y + 24.0, "TARGET %s  ·  APPLAUSE %s  ·  ENCORE %s" % [_fmt_int(tgt), _fmt_int(int(round(tgt * D.TIER_GOOD))), _fmt_int(int(round(tgt * D.TIER_GREAT)))], 13, dim, true)
-	draw_line(Vector2(x, y + 396.0), Vector2(x + w, y + 396.0), Color(1, 1, 1, 0.1), 2.0)
-	_silk(Vector2(x, y + 428.0), ("SLOT %d" % (o + 1)) if o >= 0 else "SLOT", 14, dim)
-	if o >= 0:
-		var half := D.SETLIST / 2
-		var chips1: Array = ["SET 1" if o < half else "SET 2", "ODD" if o % 2 == 0 else "EVEN"]
-		if o == 0:
-			chips1.append("FIRST")
-		elif o == D.SETLIST - 1:
-			chips1.append("LAST")
-		var cx := x + 90.0
-		for t in chips1:
-			cx += _info_chip(cx, y + 410.0, String(t), fc) + 6.0
-		var nbrs: Array = []
-		if o > 0:
-			nbrs.append(["PREV", tray[o - 1]])
-		if o >= half:
-			nbrs.append(["ABOVE", tray[D.SETLIST - 1 - o]])
-		if o < D.SETLIST - 1:
-			nbrs.append(["NEXT", tray[o + 1]])
-		var ny := y + 462.0
-		for nb: Array in nbrs:
-			_silk(Vector2(x, ny + 22.0), String(nb[0]), 13, dim)
-			var nd := int(nb[1])
-			if nd >= 0 and collection[nd].genre >= 0:
-				var nc: Disc = collection[nd]
-				_info_chip(x + 90.0, ny, "%s  %s" % [D.GENRE_SHORT[nc.genre], D.ERAS[nc.era]], Color("5d626a"))
-			else:
-				_info_chip(x + 90.0, ny, "EMPTY" if nd < 0 else "MIX", Color("3a3d42"))
-			ny += 44.0
-	_text_right(x + w, y + 610.0, ("SLOT %d / %d" % [mini(played.size() + 1, D.SETLIST), D.SETLIST]) if resolving else ("%d / %d LOADED" % [_placed(), D.SETLIST]), 14, dim, true)
-	_hw_button(Rect2(x, y + 624.0, w, 72.0), "PLAY SET" if not resolving else "PLAYING", _play, _can_play(), Color("3f9b5a"), T_LG)
+		var lab := "%s %s" % [tier[1], _fmt_int(int(tier[2]))]
+		var lw := _text_w(lab, 13, true)
+		var lx := minf(tx - lw * 0.5, x + w - lw)
+		_text(Vector2(lx, meter.end.y + 26.0), lab, 13, c_gold if hit else dim, true)
+	var sl := _score_lcd()
+	_lcd(sl, _fmt_int(shown), _score_color(float(shown)), 96, "88,888", "center")
+	_silk(Vector2(sl.position.x + 14.0, sl.position.y + 24.0), "SCORE", 13, Color(_score_color(float(shown)), 0.55))
+	var pl := _pts_lcd()
+	var fl := _flow_lcd()
+	_silk(Vector2(pl.position.x, pl.position.y - 14.0), "POINTS" if score_mode == "end" else "SONG POINTS", 14, dim)
+	_silk(Vector2(fl.position.x, fl.position.y - 14.0), "FLOW", 14, dim)
+	if pts_pulse > 0.0:
+		_panel(pl.grow(4.0 + 12.0 * pts_pulse), Color(pc, 0.5 * pts_pulse), 14)
+	if flow_pulse > 0.0:
+		_panel(fl.grow(4.0 + 12.0 * flow_pulse), Color(fc, 0.5 * flow_pulse), 14)
+	_lcd(pl, _fmt_int(pts_v), pc, int(64 * (1.0 + 0.2 * pts_pulse)), "888")
+	_lcd(fl, _ff(flow_live), fc, int(64 * (1.0 + 0.2 * flow_pulse)), "8.88", "left")
+	_heavy_center(Rect2(pl.end.x, pl.position.y, fl.position.x - pl.end.x, pl.size.y), "×", T_XL, dim)
+	_text_right(x + w, y + 670.0, ("SLOT %d / %d" % [mini(played.size() + 1, D.SETLIST), D.SETLIST]) if resolving else ("%d / %d LOADED" % [_placed(), D.SETLIST]), 14, dim, true)
+	_hw_button(Rect2(x, y + 686.0, w, 92.0), "PLAY SET" if not resolving else "PLAYING", _play, _can_play(), Color("3f9b5a"), T_LG)
 
 func _focus_slot() -> int:
 	if now_slot >= 0:
@@ -3375,6 +3808,9 @@ func _start_show(v: Dictionary) -> void:
 	held = -1
 	score_tot = 0
 	score_live = 0
+	finale = 0
+	finale_flow = 1.0
+	song_pts = 0
 	resolving = false
 	sel_slot = -1
 	set_res = {}
@@ -3405,6 +3841,8 @@ func _gig_target() -> int:
 		t *= D.HEADLINER_MULT
 	if _boss_kind() == "target":
 		t *= D.BOSS_TARGET
+	if score_mode == "end":
+		t *= D.END_TARGET_SCALE
 	return int(round(t))
 
 func _open_slot() -> int:
@@ -3785,7 +4223,7 @@ func _score_set(ids: Array) -> Dictionary:
 		if not req_done and not call_tag.is_empty() and _tag_match(d, call_tag):
 			req_done = true
 			_s_add(out, st, "call", "Request! +%d" % req, req)
-		if absf(fl - 1.0) > 0.001:
+		if absf(fl - 1.0) > 0.001 and score_mode == "song":
 			_s_mult(out, st, "fx", "Flow x%s" % _ff(fl), fl)
 		var bc: Dictionary = venue.get("challenge", {})
 		var bdc := 0
@@ -3805,7 +4243,10 @@ func _score_set(ids: Array) -> Dictionary:
 		fl = fl_next
 		slots.append({"score": sc, "steps": out, "fired": fired, "cash": cash_gain, "flow_start": fl_start, "flow_end": fl})
 		total += sc
-	return {"slots": slots, "total": total}
+	var end_extra := 0
+	if score_mode == "end":
+		end_extra = int(round(total * fl)) - total
+	return {"slots": slots, "total": total, "finale": end_extra, "finale_flow": fl}
 
 func _play() -> void:
 	if not _can_play():
@@ -3832,14 +4273,16 @@ func _start_slot(s: int) -> void:
 	if d.cdr:
 		steps.push_front({"src": "mix", "text": "Mix: %s, %s" % [D.GENRES[d.genre], D.ERAS[d.era]], "n": 0, "ci": -1})
 	var tot := int(result["score"])
+	song_pts = int(round(float(tot) / maxf(0.001, float(result["flow_start"]))))
 	steps.append({"src": "score", "text": "+%s" % _fmt_int(tot), "n": 1, "ci": -1, "run": tot})
 	song_slot = s
 	now_slot = s
 	slot_flash[s] = 1.0
 	readout[s] = {"text": "0", "pts": 0}
 	step_i = 0
-	step_t = 0.35
+	step_t = D.SONG_START * _anim()
 	score_live = score_tot
+	eq_prev_run = 0
 	playing = true
 	_sfx("click")
 	_music_start(d)
@@ -3862,8 +4305,18 @@ func _play_step(st: Dictionary) -> void:
 			col = c_gold
 	if src == "flowup":
 		flow_live = float(st["flow"])
+		flow_pulse = 1.0
+		_kick_eq(0.4, true)
+		_tick()
+	if src == "score":
+		pts_pulse = 1.0
+		_tick()
 	if st.has("run"):
+		var dl := absi(int(st["run"]) - eq_prev_run)
+		eq_prev_run = int(st["run"])
+		_kick_eq(clampf(float(dl) / maxf(8.0, float(_gig_target()) * 0.12), 0.2, 1.0), src in ["fx", "carry", "flowup"])
 		ro["text"] = _fmt_int(int(st["run"]))
+		score_live = score_tot + int(st["run"])
 	if int(st["ci"]) >= 0:
 		comp_flash[int(st["ci"])] = 1.0
 	for f: Dictionary in floats:
@@ -3900,7 +4353,18 @@ func _finish_song() -> void:
 		_start_slot(played.size())
 	else:
 		resolving = false
-		_end_show()
+		finale = int(set_res.get("finale", 0))
+		finale_flow = float(set_res.get("finale_flow", 1.0))
+		if finale > 0:
+			fin_from = score_tot
+			fin_to = score_tot + finale
+			fin_boomed = false
+			fin_accum = 0.0
+			fin_tick_t = 0.0
+			fin_t = 0.0
+			resolving = true
+		else:
+			_end_show()
 
 func _new_call() -> void:
 	var left: Array = []
@@ -3973,6 +4437,8 @@ func _draw_show_end() -> void:
 	_heavy_center(Rect2(r.position.x, r.position.y + 40.0, r.size.x, 90.0), title, T_HERO, c_good if not booed else c_bad)
 	_text_center(Rect2(r.position.x, r.position.y + 140.0, r.size.x, 40.0), "%s: %s of %s points" % [venue["name"], _fmt_int(score_tot), _fmt_int(_gig_target())], T_LG, c_ink, true)
 	var sub := "The tour ends here." if booed else ("You beat the final boss. %d shows on the road." % gig_n if final else ("You beat the boss." if bool(venue.get("headliner", false)) else "%d of %d songs played · final score %s" % [played.size(), D.SETLIST, _fmt_int(score_tot)]))
+	if finale > 0 and not booed:
+		sub = "Flow x%s added %s · final score %s" % [_ff(finale_flow), _fmt_int(finale), _fmt_int(score_tot)]
 	_text_center(Rect2(r.position.x, r.position.y + 186.0, r.size.x, 40.0), sub, T_MD, c_body)
 	var x := r.position.x + 220.0
 	var w := r.size.x - 440.0
@@ -4014,43 +4480,6 @@ func _tag_chips(x: float, y: float, label: String, tags: Array, col: Color) -> v
 		_panel(cr, bg, 12, col, 3)
 		_text_center(cr, t, T_XS, Color.WHITE, true)
 		cx += w + 8.0
-
-func _draw_crowd() -> void:
-	var r := r_clip
-	_shadow(r, 6, 10.0)
-	_panel(r, Color("f4efe4"), 6)
-	var clip := Rect2(r.get_center().x - 70.0, r.position.y - 14.0, 140.0, 34.0)
-	_brushed(clip, 6.0, Color("9aa0a6"), 5)
-	var x := r.position.x + 30.0
-	var w := r.size.x - 60.0
-	_heavy(Vector2(x, r.position.y + 70.0), String(venue.get("name", "")), T_XL, c_ink)
-	if _boss_kind() != "":
-		_text(Vector2(x, r.position.y + 104.0), "BOSS · " + String(_boss_info(venue["challenge"])["short"]), 17, c_bad, true)
-	else:
-		_text(Vector2(x, r.position.y + 104.0), "%d songs  ·  reach %s points" % [D.SETLIST, _fmt_int(_gig_target())], T_SM, c_body, true)
-	var note := Rect2(x, r.position.y + 124.0, w, 196.0)
-	_shadow(note, 2, 5.0)
-	_panel(note, Color("fbfaf5"), 2)
-	for k in 5:
-		var ly := note.position.y + 40.0 + k * 32.0
-		draw_line(Vector2(note.position.x + 10.0, ly), Vector2(note.end.x - 10.0, ly), Color("9cc3e6", 0.35), 1.0)
-	draw_line(Vector2(note.position.x + 44.0, note.position.y), Vector2(note.position.x + 44.0, note.end.y), Color("e6a0a0", 0.5), 1.5)
-	draw_rect(Rect2(note.get_center().x - 50.0, note.position.y - 10.0, 100.0, 24.0), Color(1, 1, 1, 0.6))
-	_text(Vector2(note.position.x + 60.0, note.position.y + 32.0), "TONIGHT'S CROWD", T_XS, c_ink, true)
-	_tag_chips(note.position.x + 60.0, note.position.y + 48.0, "LIKES", venue.get("likes", []), c_good)
-	_tag_chips(note.position.x + 60.0, note.position.y + 92.0, "HATES", venue.get("dislikes", []), c_bad)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 148.0), "+%d points for a liked song" % D.LIKE, 15, c_body, true)
-	_text(Vector2(note.position.x + 60.0, note.position.y + 174.0), ("A hated song scores nothing" if _boss_kind() == "hates" else "A hated song scores half"), 15, c_body, true)
-	var slip := Rect2(x, r.position.y + 332.0, w, 120.0)
-	if call.is_empty():
-		_text_i(Vector2(x, slip.position.y + 40.0), "No requests right now.", T_SM, c_muted)
-	else:
-		_shadow(slip, 2, 5.0)
-		_panel(slip, Color("fff3a8"), 2)
-		draw_rect(Rect2(slip.get_center().x - 40.0, slip.position.y - 8.0, 80.0, 20.0), Color(1, 1, 1, 0.6))
-		_text(Vector2(slip.position.x + 18.0, slip.position.y + 34.0), "REQUEST", T_XS, c_good, true)
-		_heavy(Vector2(slip.position.x + 18.0, slip.position.y + 78.0), _call_text(call), T_LG, Color("22252a"))
-		_wrap(Vector2(slip.position.x + 18.0, slip.position.y + 98.0), "+%d points for the first %s song in your set." % [_request_pts(), call["tag"][1]], slip.size.x - 36.0, 15, c_body, true)
 
 func _make_tour() -> void:
 	tour.clear()
@@ -4364,7 +4793,7 @@ func _boss_generic(kind: String) -> Dictionary:
 			return {"name": "Broken equipment", "text": "one piece of your gear is out"}
 		"destroy":
 			return {"name": "Rough crowd", "text": "played songs may be destroyed"}
-	return {"name": "No time to dig", "text": "only %d discard" % D.BOSS_DIGS}
+	return {"name": "No time to dig", "text": "no discards"}
 
 func _boss_info(c: Dictionary) -> Dictionary:
 	var gen := _boss_generic(String(c["kind"]))
@@ -4388,7 +4817,7 @@ func _boss_info(c: Dictionary) -> Dictionary:
 			return {"name": gen["name"], "text": "Your %s is broken for the night." % gn, "short": "%s is broken" % gn}
 		"destroy":
 			return {"name": gen["name"], "text": "Each song you play has a %d%% chance to be destroyed for good." % int(round(D.BOSS_DESTROY * 100.0)), "short": "Songs may be destroyed"}
-	return {"name": gen["name"], "text": "You only get %d discard tonight." % D.BOSS_DIGS, "short": "Only %d discard" % D.BOSS_DIGS}
+	return {"name": gen["name"], "text": "You get no discards tonight.", "short": "No discards"}
 
 func _ranked(is_genre: bool) -> Array:
 	var counts := {}
@@ -4557,6 +4986,7 @@ func _draw_title() -> void:
 	_heavy_center(Rect2(0.0, 820.0, UI_W, 150.0), "Disc Engine", T_HERO + 40, Color("f4efe4"))
 	_text_center(Rect2(0.0, 985.0, UI_W, 50.0), "A DJ roguelike. Lay out a set, chain your effects, win the crowd.", T_MD, Color(1, 1, 1, 0.85), true)
 	_hw_button(Rect2(UI_W * 0.5 - 220.0, 1090.0, 440.0, 100.0), "Play", _to_kits, true, Color("3f9b5a"), T_XL)
+	_hw_button(Rect2(UI_W * 0.5 - 180.0, 1220.0, 360.0, 80.0), "Settings", _open_settings, true, Color("6a6f77"), T_MD)
 
 func _kit_gear(kit: Dictionary) -> Dictionary:
 	return {"id": String(kit["gear"]), "used": 0, "broken": false}
