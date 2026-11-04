@@ -3,6 +3,8 @@ extends "res://prototypes/nine_pocket/nine_pocket_ui.gd"
 const D := preload("res://prototypes/nine_pocket/nine_pocket_data.gd")
 
 const DRAG_MIN := 24.0
+const DRAG_START := 14.0
+const SETTLE_T := 0.14
 const WELL_R := 106.0
 const DISC_R := 96.0
 const WELL_PITCH := 314.0
@@ -36,6 +38,15 @@ var discard: Array[int] = []
 var wallet: Array[int] = []
 var tray: Array[int] = []
 var held := -1
+var drag_pending := false
+var drag_active := false
+var drag_kind := ""
+var drag_idx := -1
+var drag_disc := -1
+var drag_pos := Vector2.ZERO
+var drag_lift := 0.0
+var drag_hover: Array = []
+var settles: Array = []
 var held_from := -1
 var press_pos := Vector2.ZERO
 var gig_n := 1
@@ -398,6 +409,7 @@ func _draw_finale() -> void:
 func _process(delta: float) -> void:
 	pts_pulse = maxf(0.0, pts_pulse - delta * 2.5)
 	_tick_eq(delta)
+	_tick_drag(delta)
 	flow_pulse = maxf(0.0, flow_pulse - delta * 2.5)
 	fin_flash = maxf(0.0, fin_flash - delta * 2.2)
 	fin_shake = maxf(0.0, fin_shake - delta * (0.5 if fin_t >= 0.0 and not fin_boomed else 2.2))
@@ -453,7 +465,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_flip_binder(-1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
 			press_pos = _ui_mouse()
-			_ui_click(press_pos)
+			if not _try_drag_press(press_pos):
+				_ui_click(press_pos)
+		elif mb.button_index == MOUSE_BUTTON_LEFT and (drag_active or drag_pending):
+			if drag_active:
+				_end_drag()
+			else:
+				drag_pending = false
+				_ui_click(press_pos)
 		elif mb.button_index == MOUSE_BUTTON_LEFT and (held >= 0 or gear_sel >= 0) and press_pos.distance_to(_ui_mouse()) > DRAG_MIN:
 			_ui_click(_ui_mouse())
 		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
@@ -470,6 +489,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_flip_binder(1)
 
 func _cancel() -> void:
+	if drag_active or drag_pending:
+		_cancel_drag()
+		return
 	if not dig_offer.is_empty():
 		return
 	if binder_open:
@@ -1236,6 +1258,166 @@ func _setlist() -> Array:
 			slots.append(s)
 	return [ids, slots]
 
+func _cell_get(kind: String, idx: int) -> int:
+	return tray[idx] if kind == "tray" else wallet[idx]
+
+func _cell_set(kind: String, idx: int, v: int) -> void:
+	if kind == "tray":
+		tray[idx] = v
+	else:
+		wallet[idx] = v
+
+func _cell_center(kind: String, idx: int) -> Vector2:
+	return _well_center(idx) if kind == "tray" else _pocket_rect(idx).get_center()
+
+func _can_drag() -> bool:
+	return ui_live and phase == "show" and not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and not binder_open and not settings_open and pack.is_empty() and gear_sel < 0 and bench < 0 and install_queue.is_empty() and held < 0
+
+func _drag_source_at(pos: Vector2) -> Array:
+	for s in D.SETLIST:
+		if tray[s] >= 0 and pos.distance_to(_well_center(s)) <= WELL_R:
+			return ["tray", s]
+	for p in D.HAND:
+		if wallet[p] >= 0 and _pocket_rect(p).has_point(pos):
+			return ["wallet", p]
+	return []
+
+func _drop_target(pos: Vector2) -> Array:
+	var best: Array = []
+	var bestd := INF
+	for s in D.SETLIST:
+		var d := pos.distance_to(_well_center(s))
+		if d <= WELL_R + 24.0 and d < bestd:
+			bestd = d
+			best = ["tray", s]
+	for p in D.HAND:
+		var r := _pocket_rect(p).grow(10.0)
+		if r.has_point(pos):
+			var d2 := pos.distance_to(r.get_center())
+			if d2 < bestd:
+				bestd = d2
+				best = ["wallet", p]
+	return best
+
+func _cell_hidden(kind: String, idx: int) -> bool:
+	if drag_active and drag_kind == kind and drag_idx == idx:
+		return true
+	for st: Dictionary in settles:
+		if String(st["kind"]) == kind and int(st["idx"]) == idx:
+			return true
+	return false
+
+func _try_drag_press(pos: Vector2) -> bool:
+	if not _can_drag():
+		return false
+	var src := _drag_source_at(pos)
+	if src.is_empty():
+		return false
+	drag_pending = true
+	drag_kind = String(src[0])
+	drag_idx = int(src[1])
+	return true
+
+func _start_drag() -> void:
+	drag_pending = false
+	drag_active = true
+	drag_disc = _cell_get(drag_kind, drag_idx)
+	drag_pos = _cell_center(drag_kind, drag_idx)
+	drag_lift = 0.0
+	drag_hover = []
+	sel_slot = -1
+	_sfx("click")
+
+func _apply_drop(kind: String, idx: int) -> void:
+	var a := drag_disc
+	var b := _cell_get(kind, idx)
+	_cell_set(kind, idx, a)
+	_cell_set(drag_kind, drag_idx, b)
+	settles.append({"disc": a, "kind": kind, "idx": idx, "from": drag_pos, "t": 0.0})
+	if b >= 0:
+		settles.append({"disc": b, "kind": drag_kind, "idx": drag_idx, "from": _cell_center(kind, idx), "t": 0.0})
+	if kind == "tray":
+		slot_flash[idx] = 1.0
+	_sfx("page_turn")
+
+func _end_drag() -> void:
+	var tgt := _drop_target(_ui_mouse())
+	if tgt.is_empty() or (String(tgt[0]) == drag_kind and int(tgt[1]) == drag_idx):
+		_cancel_drag()
+		return
+	_apply_drop(String(tgt[0]), int(tgt[1]))
+	drag_active = false
+	drag_disc = -1
+	drag_hover = []
+
+func _cancel_drag() -> void:
+	if drag_active:
+		settles.append({"disc": drag_disc, "kind": drag_kind, "idx": drag_idx, "from": drag_pos, "t": 0.0})
+	drag_active = false
+	drag_pending = false
+	drag_disc = -1
+	drag_hover = []
+
+func _tick_drag(delta: float) -> void:
+	var mp := _ui_mouse()
+	var down := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	if drag_pending:
+		if not down:
+			drag_pending = false
+		elif press_pos.distance_to(mp) > DRAG_START:
+			_start_drag()
+	if drag_active:
+		if phase != "show" or resolving or playing:
+			_cancel_drag()
+		elif not down:
+			_end_drag()
+		else:
+			drag_pos = drag_pos.lerp(mp, 1.0 - exp(-delta * 28.0))
+			drag_lift = minf(1.0, drag_lift + delta * 10.0)
+			drag_hover = _drop_target(mp)
+	for i in range(settles.size() - 1, -1, -1):
+		settles[i]["t"] = float(settles[i]["t"]) + delta
+		if float(settles[i]["t"]) >= SETTLE_T:
+			settles.remove_at(i)
+	if drag_active:
+		Input.set_default_cursor_shape(Input.CURSOR_DRAG)
+	elif _can_drag() and not _drag_source_at(mp).is_empty():
+		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+	else:
+		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
+func _draw_lifted(di: int, pos: Vector2, sc: float, sh: float) -> void:
+	var d := collection[di]
+	draw_circle(pos + Vector2(8.0, 20.0) * sh, DISC_R * sc * 1.04, Color(0, 0, 0, 0.18 * sh))
+	draw_circle(pos + Vector2(4.0, 10.0) * sh, DISC_R * sc * 1.0, Color(0, 0, 0, 0.22 * sh))
+	_disc_face(pos, DISC_R * sc, d)
+	_disc_marks(pos, DISC_R * sc, d)
+
+func _draw_drag() -> void:
+	if drag_active:
+		var src := _cell_center(drag_kind, drag_idx)
+		draw_arc(src, DISC_R, 0.0, TAU, 64, Color(1, 1, 1, 0.22), 3.0, true)
+		for s in D.SETLIST:
+			if not (drag_kind == "tray" and drag_idx == s):
+				draw_arc(_well_center(s), WELL_R + 2.0, 0.0, TAU, 64, Color(c_gold, 0.16 + 0.08 * sin(clock * 5.0)), 3.0, true)
+		for p in D.HAND:
+			if not (drag_kind == "wallet" and drag_idx == p):
+				draw_arc(_pocket_rect(p).get_center(), DISC_R, 0.0, TAU, 64, Color(c_gold, 0.16 + 0.08 * sin(clock * 5.0)), 3.0, true)
+		if not drag_hover.is_empty() and not (String(drag_hover[0]) == drag_kind and int(drag_hover[1]) == drag_idx):
+			var hc := _cell_center(String(drag_hover[0]), int(drag_hover[1]))
+			var hr := WELL_R + 6.0 if String(drag_hover[0]) == "tray" else DISC_R + 6.0
+			draw_circle(hc, hr, Color(c_gold, 0.14))
+			draw_arc(hc, hr, 0.0, TAU, 64, c_gold, 6.0, true)
+	for st: Dictionary in settles:
+		var u := clampf(float(st["t"]) / SETTLE_T, 0.0, 1.0)
+		var e := 1.0 - pow(1.0 - u, 3.0)
+		var from: Vector2 = st["from"]
+		var to := _cell_center(String(st["kind"]), int(st["idx"]))
+		_draw_lifted(int(st["disc"]), from.lerp(to, e), lerpf(1.1, 1.0, e), 1.0 - e)
+	if drag_active:
+		var lift := 1.0 - pow(1.0 - drag_lift, 3.0)
+		_draw_lifted(drag_disc, drag_pos, lerpf(1.0, 1.1, lift), lift)
+
 func _return_held() -> void:
 	if held < 0:
 		return
@@ -1566,6 +1748,7 @@ func _draw() -> void:
 	_draw_finale()
 	_draw_toast()
 	_draw_held()
+	_draw_drag()
 	ui_live = true
 	if not pack.is_empty():
 		_draw_pack()
@@ -1588,7 +1771,7 @@ func _draw() -> void:
 		_draw_binder_overlay()
 	elif (phase == "shop" and install_queue.is_empty()) or phase in ["map", "fork"]:
 		_draw_binder_button()
-	if held < 0 and hover_disc != null:
+	if held < 0 and not drag_active and hover_disc != null:
 		_draw_disc_tip(hover_disc)
 	_end_draw()
 
@@ -1809,7 +1992,7 @@ func _draw_well(s: int) -> void:
 	elif sel_slot >= 0 and not resolving:
 		draw_arc(c, WELL_R + 4.0, 0.0, TAU, 64, Color(c_gold, 0.25 + 0.15 * sin(clock * 4.0)), 3.0, true)
 	var i := tray[s]
-	if i >= 0:
+	if i >= 0 and not _cell_hidden("tray", s):
 		var d := collection[i]
 		_disc_face(c, DISC_R, d, spin if now_slot == s else 0.0)
 		_disc_marks(c, DISC_R, d)
@@ -2156,6 +2339,8 @@ func _draw_wallet() -> void:
 		var pocket := Rect2(r.position - Vector2(6.0, 6.0), Vector2(r.size.x + 12.0, r.size.y + 14.0))
 		var over := ui_live and pocket.has_point(mouse) and (wallet[p] >= 0 or sel_slot >= 0) and (dig_mode or not resolving)
 		var i := wallet[p]
+		if _cell_hidden("wallet", p):
+			i = -1
 		var edge := Color(c_gold, 0.8) if over else Color(1, 1, 1, 0.13)
 		var fill := Color(1, 1, 1, 0.07 if over else 0.03)
 		_panel(pocket, fill, 8, edge, 3 if over else 2)
