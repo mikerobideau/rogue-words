@@ -52,6 +52,9 @@ const SOUND_COLOR := "3fae5a"
 const ENERGY_COLOR := "8a63d2"
 const HYPE_COLOR := "e9b949"
 const FLOW_COLOR := "4ab3d9"
+const SLEEVE_MAIN: Array[String] = ["993556", "993C1D", "534AB7", "0F6E56"]
+const SLEEVE_DARK: Array[String] = ["72243E", "712B13", "3C3489", "085041"]
+const SLEEVE_LIGHT: Array[String] = ["FBEAF0", "FAECE7", "EEEDFE", "E1F5EE"]
 
 const COLLECTION := 20
 const HAND := 8
