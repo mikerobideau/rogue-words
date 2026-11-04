@@ -52,14 +52,14 @@ const SOUND_COLOR := "3fae5a"
 const ENERGY_COLOR := "8a63d2"
 const HYPE_COLOR := "e9b949"
 const FLOW_COLOR := "4ab3d9"
-const SLEEVE_MAIN: Array[String] = ["993556", "993C1D", "534AB7", "0F6E56"]
-const SLEEVE_DARK: Array[String] = ["72243E", "712B13", "3C3489", "085041"]
-const SLEEVE_LIGHT: Array[String] = ["FBEAF0", "FAECE7", "EEEDFE", "E1F5EE"]
+const SLEEVE_MAIN: Array[String] = ["993556", "185FA5", "534AB7", "3B6D11"]
+const SLEEVE_DARK: Array[String] = ["72243E", "0C447C", "3C3489", "27500A"]
+const SLEEVE_LIGHT: Array[String] = ["FBEAF0", "E6F1FB", "EEEDFE", "EAF3DE"]
 
 const COLLECTION := 20
-const HAND := 8
+const HAND := 6
 const SETLIST := 6
-const DIGS := 1
+const DIGS := 2
 const DIG_MAX := 1
 const DIG_OFFERS := 3
 const DIG_PICK := false
@@ -132,7 +132,7 @@ const PAY_APPLAUSE := 8
 const PAY_ENCORE := 11
 const BONUS_STEP := 0.25
 const BONUS_MAX := 3
-const RACK_SLOTS := 8
+const RACK_SLOTS := 6
 const START_RACK: Array[String] = []
 
 const SHOP_ALBUMS := 2
@@ -147,8 +147,8 @@ const GEAR_PACKS := [
 	{"name": "Studio Bundle", "price": 11, "show": 3, "pick": 2},
 ]
 
-const SORT_KEYS: Array[String] = ["genre", "era", "sound", "band"]
-const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "band": "Band"}
+const SORT_KEYS: Array[String] = ["genre", "era", "sound", "ability"]
+const SORT_TEXT := {"genre": "Genre", "era": "Decade", "sound": "Points", "ability": "Ability"}
 
 const EQ_MIN := -1
 const EQ_MAX := 3
