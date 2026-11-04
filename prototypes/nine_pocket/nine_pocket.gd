@@ -152,6 +152,18 @@ var slot_flash: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var spin := 0.0
 var font_marker: Font
 var music_player: AudioStreamPlayer
+var bg_player: AudioStreamPlayer
+var bg_files: Array = []
+var bg_idx := -1
+var bg_gain := 0.0
+var gig_done := false
+var count_t := 0.0
+var count_n := 0
+var count_pop := 0.0
+var audition_player: AudioStreamPlayer
+var audition_target: Disc = null
+var audition_cur: Disc = null
+var audition_gain := 0.0
 var music_t := 0.0
 var menu_album: Dictionary = {}
 var pile_with_hand := false
@@ -410,6 +422,9 @@ func _process(delta: float) -> void:
 	pts_pulse = maxf(0.0, pts_pulse - delta * 2.5)
 	_tick_eq(delta)
 	_tick_drag(delta)
+	_tick_bg(delta)
+	_tick_count(delta)
+	_tick_audition(delta)
 	rec_pop = maxf(0.0, rec_pop - delta * 4.0)
 	flow_pulse = maxf(0.0, flow_pulse - delta * 2.5)
 	fin_flash = maxf(0.0, fin_flash - delta * 2.2)
@@ -707,6 +722,13 @@ func _load_music() -> void:
 	music_player = AudioStreamPlayer.new()
 	add_child(music_player)
 	music_player.finished.connect(_on_music_finished)
+	bg_player = AudioStreamPlayer.new()
+	bg_player.volume_db = -80.0
+	add_child(bg_player)
+	_music_files(D.BG_DIR, bg_files)
+	audition_player = AudioStreamPlayer.new()
+	audition_player.volume_db = -80.0
+	add_child(audition_player)
 	var files: Array = []
 	_music_files(D.MUSIC_DIR, files)
 	for a: Dictionary in albums:
@@ -719,6 +741,97 @@ func _load_music() -> void:
 			if base == key or base.begins_with(key + " -"):
 				album_music[a["cover"]] = f
 				break
+
+func _bg_next() -> void:
+	if bg_files.is_empty() or bg_player == null:
+		return
+	bg_idx = (bg_idx + 1) % bg_files.size() if bg_idx >= 0 else rng.randi_range(0, bg_files.size() - 1)
+	var stream := _music_stream(String(bg_files[bg_idx]))
+	if stream == null:
+		return
+	if bg_files.size() == 1 and "loop" in stream:
+		stream.loop = true
+	bg_player.stream = stream
+	bg_player.stream_paused = false
+	bg_player.play(0.0)
+
+func _bg_wanted() -> bool:
+	if resolving or playing:
+		return false
+	if audition_target != null or audition_cur != null or audition_gain > 0.02:
+		return false
+	if gig_done and phase in ["show", "end", "result", "over", "won"]:
+		return false
+	return true
+
+func _tick_bg(delta: float) -> void:
+	if bg_player == null or bg_files.is_empty():
+		return
+	if not (phase in ["show", "end", "result", "over", "won"]):
+		gig_done = false
+	if _bg_wanted():
+		if bg_player.stream_paused:
+			bg_player.stream_paused = false
+		elif not bg_player.playing:
+			_bg_next()
+		bg_gain = move_toward(bg_gain, 1.0, delta / D.BG_FADE_IN)
+	else:
+		bg_gain = move_toward(bg_gain, 0.0, delta / D.BG_FADE_OUT)
+		if bg_gain <= 0.0 and bg_player.playing:
+			bg_player.stream_paused = true
+	bg_player.volume_db = linear_to_db(maxf(bg_gain, 0.0001)) + D.BG_DB
+
+func _tick_count(delta: float) -> void:
+	count_pop = maxf(0.0, count_pop - delta * 3.0)
+	if count_t <= 0.0:
+		return
+	count_t -= delta
+	var n := int(ceil(count_t / D.COUNT_STEP))
+	if n != count_n and n > 0:
+		count_n = n
+		count_pop = 1.0
+		if tick_player != null:
+			tick_player.pitch_scale = 0.8 + 0.25 * (4 - n)
+			tick_player.play()
+	if count_t <= 0.0:
+		count_n = 0
+		_start_slot(0)
+
+func _draw_countdown() -> void:
+	if count_n <= 0:
+		return
+	var c := r_changer.get_center()
+	var frac := 1.0 - fposmod(count_t, D.COUNT_STEP) / D.COUNT_STEP
+	draw_circle(c, 180.0, Color(0.05, 0.06, 0.08, 0.72))
+	draw_arc(c, 172.0, -PI * 0.5, -PI * 0.5 + TAU * frac, 64, c_gold, 8.0, true)
+	var sz := int(T_HERO * 1.7 * (1.0 + 0.3 * count_pop))
+	_heavy_center(Rect2(c.x - 180.0, c.y - 130.0, 360.0, 260.0), str(count_n), sz, Color("f4efe4"))
+
+func _audition(d: Disc) -> void:
+	if d != null and not d.cdr and ui_live:
+		audition_target = d
+
+func _tick_audition(delta: float) -> void:
+	if audition_player == null:
+		return
+	var tgt := audition_target
+	if tgt != audition_cur:
+		audition_gain = move_toward(audition_gain, 0.0, delta / 0.15)
+		if audition_gain <= 0.0:
+			audition_player.stop()
+			audition_cur = null
+			if tgt != null:
+				var stream := _music_stream(_music_for(tgt))
+				if stream != null:
+					audition_cur = tgt
+					audition_player.stream = stream
+					var len := stream.get_length()
+					audition_player.play(rng.randf_range(0.0, len - 20.0) if len > 25.0 else 0.0)
+	else:
+		audition_gain = move_toward(audition_gain, 1.0 if tgt != null else 0.0, delta / (0.25 if tgt != null else 0.3))
+		if tgt == null and audition_gain <= 0.0 and audition_player.playing:
+			audition_player.stop()
+	audition_player.volume_db = linear_to_db(maxf(audition_gain, 0.0001)) + D.AUDITION_DB
 
 func _music_for(d: Disc) -> String:
 	return String(album_music.get(d.mix_cover if d.cdr else d.cover, ""))
@@ -752,22 +865,12 @@ func _music_start(d: Disc) -> void:
 	music_player.play(rng.randf_range(0.0, maxf(0.0, stream.get_length() - D.MUSIC_SECONDS - 1.0)))
 
 func _menu_song() -> void:
-	var withsong: Array = albums.filter(func(a): return album_music.has(a["cover"]))
-	menu_album = {}
 	menu_music = false
 	menu_fade = 0.0
 	_music_stop()
-	if withsong.is_empty():
+	menu_album = {}
+	if not albums.is_empty():
 		menu_album = albums[rng.randi_range(0, albums.size() - 1)]
-		return
-	menu_album = withsong[rng.randi_range(0, withsong.size() - 1)]
-	var stream := _music_stream(String(album_music[menu_album["cover"]]))
-	if stream == null or music_player == null:
-		return
-	music_player.stream = stream
-	music_player.volume_db = 0.0
-	music_player.play(rng.randf_range(0.0, maxf(0.0, stream.get_length() * 0.5)))
-	menu_music = true
 
 func _menu_fade_out() -> void:
 	if menu_music and music_player != null and music_player.playing:
@@ -1547,7 +1650,7 @@ func _draw_jewel(r: Rect2, d: Disc, dim: float = 0.0, price: int = -1) -> void:
 			if chev > 0.0:
 				_icon(String(parts["es"]), Vector2(sx + isz + chev * 0.5, ec.y), chev * 0.9, white)
 
-func _draw_cd_player(r: Rect2) -> void:
+func _draw_cd_player(r: Rect2, art: Texture2D = null, art_spin: float = 0.0, force_art: bool = false) -> void:
 	_shadow(r, 14, 8.0)
 	_grad_panel(r, 14.0, Color("34373c"), Color("202226"))
 	_panel(r, Color(0, 0, 0, 0), 14, Color(0, 0, 0, 0.6), 2)
@@ -1557,13 +1660,15 @@ func _draw_cd_player(r: Rect2) -> void:
 	draw_circle(c, wr, Color("17181b"))
 	draw_arc(c, wr - 8.0, 0.0, TAU, 96, Color(1, 1, 1, 0.07), 2.0, true)
 	var d := _playing_disc()
-	if d != null:
+	if force_art:
+		_cd_art(c, wr * 0.9, art, art_spin)
+	elif d != null:
 		_disc_face(c, wr * 0.9 * lerpf(0.9, 1.0, 1.0 - rec_pop), d, spin)
 	else:
 		draw_circle(c, wr * 0.1, Color("2a2c31"))
 		draw_arc(c, wr * 0.1, 0.0, TAU, 32, Color(1, 1, 1, 0.2), 2.0, true)
 	draw_colored_polygon(PackedVector2Array([r.position + Vector2(14.0, 10.0), r.position + Vector2(r.size.x * 0.62, 10.0), r.position + Vector2(14.0, r.size.y * 0.62)]), Color(1, 1, 1, 0.06))
-	draw_circle(r.end - Vector2(22.0, 22.0), 5.0, Color("7fe0a0") if d != null else Color("4a4e55"))
+	draw_circle(r.end - Vector2(22.0, 22.0), 5.0, Color("7fe0a0") if d != null or force_art else Color("4a4e55"))
 
 func _setlist() -> Array:
 	var ids: Array = []
@@ -2021,6 +2126,7 @@ func _pocket_rect(p: int) -> Rect2:
 
 func _draw() -> void:
 	_begin_draw()
+	audition_target = null
 	if fin_shake > 0.0:
 		draw_set_transform(screen_origin + Vector2(sin(clock * 91.0), cos(clock * 77.0)) * 16.0 * fin_shake * ui_scale, 0.0, Vector2(ui_scale, ui_scale))
 	var modal := phase in ["result", "over", "won", "end"] or not pack.is_empty() or binder_open or settings_open
@@ -2052,6 +2158,7 @@ func _draw() -> void:
 		_draw_rack()
 	_draw_floats()
 	_draw_finale()
+	_draw_countdown()
 	_draw_toast()
 	_draw_held()
 	_draw_drag()
@@ -3856,6 +3963,8 @@ func _draw_bin() -> void:
 			var d: Disc = it["disc"]
 			_draw_case(rr, d, int(it["price"]))
 			_tip_disc(cr, d)
+			if ui_live and cr.has_point(mouse):
+				_audition(d)
 		else:
 			_draw_case_pack(rr, it["pack"], int(it["price"]))
 			var ap: Dictionary = it["pack"]
@@ -4047,6 +4156,8 @@ func _draw_pack() -> void:
 			var d: Disc = items[k]
 			_draw_case(Rect2(cell.position, Vector2(280.0, 248.0)), d)
 			_tip_disc(Rect2(cell.position, Vector2(280.0, 248.0)), d)
+			if cell.has_point(mouse):
+				_audition(d)
 		else:
 			cell = Rect2(r.get_center().x - 278.0, r.position.y + 150.0 + k * 256.0, 556.0, 236.0)
 			_draw_gear(cell, items[k], 0.0)
@@ -4260,6 +4371,7 @@ func _fmt_time(sec: int) -> String:
 
 func _start_show(v: Dictionary) -> void:
 	venue = v
+	gig_done = false
 	wallet.clear()
 	for i in D.HAND:
 		wallet.append(-1)
@@ -4744,7 +4856,8 @@ func _play() -> void:
 	sel_slot = -1
 	played.clear()
 	link_log.clear()
-	_start_slot(0)
+	count_t = D.COUNT_STEP * 3.0
+	count_n = 4
 
 func _start_slot(s: int) -> void:
 	var d := collection[tray[s]]
@@ -4838,6 +4951,7 @@ func _finish_song() -> void:
 		_start_slot(played.size())
 	else:
 		resolving = false
+		gig_done = true
 		finale = int(set_res.get("finale", 0))
 		finale_flow = float(set_res.get("finale_flow", 1.0))
 		if finale > 0:
@@ -5396,8 +5510,6 @@ func _menu_bg(art: bool = true) -> void:
 	var full := Rect2(-800.0, -800.0, UI_W + 1600.0, UI_H + 1600.0)
 	if not art:
 		draw_rect(full, Color.BLACK)
-		if not menu_album.is_empty():
-			_text_right(UI_W - 70.0, 1404.0, "Now playing: %s, %s" % [String(menu_album["band"]), String(menu_album["title"])], T_SM, Color(1, 1, 1, 0.75), true)
 		return
 	draw_rect(full, Color("0e1018"))
 	var tex := _cover_tex(String(menu_album.get("cover", "")))
@@ -5408,8 +5520,6 @@ func _menu_bg(art: bool = true) -> void:
 		draw_texture_rect(tex, Rect2((Vector2(UI_W, UI_H) - sz) * 0.5, sz), false)
 	draw_rect(full, Color(0.04, 0.05, 0.09, 0.6))
 	_grad_panel(full, 0.0, Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.55))
-	if not menu_album.is_empty():
-		_text_right(UI_W - 70.0, 1404.0, "Now playing: %s, %s" % [String(menu_album["band"]), String(menu_album["title"])], T_SM, Color(1, 1, 1, 0.75), true)
 
 func _to_kits() -> void:
 	phase = "kits"
@@ -5455,19 +5565,8 @@ func _draw_decks() -> void:
 func _draw_title() -> void:
 	_menu_bg(false)
 	var c := Vector2(UI_W * 0.5, 470.0)
-	draw_circle(c + Vector2(10.0, 16.0), 300.0, Color(0, 0, 0, 0.35))
-	draw_circle(c, 300.0, Color("111317"))
-	for k in 14:
-		draw_arc(c, 120.0 + k * 12.0, 0.0, TAU, 96, Color(1, 1, 1, 0.05 if k % 2 == 0 else 0.025), 2.0, true)
-	for k in 3:
-		var a := clock * 0.6 + k * TAU / 3.0
-		draw_arc(c, 230.0, a, a + 0.5, 24, Color(1, 1, 1, 0.1), 40.0, true)
 	var ctex := _cover_tex(String(menu_album.get("cover", "")))
-	if ctex != null:
-		_cd_art(c, 150.0, ctex, clock * 0.8)
-	else:
-		draw_circle(c, 105.0, Color("d7263d"))
-		draw_circle(c, 14.0, Color("111317"))
+	_draw_cd_player(Rect2(c - Vector2(280.0, 280.0), Vector2(560.0, 560.0)), ctex if ctex != null else null, clock * 0.8, true)
 	_heavy_center(Rect2(0.0, 820.0, UI_W, 150.0), "Disc Engine", T_HERO + 40, Color("f4efe4"))
 	_text_center(Rect2(0.0, 985.0, UI_W, 50.0), "A DJ roguelike. Lay out a set, chain your effects, win the crowd.", T_MD, Color(1, 1, 1, 0.85), true)
 	_hw_button(Rect2(UI_W * 0.5 - 220.0, 1090.0, 440.0, 100.0), "Play", _to_kits, true, Color("3f9b5a"), T_XL)
