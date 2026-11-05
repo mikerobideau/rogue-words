@@ -2451,9 +2451,10 @@ func _slot_met(s: int) -> bool:
 		above = collection[tray[D.SETLIST - 1 - s]]
 	var nxt: Disc = collection[tray[s + 1]] if s + 1 < tray.size() and tray[s + 1] >= 0 else null
 	if eff == "copy":
-		if prev == null or String(prev.rule.get("effect", "none")) in ["none", "copy"]:
+		var csrc := _copy_source(tray, s)
+		if csrc == null:
 			return false
-		rule = prev.rule
+		rule = csrc.rule
 	if String(rule.get("condition", "always")) == "per_before":
 		var c := 0
 		for j in s:
@@ -2684,7 +2685,7 @@ func _cond_text(d: Disc) -> String:
 	if eff == "none":
 		return "No effect. It is just points."
 	if eff == "copy":
-		return "Repeats the effect of the song before it."
+		return "Repeats the effect of the song before it. If that song is also a copy, it repeats the effect it copied."
 	var half := D.SETLIST / 2
 	var v := _ff(float(r.get("value", 0.0)))
 	var tp := String(r.get("tparam", ""))
@@ -4979,16 +4980,30 @@ func _cond_count(rule: Dictionary, s: int, ids: Array, prev: Disc, above: Disc, 
 			return h
 	return 0
 
+func _copy_source(ids: Array, s: int) -> Disc:
+	var j := s - 1
+	while j >= 0:
+		var dj := _ids_disc(ids, j)
+		if dj == null:
+			return null
+		var e := String(dj.rule.get("effect", "none"))
+		if e == "copy":
+			j -= 1
+			continue
+		return null if e == "none" else dj
+	return null
+
 func _fire_rule(rule: Dictionary, src: Disc, s: int, ids: Array, prev: Disc, above: Disc, nxt: Disc, out: Array, st: Dictionary, fx: Dictionary, depth: int) -> bool:
 	var eff := String(rule.get("effect", "none"))
 	if eff == "none":
 		return false
 	if eff == "copy":
-		if depth == 0 and prev != null and not String(prev.rule.get("effect", "none")) in ["none", "copy"]:
+		var csrc := _copy_source(ids, s)
+		if depth == 0 and csrc != null:
 			var at := out.size()
-			var ok := _fire_rule(prev.rule, prev, s, ids, prev, above, nxt, out, st, fx, 1)
+			var ok := _fire_rule(csrc.rule, csrc, s, ids, prev, above, nxt, out, st, fx, 1)
 			if ok:
-				out.insert(at, {"src": "fx", "text": "Copies %s" % prev.title, "n": 0, "ci": -1, "run": _s_run(st)})
+				out.insert(at, {"src": "fx", "text": "Copies %s" % csrc.title, "n": 0, "ci": -1, "run": _s_run(st)})
 			return ok
 		return false
 	if not eff in ["points", "mult", "flow_add", "flow_mult", "cash"]:

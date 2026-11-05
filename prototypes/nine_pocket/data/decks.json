@@ -34,24 +34,26 @@
 	{
 		"id": "mixed",
 		"name": "Mixed Bag",
-		"idea": "One of every CD and three Mixes.",
+		"idea": "Five common CDs from every genre and five Mixes.",
 		"enabled": true,
-		"mixes": 3,
+		"mixes": 5,
 		"cards": {
 			"unknown-new-card": 1,
 			"unknown-new-card-2": 1,
 			"unknown-new-card-3": 1,
-			"unknown-new-card-4": 1,
 			"unknown-new-card-5": 1,
 			"unknown-new-card-6": 1,
-			"unknown-new-card-7": 1,
 			"unknown-new-card-9": 1,
-			"unknown-new-card-10": 1,
 			"unknown-new-card-11": 1,
 			"unknown-new-card-12": 1,
 			"unknown-new-card-13": 1,
 			"unknown-new-card-14": 1,
-			"unknown-new-card-15": 1
+			"unknown-new-card-17": 2,
+			"unknown-new-card-19": 2,
+			"unknown-new-card-21": 1,
+			"unknown-new-card-22": 2,
+			"unknown-new-card-23": 2,
+			"unknown-new-card-27": 1
 		}
 	}
 ]
