@@ -343,6 +343,8 @@ func _cd_art(c: Vector2, rad: float, tex: Texture2D, spin: float = 0.0) -> void:
 	var hole := rad * 0.14
 	var uv_hole := 0.5 * hole / rad
 	var mid := Vector2(0.5, 0.5)
+	var ts := tex.get_size()
+	var crop := Vector2(minf(1.0, ts.y / ts.x), minf(1.0, ts.x / ts.y))
 	var white := PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE])
 	var n := 72
 	for i in n:
@@ -351,7 +353,7 @@ func _cd_art(c: Vector2, rad: float, tex: Texture2D, spin: float = 0.0) -> void:
 		var pts := PackedVector2Array([c + d0 * hole, c + d0 * rad, c + d1 * rad, c + d1 * hole])
 		var u0 := d0.rotated(-spin)
 		var u1 := d1.rotated(-spin)
-		var uvs := PackedVector2Array([mid + u0 * uv_hole, mid + u0 * 0.5, mid + u1 * 0.5, mid + u1 * uv_hole])
+		var uvs := PackedVector2Array([mid + u0 * uv_hole * crop, mid + u0 * 0.5 * crop, mid + u1 * 0.5 * crop, mid + u1 * uv_hole * crop])
 		draw_primitive(pts, white, uvs, tex)
 	draw_arc(c, (hole + rad * 0.33) * 0.5, 0, TAU, 48, Color(1, 1, 1, 0.22), rad * 0.33 - hole, true)
 	draw_arc(c, rad * 0.33, 0, TAU, 48, Color(1, 1, 1, 0.35), maxf(1.0, rad * 0.012), true)

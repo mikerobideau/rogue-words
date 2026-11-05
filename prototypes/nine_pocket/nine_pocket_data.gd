@@ -15,6 +15,8 @@ const PACK_BURST_WAIT := 0.45
 const PACK_GAP := 0.85
 const PACK_ANIM := 1.1
 const HOLD_TIME := 0.6
+const THUMB_DIR := "res://prototypes/nine_pocket/art/thumbs/"
+const THUMB_MAX := 768
 const PACK_RARITY := {
 	"common": {"glow": 0.3, "col": "ffffff", "damp": 7.5, "freq": 11.0, "pulse": 0.0, "speed": 0.0},
 	"uncommon": {"glow": 0.9, "col": "5fd4ff", "damp": 5.0, "freq": 12.0, "pulse": 0.25, "speed": 3.0},

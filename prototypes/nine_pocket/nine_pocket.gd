@@ -201,6 +201,7 @@ var message := ""
 var message_t := 0.0
 var hover_disc: Disc = null
 var covers := {}
+var prewarm_i := 0
 var textures := {}
 
 var r_changer := Rect2(820.0, 40.0, 1020.0, 660.0)
@@ -447,6 +448,7 @@ func _draw_finale() -> void:
 	_heavy_center(Rect2(mid.x - w * 0.5 - 30.0, mid.y - fs * 0.9, w + 60.0, fs * 1.5), txt, fs, col2)
 
 func _process(delta: float) -> void:
+	_prewarm_step()
 	pts_pulse = maxf(0.0, pts_pulse - delta * 2.5)
 	_tick_eq(delta)
 	_tick_drag(delta)
@@ -916,11 +918,36 @@ func _music_stop() -> void:
 	if music_player != null:
 		music_player.stop()
 
+func _thumb_path(path: String) -> String:
+	return D.THUMB_DIR + path.get_file().get_basename() + ".jpg"
+
+func _make_thumb(img: Image, thumb: String) -> Image:
+	var m := maxi(img.get_width(), img.get_height())
+	if m <= D.THUMB_MAX:
+		return img
+	var k := float(D.THUMB_MAX) / float(m)
+	img.resize(maxi(1, int(round(img.get_width() * k))), maxi(1, int(round(img.get_height() * k))), Image.INTERPOLATE_LANCZOS)
+	if img.get_format() != Image.FORMAT_RGB8:
+		img.convert(Image.FORMAT_RGB8)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(D.THUMB_DIR))
+	img.save_jpg(ProjectSettings.globalize_path(thumb), 0.9)
+	return img
+
+func _prewarm_step() -> void:
+	if prewarm_i >= albums.size():
+		return
+	_cover_tex(String(albums[prewarm_i]["cover"]))
+	prewarm_i += 1
+
 func _cover_tex(path: String) -> Texture2D:
 	if path == "":
 		return null
 	if not covers.has(path):
-		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		var thumb := _thumb_path(path)
+		var from_thumb := FileAccess.file_exists(thumb)
+		var img := Image.load_from_file(ProjectSettings.globalize_path(thumb if from_thumb else path))
+		if img and not from_thumb:
+			img = _make_thumb(img, thumb)
 		if img:
 			img.generate_mipmaps()
 			covers[path] = ImageTexture.create_from_image(img)

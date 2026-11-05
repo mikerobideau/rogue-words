@@ -188,6 +188,8 @@ The old FLOW +1 tag and the old ability icons are gone.
 ## Art
 Drawn in code in a physical style. Optional textures in `art/textures/`: `metal_brushed`, `metal_dark`, `rubber`, `leather`, `fabric`, `wood`, `crate_wood`, `pegboard`, `cardboard`.
 
+Cover loading: source photos can be thousands of pixels wide, so the first time a cover is needed it is shrunk to 768 px and saved as a JPG in `art/thumbs/` (the folder has a `.gdignore`, so Godot does not import it). Later loads read the small file, about 7 ms each instead of up to 1.6 s. All album covers are warmed one per frame at startup. Delete `art/thumbs/` to regenerate.
+
 ## Next
 Shop services Burn (copy an album to a CD-R), Trade in and a Label Maker (change a CD's genre or decade); crowd mood zones; crowd fatigue (the crowd tires of a genre played too often, so keeping flow and staying fresh pull against each other); the ring from the demo in the main game (closing the set back to the opener); a marker on the open slot when a Hype Man bonus is waiting; a quiet bias so venue tastes don't land on your biggest genres; more stop types (rest stop, radio station); more flow gear and call-out types.
 
