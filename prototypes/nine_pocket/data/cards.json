@@ -236,5 +236,22 @@
 		"value": 3,
 		"target": "set",
 		"target_param": ""
+	},
+	{
+		"id": "unknown-new-card-8",
+		"title": "R&B",
+		"band": "Rain & Biceps",
+		"cover": "res://prototypes/nine_pocket/art/covers/aleksandr-popov-tRFehFzhlcc-unsplash.jpg",
+		"song": "res://prototypes/nine_pocket/music/Pop/echoes_of_lumen-r-and-b-slow-jam-smooth-groove-589278.mp3",
+		"genre": "Pop",
+		"decade": "90s",
+		"rarity": "common",
+		"points": 5,
+		"condition": "prev_is",
+		"cond_param": "Pop",
+		"effect": "flow_add",
+		"value": 1,
+		"target": "set",
+		"target_param": ""
 	}
 ]
