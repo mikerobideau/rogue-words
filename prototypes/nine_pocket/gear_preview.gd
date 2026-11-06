@@ -71,12 +71,10 @@ func _lift_setup() -> bool:
 	wallet[6] = 6
 	wallet[7] = 7
 	tray.clear()
-	for i in 6:
+	for i in D.SETLIST:
 		tray.append(i)
 	venue = (D.VENUES[rng.randi_range(0, D.VENUES.size() - 1)] as Dictionary).duplicate(true)
-	gate_pool = (venue["dislikes"] as Array).duplicate()
-	_shuffle(gate_pool)
-	call = {}
+	crowd_move = {}
 	return true
 
 func _score_with(ids: Array) -> Array:

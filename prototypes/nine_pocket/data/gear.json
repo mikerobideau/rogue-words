@@ -320,12 +320,12 @@
 		"look": "",
 		"active": false,
 		"params": {},
-		"enabled": true
+		"enabled": false
 	},
 	{
 		"id": "gate",
 		"name": "Noise Gate",
-		"text": "Each gig, {count} random hated tag is ignored. Off when the boss has the hates ability.",
+		"text": "Each gig, the first {count} boo is ignored.",
 		"size": "half",
 		"price": 5,
 		"look": "",
@@ -338,13 +338,13 @@
 	{
 		"id": "request",
 		"name": "Request Line",
-		"text": "Requests pay +{pays} points instead of +10.",
+		"text": "Meeting the crowd's demand also earns +{pays} points.",
 		"size": "half",
 		"price": 5,
 		"look": "",
 		"active": false,
 		"params": {
-			"pays": 20
+			"pays": 12
 		},
 		"enabled": true
 	},

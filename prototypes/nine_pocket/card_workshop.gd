@@ -7,28 +7,26 @@ const COVER_DIR := "res://prototypes/nine_pocket/art/covers/"
 const MUSIC_DIR := "res://prototypes/nine_pocket/music/"
 const RARITIES: Array[String] = ["common", "uncommon", "rare"]
 const RARITY_COLORS := {"common": Color("6aa84f"), "uncommon": Color("3d85c6"), "rare": Color("c2689a")}
-const CONDITIONS: Array[String] = ["always", "first", "last", "set1", "set2", "odd", "even", "slot1", "slot2", "slot3", "slot4", "slot5", "slot6", "prev_is", "above_is", "next_is", "per_before", "per_hand"]
+const CONDITIONS: Array[String] = ["always", "first", "last", "next_empty", "prev_empty", "per_empty", "odd", "even", "slot1", "slot2", "slot3", "slot4", "prev_is", "next_is", "per_before", "per_hand"]
 const COND_NAMES := {
 	"always": "Always",
 	"first": "Played first",
 	"last": "Played last",
-	"set1": "In the first set",
-	"set2": "In the second set",
+	"next_empty": "The next slot is empty",
+	"prev_empty": "The previous slot is empty",
+	"per_empty": "For each empty slot",
 	"odd": "In an odd slot",
 	"even": "In an even slot",
 	"slot1": "In slot 1",
 	"slot2": "In slot 2",
 	"slot3": "In slot 3",
 	"slot4": "In slot 4",
-	"slot5": "In slot 5",
-	"slot6": "In slot 6",
 	"prev_is": "The song before is...",
-	"above_is": "The song above is...",
 	"next_is": "The song after is...",
 	"per_before": "For each earlier song of...",
 	"per_hand": "For each song left in hand of...",
 }
-const COND_NEEDS_PARAM: Array[String] = ["prev_is", "above_is", "next_is", "per_before", "per_hand"]
+const COND_NEEDS_PARAM: Array[String] = ["prev_is", "next_is", "per_before", "per_hand"]
 const EFFECT_KINDS: Array[String] = ["none", "points", "mult", "flow_add", "flow_mult", "cash", "copy"]
 const EFFECT_NAMES := {
 	"none": "No effect",
@@ -47,7 +45,7 @@ const TARGET_NAMES := {
 	"later_decade": "Later songs of a decade",
 	"set": "The whole set (flow)",
 }
-const COND_POWER := {"always": 1.0, "first": 0.6, "last": 0.6, "set1": 0.55, "set2": 0.55, "odd": 0.5, "even": 0.5, "slot1": 0.3, "slot2": 0.3, "slot3": 0.3, "slot4": 0.3, "slot5": 0.3, "slot6": 0.3, "prev_is": 0.45, "above_is": 0.4, "next_is": 0.45, "per_before": 1.6, "per_hand": 0.9}
+const COND_POWER := {"always": 1.0, "first": 0.6, "last": 0.6, "next_empty": 0.7, "prev_empty": 0.7, "per_empty": 0.9, "odd": 0.5, "even": 0.5, "slot1": 0.3, "slot2": 0.3, "slot3": 0.3, "slot4": 0.3, "prev_is": 0.45, "next_is": 0.45, "per_before": 1.6, "per_hand": 0.9}
 const BG := Color("1b1d21")
 const PANEL := Color("23272d")
 const EDGE := Color("353a42")

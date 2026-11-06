@@ -27,7 +27,7 @@ const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
 const GENRES: Array[String] = ["Pop", "Rock", "Hip-Hop", "Jazz"]
 const GENRE_SHORT: Array[String] = ["POP", "ROCK", "HIPHOP", "JAZZ"]
 const GENRE_COLORS: Array[String] = ["5d626a", "5d626a", "5d626a", "5d626a"]
-const COND_WEIGHTS := {"plain": 6, "set1": 3, "set2": 3, "odd": 2, "even": 2, "opener": 3, "closer": 3, "after_genre": 7, "after_decade": 6, "above_genre": 7, "above_decade": 7, "hype": 10, "boost": 8, "fans": 8, "anthem": 8, "mirror": 5}
+const COND_WEIGHTS := {"plain": 6, "odd": 2, "even": 2, "opener": 3, "closer": 3, "after_genre": 7, "after_decade": 6, "hype": 10, "boost": 8, "fans": 8, "anthem": 8, "mirror": 5}
 const RARITY_WEIGHTS := {"common": 20, "uncommon": 55, "rare": 25}
 const GEAR_PATH := "res://prototypes/nine_pocket/data/gear.json"
 const CARDS_PATH := "res://prototypes/nine_pocket/data/cards.json"
@@ -45,7 +45,7 @@ const STEP_MIN := 0.11
 const SONG_TAIL := 0.45
 const ANIM_NAMES: Array[String] = ["Fast", "Normal", "Relaxed", "Slow"]
 const ANIM_SCALE: Array[float] = [1.0, 1.35, 1.8, 2.4]
-const COND_POINTS := {"plain": 12, "set1": 6, "set2": 6, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "above_genre": 7, "above_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
+const COND_POINTS := {"plain": 12, "odd": 6, "even": 6, "opener": 8, "closer": 8, "after_genre": 7, "after_decade": 7, "hype": 4, "boost": 4, "fans": 4, "anthem": 4, "mirror": 4}
 const SET_BONUS := 10
 const SIDE_BONUS := 8
 const OPENER_MULT := 2.0
@@ -76,7 +76,15 @@ const SLEEVE_LIGHT: Array[String] = ["FBEAF0", "E6F1FB", "EEEDFE", "EAF3DE"]
 
 const COLLECTION := 20
 const HAND := 6
-const SETLIST := 6
+const SETLIST := 4
+const TURNS := 4
+const TURN_BONUS := 1
+const COOL_NEED := 0.2
+const COOL_HEAL := 0.12
+const DEMAND_HEAL := 0.12
+const STATIC_KEEP := 0.5
+const MOVE_WEIGHTS := {"cool": 3, "boo": 3, "demand": 3, "static": 2, "block": 2}
+const RUN_GIGS := 6
 const DIGS := 2
 const DIG_MAX := 1
 const DIG_OFFERS := 3
@@ -84,7 +92,7 @@ const DIG_PICK := false
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
 const FLOW_MAX := 6
-const GIG_TARGETS: Array[int] = [60, 110, 200, 360, 650, 1150]
+const GIG_TARGETS: Array[int] = [75, 140, 260, 480, 880, 1600]
 const HEADLINER_MULT := 1.25
 const BOSS_TARGET := 1.3
 const TIER_GOOD := 1.5
@@ -112,7 +120,7 @@ const VENUES := [
 	{"name": "Record Store Day", "likes": [["genre", "Hip-Hop"], ["era", "70s"]], "dislikes": [["era", "10s"]]},
 ]
 
-const USE_FORK := true
+const USE_FORK := false
 const TOURS := 2
 const LANE_GIGS := 3
 const PICKUPS_ENABLED := false
