@@ -37,10 +37,17 @@ Every unit is a Half bay and sits above its own tray (bay 1 over tray 1, and so 
 | Fog Machine | $5 | Per song | Hecklers can't block a tray while this tray is played. |
 | Deep Library | $6 | Button | Once per gig: redraw your whole hand. |
 | Sneak Peek | $4 | Button | Once per gig: look at the next {count} songs in your binder. |
+| Disco Filter | $6 | Per song | +{amount} flow if this tray is {aparam}. |
+| Gated Reverb | $6 | Per song | +{amount} points if this tray is {aparam}. |
+| Cassette Saturator | $5 | Per song | +${amount} if this tray is {aparam}. |
+| Y2K Delay | $7 | Per song | The {aparam} CD in this tray triggers its card effect twice. |
+| Auto-Tune | $7 | Per song | x{amount} points if this tray is {aparam}. |
+| Tape Deck | $6 | Once per gig | Makes a consumable the first time its tray is played each gig. |
+| Spare Reel | $7 | Anywhere | Makes a consumable if {rn}+ songs are all different genres. |
 
 ## Open items
 
 - Sneak Peek only looks at the next 3 CDs. Taking one into your hand needs a pick screen.
 - Swell and Tremolo 60s grow for the whole run. Tune or reset per gig if they snowball.
-- All numbers (Crunch Box +10, Metronome +50, Mono Drive +25, and so on) are first guesses.
+- All numbers are first guesses, and gig targets need a pass now that starter decks are plain CDs.
 - The workshop balance check measures one unit in four trays, so anywhere and shape units read as weak.

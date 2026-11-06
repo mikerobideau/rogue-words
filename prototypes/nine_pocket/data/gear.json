@@ -22,7 +22,8 @@
 			"label": "Crunch Box",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "stack_fuzz",
@@ -47,7 +48,8 @@
 			"label": "Stack Fuzz",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "sub_boost",
@@ -72,7 +74,8 @@
 			"label": "Sub Boost",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "bass_drop",
@@ -97,7 +100,8 @@
 			"label": "Bass Drop",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "radio_comp",
@@ -122,7 +126,8 @@
 			"label": "Radio Compressor",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "platinum",
@@ -147,7 +152,8 @@
 			"label": "Platinum Boost",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "piggy",
@@ -161,7 +167,8 @@
 		"params": {
 			"cash": 1
 		},
-		"enabled": true
+		"enabled": true,
+		"levels": false
 	},
 	{
 		"id": "clone",
@@ -173,7 +180,8 @@
 		"active": false,
 		"activates": "placed",
 		"params": {},
-		"enabled": true
+		"enabled": true,
+		"levels": false
 	},
 	{
 		"id": "double_tap",
@@ -198,7 +206,8 @@
 			"label": "Double Tap",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": false
 	},
 	{
 		"id": "cd_burner",
@@ -223,7 +232,8 @@
 			"label": "CD Burner",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": false
 	},
 	{
 		"id": "smoke_chorus",
@@ -248,7 +258,8 @@
 			"label": "Smoke Chorus",
 			"rparam": "Jazz",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "duo_tone",
@@ -273,7 +284,8 @@
 			"label": "Duo Tone",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "prism_phaser",
@@ -298,7 +310,8 @@
 			"label": "Prism Phaser",
 			"rparam": "",
 			"rn": 3
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "metronome",
@@ -323,7 +336,8 @@
 			"label": "Metronome",
 			"rparam": "",
 			"rn": 4
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "mono_drive",
@@ -348,7 +362,8 @@
 			"label": "Mono Drive",
 			"rparam": "",
 			"rn": 4
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "sidechain",
@@ -373,7 +388,8 @@
 			"label": "Sidechain",
 			"rparam": "Hip-Hop",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "feedback_loop",
@@ -398,7 +414,8 @@
 			"label": "Feedback Loop",
 			"rparam": "Rock",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "pre_delay",
@@ -423,7 +440,8 @@
 			"label": "Pre-Delay",
 			"rparam": "Pop",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "loop_station",
@@ -448,7 +466,8 @@
 			"label": "Loop Station",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "delay",
@@ -473,7 +492,8 @@
 			"label": "Delay Pedal",
 			"rparam": "",
 			"rn": 2
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "ping_pong",
@@ -498,7 +518,8 @@
 			"label": "Ping-Pong",
 			"rparam": "",
 			"rn": 3
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "reverb",
@@ -523,7 +544,8 @@
 			"label": "Reverb",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "clean_boost",
@@ -548,7 +570,8 @@
 			"label": "Clean Boost",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "gain_knob",
@@ -573,7 +596,8 @@
 			"label": "Gain Knob",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "swell",
@@ -601,7 +625,8 @@
 			"grow": "play",
 			"gparam": "",
 			"gamt": 1
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "tremolo",
@@ -631,7 +656,8 @@
 			"grow": "decade",
 			"gparam": "60s",
 			"gamt": 1
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "tuner",
@@ -643,7 +669,8 @@
 		"active": false,
 		"activates": "discard",
 		"params": {},
-		"enabled": true
+		"enabled": true,
+		"levels": false
 	},
 	{
 		"id": "tip_jar",
@@ -668,7 +695,8 @@
 			"label": "Tip Jar",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "wah",
@@ -693,7 +721,8 @@
 			"label": "Wah",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": true
 	},
 	{
 		"id": "gate",
@@ -705,7 +734,8 @@
 		"active": true,
 		"activates": "button",
 		"params": {},
-		"enabled": true
+		"enabled": true,
+		"levels": false
 	},
 	{
 		"id": "fog",
@@ -730,7 +760,8 @@
 			"label": "Fog",
 			"rparam": "",
 			"rn": 0
-		}
+		},
+		"levels": false
 	},
 	{
 		"id": "deep_library",
@@ -742,7 +773,8 @@
 		"active": true,
 		"activates": "button",
 		"params": {},
-		"enabled": true
+		"enabled": true,
+		"levels": false
 	},
 	{
 		"id": "sneak_peek",
@@ -756,6 +788,189 @@
 		"params": {
 			"count": 3
 		},
-		"enabled": true
+		"enabled": true,
+		"levels": false
+	},
+	{
+		"id": "disco_filter",
+		"name": "Disco Filter",
+		"text": "+{amount} flow if this tray is {aparam}.",
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"activates": "song",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "decade",
+			"aparam": "70s",
+			"effect": "flow",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Disco Filter",
+			"rparam": "",
+			"rn": 0
+		},
+		"levels": true
+	},
+	{
+		"id": "gated_reverb",
+		"name": "Gated Reverb",
+		"text": "+{amount} points if this tray is {aparam}.",
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"activates": "song",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "decade",
+			"aparam": "80s",
+			"effect": "points",
+			"amount": 10,
+			"per": "none",
+			"cap": 0,
+			"label": "Gated Reverb",
+			"rparam": "",
+			"rn": 0
+		},
+		"levels": true
+	},
+	{
+		"id": "cassette",
+		"name": "Cassette Saturator",
+		"text": "+${amount} if this tray is {aparam}.",
+		"size": "half",
+		"price": 5,
+		"look": "",
+		"active": false,
+		"activates": "song",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "decade",
+			"aparam": "90s",
+			"effect": "cash",
+			"amount": 4,
+			"per": "none",
+			"cap": 0,
+			"label": "Cassette",
+			"rparam": "",
+			"rn": 0
+		},
+		"levels": true
+	},
+	{
+		"id": "y2k_delay",
+		"name": "Y2K Delay",
+		"text": "The {aparam} CD in this tray triggers its card effect twice.",
+		"size": "half",
+		"price": 7,
+		"look": "",
+		"active": false,
+		"activates": "song",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "decade",
+			"aparam": "00s",
+			"effect": "echo",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Y2K Delay",
+			"rparam": "",
+			"rn": 0
+		},
+		"levels": false
+	},
+	{
+		"id": "auto_tune",
+		"name": "Auto-Tune",
+		"text": "x{amount} points if this tray is {aparam}.",
+		"size": "half",
+		"price": 7,
+		"look": "",
+		"active": false,
+		"activates": "song",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "decade",
+			"aparam": "10s",
+			"effect": "mult",
+			"amount": 1.5,
+			"per": "none",
+			"cap": 0,
+			"label": "Auto-Tune",
+			"rparam": "",
+			"rn": 0
+		},
+		"levels": true
+	},
+	{
+		"id": "tape_deck",
+		"name": "Tape Deck",
+		"text": "Makes a consumable the first time its tray is played each gig.",
+		"size": "half",
+		"price": 6,
+		"look": "",
+		"active": false,
+		"activates": "gig",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "none",
+			"applies": "any",
+			"aparam": "",
+			"effect": "consumable",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Tape Deck",
+			"rparam": "",
+			"rn": 0
+		},
+		"levels": false
+	},
+	{
+		"id": "spare_reel",
+		"name": "Spare Reel",
+		"text": "Makes a consumable if {rn}+ songs are all different genres.",
+		"size": "half",
+		"price": 7,
+		"look": "",
+		"active": false,
+		"activates": "anywhere",
+		"params": {},
+		"enabled": true,
+		"rule": {
+			"when": "each",
+			"requires": "all_genres_differ",
+			"applies": "any",
+			"aparam": "",
+			"effect": "consumable",
+			"amount": 1,
+			"per": "none",
+			"cap": 0,
+			"label": "Spare Reel",
+			"rparam": "",
+			"rn": 3
+		},
+		"levels": false
 	}
 ]

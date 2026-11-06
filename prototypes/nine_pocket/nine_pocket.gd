@@ -158,6 +158,10 @@ var turn_note := ""
 var turn_cash0 := 0
 var song_slot := -1
 var binder_pick := -1
+var consumables: Array = ["", ""]
+var consume_mode := ""
+var consume_slot := -1
+var trade_count := 0
 var services: Array = []
 var bench := -1
 var binder_page := 0
@@ -327,7 +331,7 @@ func _load_finale_sounds() -> void:
 	sfx["coin"] = cpl
 
 func _cash_lcd() -> Rect2:
-	return Rect2(r_cash.position.x + 84.0, r_cash.position.y + 8.0, r_cash.size.x - 98.0, 64.0)
+	return Rect2(r_cash.position.x, r_cash.position.y + 8.0, r_cash.size.x, 64.0)
 
 func _cash_fx(amount: int, slot: int) -> void:
 	if amount <= 0:
@@ -612,6 +616,11 @@ func _cancel() -> void:
 	if burn_mode:
 		burn_mode = false
 		burn_marks.clear()
+		message_t = 0.0
+		return
+	if consume_mode != "":
+		consume_mode = ""
+		consume_slot = -1
 		message_t = 0.0
 		return
 	if gear_sel >= 0:
@@ -1105,7 +1114,7 @@ func _rand_pair(avoid: Array = []) -> Array:
 	return pr
 
 func _make_gear(id: String) -> Dictionary:
-	var g := {"id": id, "used": 0, "broken": false, "done": false}
+	var g := {"id": id, "used": 0, "broken": false, "done": false, "level": 0}
 	var rl: Dictionary = gear_defs[id].get("rule", {})
 	if String(rl.get("grow", "")) != "":
 		g["count"] = 0
@@ -1328,6 +1337,9 @@ func _new_run(kit_i: int = 0, deck: Dictionary = {}) -> void:
 	if D.USE_KITS:
 		_place_free(_make_gear(String(kit["gear"])))
 	cash = D.START_CASH
+	consumables = ["", ""]
+	consume_mode = ""
+	trade_count = 0
 	gig_n = 1
 	plays = {}
 	pack = {}
@@ -1783,7 +1795,7 @@ func _cell_center(kind: String, idx: int) -> Vector2:
 	return _well_center(idx) if kind == "tray" else _pocket_rect(idx).get_center()
 
 func _can_drag() -> bool:
-	return ui_live and phase == "show" and not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and not binder_open and not settings_open and pack.is_empty() and gear_sel < 0 and bench < 0 and install_queue.is_empty() and held < 0
+	return ui_live and phase == "show" and consume_mode == "" and not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and not binder_open and not settings_open and pack.is_empty() and gear_sel < 0 and bench < 0 and install_queue.is_empty() and held < 0
 
 func _drag_source_at(pos: Vector2) -> Array:
 	for s in D.TRAYS:
@@ -1955,7 +1967,183 @@ func _placed() -> int:
 func _can_play() -> bool:
 	return ui_live and phase == "show" and not resolving and not playing and not dig_mode and not burn_mode and not peek_open and dig_offer.is_empty() and _placed() >= 1
 
+func _give_consumable(id: String = "") -> bool:
+	var slot := consumables.find("")
+	if slot < 0:
+		return false
+	if id == "":
+		var keys: Array = D.CONSUMABLES.keys()
+		id = String(keys[rng.randi_range(0, keys.size() - 1)])
+	consumables[slot] = id
+	_say("Got %s." % D.CONSUMABLES[id]["name"])
+	_sfx("page_turn")
+	return true
+
+func _use_consumable(slot: int) -> void:
+	var id := String(consumables[slot])
+	if id == "" or phase != "show" or resolving or playing or not dig_offer.is_empty() or dig_mode or burn_mode or peek_open or binder_open:
+		return
+	if consume_mode != "" and consume_slot == slot:
+		consume_mode = ""
+		consume_slot = -1
+		message_t = 0.0
+		return
+	if String(D.CONSUMABLES[id]["target"]) != "":
+		consume_mode = id
+		consume_slot = slot
+		_say("Pick %s for %s. Right-click to cancel." % ["a CD in your hand" if String(D.CONSUMABLES[id]["target"]) == "cd" else "a gear unit", D.CONSUMABLES[id]["name"]])
+		return
+	match id:
+		"amp_up":
+			bank_in["flow"] = float(bank_in.get("flow", 0.0)) + 1.0
+			flow_live = float(_score_ctx()["fl"])
+		"quiet_down":
+			if String(crowd_move.get("kind", "")) == "" or bool(crowd_move.get("ignored", false)):
+				_say("There is nothing to quiet down this turn.")
+				return
+			crowd_move["ignored"] = true
+			crowd_move["by"] = "Quiet Down"
+			crowd_move["gated"] = true
+			if String(crowd_move["kind"]) == "block":
+				blocked_slot = -1
+			flow_live = float(_score_ctx()["fl"])
+	consumables[slot] = ""
+	_sfx("page_turn")
+	_say("Used %s." % D.CONSUMABLES[id]["name"])
+
+func _apply_consumable(p: int) -> void:
+	if p < 0 or wallet[p] < 0 or consume_mode == "" or String(D.CONSUMABLES[consume_mode]["target"]) != "cd":
+		return
+	var d: Disc = collection[wallet[p]]
+	var id := consume_mode
+	match id:
+		"fast_forward":
+			if d.era >= D.ERAS.size() - 1:
+				_say("%s can't go any later." % d.title)
+				return
+			d.era += 1
+		"rewind":
+			if d.era <= 0:
+				_say("%s can't go any earlier." % d.title)
+				return
+			d.era -= 1
+		"remix":
+			if d.genre < 0:
+				return
+			var ng := d.genre
+			while ng == d.genre:
+				ng = rng.randi_range(0, D.GENRES.size() - 1)
+			d.genre = ng
+		"polish":
+			d.sound += 2
+		"press":
+			if d.edition != "":
+				_say("%s already has an edition." % d.title)
+				return
+			var eds: Array = D.EDITIONS.keys()
+			d.edition = String(eds[rng.randi_range(0, eds.size() - 1)])
+		"trade_in":
+			doomed.append(d)
+			wallet[p] = -1
+		"dub":
+			var nd := Disc.new()
+			nd.uid = next_uid
+			next_uid += 1
+			nd.title = d.title
+			nd.band = d.band
+			nd.cover = d.cover
+			nd.song = d.song
+			nd.genre = d.genre
+			nd.era = d.era
+			nd.label = d.label
+			nd.sound = d.sound
+			nd.rule = d.rule.duplicate()
+			nd.rarity = d.rarity
+			nd.edition = d.edition
+			collection.append(nd)
+	consumables[consume_slot] = ""
+	consume_mode = ""
+	consume_slot = -1
+	_sfx("page_turn")
+	_say("%s used on %s." % [D.CONSUMABLES[id]["name"], d.title])
+
+func _gear_can_level(g: Dictionary) -> bool:
+	return bool(gear_defs[g["id"]].get("levels", false)) and int(g.get("level", 0)) < D.LEVEL_NAMES.size() - 1
+
+func _apply_consumable_gear(i: int) -> void:
+	if consume_mode == "" or rack[i].is_empty() or not _gear_can_level(rack[i]):
+		return
+	var g: Dictionary = rack[i]
+	g["level"] = int(g.get("level", 0)) + 1
+	comp_flash[i] = 1.0
+	var id := consume_mode
+	consumables[consume_slot] = ""
+	consume_mode = ""
+	consume_slot = -1
+	_sfx("page_turn")
+	_say("%s is now %s." % [gear_defs[g["id"]]["name"], D.LEVEL_NAMES[int(g["level"])]])
+
+func _cons_rect(i: int) -> Rect2:
+	if phase == "shop":
+		return Rect2(60.0 + i * (COL_W + COL_G), 1150.0, COL_W, GEAR_H)
+	var x0 := r_score.position.x + (r_score.size.x - (2.0 * COL_W + COL_G)) * 0.5
+	return Rect2(x0 + i * (COL_W + COL_G), r_score.end.y - 40.0 - GEAR_H, COL_W, GEAR_H)
+
+func _draw_cons_tile(r: Rect2, id: String, targeting: bool, hot: bool) -> void:
+	var def: Dictionary = D.CONSUMABLES[id]
+	var col := Color(String(def["col"]))
+	var w := r.size.x
+	var h := r.size.y
+	_shadow(r, 10, 8.0)
+	_panel(r, col.lightened(0.08) if hot else col, 12, Color(0, 0, 0, 0.35), 2)
+	for pt in [Vector2(14.0, 14.0), Vector2(w - 14.0, 14.0), Vector2(14.0, h - 14.0), Vector2(w - 14.0, h - 14.0)]:
+		draw_circle(r.position + pt, 3.0, Color(0, 0, 0, 0.4))
+	var lab := Rect2(r.position.x + w * 0.056, r.position.y + h * 0.077, w * 0.888, h * 0.568)
+	_panel(lab, Color("efe6d2"), 6)
+	draw_line(Vector2(lab.position.x + 16.0, lab.end.y - 12.0), Vector2(lab.end.x - 16.0, lab.end.y - 12.0), Color("cfc5ab"), 1.5)
+	var nm := String(def["name"]).to_upper()
+	var lines: Array[String] = [nm]
+	var words := nm.split(" ")
+	var maxw := lab.size.x - 28.0
+	if words.size() >= 2 and _text_w(nm, 28, true) > maxw:
+		lines = [String(words[0]), nm.substr(String(words[0]).length() + 1)]
+	var fs := 28
+	for ln in lines:
+		while fs > 14 and _text_w(ln, fs, true) > maxw:
+			fs -= 1
+	var cy := lab.position.y + lab.size.y * 0.46
+	for k in lines.size():
+		_text_center(Rect2(lab.position.x, cy + (k - (lines.size() - 1) * 0.5) * fs * 1.2 - fs * 0.6, lab.size.x, fs * 1.2), lines[k], fs, Color("22252a"), true)
+	var win := Rect2(r.position.x + w * 0.247, r.position.y + h * 0.70, w * 0.506, h * 0.22)
+	_panel(win, Color(0.08, 0.09, 0.1, 0.8), int(win.size.y * 0.5))
+	for rx in [0.35, 0.65]:
+		draw_circle(r.position + Vector2(w * rx, h * 0.806), h * 0.077, Color(1, 1, 1, 0.27))
+		draw_circle(r.position + Vector2(w * rx, h * 0.806), h * 0.026, Color("15171a"))
+	if targeting or hot:
+		_panel(r.grow(3.0), Color(0, 0, 0, 0), 14, c_gold, 4 if targeting else 2)
+	_tip(r, "%s: %s" % [def["name"], def["text"]])
+
+func _draw_consumables() -> void:
+	var bay := Rect2(_cons_rect(0).position - Vector2(26.0, 26.0), Vector2(2.0 * COL_W + COL_G + 52.0, GEAR_H + 52.0))
+	_inset(bay, 14.0, Color("0b0c0e"))
+	for bi in D.CONSUMABLE_SLOTS:
+		_inset(_cons_rect(bi).grow(6.0), 10.0, Color("060708"))
+	for i in D.CONSUMABLE_SLOTS:
+		var r := _cons_rect(i)
+		var id := String(consumables[i])
+		if id == "":
+			_text_center(r, "CONSUMABLE", T_XS, Color("4a4f57"), true)
+			continue
+		var targeting := consume_mode != "" and consume_slot == i
+		var usable := phase == "show" and ui_live and not resolving and not playing
+		_draw_cons_tile(r, id, targeting, usable and r.has_point(mouse))
+		if usable:
+			_register(r, _use_consumable.bind(i))
+
 func _on_pocket(p: int) -> void:
+	if consume_mode != "":
+		_apply_consumable(p)
+		return
 	if burn_mode:
 		_on_burn_pick(p)
 		return
@@ -2261,6 +2449,7 @@ func _draw() -> void:
 		_draw_changer()
 		_draw_score_panel()
 		_draw_wallet()
+		_draw_gig_header()
 		_draw_banner()
 		_draw_rack()
 	_draw_floats()
@@ -2800,6 +2989,8 @@ func _cond_part(rule: Dictionary, count: int) -> String:
 func _rule_line(rule: Dictionary, count: int, amt: float) -> String:
 	var cp := _cond_part(rule, count)
 	var eff := String(rule.get("effect", "none"))
+	if eff == "consumable":
+		return (cp + ": makes a consumable") if cp != "" else "Makes a consumable"
 	var tgt := String(rule.get("target", "self"))
 	var tp := String(rule.get("tparam", ""))
 	var sg := ("+$" + _ff(amt)) if eff == "cash" else (("+" + _ff(amt)) if eff == "points" or eff == "flow_add" else ("x" + _ff(amt)))
@@ -2894,7 +3085,7 @@ func _draw_wallet() -> void:
 				draw_rect(c, Color(0, 0, 0, 0.55))
 				_heavy_center(c, "BURN", T_XL, c_gold)
 				_panel(c.grow(-2.0), Color(0, 0, 0, 0), 8, c_gold, 5)
-			elif burn_mode:
+			elif burn_mode or consume_mode != "":
 				_panel(c.grow(-2.0), Color(0, 0, 0, 0), 8, Color(c_gold, 0.35 + 0.2 * sin(clock * 5.0)), 3)
 		if ui_live:
 			_register(r, _on_pocket.bind(p))
@@ -2908,11 +3099,6 @@ func _nav_bg(r: Rect2) -> void:
 	_panel(r, Color(0, 0, 0, 0), 8, Color(0, 0, 0, 0.6), 2)
 
 func _draw_cash() -> void:
-	var r := r_cash
-	_shadow(r, 8, 10.0)
-	_surface(r, 8.0, "metal_dark", Color("2b2e33"), Color("1a1c20"))
-	_panel(r, Color(0, 0, 0, 0), 8, Color(0, 0, 0, 0.6), 2)
-	_silk(Vector2(r.position.x + 18.0, r.position.y + 56.0), "CASH", T_SM, Color("8d939b"))
 	var lr := _cash_lcd()
 	if cash_pulse > 0.0:
 		_panel(lr.grow(4.0 + 12.0 * cash_pulse), Color(0.5, 0.88, 0.63, 0.5 * cash_pulse), 10)
@@ -3108,7 +3294,7 @@ func _draw_side() -> void:
 		_hw_button(Rect2(x, by, w, 76.0), "Dig through the binder", _start_dig, digs > 0 and ui_live, Color("c9a227"), T_LG)
 
 func _rack_idle() -> bool:
-	return not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and install_queue.is_empty() and bench < 0 and pack.is_empty() and not binder_open and (phase == "show" or phase == "shop")
+	return consume_mode == "" and not resolving and not playing and dig_offer.is_empty() and not dig_mode and not burn_mode and not peek_open and install_queue.is_empty() and bench < 0 and pack.is_empty() and not binder_open and (phase == "show" or phase == "shop")
 
 func _gear_click(i: int) -> void:
 	if not _rack_idle():
@@ -3327,6 +3513,7 @@ func _unit_rect(i: int) -> Rect2:
 func _draw_rack(show_cash: bool = true) -> void:
 	if show_cash:
 		_draw_cash()
+		_draw_consumables()
 	var installing := phase == "shop" and not install_queue.is_empty() and ui_live
 	var idle := _rack_idle()
 	var bk := _bench_kind()
@@ -3366,6 +3553,13 @@ func _draw_rack(show_cash: bool = true) -> void:
 			_draw_empty_bay(br)
 		else:
 			_draw_gear(br, g, comp_flash[i], i)
+		if consume_mode != "" and phase == "show" and String(D.CONSUMABLES[consume_mode]["target"]) == "gear" and not g.is_empty():
+			if _gear_can_level(g):
+				_panel(br.grow(6.0), Color(0, 0, 0, 0), 10, Color(c_gold, 0.5 + 0.3 * sin(clock * 5.0)), 4)
+				if ui_live:
+					_register(br, _apply_consumable_gear.bind(i))
+			else:
+				_panel(br, Color(0, 0, 0, 0.5), 8)
 		if gear_sel == i:
 			_panel(br.grow(6.0), Color(c_gold, 0.1), 10, c_gold, 5)
 		elif gear_sel >= 0 and idle and br.has_point(mouse):
@@ -3473,7 +3667,6 @@ func _draw_score_panel() -> void:
 	var fc := Color(D.FLOW_COLOR).lightened(0.3)
 	var pc := Color(D.SOUND_COLOR).lightened(0.25)
 	var dim := Color("8d939b")
-	_draw_paper(Rect2(x, y + 1150.0, w, 130.0), tgt)
 	_silk(Vector2(x, y + 430.0), "NOW PLAYING", 15, Color(1, 1, 1, 0.9))
 	var cur := _playing_disc()
 	var song := "READY"
@@ -3546,6 +3739,18 @@ func _draw_empty_bay(r: Rect2) -> void:
 	_panel(r, Color(0, 0, 0, 0.28), 8, Color(1, 1, 1, 0.14), 2)
 	_text_center(r, "EMPTY", T_MD, Color("6f747c"), true)
 
+func _draw_gig_header() -> void:
+	var r := Rect2(879.0, 40.0, 796.0, 80.0)
+	_panel(r, Color("1a1c20"), 8, Color("2a2d33"), 2)
+	var nm := String(venue.get("name", ""))
+	_heavy(Vector2(r.position.x + 24.0, r.position.y + 44.0), nm, _fit_size(nm, T_LG, 440.0, 18), Color("f0f2f5"))
+	_text(Vector2(r.position.x + 24.0, r.position.y + 68.0), "TURN %d OF %d" % [mini(turn_n, D.TURNS), D.TURNS], T_XS, Color("8d939b"), true)
+	var big := _fmt_int(maxi(0, _gig_target() - score_tot))
+	var bw := _heavy_w(big, 48)
+	_heavy(Vector2(r.end.x - 24.0 - bw, r.position.y + 60.0), big, 48, Color("ee5a4f"))
+	var lab := "CROWD HP"
+	_text(Vector2(r.end.x - 24.0 - bw - 16.0 - _text_w(lab, T_XS, true), r.position.y + 58.0), lab, T_XS, Color("8d939b"), true)
+
 func _draw_banner() -> void:
 	if crowd_move.is_empty() or phase != "show":
 		return
@@ -3574,6 +3779,8 @@ func _gear_color(id: String) -> Color:
 			return Color(D.ENERGY_COLOR)
 		"block":
 			return Color("9fb4c8")
+		"consumable":
+			return Color("5fd4c3")
 	match id:
 		"piggy":
 			return Color(D.HYPE_COLOR)
@@ -3617,6 +3824,10 @@ func _draw_gear(r: Rect2, g: Dictionary, flash: float, slot: int = -1) -> void:
 	draw_rect(Rect2(r.position.x + 12.0, r.position.y + 9.0, r.size.x - 24.0, 5.0), ecol if lit else Color(ecol, 0.35))
 	if gcol.a > 0.0:
 		draw_rect(Rect2(r.position.x, r.position.y + 16.0, 9.0, r.size.y - 32.0), gcol if lit else Color(gcol, 0.45))
+	var lvl_i := int(g.get("level", 0))
+	if lvl_i > 0:
+		var lvt := String(D.LEVEL_NAMES[lvl_i])
+		_text(Vector2(r.end.x - 14.0 - _text_w(lvt, T_XS, true), r.position.y + 42.0), lvt, T_XS, c_gold, true)
 	var nm := String(def["name"]).to_upper()
 	var maxw := r.size.x - 44.0
 	var lines: Array[String] = [nm]
@@ -3686,7 +3897,10 @@ func _draw_gear_tip(g: Dictionary) -> void:
 	var st := _gear_status(g, -1)
 	var bh := font.get_multiline_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y
 	var ah := font.get_multiline_string_size(String(acts.get(act, "")), HORIZONTAL_ALIGNMENT_LEFT, iw, T_SM).y
-	var h := pad + 84.0 + 52.0 + bh + 10.0 + 52.0 + ah + (46.0 if st != "" else 0.0) + pad - 6.0
+	var lv_text := "Cannot be leveled up."
+	if bool(def.get("levels", false)):
+		lv_text = "Level: MK I. A Tune-Up makes it stronger." if int(g.get("level", 0)) == 0 else "Level: %s. Each level adds 50%% to its numbers." % D.LEVEL_NAMES[int(g["level"])]
+	var h := pad + 84.0 + 52.0 + bh + 10.0 + 52.0 + ah + 10.0 + 52.0 + 30.0 + (46.0 if st != "" else 0.0) + pad - 6.0
 	var box := Rect2(mouse + Vector2(28.0, 28.0), Vector2(w, h))
 	if box.end.x > UI_W - 12.0:
 		box.position.x = mouse.x - w - 20.0
@@ -3706,8 +3920,12 @@ func _draw_gear_tip(g: Dictionary) -> void:
 	draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
 	_text(Vector2(x, y + 34.0), "WHEN", T_XS, c_gold, true)
 	_wrap(Vector2(x, y + 46.0), String(acts.get(act, "")), iw, T_SM, Color("e8ecf2"))
+	y += 52.0 + ah + 10.0
+	draw_line(Vector2(x, y), Vector2(x + iw, y), Color(1, 1, 1, 0.12), 2.0)
+	_text(Vector2(x, y + 34.0), "LEVEL", T_XS, c_gold, true)
+	_wrap(Vector2(x, y + 46.0), lv_text, iw, T_SM, Color("e8ecf2"))
 	if st != "":
-		_text(Vector2(x, y + 52.0 + ah + 30.0), st, T_SM, Color("9af0b8"), true)
+		_text(Vector2(x, y + 52.0 + 30.0 + 30.0), st, T_SM, Color("9af0b8"), true)
 
 func _playing_disc() -> Disc:
 	if now_slot >= 0 and tray[now_slot] >= 0:
@@ -4055,17 +4273,16 @@ func _bench_kind() -> String:
 		return ""
 	return String(services[bench]["kind"])
 
-func _start_service(i: int) -> void:
+func _buy_consumable(i: int) -> void:
 	var sv: Dictionary = services[i]
 	if bool(sv["sold"]) or cash < int(sv["price"]):
 		return
-	if sv["kind"] in ["enhance", "upgrade"]:
-		binder_pick = i
-		binder_open = true
-		binder_page = 0
+	if consumables.find("") < 0:
+		_say("Your consumable slots are full.")
 		return
-	bench = i
-	_say("Click a unit in your rack." if sv["kind"] == "upgrade" else "Click a fader or dial setting in your rack.")
+	cash -= int(sv["price"])
+	sv["sold"] = true
+	_give_consumable(String(sv["id"]))
 
 func _bench_apply(bay: int, idx: int) -> void:
 	var sv: Dictionary = services[bench]
@@ -4086,7 +4303,11 @@ func _enhance(i: int) -> void:
 	var d := collection[i]
 	if cash < int(sv["price"]):
 		return
-	if String(sv["kind"]) == "upgrade":
+	if String(sv["kind"]) == "trade":
+		collection.erase(d)
+		trade_count += 1
+		_say("Traded in %s." % d.title)
+	elif String(sv["kind"]) == "upgrade":
 		d.sound += D.UPGRADE_POINTS
 		_say("%s gains +%d base points." % [d.title, D.UPGRADE_POINTS])
 	else:
@@ -4103,10 +4324,11 @@ func _enhance(i: int) -> void:
 func _make_services() -> void:
 	services.clear()
 	bench = -1
-	var eds: Array = D.EDITIONS.keys()
-	var e: String = eds[rng.randi_range(0, eds.size() - 1)]
-	services.append({"kind": "enhance", "edition": e, "price": int(D.EDITIONS[e]["price"]), "sold": false})
-	services.append({"kind": "upgrade", "price": D.UPGRADE_PRICE, "sold": false})
+	var keys: Array = D.CONSUMABLES.keys()
+	_shuffle(keys)
+	for k in D.CONSUMABLE_OFFERS:
+		var id := String(keys[k])
+		services.append({"id": id, "price": int(D.CONSUMABLES[id]["price"]), "sold": false})
 
 func _install(slot: int) -> void:
 	if install_queue.is_empty():
@@ -4150,7 +4372,7 @@ func _draw_shop() -> void:
 	_text_center(Rect2(sign.position.x, sign.position.y + 70.0, sign.size.x, 32.0), sub, T_SM, sub_col, true)
 	_draw_shop_label(1455.5, "RECORDS", 560.0)
 	_draw_shop_label(1455.5, "GEAR", 910.0)
-	_draw_shop_label(793.5, "WORK BENCH", 560.0)
+	_draw_shop_label(793.5, "CONSUMABLES", 560.0)
 	_draw_shop_records()
 	_draw_shop_gear()
 	_draw_services(Rect2(668.0, 600.0, COL_W, 495.0))
@@ -4655,8 +4877,13 @@ func _draw_binder_overlay() -> void:
 	_heavy(Vector2(b.position.x, 96.0), "Your Binder", T_XL + 8, Color("f4efe4"))
 	var sorted_by := "  ·  sorted by %s" % String(D.SORT_TEXT[sort_key]).to_lower() if sort_key != "" else "  ·  in the order you got them"
 	if binder_pick >= 0:
-		var ed: Dictionary = D.EDITIONS[services[binder_pick]["edition"]]
-		sorted_by = "  ·  pick an album to make %s ($%d)" % [ed["name"], int(services[binder_pick]["price"])]
+		var bsv: Dictionary = services[binder_pick]
+		if String(bsv["kind"]) == "enhance":
+			sorted_by = "  ·  pick an album to make %s ($%d)" % [D.EDITIONS[bsv["edition"]]["name"], int(bsv["price"])]
+		elif String(bsv["kind"]) == "trade":
+			sorted_by = "  ·  pick an album to trade in ($%d)" % int(bsv["price"])
+		else:
+			sorted_by = "  ·  pick an album to upgrade ($%d)" % int(bsv["price"])
 	_text(Vector2(b.position.x + _heavy_w("Your Binder", T_XL + 8) + 24.0, 92.0), "%d albums%s" % [collection.size(), sorted_by], T_MD, Color("b8c0cc"), true)
 	_shadow(b, 22, 14.0)
 	_surface(b, 22.0, "leather", C_LEATHER.lightened(0.1), C_LEATHER.darkened(0.15), 600.0)
@@ -4751,49 +4978,20 @@ func _edition_marks(c: Vector2, rad: float, e: String) -> void:
 	_text_center(pr, text, fs, Color.WHITE, true)
 
 func _draw_services(r: Rect2) -> void:
-	var th := (r.size.y - 20.0) / 2.0
 	for i in services.size():
 		var sv: Dictionary = services[i]
-		var t := Rect2(r.position.x, r.position.y + i * (th + 20.0), r.size.x, th)
-		_shadow(t, 4, 6.0)
-		_panel(t, Color("f6e7dc"), 3)
-		var x := t.position.x + 14.0
-		while x < t.end.x - 8.0:
-			draw_circle(Vector2(x, t.position.y + 10.0), 3.0, Color("3e2a1c"))
-			x += 18.0
-		var title := ""
-		var desc := ""
-		match String(sv["kind"]):
-			"enhance":
-				var ed: Dictionary = D.EDITIONS[sv["edition"]]
-				title = "Make one %s" % String(ed["name"]).to_lower()
-				desc = "Make one album in your binder %s: %s" % [ed["name"], ed["text"]]
-			"upgrade":
-				title = "Upgrade a CD"
-				desc = "Give one album in your binder +%d base points, permanently." % D.UPGRADE_POINTS
-		var lines := _marker_lines(title, 26, t.size.x - 36.0)
-		var ty := t.position.y + 34.0
-		for ln in lines:
-			_heavy_center(Rect2(t.position.x, ty, t.size.x, 32.0), String(ln), 24, Color("22252a"))
-			ty += 32.0
-		var pr := Rect2(t.get_center().x - 54.0, t.end.y - 90.0, 108.0, 58.0)
-		_panel(pr, Color(0, 0, 0, 0), 6, Color("b03a2e"), 3)
-		_heavy_center(pr, "$%d" % int(sv["price"]), T_LG, Color("b03a2e"))
-		_tip(t, desc)
-		var active := bench == i or binder_pick == i
+		var t := Rect2(r.position.x, r.position.y + i * (GEAR_H + 130.0), COL_W, GEAR_H)
 		if bool(sv["sold"]):
-			_panel(t, Color(0, 0, 0, 0.25), 3)
-			_heavy_center(t, "DONE", T_XL, Color(c_good, 0.7))
+			_heavy_center(t, "SOLD", T_XL, Color(1, 1, 1, 0.12))
 			continue
-		var afford := cash >= int(sv["price"])
-		if active:
-			_panel(t.grow(5.0), Color(0, 0, 0, 0), 8, c_gold, 5)
-		elif not afford:
-			_panel(t, Color(0, 0, 0, 0.35), 3)
-		elif ui_live and bench < 0 and install_queue.is_empty():
-			if t.has_point(mouse):
-				_panel(t.grow(4.0), Color(0, 0, 0, 0), 8, Color(c_gold, 0.8), 3)
-			_register(t, _start_service.bind(i))
+		var afford := cash >= int(sv["price"]) and consumables.find("") >= 0
+		var hot := ui_live and afford and t.has_point(mouse)
+		_draw_cons_tile(Rect2(t.position - Vector2(0.0, 8.0 if hot else 0.0), t.size), String(sv["id"]), false, false)
+		if not afford:
+			_panel(t, Color(0, 0, 0, 0.45), 8)
+		_hang_tag(Vector2(t.get_center().x, t.end.y + 36.0), "$%d" % int(sv["price"]))
+		if ui_live and afford:
+			_hold(t, "cons%d" % i, "Hold to buy", _buy_consumable.bind(i))
 
 func _fmt_time(sec: int) -> String:
 	return "%d:%02d" % [maxi(0, sec) / 60, maxi(0, sec) % 60]
@@ -4834,6 +5032,7 @@ func _start_show(v: Dictionary) -> void:
 	burn_mode = false
 	burn_marks.clear()
 	peek_open = false
+	consume_mode = ""
 	held = -1
 	score_tot = 0
 	score_live = 0
@@ -4988,11 +5187,15 @@ func _fire_rule(rule: Dictionary, src: Disc, s: int, ids: Array, prev: Disc, nxt
 				out.insert(at, {"src": "fx", "text": "Copies %s" % csrc.title, "n": 0, "ci": -1, "run": _s_run(st)})
 			return ok
 		return false
-	if not eff in ["points", "mult", "flow_add", "flow_mult", "cash"]:
+	if not eff in ["points", "mult", "flow_add", "flow_mult", "cash", "consumable"]:
 		return false
 	var count := _cond_count(rule, s, ids, prev, nxt)
 	if count <= 0:
 		return false
+	if eff == "consumable":
+		fx["gen"] = int(fx["gen"]) + 1
+		out.append({"src": "fx", "text": "Makes a consumable", "n": 0, "ci": -1, "run": _s_run(st)})
+		return true
 	if String(rule.get("target", "self")) == "turn" and eff != "mult":
 		var bk: Dictionary = fx["bank"]
 		var bper := count if String(rule.get("condition", "")) in ["per_before", "per_hand", "per_empty"] else 1
@@ -5274,7 +5477,7 @@ func _rule_song(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array, prev:
 	var count := _rule_count(r, e, d, s, ids)
 	if count <= 0:
 		return 0
-	var m: int = e["m"]
+	var m: float = float(e["m"]) * (1.0 + 0.5 * float(int((e["g"] as Dictionary).get("level", 0))))
 	var ci: int = e["ci"]
 	var amt := float(r.get("amount", 0.0))
 	var label := String(r.get("label", ""))
@@ -5295,6 +5498,9 @@ func _rule_song(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array, prev:
 			var lm2 := 1.0 + (amt - 1.0) * m
 			fx["fl"] = float(fx["fl"]) * lm2
 			out.append({"src": "rack", "text": "%s flow x%s" % [label, _ff(lm2)], "n": 0, "ci": ci, "run": _s_run(st), "flow": float(fx["fl"])})
+		"consumable":
+			fx["gen"] = int(fx["gen"]) + int(round(amt * count * m))
+			out.append({"src": "rack", "text": "%s: consumable" % label, "n": 0, "ci": ci, "run": _s_run(st)})
 		"upgrade":
 			var up := int(round(amt * count * m))
 			fx["upg"] = int(fx["upg"]) + up
@@ -5371,7 +5577,7 @@ func _score_ctx() -> Dictionary:
 	var fl := (1.0 + float(bank_in.get("flow", 0.0)) + stored) * float(bank_in.get("fmult", 1.0))
 	if String(crowd_move.get("kind", "")) == "static" and not bool(crowd_move.get("ignored", false)):
 		fl = 1.0 + (fl - 1.0) * D.STATIC_KEEP
-	return {"fx": {"fl": 1.0, "cash": 0, "nextq": [], "later": [], "upg": 0, "bank": {"points": 0, "flow": 0.0, "fmult": 1.0, "cash": 0}}, "req_done": false, "gm": gm, "hand_g": 0, "req": _demand_bonus(), "fl": fl, "stored": stored, "total": 0, "carry": int(bank_in.get("points", 0))}
+	return {"fx": {"fl": 1.0, "cash": 0, "nextq": [], "later": [], "upg": 0, "gen": 0, "bank": {"points": 0, "flow": 0.0, "fmult": 1.0, "cash": 0}}, "req_done": false, "gm": gm, "hand_g": 0, "req": _demand_bonus(), "fl": fl, "stored": stored, "total": 0, "carry": int(bank_in.get("points", 0))}
 
 func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 	var gm: Dictionary = ctx["gm"]
@@ -5390,6 +5596,7 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 	fx["fl"] = fl
 	fx["cash"] = 0
 	fx["upg"] = 0
+	fx["gen"] = 0
 	for q: Dictionary in fx["nextq"]:
 		if int(q["slot"]) == s:
 			_apply_buff(out, st, q)
@@ -5437,7 +5644,7 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 		fired = true
 	ctx["fl"] = fl_mul
 	ctx["total"] = int(ctx["total"]) + song
-	return {"score": song, "song": song, "steps": out, "fired": fired, "cash": cash_gain, "upgrade": int(fx["upg"]), "flow_start": fl_start, "flow_mul": fl_mul}
+	return {"score": song, "song": song, "steps": out, "fired": fired, "cash": cash_gain, "upgrade": int(fx["upg"]), "gen": int(fx["gen"]), "flow_start": fl_start, "flow_mul": fl_mul}
 
 func _score_set(ids: Array, tray_slots: Array = []) -> Dictionary:
 	var ctx := _score_ctx()
@@ -5576,6 +5783,9 @@ func _finish_song() -> void:
 	if extra > 0:
 		_cash_fx(extra, s)
 		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": "+$%d" % extra, "col": Color("7fe0a0"), "life": 1.3})
+	for gk in int(result.get("gen", 0)):
+		var gtxt := "Consumable!" if _give_consumable() else "Consumable slots full"
+		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": gtxt, "col": c_gold, "life": 1.6})
 	var upg := int(result.get("upgrade", 0))
 	if upg > 0:
 		d.sound += upg

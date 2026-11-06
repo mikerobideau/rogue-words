@@ -27,7 +27,7 @@ const COND_NAMES := {
 	"per_hand": "For each song left in hand of...",
 }
 const COND_NEEDS_PARAM: Array[String] = ["prev_is", "next_is", "per_before", "per_hand"]
-const EFFECT_KINDS: Array[String] = ["none", "points", "mult", "flow_add", "flow_mult", "cash", "copy"]
+const EFFECT_KINDS: Array[String] = ["none", "points", "mult", "flow_add", "flow_mult", "cash", "copy", "consumable"]
 const EFFECT_NAMES := {
 	"none": "No effect",
 	"points": "Add points",
@@ -36,6 +36,7 @@ const EFFECT_NAMES := {
 	"flow_mult": "Multiply flow",
 	"cash": "Add cash",
 	"copy": "Copy the previous song's effect",
+	"consumable": "Make a consumable",
 }
 const TARGET_NAMES := {
 	"self": "This song",

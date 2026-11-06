@@ -227,3 +227,17 @@ The screen is nine modules across, each 251 wide with 22 gutters, inside 60 marg
 Gear tiles are golden rectangles (251 by 155). CD tiles keep the jewel-case shape. The stage rows are gear, tray numbers, trays, hand, a crowd-move banner, then the bars, with RIG and HAND labels in the same small uppercase style.
 
 Color: gold means "this tray is in play". Red is only for danger (blocked, Discard, score below target). Green is PLAY. Gear is dark gunmetal and brightens when powered. Each gear unit has a top strip in the color of what it adds (green points, blue flow, gold cash, purple upgrade or echo) and a left strip in the genre color when it keys on one.
+
+## Starter decks, decades, trade-in and consumables
+
+Each starter deck is a 4 by 6 grid of plain CDs: one for each genre and decade, two copies each (48), plus five themed CDs. A basic CD is a suit and a value (genre and decade) with 4 base points and no effect. Shops sell only CDs with abilities and packs, so basics are only removed or improved, never bought.
+
+Decade gear keys on one axis only: 60s grows (Tremolo), 70s flow (Disco Filter), 80s points (Gated Reverb), 90s cash (Cassette Saturator), 00s echo (Y2K Delay), 10s a multiplier (Auto-Tune). Genre gear stays on genre.
+
+Consumables replace the old work bench. There are ten: Fast Forward, Rewind, Remix, Polish, Dub, Press (random edition), Trade In (removes a CD from the deck at the end of the gig), Tune-Up (levels up a gear unit), Amp Up and Quiet Down. Two slots sit at the bottom left, drawn as tiles like gear. Click one during a gig to use it; CD ones then ask for a CD in your hand, and Tune-Up asks for a gear unit.
+
+They come from four places: the shop sells two at random (priced $2 to $6), some gear makes one (Tape Deck, Spare Reel), and some uncommon CDs make one (Improv Jam, Studio Outtakes). A full inventory wastes a new one.
+
+Gear with `levels: true` in `gear.json` can take a Tune-Up, to MK II and MK III, and each level adds 50% to its numbers. Echo, block, button, upgrade and consumable-making units do not level.
+
+The gig name, turn and crowd HP sit in a header tile at the top middle of the stage.

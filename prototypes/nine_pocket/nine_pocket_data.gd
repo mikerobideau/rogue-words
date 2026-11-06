@@ -197,3 +197,18 @@ const SERVICE_CHANCE := {"enhance": 0.45, "tweak": 0.5, "upgrade": 0.45}
 const TWEAK_PRICE := 3
 const UPGRADE_PRICE := 6
 const UPGRADE_POINTS := 2
+const TRADE_PRICE := 2
+const CONSUMABLE_SLOTS := 2
+const CONSUMABLE_OFFERS := 2
+const CONSUMABLES := {
+	"fast_forward": {"name": "Fast Forward", "text": "Move one CD in your hand a decade later, for good.", "target": "cd", "price": 3, "col": "2f9d8c"},
+	"rewind": {"name": "Rewind", "text": "Move one CD in your hand a decade earlier, for good.", "target": "cd", "price": 3, "col": "2f9d8c"},
+	"remix": {"name": "Remix", "text": "Change one CD in your hand to a random other genre, for good.", "target": "cd", "price": 3, "col": "2f9d8c"},
+	"polish": {"name": "Polish", "text": "One CD in your hand gains +2 base points, for good.", "target": "cd", "price": 5, "col": "2f9d8c"},
+	"dub": {"name": "Dub", "text": "Add a copy of one CD in your hand to your deck.", "target": "cd", "price": 5, "col": "2f9d8c"},
+	"press": {"name": "Press", "text": "Give one CD in your hand a random edition: holographic, signed, limited or mint.", "target": "cd", "price": 4, "col": "2f9d8c"},
+	"trade_in": {"name": "Trade In", "text": "Remove one CD in your hand from your deck for good.", "target": "cd", "price": 2, "col": "2f9d8c"},
+	"tune_up": {"name": "Tune-Up", "text": "Level up one gear unit that supports it, to MK II and then MK III.", "target": "gear", "price": 6, "col": "6b4fb8"},
+	"amp_up": {"name": "Amp Up", "text": "+1 flow for the rest of this turn.", "target": "", "price": 2, "col": "d9a62e"},
+	"quiet_down": {"name": "Quiet Down", "text": "Cancel this turn's crowd move.", "target": "", "price": 3, "col": "d9a62e"},
+}
