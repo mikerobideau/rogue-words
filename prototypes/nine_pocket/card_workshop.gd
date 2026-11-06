@@ -44,6 +44,7 @@ const TARGET_NAMES := {
 	"later_genre": "Later songs of a genre",
 	"later_decade": "Later songs of a decade",
 	"set": "The whole set (flow)",
+	"turn": "Start of next turn",
 }
 const COND_POWER := {"always": 1.0, "first": 0.6, "last": 0.6, "next_empty": 0.7, "prev_empty": 0.7, "per_empty": 0.9, "odd": 0.5, "even": 0.5, "slot1": 0.3, "slot2": 0.3, "slot3": 0.3, "slot4": 0.3, "prev_is": 0.45, "next_is": 0.45, "per_before": 1.6, "per_hand": 0.9}
 const BG := Color("1b1d21")
@@ -605,10 +606,14 @@ func _on_list_selected(idx: int) -> void:
 
 func _allowed_targets(effect: String) -> Array:
 	match effect:
-		"points", "mult":
+		"points":
+			return ["self", "next", "later", "later_genre", "later_decade", "turn"]
+		"mult":
 			return ["self", "next", "later", "later_genre", "later_decade"]
 		"flow_add", "flow_mult":
-			return ["set"]
+			return ["set", "turn"]
+		"cash":
+			return ["self", "turn"]
 	return ["self"]
 
 func _fill_cparam(cond: String, current: String) -> void:
@@ -769,6 +774,8 @@ func _power(c: Dictionary) -> float:
 			raw *= 2.0
 		"later_genre", "later_decade":
 			raw *= 0.8
+		"turn":
+			raw *= 0.9
 	return pts + raw * float(COND_POWER.get(String(c.get("condition", "always")), 1.0))
 
 func _bar_fill(col: Color) -> void:

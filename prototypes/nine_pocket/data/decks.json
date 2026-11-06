@@ -1,59 +1,74 @@
 [
 	{
-		"id": "rock",
-		"name": "Rock Deck",
-		"idea": "Two copies of every Rock CD and two Mixes.",
+		"id": "hipster",
+		"name": "Hipster Deck",
+		"idea": "Indie, soul and lo-fi. Old records chain into big flow.",
 		"enabled": true,
-		"mixes": 2,
+		"mixes": 0,
 		"cards": {
-			"unknown-new-card": 2,
-			"unknown-new-card-2": 2,
-			"unknown-new-card-3": 2,
-			"unknown-new-card-4": 2,
-			"unknown-new-card-5": 2,
-			"unknown-new-card-6": 2,
-			"unknown-new-card-7": 2
+			"basic-rock": 5,
+			"basic-pop": 5,
+			"basic-hiphop": 5,
+			"basic-jazz": 5,
+			"unknown-new-card-7": 2,
+			"unknown-new-card-12": 2,
+			"unknown-new-card-15": 2,
+			"unknown-new-card-24": 2,
+			"unknown-new-card-18": 2
 		}
 	},
 	{
-		"id": "pop",
-		"name": "Pop Deck",
-		"idea": "Two copies of every Pop CD and two Mixes.",
+		"id": "sellout",
+		"name": "Sellout Deck",
+		"idea": "Chart-toppers that pay cash. Play for the money.",
 		"enabled": true,
-		"mixes": 2,
+		"mixes": 0,
 		"cards": {
-			"unknown-new-card-9": 2,
-			"unknown-new-card-10": 2,
-			"unknown-new-card-11": 2,
-			"unknown-new-card-12": 2,
+			"basic-rock": 5,
+			"basic-pop": 5,
+			"basic-hiphop": 5,
+			"basic-jazz": 5,
 			"unknown-new-card-13": 2,
 			"unknown-new-card-14": 2,
-			"unknown-new-card-15": 2
+			"unknown-new-card-9": 2,
+			"unknown-new-card-17": 2,
+			"unknown-new-card-11": 2
 		}
 	},
 	{
-		"id": "mixed",
-		"name": "Mixed Bag",
-		"idea": "Five common CDs from every genre and five Mixes.",
+		"id": "headbanger",
+		"name": "Headbanger Deck",
+		"idea": "Loud Rock that stacks points. Leave gaps for the big hits.",
 		"enabled": true,
-		"mixes": 5,
+		"mixes": 0,
 		"cards": {
-			"unknown-new-card": 1,
-			"unknown-new-card-2": 1,
-			"unknown-new-card-3": 1,
-			"unknown-new-card-5": 1,
-			"unknown-new-card-6": 1,
-			"unknown-new-card-9": 1,
-			"unknown-new-card-11": 1,
-			"unknown-new-card-12": 1,
-			"unknown-new-card-13": 1,
-			"unknown-new-card-14": 1,
-			"unknown-new-card-17": 2,
+			"basic-rock": 5,
+			"basic-pop": 5,
+			"basic-hiphop": 5,
+			"basic-jazz": 5,
+			"unknown-new-card-4": 2,
+			"unknown-new-card-5": 2,
+			"unknown-new-card": 2,
+			"unknown-new-card-2": 2,
+			"unknown-new-card-3": 2
+		}
+	},
+	{
+		"id": "crate-digger",
+		"name": "Crate Digger Deck",
+		"idea": "Hip-Hop beats and Jazz oddities. Chain flow and copy the best.",
+		"enabled": true,
+		"mixes": 0,
+		"cards": {
+			"basic-rock": 5,
+			"basic-pop": 5,
+			"basic-hiphop": 5,
+			"basic-jazz": 5,
+			"unknown-new-card-16": 2,
 			"unknown-new-card-19": 2,
-			"unknown-new-card-21": 1,
-			"unknown-new-card-22": 2,
+			"unknown-new-card-21": 2,
 			"unknown-new-card-23": 2,
-			"unknown-new-card-27": 1
+			"unknown-new-card-28": 2
 		}
 	}
 ]
