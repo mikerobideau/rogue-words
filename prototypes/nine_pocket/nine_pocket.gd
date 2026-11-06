@@ -152,6 +152,8 @@ var crowd_move := {}
 var turn_n := 1
 var bank_in := {}
 var blocked_slot := -1
+var boss_blocked: Array = []
+var boss_last_genre := -1
 var turn_dmg := 0
 var move_met := false
 var turn_note := ""
@@ -233,6 +235,51 @@ const TRAY_Y := 365.0
 const HAND_Y := 800.0
 var hover_gear: Dictionary = {}
 var gear_tip_off := false
+
+func _tray_blocked(s: int) -> bool:
+	return s == blocked_slot or s in boss_blocked
+
+func _max_play() -> int:
+	return D.SETLIST - 1 if _boss_kind() == "exec" else D.SETLIST
+
+func _roll_boss_blocks() -> void:
+	boss_blocked.clear()
+	if _boss_kind() != "heckler":
+		return
+	var pool: Array = []
+	for k in D.TRAYS:
+		if k != blocked_slot:
+			pool.append(k)
+	_shuffle(pool)
+	boss_blocked.assign(pool.slice(0, 2))
+
+func _boss_title() -> String:
+	return String((venue.get("challenge", {}) as Dictionary).get("title", ""))
+
+func _boss_text() -> String:
+	var ch: Dictionary = venue.get("challenge", {})
+	match String(ch.get("kind", "")):
+		"heckler":
+			return "Two trays are blocked every turn, and their gear is off."
+		"purist":
+			return "Only %s songs score in full. Every other genre scores at 65%%." % D.GENRES[int(ch.get("genre", 0))]
+		"critic":
+			if boss_last_genre >= 0:
+				return "You played the most %s last turn, so %s songs score half this turn." % [D.GENRES[boss_last_genre], D.GENRES[boss_last_genre]]
+			return "The genre you play the most each turn scores half on the next turn."
+		"engineer":
+			var names: Array = ch.get("names", [])
+			return ("%s are switched off for the whole gig." % " and ".join(names)) if not names.is_empty() else "Two of your gear units are switched off for the whole gig."
+		"exec":
+			return "You can play only three CDs a turn, and consumables are locked."
+	return ""
+
+func _make_boss_venue(bi: int) -> Dictionary:
+	var b: Dictionary = D.BOSSES[mini(bi, D.BOSSES.size() - 1)]
+	var ch := {"kind": String(b["kind"]), "title": String(b["title"])}
+	if String(b["kind"]) == "purist":
+		ch["genre"] = rng.randi_range(0, D.GENRES.size() - 1)
+	return {"name": String(b["venue"]), "likes": [], "dislikes": [], "headliner": true, "challenge": ch}
 
 func _gx() -> float:
 	return 472.0 if phase == "shop" else 879.0
@@ -1541,6 +1588,9 @@ func _jewel_parts(d: Disc) -> Dictionary:
 			cb = ["@hand", p]
 	var ei := "note"
 	var en := ("+$" + _ff(v)) if eff == "cash" else (("+" + _ff(v)) if eff == "points" or eff == "flow_add" else ("x" + _ff(v)))
+	if eff == "consumable":
+		ei = "tape"
+		en = "+1"
 	if eff == "flow_add" or eff == "flow_mult":
 		ei = "wave"
 	elif eff == "cash":
@@ -1563,6 +1613,10 @@ func _icon(kind: String, c: Vector2, s: float, col: Color) -> void:
 			draw_circle(c + Vector2(-h * 0.35, h * 0.55), h * 0.38, col)
 			draw_line(c + Vector2(0.0, h * 0.5), c + Vector2(0.0, -h * 0.8), col, w)
 			draw_line(c + Vector2(0.0, -h * 0.8), c + Vector2(h * 0.7, -h * 0.35), col, w)
+		"tape":
+			draw_rect(Rect2(c.x - h * 0.95, c.y - h * 0.6, h * 1.9, h * 1.2), col, false, w)
+			draw_circle(c + Vector2(-h * 0.4, 0.0), h * 0.22, col)
+			draw_circle(c + Vector2(h * 0.4, 0.0), h * 0.22, col)
 		"wave":
 			var pts := PackedVector2Array()
 			for i in 13:
@@ -1810,9 +1864,9 @@ func _drop_target(pos: Vector2) -> Array:
 	var best: Array = []
 	var bestd := INF
 	for s in D.TRAYS:
-		if s == blocked_slot:
+		if _tray_blocked(s):
 			continue
-		if tray[s] < 0 and drag_kind == "wallet" and _placed() >= D.SETLIST:
+		if tray[s] < 0 and drag_kind == "wallet" and _placed() >= _max_play():
 			continue
 		var rr := _case_rect(s).grow(16.0)
 		if rr.has_point(pos):
@@ -1932,7 +1986,7 @@ func _draw_drag() -> void:
 		_panel(_cell_rect(drag_kind, drag_idx), Color(0, 0, 0, 0), 8, Color(1, 1, 1, 0.22), 3)
 		var pulse := 0.16 + 0.08 * sin(clock * 5.0)
 		for s in D.TRAYS:
-			if not (drag_kind == "tray" and drag_idx == s) and s != blocked_slot:
+			if not (drag_kind == "tray" and drag_idx == s) and not _tray_blocked(s):
 				_panel(_case_rect(s).grow(6.0), Color(0, 0, 0, 0), 12, Color(c_gold, pulse), 3)
 		for p in D.HAND:
 			if not (drag_kind == "wallet" and drag_idx == p):
@@ -1981,6 +2035,9 @@ func _give_consumable(id: String = "") -> bool:
 
 func _use_consumable(slot: int) -> void:
 	var id := String(consumables[slot])
+	if _boss_kind() == "exec" and id != "":
+		_say("The Label Exec has locked your consumables.")
+		return
 	if id == "" or phase != "show" or resolving or playing or not dig_offer.is_empty() or dig_mode or burn_mode or peek_open or binder_open:
 		return
 	if consume_mode != "" and consume_slot == slot:
@@ -2168,9 +2225,9 @@ func _on_pocket(p: int) -> void:
 	if wallet[p] < 0:
 		return
 	var o := -1
-	if _placed() < D.SETLIST:
+	if _placed() < _max_play():
 		for k in D.TRAYS:
-			if tray[k] < 0 and k != blocked_slot:
+			if tray[k] < 0 and not _tray_blocked(k):
 				o = k
 				break
 	if o < 0:
@@ -2185,7 +2242,7 @@ func _on_pocket(p: int) -> void:
 func _on_slot(s: int) -> void:
 	if resolving or playing or not dig_offer.is_empty():
 		return
-	if s == blocked_slot:
+	if _tray_blocked(s):
 		return
 	if sel_slot < 0:
 		if tray[s] >= 0:
@@ -2629,7 +2686,7 @@ func _draw_tray_disc(s: int) -> void:
 	var cr := _case_rect(s)
 	var c := Vector2(cr.get_center().x, cr.position.y - 32.0)
 	var occupied := tray[s] >= 0
-	var blocked := s == blocked_slot
+	var blocked := _tray_blocked(s)
 	var ring := Color(1, 1, 1, 0.2)
 	var ink := Color("6c727a")
 	if blocked:
@@ -2724,15 +2781,15 @@ func _draw_well(s: int) -> void:
 		_tip_disc(cr, d)
 	if slot_flash[s] > 0.0:
 		_panel(cr.grow(6.0), Color(0, 0, 0, 0), 12, Color(c_gold, slot_flash[s]), 5)
-	if s == blocked_slot:
+	if _tray_blocked(s):
 		draw_rect(cr, Color(0.35, 0.05, 0.05, 0.55))
 		_text_center(cr, "BLOCKED", T_MD, Color("ffb0a6"), true)
 	if lock_tag != "":
 		var lr0 := Rect2(cr.position.x, cr.position.y + 4.0, cr.size.x, 30.0)
 		_panel(lr0, Color("7a1f1f"), 8, Color("ffb0a6"), 2)
 		_text_center(lr0, lock_tag, 13, Color.WHITE, true)
-	if i < 0 and _placed() >= D.SETLIST and not resolving and s != blocked_slot:
-		_text_center(cr, "FOUR PLACED", T_SM, Color(1, 1, 1, 0.22), true)
+	if i < 0 and _placed() >= _max_play() and not resolving and not _tray_blocked(s):
+		_text_center(cr, "FULL", T_SM, Color(1, 1, 1, 0.22), true)
 	var ro: Dictionary = readout[s]
 	var lr := Rect2(cr.position.x, cr.end.y + 26.0, cr.size.x, 40.0)
 	var lc := Color(D.SOUND_COLOR).lightened(0.25)
@@ -2847,6 +2904,8 @@ func _cond_label(d: Disc) -> String:
 	var tp := _short_name(String(r.get("tparam", "")))
 	var p := _short_name(String(r.get("cparam", "")))
 	var sg := ("+$" + _ff(v)) if eff == "cash" else (("+" + _ff(v)) if eff == "points" or eff == "flow_add" else ("x" + _ff(v)))
+	if eff == "consumable":
+		sg = "+TAPE"
 	var part := sg
 	if tgt == "turn":
 		part = "NEXT TURN " + (("FLOW " + sg) if eff == "flow_add" or eff == "flow_mult" else sg)
@@ -2931,6 +2990,8 @@ func _cond_text(d: Disc) -> String:
 			body = ("next turn starts with %s more flow." % v) if later else ("your flow goes up by %s." % v)
 		"flow_mult":
 			body = ("next turn starts with your flow multiplied by %s." % v) if later else ("your flow is multiplied by %s." % v)
+		"consumable":
+			body = "you get a random consumable if a slot is free."
 		"cash":
 			body = ("you earn $%s at the start of next turn." % v) if later else ("you earn $%s." % v)
 		_:
@@ -3129,8 +3190,8 @@ func _draw_actions() -> void:
 
 func _draw_shop_nav() -> void:
 	var enabled := ui_live and install_queue.is_empty() and bench < 0
-	_hw_button(Rect2(60.0, 891.0, 360.0, 84.0), "View binder (%d)" % collection.size(), _toggle_binder, install_queue.is_empty(), Color("1a1c20"), T_MD)
-	_hw_button(Rect2(60.0, 995.0, 360.0, 100.0), "Leave shop", _leave_shop, enabled, Color("3f9b5a"), T_XL)
+	_hw_button(Rect2(60.0, 618.0, 360.0, 84.0), "View binder (%d)" % collection.size(), _toggle_binder, install_queue.is_empty(), Color("1a1c20"), T_MD)
+	_hw_button(Rect2(60.0, 722.0, 360.0, 100.0), "Leave shop", _leave_shop, enabled, Color("3f9b5a"), T_XL)
 
 func _draw_console_sorted() -> void:
 	var r := Rect2(60.0, 1302.0, r_side.end.x - 60.0, 108.0)
@@ -3232,9 +3293,7 @@ func _score_color(v: float) -> Color:
 		return Color("ff6b5a")
 	if v < t:
 		return Color("f2c14e")
-	if v < t * D.TIER_GOOD:
-		return Color("7fe0a0")
-	return Color("b6ff8a")
+	return Color("7fe0a0")
 
 func _tag_ring_val(is_era: bool, v: int) -> Color:
 	var key := "era" if is_era else "genre"
@@ -3680,25 +3739,16 @@ func _draw_score_panel() -> void:
 	_eq_strip(Rect2(x, y + 532.0, w, 62.0))
 	var meter := Rect2(x, y + 260.0, w, 56.0)
 	_inset(meter, 6.0, Color("0b0c0e"))
-	var frac := clampf(float(shown) / (2.0 * tgt), 0.0, 1.0)
+	var frac := clampf(float(shown) / float(tgt), 0.0, 1.0)
 	var gfrac := 0.0
 	var bars := 28
 	var bw := (meter.size.x - 24.0) / bars
 	for k in bars:
 		var on := float(k) / bars < frac
 		var ghost := not on and float(k) / bars < gfrac
-		var col := _score_color(float(k) / bars * 2.0 * tgt)
+		var col := _score_color(float(shown) if shown >= tgt else float(k) / bars * float(tgt))
 		var br := Rect2(meter.position.x + 12.0 + k * bw, meter.position.y + 10.0, bw - 4.0, meter.size.y - 20.0)
 		_panel(br, col if on else (Color(col, 0.38) if ghost else Color(col, 0.08)), 2)
-	var span := meter.size.x - 24.0
-	for tier: Array in [[0.5, "TARGET", tgt], [0.75, "APPLAUSE", int(round(tgt * D.TIER_GOOD))], [1.0, "ENCORE", int(round(tgt * D.TIER_GREAT))]]:
-		var tx := meter.position.x + 12.0 + span * float(tier[0])
-		var hit := float(shown) >= float(tier[2])
-		draw_line(Vector2(tx, meter.position.y + 4.0), Vector2(tx, meter.end.y - 4.0), Color(1, 1, 1, 0.55), 2.0)
-		var lab := "%s %s" % [tier[1], _fmt_int(int(tier[2]))]
-		var lw := _text_w(lab, 13, true)
-		var lx := minf(tx - lw * 0.5, x + w - lw)
-		_text(Vector2(lx, meter.end.y + 26.0), lab, 13, c_gold if hit else dim, true)
 	var sl := _score_lcd()
 	_lcd(sl, _fmt_int(shown), _score_color(float(shown)), _lcd_size(sl, 96), "888,888", "center")
 	_silk(Vector2(sl.position.x + 14.0, sl.position.y + 24.0), "SCORE", 13, Color(_score_color(float(shown)), 0.55))
@@ -3744,7 +3794,10 @@ func _draw_gig_header() -> void:
 	_panel(r, Color("1a1c20"), 8, Color("2a2d33"), 2)
 	var nm := String(venue.get("name", ""))
 	_heavy(Vector2(r.position.x + 24.0, r.position.y + 44.0), nm, _fit_size(nm, T_LG, 440.0, 18), Color("f0f2f5"))
-	_text(Vector2(r.position.x + 24.0, r.position.y + 68.0), "TURN %d OF %d" % [mini(turn_n, D.TURNS), D.TURNS], T_XS, Color("8d939b"), true)
+	var sub := "GIG %d OF %d  ·  TURN %d OF %d" % [gig_n, D.RUN_GIGS, mini(turn_n, D.TURNS), D.TURNS]
+	if bool(venue.get("headliner", false)):
+		sub += "  ·  HEADLINER"
+	_text(Vector2(r.position.x + 24.0, r.position.y + 68.0), sub, T_XS, Color("ee5a4f") if bool(venue.get("headliner", false)) else Color("8d939b"), true)
 	var big := _fmt_int(maxi(0, _gig_target() - score_tot))
 	var bw := _heavy_w(big, 48)
 	_heavy(Vector2(r.end.x - 24.0 - bw, r.position.y + 60.0), big, 48, Color("ee5a4f"))
@@ -3754,7 +3807,19 @@ func _draw_gig_header() -> void:
 func _draw_banner() -> void:
 	if crowd_move.is_empty() or phase != "show":
 		return
-	var r := Rect2(879.0, 1070.0, 1616.0, 64.0)
+	var head := bool(venue.get("headliner", false))
+	if head:
+		var br := Rect2(879.0, 1030.0, 1616.0, 52.0)
+		_panel(br, Color(0.1, 0.06, 0.06, 0.95), 10, Color(c_bad, 0.7), 2)
+		var bt := ("HEADLINER · " + _boss_title()).to_upper()
+		var btw := _heavy_w(bt, T_SM) + 40.0
+		var bcr := Rect2(br.position.x + 8.0, br.position.y + 7.0, btw, br.size.y - 14.0)
+		_panel(bcr, Color(c_bad, 0.9), 6)
+		_heavy_center(bcr, bt, T_SM, Color.WHITE)
+		var btx := _boss_text()
+		var bsz := _fit_size(btx, T_SM, br.end.x - bcr.end.x - 48.0)
+		_text(Vector2(bcr.end.x + 24.0, br.get_center().y + _vc(font_bold, bsz)), btx, bsz, Color("e8ecf2"), true)
+	var r := Rect2(879.0, 1094.0 if head else 1070.0, 1616.0, 64.0)
 	var chip := c_good if bool(crowd_move.get("ignored", false)) else c_bad
 	_panel(r, Color(0.07, 0.08, 0.1, 0.92), 10, Color(chip, 0.55), 2)
 	var title := _move_title().to_upper()
@@ -3806,7 +3871,7 @@ func _gear_lit(g: Dictionary, slot: int) -> bool:
 	if phase != "show" or slot < 0:
 		return true
 	if _gear_act(String(g["id"])) in ["song", "gig", "discard"]:
-		return _tray_on(slot) and slot != blocked_slot
+		return _tray_on(slot) and not _tray_blocked(slot)
 	return true
 
 func _tip_gear(r: Rect2, g: Dictionary) -> void:
@@ -3865,7 +3930,7 @@ func _draw_gear(r: Rect2, g: Dictionary, flash: float, slot: int = -1) -> void:
 		_led(Vector2(r.get_center().x, bottom), 7.0, ecol, maxf(1.0 if lit and slot >= 0 and phase == "show" else 0.0, flash))
 	if flash > 0.0:
 		_panel(r, Color(c_gold, 0.35 * flash), 8)
-	if phase == "show" and slot >= 0 and slot == blocked_slot:
+	if phase == "show" and slot >= 0 and _tray_blocked(slot):
 		draw_rect(r, Color(0.35, 0.05, 0.05, 0.6))
 		var hh := r.size.y
 		var sx := r.position.x - hh
@@ -4153,10 +4218,26 @@ func _draw_result() -> void:
 	_hw_button(Rect2(r.get_center().x - 220.0, r.end.y - 120.0, 440.0, 84.0), "Visit the record shop", _to_shop, true, Color("3f9b5a"), T_LG)
 
 func _draw_run_end(won: bool) -> void:
-	var r := _modal_panel(900.0, 440.0)
-	_heavy_center(Rect2(r.position.x, r.position.y + 50.0, r.size.x, 90.0), "Tour complete!" if won else "The crowd went home", T_HERO, c_good if won else c_bad)
-	_text_center(Rect2(r.position.x, r.position.y + 160.0, r.size.x, 40.0), "Crowd score %s of %s" % [_fmt_int(gig_score), _fmt_int(target)], T_LG, c_ink, true)
-	_text_center(Rect2(r.position.x, r.position.y + 205.0, r.size.x, 40.0), "You played all %d gigs." % _tour_gigs() if won else "Your tour ended at gig %d of %d." % [gig_n, _tour_gigs()], T_MD, c_body)
+	var r := _modal_panel(1000.0, 600.0)
+	if won:
+		_heavy_center(Rect2(r.position.x, r.position.y + 50.0, r.size.x, 110.0), "YOU WIN!", T_HERO + 24, c_good)
+		_text_center(Rect2(r.position.x, r.position.y + 190.0, r.size.x, 44.0), "You beat all %d headliners across %d gigs." % [D.RUN_GIGS / D.BOSS_EVERY, D.RUN_GIGS], T_LG, c_ink, true)
+		var units := 0
+		for g: Dictionary in rack:
+			if not g.is_empty():
+				units += 1
+		var x := r.position.x + 260.0
+		var w := r.size.x - 520.0
+		var y := r.position.y + 290.0
+		_text(Vector2(x, y), "Deck", T_MD, c_muted, true)
+		_heavy_right(x + w, y, "%d CDs" % collection.size(), T_LG, c_ink)
+		_text(Vector2(x, y + 56.0), "Rig", T_MD, c_muted, true)
+		_heavy_right(x + w, y + 56.0, "%d units" % units, T_LG, c_ink)
+		_text(Vector2(x, y + 112.0), "Cash", T_MD, c_muted, true)
+		_heavy_right(x + w, y + 112.0, "$%d" % cash, T_LG, c_good)
+	else:
+		_heavy_center(Rect2(r.position.x, r.position.y + 50.0, r.size.x, 90.0), "The crowd went home", T_HERO, c_bad)
+		_text_center(Rect2(r.position.x, r.position.y + 190.0, r.size.x, 44.0), "Your tour ended at gig %d of %d." % [gig_n, D.RUN_GIGS], T_LG, c_ink, true)
 	_hw_button(Rect2(r.get_center().x - 160.0, r.end.y - 130.0, 320.0, 86.0), "Main menu", _to_title, true, Color("3f9b5a"), T_LG)
 
 func _to_shop(hint: Dictionary = {}) -> void:
@@ -5019,6 +5100,19 @@ func _start_show(v: Dictionary) -> void:
 		for g: Dictionary in rack:
 			if not g.is_empty() and String(g["id"]) == String(chal.get("gear_id", "")):
 				g["broken"] = true
+	boss_blocked.clear()
+	boss_last_genre = -1
+	if String(chal.get("kind", "")) == "engineer":
+		var live: Array = []
+		for bi in rack.size():
+			if not rack[bi].is_empty():
+				live.append(bi)
+		_shuffle(live)
+		var bnames: Array = []
+		for bj in mini(2, live.size()):
+			rack[live[bj]]["broken"] = true
+			bnames.append(String(gear_defs[rack[live[bj]]["id"]]["name"]))
+		chal["names"] = bnames
 	for g: Dictionary in rack:
 		if not g.is_empty():
 			g["used"] = 0
@@ -5634,8 +5728,15 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 		bdc = _has_tag(d, false, int(bc.get("genre", -2)))
 	elif _boss_kind() == "era":
 		bdc = _has_tag(d, true, int(bc.get("era", -2)))
+	elif _boss_kind() == "purist" and d.genre >= 0 and d.genre != int(bc.get("genre", -2)):
+		bdc = 1
+	elif _boss_kind() == "critic" and d.genre >= 0 and d.genre == boss_last_genre:
+		bdc = 1
 	if bdc > 0:
-		_s_mult(out, st, "boss", "Boss debuff x0.5", D.BOSS_DEBUFF_MULT)
+		if _boss_kind() == "purist":
+			_s_mult(out, st, "boss", "Purist x%s" % str(D.PURIST_MULT), D.PURIST_MULT)
+		else:
+			_s_mult(out, st, "boss", "Boss debuff x0.5", D.BOSS_DEBUFF_MULT)
 	if _slot_locked(d, s):
 		_s_mult(out, st, "boss", "Slot locked: no points", 0.0)
 	var song := _s_run(st)
@@ -5913,6 +6014,7 @@ func _start_turn() -> void:
 	_refill()
 	_apply_sort()
 	_roll_move()
+	_roll_boss_blocks()
 	flow_live = float(_score_ctx()["fl"])
 	turn_base = int(bank_in.get("points", 0))
 	turn_pts = turn_base
@@ -5939,6 +6041,18 @@ func _start_turn() -> void:
 
 func _end_turn() -> void:
 	resolving = false
+	if _boss_kind() == "critic" and not play_ids.is_empty():
+		var cnt := {}
+		for pi in play_ids:
+			var gg: int = collection[pi].genre
+			cnt[gg] = int(cnt.get(gg, 0)) + 1
+		var best := -1
+		var bn := 0
+		for gk in cnt:
+			if int(cnt[gk]) > bn:
+				bn = int(cnt[gk])
+				best = int(gk)
+		boss_last_genre = best
 	var tc := int(set_res.get("turn_cash", 0))
 	if tc > 0:
 		_cash_fx(tc, -1)
@@ -5991,51 +6105,59 @@ func _end_show() -> void:
 	dig_marks.clear()
 	booed = score_tot < _gig_target()
 	var ratio := float(score_tot) / float(_gig_target())
-	var pay := D.PAY_BOOED if booed else (D.PAY_ENCORE if ratio >= D.TIER_GREAT else (D.PAY_APPLAUSE if ratio >= D.TIER_GOOD else D.PAY_BASE))
-	var gear_pay := 0
-	gear_pay += _rule_gig("gig_end", "cash")
+	var gear_pay := _rule_gig("gig_end", "cash")
 	for pg: Dictionary in rack:
 		if not pg.is_empty() and String(pg["id"]) == "piggy":
 			pg["pot"] = int(pg["pot"]) + int(_gp("piggy", "cash"))
-	var early := maxi(0, D.TURNS - turn_n) * D.TURN_BONUS if not booed else 0
-	reward = {"pay": pay, "mint": cash - show_cash, "gear": gear_pay, "early": early}
-	cash += pay + gear_pay + early
+	var turns_left := maxi(0, D.TURNS - turn_n) if not booed else 0
+	var unused := maxi(0, digs) if not booed else 0
+	var interest := cash / D.INTEREST_PER if not booed else 0
+	if D.INTEREST_CAP > 0:
+		interest = mini(interest, D.INTEREST_CAP)
+	reward = {"turns": turns_left, "discards": unused, "interest": interest, "mint": cash - show_cash, "gear": gear_pay}
+	cash += turns_left + unused + interest + gear_pay
 	phase = "end"
 
 func _draw_show_end() -> void:
-	var r := _modal_panel(900.0, 600.0)
+	var r := _modal_panel(900.0, 680.0)
 	var final := _is_final()
 	var ratio := float(score_tot) / float(_gig_target())
 	var title := "Booed off stage" if booed else ("Encore!" if ratio >= D.TIER_GREAT else ("Big applause" if ratio >= D.TIER_GOOD else "Target cleared"))
 	if final and not booed:
-		title = "Tour complete!"
+		title = "Final boss beaten!"
 	_heavy_center(Rect2(r.position.x, r.position.y + 40.0, r.size.x, 90.0), title, T_HERO, c_good if not booed else c_bad)
 	_text_center(Rect2(r.position.x, r.position.y + 140.0, r.size.x, 40.0), "%s: %s of %s points" % [venue["name"], _fmt_int(score_tot), _fmt_int(_gig_target())], T_LG, c_ink, true)
 	var sub := "The tour ends here." if booed else ("You won over all %d crowds." % gig_n if final else ("You beat the boss." if bool(venue.get("headliner", false)) else "turn %d of %d · final score %s" % [turn_n, D.TURNS, _fmt_int(score_tot)]))
 	_text_center(Rect2(r.position.x, r.position.y + 186.0, r.size.x, 40.0), sub, T_MD, c_body)
 	var x := r.position.x + 220.0
 	var w := r.size.x - 440.0
-	var y := r.position.y + 270.0
-	_text(Vector2(x, y), "Show pay", T_MD, c_muted, true)
-	_heavy_right(x + w, y, "$%d" % int(reward["pay"]), T_LG, c_ink)
+	var y := r.position.y + 262.0
+	var rows := [["Turns left", int(reward["turns"])], ["Unused discards", int(reward["discards"])], ["Interest", int(reward["interest"])]]
+	for k in rows.size():
+		_text(Vector2(x, y + k * 44.0), String(rows[k][0]), T_MD, c_muted, true)
+		_heavy_right(x + w, y + k * 44.0, "$%d" % int(rows[k][1]), T_LG, c_ink)
 	if int(reward["mint"]) > 0:
 		_text(Vector2(x + w + 30.0, y), "+$%d mint" % int(reward["mint"]), T_SM, c_good, true)
 	if int(reward.get("gear", 0)) > 0:
-		_text(Vector2(x + w + 30.0, y + 34.0), "+$%d gear" % int(reward["gear"]), T_SM, c_good, true)
-	if int(reward.get("early", 0)) > 0:
-		_text(Vector2(x + w + 30.0, y + 68.0), "+$%d early finish" % int(reward["early"]), T_SM, c_good, true)
-	draw_line(Vector2(x, y + 24.0), Vector2(x + w, y + 24.0), Color(c_ink, 0.2), 2.0)
-	_text(Vector2(x, y + 70.0), "Cash", T_MD, c_muted, true)
-	_heavy_right(x + w, y + 72.0, "$%d" % cash, T_XL, c_good)
+		_text(Vector2(x + w + 30.0, y + 44.0), "+$%d gear" % int(reward["gear"]), T_SM, c_good, true)
+	draw_line(Vector2(x, y + 150.0), Vector2(x + w, y + 150.0), Color(c_ink, 0.2), 2.0)
+	_text(Vector2(x, y + 206.0), "Cash", T_MD, c_muted, true)
+	_heavy_right(x + w, y + 208.0, "$%d" % cash, T_XL, c_good)
 	if not doomed.is_empty():
 		var names: Array = []
 		for dd: Disc in doomed:
 			names.append(dd.title)
-		_text_center(Rect2(r.position.x, r.position.y + 410.0, r.size.x, 30.0), "Destroyed: " + ", ".join(names), T_SM, c_bad, true)
-	if booed or final:
+		_text_center(Rect2(r.position.x, r.position.y + 500.0, r.size.x, 30.0), "Destroyed: " + ", ".join(names), T_SM, c_bad, true)
+	if booed:
 		_hw_button(Rect2(r.get_center().x - 200.0, r.end.y - 130.0, 400.0, 86.0), "Main menu", _to_title, true, Color("3f9b5a"), T_LG)
+	elif final:
+		_hw_button(Rect2(r.get_center().x - 220.0, r.end.y - 130.0, 440.0, 86.0), "Continue", _to_win, true, Color("3f9b5a"), T_LG)
 	else:
 		_hw_button(Rect2(r.get_center().x - 220.0, r.end.y - 130.0, 440.0, 86.0), "Continue", _to_map, true, Color("3f9b5a"), T_LG)
+
+func _to_win() -> void:
+	_burn_doomed()
+	phase = "won"
 
 func _to_map() -> void:
 	_burn_doomed()
@@ -6065,7 +6187,10 @@ func _make_road() -> void:
 	_shuffle(vs)
 	road_stops.append({"kind": "shop", "stamp": [], "hint": {}, "town": ""})
 	for k in D.RUN_GIGS:
-		road_stops.append({"kind": "venue", "venue": (D.VENUES[vs[k % vs.size()]] as Dictionary).duplicate(true), "stamp": [], "hint": {}, "town": ""})
+		var vn: Dictionary = (D.VENUES[vs[k % vs.size()]] as Dictionary).duplicate(true)
+		if (k + 1) % D.BOSS_EVERY == 0:
+			vn = _make_boss_venue(k / D.BOSS_EVERY)
+		road_stops.append({"kind": "venue", "venue": vn, "stamp": [], "hint": {}, "town": ""})
 		if k < D.RUN_GIGS - 1:
 			road_stops.append({"kind": "shop", "stamp": [], "hint": {}, "town": ""})
 

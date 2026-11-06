@@ -48,7 +48,7 @@ func _draw() -> void:
 	_disc_face(c, 170.0, d)
 	_disc_marks(c, 170.0, d)
 	_heavy_center(Rect2(20.0, 420.0, sz.x - 40.0, 50.0), d.title if d.title != "" else "Untitled", T_LG, Color.WHITE)
-	_text_center(Rect2(20.0, 472.0, sz.x - 40.0, 30.0), "by %s" % (d.band if d.band != "" else "Unknown"), T_SM, Color("b8c0cc"), true)
+	_text_center(Rect2(20.0, 472.0, sz.x - 40.0, 30.0), "by %s" % (d.band if d.band != "" else "Various Artists"), T_SM, Color("b8c0cc"), true)
 	var chips: Array = [[D.GENRES[d.genre].to_upper(), Color("5d626a")], [D.ERAS[d.era], Color("5d626a")], ["%d POINTS" % d.sound, Color(D.SOUND_COLOR)], [D.LABELS[d.label]["short"].to_upper(), Color(D.LABELS[d.label]["color"])]]
 	var total := 0.0
 	for ch: Array in chips:

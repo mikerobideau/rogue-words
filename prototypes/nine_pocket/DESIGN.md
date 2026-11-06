@@ -241,3 +241,15 @@ They come from four places: the shop sells two at random (priced $2 to $6), some
 Gear with `levels: true` in `gear.json` can take a Tune-Up, to MK II and MK III, and each level adds 50% to its numbers. Echo, block, button, upgrade and consumable-making units do not level.
 
 The gig name, turn and crowd HP sit in a header tile at the top middle of the stage.
+
+## Run structure, bosses and targets
+
+A run is 15 gigs of 4 turns each, with a shop before the first gig and between every gig. Every third gig (3, 6, 9, 12, 15) is a headliner boss with one rule for the whole gig and a target 25% higher. Beating the fifth boss opens a "You win" screen.
+
+Bosses: Heckler King (two extra trays blocked each turn, their gear off), The Purist (one genre scores in full, the others at 65%), The Critic (the genre you played most last turn scores half), Sound Engineer (two gear units switched off for the gig), Label Exec (play at most three CDs a turn, consumables locked).
+
+Targets grow about 30% per gig after a gentle start: 65, 85, 110, 150, 200, 265, 350, 455, 595, 780, 1020, 1330, 1730, 2250, 2925 (`GIG_TARGETS`, before the boss bonus). A rough bot that picks the best arrangement from its hand but buys gear at random clears about gigs 1 to 5, so a build with real synergy should go further. Treat the numbers as a first pass and tune after playtests.
+
+## Money
+
+A run starts with $10. After you clear a gig you earn $1 for each turn you did not need, $1 for each unused discard, and $1 of interest for each $5 you hold (`INTEREST_PER`, with `INTEREST_CAP` at 0 meaning no cap). Gear can add more at the end of a gig. There is no base show pay.

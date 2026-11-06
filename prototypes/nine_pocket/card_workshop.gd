@@ -825,7 +825,7 @@ func _select_card(i: int) -> void:
 	_refresh_all()
 
 func _on_new() -> void:
-	cards.append(_new_card("New card", "Unknown"))
+	cards.append(_new_card("New card", "Various Artists"))
 	_set_dirty(true)
 	_select_card(cards.size() - 1)
 
@@ -896,7 +896,7 @@ func _card_from_image(src: String) -> void:
 		return
 	var base := src.get_file().get_basename()
 	var parts := base.split(" - ", true, 1)
-	var band := String(parts[0]) if parts.size() == 2 else "Unknown"
+	var band := String(parts[0]) if parts.size() == 2 else "Various Artists"
 	var title := String(parts[1]) if parts.size() == 2 else base
 	var c := _new_card(title, band)
 	c["cover"] = dest

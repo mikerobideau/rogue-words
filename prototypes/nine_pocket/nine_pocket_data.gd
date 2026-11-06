@@ -85,7 +85,8 @@ const COOL_HEAL := 0.12
 const DEMAND_HEAL := 0.12
 const STATIC_KEEP := 0.5
 const MOVE_WEIGHTS := {"cool": 3, "boo": 3, "demand": 3, "static": 2, "block": 2}
-const RUN_GIGS := 6
+const RUN_GIGS := 15
+const BOSS_EVERY := 3
 const DIGS := 1
 const DIG_MAX := 1
 const DIG_OFFERS := 3
@@ -93,8 +94,16 @@ const DIG_PICK := false
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
 const FLOW_MAX := 6
-const GIG_TARGETS: Array[int] = [75, 140, 260, 480, 880, 1600]
+const GIG_TARGETS: Array[int] = [65, 85, 110, 150, 200, 265, 350, 455, 595, 780, 1020, 1330, 1730, 2250, 2925]
 const HEADLINER_MULT := 1.25
+const PURIST_MULT := 0.65
+const BOSSES := [
+	{"venue": "The Grand Ballroom", "title": "Heckler King", "kind": "heckler"},
+	{"venue": "Riverside Amphitheater", "title": "The Purist", "kind": "purist"},
+	{"venue": "The Palladium", "title": "The Critic", "kind": "critic"},
+	{"venue": "The Velvet Room", "title": "Sound Engineer", "kind": "engineer"},
+	{"venue": "Starlight Arena", "title": "Label Exec", "kind": "exec"},
+]
 const BOSS_TARGET := 1.3
 const TIER_GOOD := 1.5
 const TIER_GREAT := 2.0
@@ -151,7 +160,9 @@ const TOWNS: Array[String] = ["Rustfield", "Lake Halcyon", "Cedar Bluff", "Port 
 
 const GIGS := 8
 const TARGETS: Array[int] = [90, 120, 160, 210, 270, 350, 450, 580]
-const START_CASH := 25
+const START_CASH := 10
+const INTEREST_PER := 5
+const INTEREST_CAP := 0
 const USE_KITS := false
 const REWARD_BASE := 5
 const PAY_BOOED := 2
