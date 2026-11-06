@@ -149,7 +149,8 @@ const TOWNS: Array[String] = ["Rustfield", "Lake Halcyon", "Cedar Bluff", "Port 
 
 const GIGS := 8
 const TARGETS: Array[int] = [90, 120, 160, 210, 270, 350, 450, 580]
-const START_CASH := 0
+const START_CASH := 25
+const USE_KITS := false
 const REWARD_BASE := 5
 const PAY_BOOED := 2
 const PAY_BASE := 5

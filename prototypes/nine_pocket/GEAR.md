@@ -1,102 +1,69 @@
-# Disc Engine: gear roster (31 units)
+# Disc Engine: gear roster (34 units)
 
-This roster is implemented in the game. The units and their numbers are in `data/gear.json`, edited with the gear workshop (see DESIGN.md); the behavior is in `nine_pocket.gd`.
+The numbers and text live in `data/gear.json`, edited with the gear workshop. All units are Half bays (one of 6 half-slots in the rack). A Splitter adds one copy of the unit to its right. An Audio Interface adds one copy of the unit on each side of it. Copies add together, so a unit between a Splitter and an Audio Interface counts three times.
 
-## Rack rules
+Special units (behavior in code): Deep Library, Sneak Peek, Noise Gate (buttons, once per gig), Octave, Saxophone, Splitter, Audio Interface, T Shirt Cannon, Vintage Amp, Big Bass, Piggy Bank. Everything else is a rule you can tune in the workshop.
 
-- The rack has 4 bays of 2 half-slots each. A Full unit fills a bay. A Half unit takes 1 half-slot.
-- Gear can be dragged and rearranged freely until PLAY is pressed.
-- Chain order is left to right inside a bay, then down to the next bay. "The unit to its right" is the next unit in that order.
-- A unit with a button is active gear. The button works only while you are laying out the set, and it recharges at the start of each gig.
-- Scaling counters (Vintage Amp, Feedback, Piggy Bank) live on the unit for the whole run. Selling the unit loses the counter.
-- Units that are random (the EQs, Octave, Sampler) roll when you get them and show the result on the unit.
+| Name | Effect (N = the unit's amount) |
+|---|---|
+| Genre EQ | +N point for every {rn} CDs of the song's genre in your deck (max +{cap}). |
+| Decade EQ | If {rn}+ songs are all from different decades, each scores +N points. |
+| CD Burner | Your first song gets +N base points for the rest of the run. |
+| Looper | If the last song shares a genre or decade with the first, flow xN. |
+| Overdrive | The Cools Off crowd move never heals the crowd. |
+| Tube Preamp | +N point per song for each different genre in your play (max +{cap}). |
+| Phaser | +N flow when a song's decade is later than the song before it. |
+| Tuner | +N discard each gig. |
+| Mini Amp | +N point per song for each genre you hold {rn}+ CDs of in hand (max +{cap}). |
+| Fog Machine | Hecklers can no longer block a slot. |
+| Delay Pedal | When a song shares its genre with the song {rn} back, its card effect triggers again. |
+| Merch Table | $N each turn you play all four slots. |
+| Tip Jar | $N per unused discard when the show ends. |
+| T Shirt Cannon | Slot 3 earns no points, but earns money equal to its base points. |
+| Octave | Songs of one genre also count as another. |
+| Reverb | +N points per song for each empty slot in your play (max {cap}). |
+| Audio Interface | Units on either side of it count double, like a Splitter. |
+| Noise Gate | Once per gig: cancel this turn's crowd move. |
+| Request Line | A Demand move never heals the crowd. Meeting it pays +N points. |
+| Vintage Amp | Gains +{store} flow each time a {decade} song is played. Adds to your starting flow. |
+| Big Bass | Gains +{store} flow each time a {genre} song is played. Adds to your starting flow. |
+| Piggy Bank | The pot gains ${cash} each gig, plus $1 per turn left on a win. Sell it to cash out. |
+| Deep Library | Once per gig: redraw your whole hand. |
+| Sneak Peek | Once per gig: look at the next {count} songs in your binder. |
+| Turntables | After each {aparam} song this gig, flow rises by N. |
+| Radio | Each {aparam} song pays $N. |
+| Saxophone | Jazz songs count as any genre for their neighbors' conditions. |
+| Splitter | Duplicates the unit to its right. |
+| Wah Pedal | After every song, flow rises by N for each unit to its left. |
+| Blues Drive | {aparam} songs next to a {rparam} song score +N points. |
+| Chorus | {aparam} songs next to a {rparam} song score +N points. |
+| Funky Groove | +N flow after a {aparam} song next to a {rparam} song. |
+| Showtune | {aparam} songs next to a {rparam} song pay $N. |
+| Shred | Every {rn} {aparam} songs in a row, the last one scores xN. |
+| Flanger | Rainbow: if 3+ songs are all different genres, every song's card effect triggers again. |
+| Ping-Pong Delay | Zigzag: if 3+ songs are played and no neighbors share a genre, each song raises flow by 0.5. |
+| Mirror Ball | Mirror: if 3+ songs' genres read the same backwards, flow x1.5 on the closing song. |
+| Talk Box | Sandwich: a song between two songs of one other genre triggers its card effect again. |
+| Metronome | Ladder: if 3+ songs each rise a decade, every song scores +5 points. |
+| Slapback Echo | When the song before shares a song's decade, its card effect triggers again. |
+| Encore Pedal | If the closing song shares a genre or decade with the opener, its card effect triggers again. |
 
-## Roster
+## Hand-shape gear
 
-### Points
+Shapes are only defined by gear, not by the game. Each is a condition the workshop can set on any rule:
 
-| Name | Bay | Effect |
-|---|---|---|
-| Overdrive | Half | +3 points per song. |
-| Make Some Noise | Half | +1 point per song. |
-| Genre EQ | Full | Random fader for each genre, about -1 to +3 points per song of that genre. |
-| Decade EQ | Full | Random fader for each decade, same idea. |
-| Tube Preamp | Full | +1 point per different genre in your hand (max +5). |
-| Reverb | Half | Each song scores +1 point for each earlier song in the set that shares its genre (max +5). |
-| Looper | Half | The final song scores x2 points if it shares a genre or decade with the slot 1 song. |
-| Delay Pedal | Half | If two songs of the same genre are back to back, the next one scores x2 points. |
+- Rainbow: all genres differ (Flanger, Tube Preamp, Decade EQ for decades)
+- Loop: closing song matches the opener (Looper, Encore Pedal)
+- Echo: a song matches the song N back (Delay Pedal)
+- Zigzag: no neighbors share a genre (Ping-Pong Delay)
+- Mirror: genres read the same backwards, like Rock Pop Pop Rock (Mirror Ball, stacks with Looper)
+- Sandwich: a song between two of another genre (Talk Box)
+- Ladder: each decade later than the last (Metronome, Phaser)
+- Neighbors: same decade (Slapback Echo), or a genre beside another genre (Blues Drive, Chorus, Funky Groove, Showtune)
 
-### Flow
+## Open items
 
-| Name | Bay | Effect |
-|---|---|---|
-| Fog Machine | Half | The opener raises flow by 1 after it plays. |
-| Phaser | Full | +0.5 flow if the song before has the same decade. |
-| Vintage Amp | Half | Gains +0.1 flow each time a 60s song is played. The stored flow is added to the starting flow of every set, for the rest of the run. |
-| Feedback | Half | Gains +0.1 flow each time a Rock song is played. Same storage as Vintage Amp. |
-| Wah Pedal | Half | After every song, flow rises by 0.05 for each unit to its left in the chain. It wants to sit last. |
-
-### Economy
-
-| Name | Bay | Effect |
-|---|---|---|
-| Merch Table | Full | $5 at the end of each gig. |
-| Tip Jar | Half | $2 per unused discard when the show ends. |
-| T Shirt Cannon | Half | Slot 3 earns no points, but earns money equal to its base points. |
-| Sampler | Half | Random pair: songs of the first genre pay $1 when they follow the second (for example Jazz after Rock). |
-| Piggy Bank | Half | Holds a pot that gains $1 each gig. Selling it pays out the pot, as does the tour boss. There is no cash-out button. |
-
-### Rules, crowd and requests
-
-| Name | Bay | Effect |
-|---|---|---|
-| Octave | Full | Random pair: songs of the first genre also count as the second (for example Hip-Hop as Pop). |
-| Audio Interface | Half | "The song above" also works in slots 1 to 3, where it means the mirrored slot (slot 1 looks at 6, 2 at 5, 3 at 4). |
-| Noise Gate | Half | At the start of each gig, one randomly chosen hated tag is ignored. It is shown before PLAY. It does nothing when the boss has the hates ability. |
-| Request Line | Half | Requests pay +20 points instead of +10. |
-
-### Hand and discards (CD Burner, Deep Library and Sneak Peek have a button, once per gig)
-
-| Name | Bay | Effect |
-|---|---|---|
-| CD Burner | Full | Copy an album onto a Mix (both must be in hand). The copy goes to the binder and the source returns to hand. |
-| Deep Library | Half | Redraw your whole hand. |
-| Sneak Peek | Half | Look at the next 5 songs in the draw pile. |
-| Tuner | Half | +1 discard (passive). |
-
-### Genre gear
-
-| Name | Bay | Effect |
-|---|---|---|
-| Stack Amp | Half | Each Rock song scores +1 point for each other Rock song in the set. |
-| Turntables | Half | After each Hip-Hop song, flow rises by 0.25. |
-| Radio | Half | Each Pop song pays $1. |
-| Saxophone | Half | Jazz songs count as any genre for their neighbors' conditions (the song before, above and after). |
-
-### Chain gear
-
-| Name | Bay | Effect |
-|---|---|---|
-| Splitter | Full | Duplicates the unit to its right. Any unit works. |
-| Wah Pedal | Half | See Flow. |
-
-## Splitter rules
-
-- Numeric bonuses are added a second time, not multiplied: +3 becomes +6, x2 becomes x3, $5 becomes $10, +0.5 flow becomes +1.
-- Active gear gets a second use per gig.
-- Random pairs get a second pair: Octave and Sampler roll another pair, the EQs double their faders, Noise Gate ignores a second hated tag, Tuner gives +2 discards.
-- Splitter next to a Splitter, or last in the chain, does nothing.
-- Counters (Vintage Amp, Feedback, Piggy Bank) grow at the normal rate and pay out double.
-
-## Counts
-
-- 31 units: 8 Full and 23 Half. A full rack is 4 Full units or 8 Half units.
-- The old Make Some Noise (closer x2), Gain Stage, Exciter, Pitch Control and Echo Unit are not in this roster.
-
-## Provisional numbers and open items
-
-- Wah Pedal is 0.05 per unit, not 0.1. At 0.1 with a rack of 6 units it adds about +72 raw points per set, four times Overdrive.
-- Piggy Bank at $1 per gig only reaches about $3 by the tour boss, which is less than one Merch Table gig. Consider $2 per gig, or a pot that grows by one more dollar each gig.
-- Make Some Noise (+1 per song) is strictly worse than Overdrive (+3 per song) at the same bay cost. Either cut it or give it a different job.
-- Splitter next to Looper or Delay Pedal makes x3 on a single song. Check it with the bot.
-- Deep Library recharges each gig. If you want it to be a single-use consumable, say so.
+- Sneak Peek only looks at the next 3 CDs. Taking one into your hand needs a pick screen.
+- Piggy Bank pays out only when sold (there are no bosses now).
+- Flow numbers (Turntables, Wah Pedal, Phaser, Funky Groove) need tuning against the end-of-turn multiply.
+- A Pop and Hip-Hop pair gear is still missing from the cross-genre set (Blues Drive, Chorus, Funky Groove, Showtune).

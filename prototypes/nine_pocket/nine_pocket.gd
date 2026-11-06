@@ -91,7 +91,6 @@ var set_res := {}
 var pending_kit := 0
 var flow_live := 1.0
 var gear_sel := -1
-var gate_used := 0
 var burn_mode := false
 var burn_marks: Array[int] = []
 var peek_open := false
@@ -1092,14 +1091,6 @@ func _rand_pair(avoid: Array = []) -> Array:
 func _make_gear(id: String) -> Dictionary:
 	var g := {"id": id, "used": 0, "broken": false}
 	match id:
-		"genre_eq":
-			var lv: Array = D.EQ_START.duplicate()
-			_shuffle(lv)
-			g["levels"] = lv
-		"decade_eq":
-			var lv2: Array = D.EQ_ERA_START.duplicate()
-			_shuffle(lv2)
-			g["levels"] = lv2
 		"octave", "sampler":
 			var p1 := _rand_pair()
 			g["pairs"] = [p1, _rand_pair(p1)]
@@ -1204,10 +1195,14 @@ func _gear_map() -> Dictionary:
 	for k in ch.size():
 		var ci: int = ch[k]
 		var g: Dictionary = rack[ci]
+		var gid := String(g["id"])
 		var m := 1
-		if k > 0 and String(rack[ch[k - 1]]["id"]) == "splitter" and String(g["id"]) != "splitter":
-			m = 2
-		out[String(g["id"])] = {"g": g, "ci": ci, "m": m, "left": k}
+		if gid != "splitter" and gid != "audio":
+			if k > 0 and String(rack[ch[k - 1]]["id"]) in ["splitter", "audio"]:
+				m += 1
+			if k + 1 < ch.size() and String(rack[ch[k + 1]]["id"]) == "audio":
+				m += 1
+		out[gid] = {"g": g, "ci": ci, "m": m, "left": k}
 	return out
 
 func _gear_m(id: String) -> int:
@@ -1240,12 +1235,21 @@ func _nm_nb(d: Disc, nm: String) -> bool:
 	return d.genre >= 0 and String(D.GENRES[d.genre]) == "Jazz" and D.GENRES.has(nm) and _bay_of("sax") >= 0
 
 func _demand_bonus() -> int:
-	var m := _gear_m("request")
-	return int(_gp("request", "pays")) * m if m > 0 else 0
+	var gm := _gear_map()
+	var t := 0.0
+	for id: String in gm:
+		var r: Dictionary = gear_defs[id].get("rule", {})
+		if String(r.get("effect", "")) == "block" and String(r.get("aparam", "")) == "demand":
+			t += float(r.get("amount", 0.0)) * int(gm[id]["m"])
+	return int(round(t))
 
-func _gate_ready() -> bool:
-	var m := _gear_m("gate")
-	return m > 0 and gate_used < m * int(_gp("gate", "count"))
+func _crowd_block(kind: String) -> String:
+	var gm := _gear_map()
+	for id: String in gm:
+		var r: Dictionary = gear_defs[id].get("rule", {})
+		if String(r.get("effect", "")) == "block" and String(r.get("aparam", "")) == kind:
+			return String(gear_defs[id]["name"])
+	return ""
 
 func _hand_genre_count() -> int:
 	var seen := {}
@@ -1280,8 +1284,19 @@ func _gear_status(g: Dictionary, slot: int) -> String:
 			if phase != "show":
 				return ""
 			if bool(crowd_move.get("ignored", false)):
-				return "Ignoring this boo"
-			return "Ready: %d left" % maxi(0, m * int(_gp("gate", "count")) - gate_used)
+				return "Cancelled this turn"
+			return "Ready: %d left" % maxi(0, m - int(g.get("used", 0)))
+		"audio":
+			var cha := _chain()
+			var ati := cha.find(slot)
+			var names: Array[String] = []
+			for off in [-1, 1]:
+				var ni: int = ati + int(off)
+				if ati >= 0 and ni >= 0 and ni < cha.size():
+					var nid := String(rack[cha[ni]]["id"])
+					if nid != "splitter" and nid != "audio":
+						names.append(String(gear_defs[nid]["name"]))
+			return ("Doubling: " + ", ".join(names)) if not names.is_empty() else "No neighbors"
 		"splitter":
 			var ch := _chain()
 			var at := ch.find(slot)
@@ -1308,7 +1323,8 @@ func _new_run(kit_i: int = 0, deck: Dictionary = {}) -> void:
 	rack.clear()
 	for k in D.RACK_SLOTS:
 		rack.append({})
-	_place_free(_make_gear(String(kit["gear"])))
+	if D.USE_KITS:
+		_place_free(_make_gear(String(kit["gear"])))
 	cash = D.START_CASH
 	gig_n = 1
 	plays = {}
@@ -3025,7 +3041,7 @@ func _boosts(key: String, v: int) -> int:
 	for g: Dictionary in rack:
 		if g.is_empty() or bool(g.get("broken", false)):
 			continue
-		if (key == "genre" and g["id"] == "genre_eq") or (key == "era" and g["id"] == "decade_eq"):
+		if g.has("levels") and ((key == "genre" and g["id"] == "genre_eq") or (key == "era" and g["id"] == "decade_eq")):
 			var lv := int(g["levels"][v])
 			if lv < 0:
 				return -1
@@ -3172,15 +3188,18 @@ func _use_gear(slot: int) -> void:
 			g["used"] = int(g["used"]) + 1
 			comp_flash[slot] = 1.0
 			_sfx("page_turn")
-		"cd_burner":
-			if burn_mode:
-				burn_mode = false
-				burn_marks.clear()
+		"gate":
+			if String(crowd_move.get("kind", "")) == "" or bool(crowd_move.get("ignored", false)):
 				return
-			burn_mode = true
-			burn_marks.clear()
-			_say("CD Burner: pick an album and a Mix in your hand.")
-			message_t = 60.0
+			crowd_move["ignored"] = true
+			crowd_move["by"] = "The Noise Gate"
+			if String(crowd_move["kind"]) == "block":
+				blocked_slot = -1
+			flow_live = float(_score_ctx()["fl"])
+			g["used"] = int(g["used"]) + 1
+			comp_flash[slot] = 1.0
+			_sfx("page_turn")
+			_say("%s %s" % [_move_title(), _move_desc()])
 
 func _on_burn_pick(p: int) -> void:
 	if wallet[p] < 0:
@@ -3341,7 +3360,7 @@ func _draw_rack() -> void:
 		elif gear_sel >= 0 and idle and br.has_point(mouse):
 			_panel(br.grow(6.0), Color(0, 0, 0, 0), 10, Color(c_gold, 0.7), 3)
 		if bk == "tweak" and ui_live and phase == "shop" and not g.is_empty():
-			var ok := String(g["id"]) in ["genre_eq", "decade_eq"]
+			var ok := g.has("levels")
 			_panel(br.grow(6.0), Color(0, 0, 0, 0), 10, Color(c_gold, 0.45 + 0.25 * sin(clock * 5.0)) if ok else Color(0, 0, 0, 0), 3)
 			if not ok:
 				_panel(br, Color(0, 0, 0, 0.45), 6)
@@ -3551,7 +3570,8 @@ func _draw_gear(r: Rect2, g: Dictionary, flash: float, slot: int = -1) -> void:
 		var tweak := slot >= 0 and _bench_kind() == "tweak"
 		match String(def["look"]):
 			"faders":
-				_ctl_faders(ctl, g["levels"], flash, slot if tweak else -1, id == "decade_eq")
+				if g.has("levels"):
+					_ctl_faders(ctl, g["levels"], flash, slot if tweak else -1, id == "decade_eq")
 			"knobs":
 				_ctl_knobs(ctl, flash)
 			"tube":
@@ -3940,7 +3960,7 @@ func _start_service(i: int) -> void:
 func _bench_apply(bay: int, idx: int) -> void:
 	var sv: Dictionary = services[bench]
 	var g: Dictionary = rack[bay]
-	if cash < int(sv["price"]) or g.is_empty() or not String(g["id"]) in ["genre_eq", "decade_eq"]:
+	if cash < int(sv["price"]) or g.is_empty() or not g.has("levels"):
 		return
 	g["levels"][idx] = mini(D.EQ_MAX, int(g["levels"][idx]) + 1)
 	var nm := String(D.GENRES[idx]) if String(g["id"]) == "genre_eq" else "The " + String(D.ERAS[idx])
@@ -3972,7 +3992,7 @@ func _make_services() -> void:
 		var eds: Array = D.EDITIONS.keys()
 		var e: String = eds[rng.randi_range(0, eds.size() - 1)]
 		pool.append({"kind": "enhance", "edition": e, "price": int(D.EDITIONS[e]["price"]), "sold": false})
-	if rng.randf() < float(D.SERVICE_CHANCE["tweak"]) and rack.any(func(g): return not g.is_empty() and g["id"] in ["genre_eq", "decade_eq"]):
+	if rng.randf() < float(D.SERVICE_CHANCE["tweak"]) and rack.any(func(g): return not g.is_empty() and g.has("levels")):
 		pool.append({"kind": "tweak", "price": D.TWEAK_PRICE, "sold": false})
 	_shuffle(pool)
 	services = pool.slice(0, D.SERVICES_MAX)
@@ -4761,7 +4781,6 @@ func _start_show(v: Dictionary) -> void:
 	for g: Dictionary in rack:
 		if not g.is_empty():
 			g["used"] = 0
-	gate_used = 0
 	turn_n = 1
 	bank_in = {}
 	crowd_move = {}
@@ -5012,8 +5031,59 @@ func _rule_applies(r: Dictionary, d: Disc) -> bool:
 			return d.era >= 0 and d.era == D.ERAS.find(String(r.get("aparam", "")))
 	return true
 
+func _play_size(ids: Array) -> int:
+	var n := 0
+	for j in ids.size():
+		if _ids_disc(ids, j) != null:
+			n += 1
+	return n
+
 func _rule_requires(r: Dictionary, s: int, ids: Array, prev: Disc, d: Disc) -> bool:
+	if d == null and not String(r.get("requires", "none")) in ["none", "full_set", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "era_ladder"]:
+		return false
 	match String(r.get("requires", "none")):
+		"switch_up", "mirror", "era_ladder":
+			var seq: Array[Disc] = []
+			for j in ids.size():
+				var dq := _ids_disc(ids, j)
+				if dq != null:
+					seq.append(dq)
+			var kind := String(r.get("requires", ""))
+			if seq.size() < maxi(3, int(r.get("rn", 3))):
+				return false
+			for j in seq.size():
+				if kind == "era_ladder":
+					if seq[j].era < 0 or (j > 0 and seq[j].era <= seq[j - 1].era):
+						return false
+				elif seq[j].genre < 0:
+					return false
+				elif kind == "switch_up" and j > 0 and seq[j].genre == seq[j - 1].genre:
+					return false
+				elif kind == "mirror" and seq[j].genre != seq[seq.size() - 1 - j].genre:
+					return false
+			return true
+		"sandwich":
+			var a := _ids_disc(ids, s - 1)
+			var b := _ids_disc(ids, s + 1)
+			return a != null and b != null and a.genre >= 0 and a.genre == b.genre and d.genre != a.genre
+		"prev_earlier_era":
+			return prev != null and d.era >= 0 and prev.era >= 0 and d.era > prev.era
+		"full_set":
+			return _play_size(ids) >= D.SETLIST
+		"all_genres_differ", "all_eras_differ":
+			var by_era := String(r.get("requires", "")) == "all_eras_differ"
+			var seen := {}
+			var cnt := 0
+			for j in ids.size():
+				var dj := _ids_disc(ids, j)
+				if dj == null:
+					continue
+				var key := dj.era if by_era else dj.genre
+				cnt += 1
+				if key < 0 or seen.has(key):
+					return false
+				seen[key] = true
+			return cnt >= maxi(2, int(r.get("rn", 3)))
 		"prev_same_era":
 			return s > 0 and prev != null and d.era >= 0 and prev.era == d.era
 		"prev2_same_genre":
@@ -5076,6 +5146,36 @@ func _rule_count(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array) -> i
 			c = int(e["left"])
 		"unused_discards":
 			c = maxi(0, digs)
+		"empty_slots":
+			c = 0
+			for j in D.SETLIST:
+				if j != blocked_slot and _ids_disc(ids, j) == null:
+					c += 1
+		"genres_in_play":
+			var gs := {}
+			for j in ids.size():
+				var dg := _ids_disc(ids, j)
+				if dg != null and dg.genre >= 0:
+					gs[dg.genre] = true
+			c = gs.size()
+		"deck_genre":
+			c = 0
+			if d.genre >= 0:
+				for o: Disc in collection:
+					if not o.cdr and o.genre == d.genre:
+						c += 1
+			c = c / maxi(1, int(r.get("rn", 4)))
+		"hand_genres":
+			var hc := {}
+			for hi in wallet + tray:
+				if hi >= 0:
+					var hd: Disc = collection[hi]
+					if hd.genre >= 0:
+						hc[hd.genre] = int(hc.get(hd.genre, 0)) + 1
+			c = 0
+			for gk in hc:
+				if int(hc[gk]) >= maxi(1, int(r.get("rn", 3))):
+					c += 1
 	var cap := int(r.get("cap", 0))
 	if cap > 0:
 		c = mini(c, cap)
@@ -5083,7 +5183,7 @@ func _rule_count(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array) -> i
 
 func _rule_song(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, out: Array, st: Dictionary, fx: Dictionary) -> int:
 	var when := String(r.get("when", "each"))
-	if when == "gig_start" or when == "gig_end":
+	if when in ["gig_start", "gig_end", "turn_end"] or String(r.get("effect", "")) in ["block", "echo"]:
 		return 0
 	if (when == "first" and s != 0) or (when == "last" and s != ids.size() - 1):
 		return 0
@@ -5109,7 +5209,33 @@ func _rule_song(r: Dictionary, e: Dictionary, d: Disc, s: int, ids: Array, prev:
 		"cash":
 			var c := int(round(amt * count * m))
 			return _gear_cash(out, st, "%s +$%d" % [label, c], c, ci)
+		"flow_mult":
+			var lm2 := 1.0 + (amt - 1.0) * m
+			fx["fl"] = float(fx["fl"]) * lm2
+			out.append({"src": "rack", "text": "%s flow x%s" % [label, _ff(lm2)], "n": 0, "ci": ci, "run": _s_run(st), "flow": float(fx["fl"])})
+		"upgrade":
+			var up := int(round(amt * count * m))
+			fx["upg"] = int(fx["upg"]) + up
+			out.append({"src": "rack", "text": "%s +%d base points" % [label, up], "n": 0, "ci": ci, "run": _s_run(st)})
 	return 0
+
+func _echo_count(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, out: Array, st: Dictionary) -> int:
+	if String(d.rule.get("effect", "none")) == "none":
+		return 0
+	var n := 0
+	for id: String in gm:
+		var rule: Dictionary = gear_defs[id].get("rule", {})
+		if String(rule.get("effect", "")) != "echo":
+			continue
+		var rw := String(rule.get("when", "each"))
+		if (rw == "first" and s != 0) or (rw == "last" and s != ids.size() - 1):
+			continue
+		if not _rule_applies(rule, d) or not _rule_requires(rule, s, ids, prev, d):
+			continue
+		var e: Dictionary = gm[id]
+		n += int(e["m"])
+		out.append({"src": "rack", "text": "%s: effect again" % String(rule.get("label", "Echo")), "n": 0, "ci": int(e["ci"]), "run": _s_run(st)})
+	return n
 
 func _rule_gig(when: String, effect: String) -> int:
 	var gm := _gear_map()
@@ -5138,20 +5264,6 @@ func _gear_song(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, hand_g:
 			cash_gain += _rule_song(rule, e, d, s, ids, prev, out, st, fx)
 			continue
 		match id:
-			"genre_eq":
-				if gi >= 0:
-					var lv := int((g["levels"] as Array)[gi]) * int(_gp("genre_eq", "step")) * m
-					if lv != 0:
-						_s_add(out, st, "rack", "Genre EQ %+d" % lv, lv, ci)
-			"decade_eq":
-				if d.era >= 0:
-					var lv2 := int((g["levels"] as Array)[d.era]) * int(_gp("decade_eq", "step")) * m
-					if lv2 != 0:
-						_s_add(out, st, "rack", "Decade EQ %+d" % lv2, lv2, ci)
-			"tube":
-				var tn := mini(hand_g, int(_gp("tube", "max"))) * m
-				if tn > 0:
-					_s_add(out, st, "rack", "Tube +%d" % tn, tn, ci)
 			"tshirt":
 				if s == 2:
 					_s_mult(out, st, "rack", "Slot 3: no points", 0.0, ci)
@@ -5173,9 +5285,9 @@ func _score_ctx() -> Dictionary:
 	var gm := _gear_map()
 	var stored := _stored_flow(gm)
 	var fl := (1.0 + float(bank_in.get("flow", 0.0)) + stored) * float(bank_in.get("fmult", 1.0))
-	if String(crowd_move.get("kind", "")) == "static":
+	if String(crowd_move.get("kind", "")) == "static" and not bool(crowd_move.get("ignored", false)):
 		fl = 1.0 + (fl - 1.0) * D.STATIC_KEEP
-	return {"fx": {"fl": 1.0, "cash": 0, "nextq": [], "later": [], "bank": {"points": 0, "flow": 0.0, "fmult": 1.0, "cash": 0}}, "req_done": false, "gm": gm, "hand_g": _hand_genre_count() if gm.has("tube") else 0, "req": _demand_bonus(), "fl": fl, "stored": stored, "total": 0, "carry": int(bank_in.get("points", 0))}
+	return {"fx": {"fl": 1.0, "cash": 0, "nextq": [], "later": [], "upg": 0, "bank": {"points": 0, "flow": 0.0, "fmult": 1.0, "cash": 0}}, "req_done": false, "gm": gm, "hand_g": _hand_genre_count() if gm.has("tube") else 0, "req": _demand_bonus(), "fl": fl, "stored": stored, "total": 0, "carry": int(bank_in.get("points", 0))}
 
 func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 	var gm: Dictionary = ctx["gm"]
@@ -5193,6 +5305,7 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 	var fl_start := fl
 	fx["fl"] = fl
 	fx["cash"] = 0
+	fx["upg"] = 0
 	for q: Dictionary in fx["nextq"]:
 		if int(q["slot"]) == s:
 			_apply_buff(out, st, q)
@@ -5202,8 +5315,10 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 			_apply_buff(out, st, q)
 			fired = true
 	if not d.cdr:
-		if _fire_rule(d.rule, d, s, ids, prev, nxt, out, st, fx, 0):
-			fired = true
+		var reps := 1 + _echo_count(gm, d, s, ids, prev, out, st)
+		for rp in reps:
+			if _fire_rule(d.rule, d, s, ids, prev, nxt, out, st, fx, 0):
+				fired = true
 		cash_gain += int(fx["cash"])
 	match d.edition:
 		"holo", "signed", "limited":
@@ -5238,7 +5353,7 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 		fired = true
 	ctx["fl"] = fl_mul
 	ctx["total"] = int(ctx["total"]) + song
-	return {"score": song, "song": song, "steps": out, "fired": fired, "cash": cash_gain, "flow_start": fl_start, "flow_mul": fl_mul}
+	return {"score": song, "song": song, "steps": out, "fired": fired, "cash": cash_gain, "upgrade": int(fx["upg"]), "flow_start": fl_start, "flow_mul": fl_mul}
 
 func _score_set(ids: Array) -> Dictionary:
 	var ctx := _score_ctx()
@@ -5247,7 +5362,13 @@ func _score_set(ids: Array) -> Dictionary:
 		slots.append(_score_slot(s, ids, ctx))
 	var pts := int(ctx["total"]) + int(ctx["carry"])
 	var fl := float(ctx["fl"])
-	return {"slots": slots, "total": int(round(float(pts) * fl)), "pts": pts, "carry": int(ctx["carry"]), "finale_flow": fl, "stored": float(ctx["stored"]), "bank": (ctx["fx"] as Dictionary)["bank"]}
+	var tcash := 0
+	var gmx: Dictionary = ctx["gm"]
+	for gid: String in gmx:
+		var gr: Dictionary = gear_defs[gid].get("rule", {})
+		if String(gr.get("when", "")) == "turn_end" and String(gr.get("effect", "")) == "cash" and _rule_requires(gr, 0, ids, null, null):
+			tcash += int(round(float(gr.get("amount", 0.0)) * int(gmx[gid]["m"])))
+	return {"turn_cash": tcash, "slots": slots, "total": int(round(float(pts) * fl)), "pts": pts, "carry": int(ctx["carry"]), "finale_flow": fl, "stored": float(ctx["stored"]), "bank": (ctx["fx"] as Dictionary)["bank"]}
 
 func _play() -> void:
 	if not _can_play():
@@ -5369,6 +5490,10 @@ func _finish_song() -> void:
 	if extra > 0:
 		_cash_fx(extra, s)
 		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": "+$%d" % extra, "col": Color("7fe0a0"), "life": 1.3})
+	var upg := int(result.get("upgrade", 0))
+	if upg > 0:
+		d.sound += upg
+		floats.append({"slot": s, "pos": _well_center(s) + Vector2(0.0, 30.0), "text": "Base points +%d" % upg, "col": c_gold, "life": 1.6})
 	readout[s] = {"text": "+%s" % _fmt_int(got), "net": got, "fl": float(result["flow_mul"]) - float(result["flow_start"])}
 	now_slot = -1
 	song_slot = -1
@@ -5421,15 +5546,18 @@ func _roll_move() -> void:
 			crowd_move["heal"] = int(round(tgt * D.COOL_HEAL))
 		"boo":
 			crowd_move["tag"] = _move_tag(true)
-			if _gate_ready():
-				crowd_move["ignored"] = true
-				gate_used += 1
 		"demand":
 			crowd_move["tag"] = _move_tag(false)
 			crowd_move["heal"] = int(round(tgt * D.DEMAND_HEAL))
 		"block":
 			blocked_slot = rng.randi_range(0, D.SETLIST - 1)
 			crowd_move["slot"] = blocked_slot
+	var blocker := _crowd_block(kind)
+	if blocker != "":
+		crowd_move["ignored"] = true
+		crowd_move["by"] = blocker
+		if kind == "block":
+			blocked_slot = -1
 
 func _move_title() -> String:
 	match String(crowd_move.get("kind", "")):
@@ -5446,12 +5574,12 @@ func _move_title() -> String:
 	return ""
 
 func _move_desc() -> String:
+	if bool(crowd_move.get("ignored", false)):
+		return "%s cancels it." % String(crowd_move.get("by", "Your gear"))
 	match String(crowd_move.get("kind", "")):
 		"cool":
 			return "Deal %s points this turn or the crowd wins back %s." % [_fmt_int(int(crowd_move["need"])), _fmt_int(int(crowd_move["heal"]))]
 		"boo":
-			if bool(crowd_move.get("ignored", false)):
-				return "Your noise gate cuts it out. Nothing happens."
 			return "%s songs score half this turn." % String(crowd_move["tag"][1])
 		"demand":
 			return "Play a %s song or the crowd wins back %s." % [String(crowd_move["tag"][1]), _fmt_int(int(crowd_move["heal"]))]
@@ -5495,11 +5623,15 @@ func _start_turn() -> void:
 
 func _end_turn() -> void:
 	resolving = false
+	var tc := int(set_res.get("turn_cash", 0))
+	if tc > 0:
+		_cash_fx(tc, -1)
 	var heal := 0
 	var kind := String(crowd_move.get("kind", ""))
-	if kind == "cool" and turn_dmg < int(crowd_move["need"]):
+	var ign := bool(crowd_move.get("ignored", false))
+	if kind == "cool" and not ign and turn_dmg < int(crowd_move["need"]):
 		heal = int(crowd_move["heal"])
-	elif kind == "demand" and not move_met:
+	elif kind == "demand" and not ign and not move_met:
 		heal = int(crowd_move["heal"])
 	if heal > 0:
 		score_tot = maxi(0, score_tot - heal)
@@ -5549,10 +5681,7 @@ func _end_show() -> void:
 	gear_pay += _rule_gig("gig_end", "cash")
 	if gm.has("piggy"):
 		var pg: Dictionary = gm["piggy"]["g"]
-		pg["pot"] = int(pg["pot"]) + int(_gp("piggy", "cash"))
-		if venue.has("challenge") and not booed:
-			gear_pay += int(pg["pot"]) * int(gm["piggy"]["m"])
-			pg["pot"] = 0
+		pg["pot"] = int(pg["pot"]) + int(_gp("piggy", "cash")) + (maxi(0, D.TURNS - turn_n) if not booed else 0)
 	var early := maxi(0, D.TURNS - turn_n) * D.TURN_BONUS if not booed else 0
 	reward = {"pay": pay, "mint": cash - show_cash, "gear": gear_pay, "early": early}
 	cash += pay + gear_pay + early
@@ -5619,6 +5748,7 @@ func _make_road() -> void:
 	road_stops.clear()
 	var vs: Array = range(D.VENUES.size())
 	_shuffle(vs)
+	road_stops.append({"kind": "shop", "stamp": [], "hint": {}, "town": ""})
 	for k in D.RUN_GIGS:
 		road_stops.append({"kind": "venue", "venue": (D.VENUES[vs[k % vs.size()]] as Dictionary).duplicate(true), "stamp": [], "hint": {}, "town": ""})
 		if k < D.RUN_GIGS - 1:
@@ -6019,7 +6149,8 @@ func _menu_bg(art: bool = true) -> void:
 	_grad_panel(full, 0.0, Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.55))
 
 func _to_kits() -> void:
-	phase = "kits"
+	pending_kit = 0
+	phase = "decks"
 
 func _pick_kit(i: int) -> void:
 	pending_kit = i
@@ -6031,8 +6162,6 @@ func _pick_deck(i: int) -> void:
 func _draw_decks() -> void:
 	_menu_bg(false)
 	_heavy_center(Rect2(0.0, 40.0, UI_W, 110.0), "Choose your deck", T_XL + 16, Color("f4efe4"))
-	var kit: Dictionary = D.KITS[pending_kit]
-	_text_center(Rect2(0.0, 150.0, UI_W, 40.0), "%s kit  ·  %s" % [String(kit["name"]), String(gear_defs[String(kit["gear"])]["name"])], T_MD, Color("b8c0cc"), true)
 	var ds := _decks()
 	var w := 300.0
 	var h := 400.0
@@ -6057,7 +6186,7 @@ func _draw_decks() -> void:
 		_wrap(Vector2(r.position.x + 22.0, r.position.y + 322.0), String(dk.get("idea", "")), w - 44.0, 15, c_body, true)
 		if ui_live:
 			_register(r, _pick_deck.bind(di))
-	_hw_button(Rect2(70.0, 1336.0, 260.0, 84.0), "Back", _to_kits, true, Color("6a6f77"), T_MD)
+	_hw_button(Rect2(70.0, 1336.0, 260.0, 84.0), "Back", _to_title, true, Color("6a6f77"), T_MD)
 
 func _draw_title() -> void:
 	_menu_bg(false)
