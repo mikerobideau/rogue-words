@@ -17,9 +17,9 @@ const HOLD_TIME := 0.6
 const THUMB_DIR := "res://prototypes/nine_pocket/art/thumbs/"
 const THUMB_MAX := 768
 const PACK_RARITY := {
-	"common": {"glow": 0.3, "col": "ffffff", "damp": 7.5, "freq": 11.0, "pulse": 0.0, "speed": 0.0},
-	"uncommon": {"glow": 0.9, "col": "5fd4ff", "damp": 5.0, "freq": 12.0, "pulse": 0.25, "speed": 3.0},
-	"rare": {"glow": 1.7, "col": "ffd24a", "damp": 3.2, "freq": 13.0, "pulse": 0.5, "speed": 4.5},
+	"common": {"glow": 0.12, "col": "ffffff", "damp": 7.5, "freq": 11.0, "pulse": 0.0, "speed": 0.0, "size": 0.9},
+	"uncommon": {"glow": 0.32, "col": "6fc8ee", "damp": 5.0, "freq": 12.0, "pulse": 0.08, "speed": 2.0, "size": 1.0},
+	"rare": {"glow": 0.5, "col": "c38bff", "damp": 3.2, "freq": 13.0, "pulse": 0.1, "speed": 2.0, "size": 1.3},
 }
 const AUDITION_DB := -4.0
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"

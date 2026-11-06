@@ -219,3 +219,11 @@ A gear unit has an **activates** attribute: per song (it fires for the CD in its
 Gear shows only its name. The rule text appears in a tooltip. Scaling units (Swell, Tremolo 60s) store a count that grows when their tray is played. Clone Box turns into a copy of the unit to its right when placed. The sort UI is hidden by `SHOW_SORT := false` and the code is kept.
 
 The shop is centered on the screen: sign, rig, then work bench, records (two CDs and a pack) and gear (two units and a bundle). The pack screen fades to black and keeps only the rig visible.
+
+## Layout system (gig screen and shop)
+
+The screen is nine modules across, each 251 wide with 22 gutters, inside 60 margins. The score panel takes the left three modules (x 60 to 857), and the stage takes the right six (x 879 to 2495), which is two equal blocks of three. The dividing lines fall on the thirds of the screen. The panel and the bottom bars share the same top (y 40) and bottom (y 1360), and the bars sit on column edges.
+
+Gear tiles are golden rectangles (251 by 155). CD tiles keep the jewel-case shape. The stage rows are gear, tray numbers, trays, hand, a crowd-move banner, then the bars, with RIG and HAND labels in the same small uppercase style.
+
+Color: gold means "this tray is in play". Red is only for danger (blocked, Discard, score below target). Green is PLAY. Gear is dark gunmetal and brightens when powered. Each gear unit has a top strip in the color of what it adds (green points, blue flow, gold cash, purple upgrade or echo) and a left strip in the genre color when it keys on one.
