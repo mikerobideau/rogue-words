@@ -78,6 +78,12 @@ var pack_fx: Array = []
 var install_queue: Array = []
 var install_price := 0
 var install_src := -1
+var opt_discards := 2
+var opt_cash := 15
+var reroll_n := 0
+var shop_hint: Dictionary = {}
+var install_refund := -1
+var install_refund_price := 0
 var reward := {}
 var show_cash := 0
 var next_uid := 1
@@ -282,7 +288,7 @@ func _make_boss_venue(bi: int) -> Dictionary:
 	return {"name": String(b["venue"]), "likes": [], "dislikes": [], "headliner": true, "challenge": ch}
 
 func _gx() -> float:
-	return 472.0 if phase == "shop" else 879.0
+	return 472.0 if phase == "shop" or phase == "reward" else 879.0
 
 func _col_x(i: int) -> float:
 	return _gx() + i * (COL_W + COL_G)
@@ -304,15 +310,27 @@ func _load_prefs() -> void:
 	var cf := ConfigFile.new()
 	if cf.load(D.PREFS_PATH) == OK:
 		anim_idx = clampi(int(cf.get_value("game", "anim_speed", 1)), 0, D.ANIM_SCALE.size() - 1)
+		opt_discards = clampi(int(cf.get_value("game", "discards", D.DIGS)), 1, 3)
+		opt_cash = clampi(int(cf.get_value("game", "start_cash", D.START_CASH)), 0, 99)
 
 func _save_prefs() -> void:
 	var cf := ConfigFile.new()
 	cf.load(D.PREFS_PATH)
 	cf.set_value("game", "anim_speed", anim_idx)
+	cf.set_value("game", "discards", opt_discards)
+	cf.set_value("game", "start_cash", opt_cash)
 	cf.save(D.PREFS_PATH)
 
 func _anim() -> float:
 	return float(D.ANIM_SCALE[anim_idx])
+
+func _set_discards(n: int) -> void:
+	opt_discards = clampi(n, 1, 3)
+	_save_prefs()
+
+func _adj_cash(delta: int) -> void:
+	opt_cash = clampi(opt_cash + delta, 0, 99)
+	_save_prefs()
 
 func _set_anim(i: int) -> void:
 	anim_idx = i
@@ -680,6 +698,11 @@ func _cancel() -> void:
 		install_queue.pop_front()
 		install_price = 0
 		install_src = -1
+		if install_refund >= 0:
+			cash += install_refund_price
+			shop_items[install_refund]["sold"] = false
+			install_refund = -1
+		_after_placement()
 	_return_held()
 	sel_slot = -1
 	sel_hand = -1
@@ -1383,7 +1406,7 @@ func _new_run(kit_i: int = 0, deck: Dictionary = {}) -> void:
 		rack.append({})
 	if D.USE_KITS:
 		_place_free(_make_gear(String(kit["gear"])))
-	cash = D.START_CASH
+	cash = opt_cash
 	consumables = ["", ""]
 	consume_mode = ""
 	trade_count = 0
@@ -2497,6 +2520,8 @@ func _draw() -> void:
 		_draw_decks()
 	elif phase == "pickup":
 		_draw_pickup()
+	elif phase == "reward":
+		pass
 	elif phase == "shop":
 		_draw_shop()
 		_draw_rack()
@@ -3181,7 +3206,7 @@ func _draw_actions() -> void:
 	else:
 		var can := ui_live and phase == "show" and not resolving and dig_offer.is_empty() and digs > 0 and draw_pile.size() + discard.size() > 0
 		_hw_button(Rect2(x + 24.0, y + 16.0, 388.0, 84.0), "Discard", _start_dig, can, red, T_LG)
-		var lamps := maxi(D.DIGS, digs)
+		var lamps := maxi(opt_discards, digs)
 		for k in lamps:
 			_led(Vector2(x + 380.0 - (lamps - 1 - k) * 28.0, y + 58.0), 8.0, Color("ffb347"), 1.0 if k < digs else 0.0)
 	var count := "%d / %d" % [mini(turn_n, D.TURNS), D.TURNS]
@@ -3190,8 +3215,9 @@ func _draw_actions() -> void:
 
 func _draw_shop_nav() -> void:
 	var enabled := ui_live and install_queue.is_empty() and bench < 0
-	_hw_button(Rect2(60.0, 618.0, 360.0, 84.0), "View binder (%d)" % collection.size(), _toggle_binder, install_queue.is_empty(), Color("1a1c20"), T_MD)
-	_hw_button(Rect2(60.0, 722.0, 360.0, 100.0), "Leave shop", _leave_shop, enabled, Color("3f9b5a"), T_XL)
+	_hw_button(Rect2(60.0, 566.0, 360.0, 84.0), "Reroll  $%d" % _reroll_price(), _reroll, enabled and cash >= _reroll_price(), Color("a8861c"), T_MD)
+	_hw_button(Rect2(60.0, 670.0, 360.0, 84.0), "View binder (%d)" % collection.size(), _toggle_binder, install_queue.is_empty(), Color("1a1c20"), T_MD)
+	_hw_button(Rect2(60.0, 774.0, 360.0, 100.0), "Leave shop", _leave_shop, enabled, Color("3f9b5a"), T_XL)
 
 func _draw_console_sorted() -> void:
 	var r := Rect2(60.0, 1302.0, r_side.end.x - 60.0, 108.0)
@@ -3516,7 +3542,7 @@ func _choice(r: Rect2, label: String, on: bool, cb: Callable) -> void:
 	_hw_button(r, label, cb, true, Color("3f9b5a") if on else Color("5a5f67"), T_MD)
 
 func _draw_settings() -> void:
-	var r := _modal_panel(1200.0, 520.0)
+	var r := _modal_panel(1200.0, 830.0)
 	_register(Rect2(Vector2(-800, -800), Vector2(UI_W, UI_H) + Vector2(1600, 1600)), func(): pass)
 	_heavy_center(Rect2(r.position.x, r.position.y + 26.0, r.size.x, 70.0), "Settings", T_XL, c_ink)
 	var x := r.position.x + 60.0
@@ -3528,6 +3554,19 @@ func _draw_settings() -> void:
 	for i in n:
 		_choice(Rect2(x + i * (bw + 16.0), y + 20.0, bw, 76.0), String(D.ANIM_NAMES[i]), anim_idx == i, _set_anim.bind(i))
 	_text(Vector2(x, y + 134.0), "How fast the score sequence plays out.", T_SM, c_body, true)
+	var y2 := y + 200.0
+	_text(Vector2(x, y2), "DISCARDS PER GIG", 16, c_muted, true)
+	for i in 3:
+		_choice(Rect2(x + i * (bw + 16.0), y2 + 20.0, bw, 76.0), str(i + 1), opt_discards == i + 1, _set_discards.bind(i + 1))
+	var y3 := y2 + 150.0
+	_text(Vector2(x, y3), "STARTING CASH", 16, c_muted, true)
+	var steps := [[-5, "-5"], [-1, "-1"], [1, "+1"], [5, "+5"]]
+	_hw_button(Rect2(x, y3 + 20.0, 120.0, 76.0), "-5", _adj_cash.bind(-5), true, Color("5a5f67"), T_MD)
+	_hw_button(Rect2(x + 136.0, y3 + 20.0, 120.0, 76.0), "-1", _adj_cash.bind(-1), true, Color("5a5f67"), T_MD)
+	_heavy_center(Rect2(x + 272.0, y3 + 20.0, 240.0, 76.0), "$%d" % opt_cash, T_XL, c_ink)
+	_hw_button(Rect2(x + 528.0, y3 + 20.0, 120.0, 76.0), "+1", _adj_cash.bind(1), true, Color("5a5f67"), T_MD)
+	_hw_button(Rect2(x + 664.0, y3 + 20.0, 120.0, 76.0), "+5", _adj_cash.bind(5), true, Color("5a5f67"), T_MD)
+	_text(Vector2(x, y3 + 134.0), "Discards and starting cash apply to your next run.", T_SM, c_body, true)
 	_hw_button(Rect2(r.get_center().x - 160.0, r.end.y - 110.0, 320.0, 80.0), "Close", _close_settings, true, Color("3f9b5a"), T_LG)
 
 func _draw_peek() -> void:
@@ -3561,7 +3600,10 @@ func _rack_unit(r: Rect2, title: String, sub: String, seed_n: int, flash: float,
 	_silk(Vector2(r.position.x + tx + 28.0, r.end.y - 28.0), "ACTIVE", 12, Color("3d4148"))
 
 func _bay_rect(k: int) -> Rect2:
-	return Rect2(_col_x(k), 270.0 if phase == "shop" else 150.0, COL_W, GEAR_H)
+	var by := 150.0
+	if phase == "shop" or phase == "reward":
+		by = lerpf(270.0, 90.0, clampf(pack_t / 0.5, 0.0, 1.0)) if not pack.is_empty() else 270.0
+	return Rect2(_col_x(k), by, COL_W, GEAR_H)
 
 func _slot_rect(i: int) -> Rect2:
 	return _bay_rect(i)
@@ -3574,6 +3616,11 @@ func _draw_rack(show_cash: bool = true) -> void:
 		_draw_cash()
 		_draw_consumables()
 	var installing := phase == "shop" and not install_queue.is_empty() and ui_live
+	if installing:
+		var rr := Rect2(_col_x(0) - 16.0, _bay_rect(0).position.y - 16.0, 6.0 * COL_W + 5.0 * COL_G + 32.0, GEAR_H + 32.0)
+		_panel(rr, Color(c_gold, 0.06), 14, Color(c_gold, 0.6 + 0.3 * sin(clock * 5.0)), 4)
+		var pend := String(gear_defs[(install_queue[0] as Dictionary)["id"]]["name"]).to_upper()
+		_heavy_center(Rect2(rr.position.x, rr.position.y - 46.0, rr.size.x, 36.0), "CLICK A BAY TO PLACE THE %s" % pend, T_SM, c_gold)
 	var idle := _rack_idle()
 	var bk := _bench_kind()
 	for i in rack.size():
@@ -4259,7 +4306,29 @@ func _leave_shop() -> void:
 func _album_price(d: Disc) -> int:
 	return D.ALBUM_PRICE + (1 if d.sound >= 10 else 0)
 
-func _make_shop(hint: Dictionary = {}) -> void:
+func _reroll_price() -> int:
+	var a := 3
+	var b := 5
+	for i in reroll_n:
+		var t := a + b
+		a = b
+		b = t
+	return a
+
+func _reroll() -> void:
+	var price := _reroll_price()
+	if cash < price or not install_queue.is_empty() or not pack.is_empty():
+		return
+	cash -= price
+	reroll_n += 1
+	_make_shop(shop_hint, false)
+	_sfx("page_turn")
+	_say("New stock. The next reroll costs $%d." % _reroll_price())
+
+func _make_shop(hint: Dictionary = {}, fresh: bool = true) -> void:
+	if fresh:
+		reroll_n = 0
+	shop_hint = hint
 	shop_items.clear()
 	var picks: Array = _random_albums(D.SHOP_ALBUMS, int(hint["genre"]) if not hint.is_empty() else -1, int(hint["era"]) if not hint.is_empty() else -1)
 	for a: Dictionary in picks:
@@ -4303,10 +4372,16 @@ func _buy(i: int) -> void:
 			pack_sel.clear()
 			_pack_start()
 		"gear":
+			if not install_queue.is_empty():
+				return
+			cash -= int(it["price"])
+			it["sold"] = true
 			install_queue = [it["gear"]]
-			install_price = int(it["price"])
-			install_src = i
-			_say("Pick a bay in your rack. Right-click to cancel.")
+			install_price = 0
+			install_src = -1
+			install_refund = i
+			install_refund_price = int(it["price"])
+			_say("Pick a bay for the %s. Right-click to take it back." % gear_defs[(it["gear"] as Dictionary)["id"]]["name"])
 		"gear_pack":
 			cash -= int(it["price"])
 			it["sold"] = true
@@ -4348,6 +4423,8 @@ func _take_pack() -> void:
 		_say("Pick a bay for each piece of gear. Right-click to leave it in the box.")
 	pack = {}
 	pack_sel.clear()
+	if phase == "reward":
+		_back_on_road()
 
 func _bench_kind() -> String:
 	if bench < 0 or bench >= services.size():
@@ -4429,6 +4506,8 @@ func _install(slot: int) -> void:
 	comp_flash[t] = 1.0
 	install_price = 0
 	install_src = -1
+	install_refund = -1
+	_after_placement()
 	_sfx("page_turn")
 	_say("Installed the %s." % gear_defs[g["id"]]["name"])
 
@@ -4523,7 +4602,7 @@ func _draw_shop_gear() -> void:
 			if k < 2:
 				if ur.has_point(mouse):
 					_panel(ur.grow(4.0), Color(0, 0, 0, 0), 10, Color(c_gold, 0.8), 3)
-				_register(ur, _buy.bind(3 + k))
+				_hold(ur, "gbuy%d" % k, "Hold to buy", _buy.bind(3 + k))
 			else:
 				_hold(ur, "buy5", "Hold to buy", _buy.bind(5))
 
@@ -4767,19 +4846,38 @@ func _draw_hold() -> void:
 			_text_center(pr, lab, T_SM, c_gold, true)
 
 func _pack_take(k: int) -> void:
-	if pack.is_empty() or k in pack_sel:
+	if pack.is_empty() or k in pack_sel or not install_queue.is_empty():
 		return
 	pack_sel.append(k)
 	_sfx("page_turn")
+	if String(pack["kind"]) == "gear":
+		var gu: Dictionary = (pack["items"] as Array)[k]
+		install_queue = [gu]
+		install_price = 0
+		install_src = -1
+		install_refund = -1
+		_say("Pick a bay for the %s. Right-click to leave it in the box." % gear_defs[gu["id"]]["name"])
+		return
 	if pack_sel.size() >= int(pack["pick"]):
 		_take_pack()
 
+func _after_placement() -> void:
+	if pack.is_empty() or String(pack.get("kind", "")) != "gear":
+		return
+	if install_queue.is_empty() and pack_sel.size() >= int(pack["pick"]):
+		pack = {}
+		pack_sel.clear()
+
 func _skip_pack() -> void:
-	if not pack.is_empty() and not pack_sel.is_empty():
+	if not install_queue.is_empty():
+		return
+	if not pack.is_empty() and not pack_sel.is_empty() and String(pack["kind"]) == "album":
 		_take_pack()
 		return
 	pack = {}
 	pack_sel.clear()
+	if phase == "reward":
+		_back_on_road()
 
 func _draw_pack() -> void:
 	var items: Array = pack["items"]
@@ -4894,7 +4992,7 @@ func _draw_pack() -> void:
 			if albums:
 				if cell.has_point(mouse):
 					_audition(it as Disc)
-			if pack_sel.size() < pick:
+			if pack_sel.size() < pick and install_queue.is_empty():
 				_hold(cell, "pk%d" % k, "Hold to take", _pack_take.bind(k))
 	for f: Dictionary in pack_sparks:
 		var fa := clampf(1.0 - float(f["t"]) / float(f["life"]), 0.0, 1.0)
@@ -4906,10 +5004,10 @@ func _draw_pack() -> void:
 		draw_rect(full, Color(1.0, 0.97, 0.88, fl))
 	var ta := clampf((t - D.PACK_BUILD - 0.2) / 0.5, 0.0, 1.0)
 	if ta > 0.0:
-		_heavy_center(Rect2(_pack_cx() - 800.0, 480.0, 1600.0, 80.0), String(pack["title"]).to_upper(), T_XL + 8, Color(c_gold, ta))
+		_heavy_center(Rect2(_pack_cx() - 800.0, 455.0, 1600.0, 80.0), String(pack["title"]).to_upper(), T_XL + 8, Color(c_gold, ta))
 	if ready:
-		_text_center(Rect2(_pack_cx() - 600.0, 1000.0, 1200.0, 44.0), "Hold to take  ·  %d of %d taken" % [pack_sel.size(), pick], T_MD, Color(1, 1, 1, 0.85), true)
-		_hw_button(Rect2(_pack_cx() - 110.0, 1180.0, 220.0, 92.0), "Skip", _skip_pack, true, Color("6a6f77"), T_LG)
+		_text_center(Rect2(_pack_cx() - 600.0, 1000.0, 1200.0, 44.0), ("Place it in a bay above" if not install_queue.is_empty() else "Hold to take  ·  %d of %d taken" % [pack_sel.size(), pick]), T_MD, Color(1, 1, 1, 0.85), true)
+		_hw_button(Rect2(_pack_cx() - 110.0, 1180.0, 220.0, 92.0), "Skip", _skip_pack, install_queue.is_empty(), Color("6a6f77"), T_LG)
 
 func _toggle_binder() -> void:
 	binder_open = not binder_open
@@ -5137,7 +5235,7 @@ func _start_show(v: Dictionary) -> void:
 	set_res = {}
 	flow_live = 1.0
 	link_log.clear()
-	digs = D.BOSS_DIGS if String(chal.get("kind", "")) == "discards" else D.DIGS
+	digs = D.BOSS_DIGS if String(chal.get("kind", "")) == "discards" else opt_discards
 	tuner_bonus = 0
 	_sync_tuner()
 	dig_mode = false
@@ -5606,8 +5704,6 @@ func _tray_of(fx: Dictionary, s: int) -> int:
 	return int(sl[s]) if s < sl.size() else s
 
 func _echo_count(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, out: Array, st: Dictionary, fx: Dictionary) -> int:
-	if String(d.rule.get("effect", "none")) == "none":
-		return 0
 	var n := 0
 	for key in gm:
 		var e: Dictionary = gm[key]
@@ -5621,7 +5717,7 @@ func _echo_count(gm: Dictionary, d: Disc, s: int, ids: Array, prev: Disc, out: A
 			continue
 		var id: String = e["id"]
 		n += int(e["m"])
-		out.append({"src": "rack", "text": "%s: effect again" % String(rule.get("label", "Echo")), "n": 0, "ci": int(e["ci"]), "run": _s_run(st)})
+		out.append({"src": "rack", "text": "%s: plays again" % String(rule.get("label", "Echo")), "n": 0, "ci": int(e["ci"]), "run": _s_run(st)})
 	return n
 
 func _rule_gig(when: String, effect: String) -> int:
@@ -5699,18 +5795,22 @@ func _score_slot(s: int, ids: Array, ctx: Dictionary) -> Dictionary:
 		if int(q["from"]) < s and (String(q["filter"]) == "" or _name_matches(d, String(q["filter"]))):
 			_apply_buff(out, st, q)
 			fired = true
+	var reps := 1
 	if not d.cdr:
-		var reps := 1 + _echo_count(gm, d, s, ids, prev, out, st, fx)
+		reps = 1 + _echo_count(gm, d, s, ids, prev, out, st, fx)
 		for rp in reps:
+			if rp > 0:
+				_s_add(out, st, "rack", "Plays again: points +%d" % d.sound, d.sound)
 			if _fire_rule(d.rule, d, s, ids, prev, nxt, out, st, fx, 0):
 				fired = true
 		cash_gain += int(fx["cash"])
-	match d.edition:
-		"holo", "signed", "limited":
-			var en := int(D.EDITIONS[d.edition]["n"])
-			_s_add(out, st, "disc", "%s +%d" % [D.EDITIONS[d.edition]["name"], en], en)
-		"mint":
-			cash_gain += int(D.EDITIONS["mint"]["n"])
+	for rp in reps:
+		match d.edition:
+			"holo", "signed", "limited":
+				var en := int(D.EDITIONS[d.edition]["n"])
+				_s_add(out, st, "disc", "%s +%d" % [D.EDITIONS[d.edition]["name"], en], en)
+			"mint":
+				cash_gain += int(D.EDITIONS["mint"]["n"])
 	cash_gain += _gear_song(gm, d, s, ids, prev, hand_g, out, st, fx)
 	var ht := _hated_tag(d)
 	if ht != "":
@@ -6109,8 +6209,8 @@ func _end_show() -> void:
 	for pg: Dictionary in rack:
 		if not pg.is_empty() and String(pg["id"]) == "piggy":
 			pg["pot"] = int(pg["pot"]) + int(_gp("piggy", "cash"))
-	var turns_left := maxi(0, D.TURNS - turn_n) if not booed else 0
-	var unused := maxi(0, digs) if not booed else 0
+	var turns_left := (maxi(0, D.TURNS - turn_n) * D.PAY_TURN) if not booed else 0
+	var unused := (maxi(0, digs) * D.PAY_DISCARD) if not booed else 0
 	var interest := cash / D.INTEREST_PER if not booed else 0
 	if D.INTEREST_CAP > 0:
 		interest = mini(interest, D.INTEREST_CAP)
@@ -6192,6 +6292,7 @@ func _make_road() -> void:
 			vn = _make_boss_venue(k / D.BOSS_EVERY)
 		road_stops.append({"kind": "venue", "venue": vn, "stamp": [], "hint": {}, "town": ""})
 		if k < D.RUN_GIGS - 1:
+			road_stops.append({"kind": "reward", "stamp": [], "hint": {}, "town": ""})
 			road_stops.append({"kind": "shop", "stamp": [], "hint": {}, "town": ""})
 
 func _make_headliner() -> Dictionary:
@@ -6344,8 +6445,19 @@ func _enter_stop(nd: Dictionary) -> void:
 			_start_pickup(String(nd["kind"]), nd.get("stamp", []))
 		"boss":
 			_enter_boss(String(nd["boss"]))
+		"reward":
+			_start_reward()
 		_:
 			_start_show(nd["venue"])
+
+func _start_reward() -> void:
+	phase = "reward"
+	var items: Array = []
+	for a: Dictionary in _random_albums(3):
+		items.append(_make_disc(a))
+	pack = {"kind": "album", "title": "Choose an album", "pick": 1, "items": items}
+	pack_sel.clear()
+	_pack_start()
 
 func _back_on_road() -> void:
 	_advance_road()

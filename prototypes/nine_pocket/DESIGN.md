@@ -252,4 +252,10 @@ Targets grow about 30% per gig after a gentle start: 65, 85, 110, 150, 200, 265,
 
 ## Money
 
-A run starts with $10. After you clear a gig you earn $1 for each turn you did not need, $1 for each unused discard, and $1 of interest for each $5 you hold (`INTEREST_PER`, with `INTEREST_CAP` at 0 meaning no cap). Gear can add more at the end of a gig. There is no base show pay.
+A run starts with $15 (a setting, 0 to 99) and 2 discards a gig (a setting, 1 to 3). After you clear a gig you earn $2 for each turn you did not need, $2 for each unused discard (`PAY_TURN`, `PAY_DISCARD`), and $1 of interest for each $5 you hold (`INTEREST_PER`, with `INTEREST_CAP` at 0 meaning no cap). Gear can add more at the end of a gig. There is no base show pay.
+
+## Album pick after each gig
+
+After you clear a gig, and before the shop, you choose 1 of 3 random albums (the black pack screen, with Skip). These never include the basic CDs. The last gig has no pick, since the run ends on the win screen.
+
+An echo (Double Tap, Y2K Delay) plays the whole CD again: its base points, its edition bonus and its card effect all trigger a second time. Gear numbers from other units still apply once.

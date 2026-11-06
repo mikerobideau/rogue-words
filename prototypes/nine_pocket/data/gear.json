@@ -186,7 +186,7 @@
 	{
 		"id": "double_tap",
 		"name": "Double Tap",
-		"text": "The CD in this tray triggers its card effect twice.",
+		"text": "The CD in this tray plays twice: base points, edition and card effect all trigger again.",
 		"size": "half",
 		"price": 7,
 		"look": "",
@@ -872,7 +872,7 @@
 	{
 		"id": "y2k_delay",
 		"name": "Y2K Delay",
-		"text": "The {aparam} CD in this tray triggers its card effect twice.",
+		"text": "The {aparam} CD in this tray plays twice: base points, edition and card effect all trigger again.",
 		"size": "half",
 		"price": 7,
 		"look": "",
