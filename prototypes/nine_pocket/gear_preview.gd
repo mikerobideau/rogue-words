@@ -44,7 +44,7 @@ func _draw() -> void:
 	var sell := maxi(1, int(def["price"]) / 2)
 	var lines: Array = [
 		"%s unit  ·  $%d  ·  sells for $%d" % ["Full" if is_full else "Half", int(def["price"]), sell],
-		"Next to a Splitter this unit's numbers apply twice.",
+		"Activates: %s" % String(def.get("activates", "song")),
 	]
 	var y := 430.0
 	for ln in lines:
@@ -66,34 +66,35 @@ func _lift_setup() -> bool:
 		d.edition = ""
 		collection.append(d)
 	wallet.clear()
-	for i in 8:
+	for i in D.HAND:
 		wallet.append(-1)
-	wallet[6] = 6
-	wallet[7] = 7
+	wallet[4] = 4
+	wallet[5] = 5
 	tray.clear()
-	for i in D.SETLIST:
-		tray.append(i)
+	for i in D.TRAYS:
+		tray.append(i if i < D.SETLIST else -1)
 	venue = (D.VENUES[rng.randi_range(0, D.VENUES.size() - 1)] as Dictionary).duplicate(true)
 	crowd_move = {}
 	return true
 
-func _score_with(ids: Array) -> Array:
+func _score_with(ids: Array, bay: int = -1) -> Array:
 	rack.clear()
 	for i in D.RACK_SLOTS:
 		rack.append({})
-	for id in ids:
-		var g := _make_gear(String(id))
+	for k in ids.size():
+		var g := _make_gear(String(ids[k]))
 		if g.has("count"):
 			g["count"] = 10
-		_place_free(g)
-	var res := _score_set(tray)
+		if bay >= 0 and k == ids.size() - 1:
+			rack[bay] = g
+		else:
+			_place_free(g)
+	var res := _score_set([0, 1, 2, 3], [0, 1, 2, 3])
 	return [float(res["total"]), float(_cash_of(res))]
 
 func _lift_ids(id: String) -> Array:
 	if id == "wah":
-		return [["noise", "noise", "noise"], ["noise", "noise", "noise", "wah"]]
-	if id == "splitter":
-		return [["overdrive"], ["splitter", "overdrive"]]
+		return [["clean_boost", "clean_boost", "clean_boost"], ["clean_boost", "clean_boost", "clean_boost", "wah"]]
 	return [[], [id]]
 
 func lift(ids: Array, trials: int) -> Dictionary:
@@ -109,9 +110,10 @@ func lift(ids: Array, trials: int) -> Dictionary:
 			for id in ids:
 				var cfg: Array = _lift_ids(String(id))
 				var a: Array = _score_with(cfg[0])
-				var b: Array = _score_with(cfg[1])
-				out[id]["points"] = float(out[id]["points"]) + (b[0] - a[0])
-				out[id]["cash"] = float(out[id]["cash"]) + (b[1] - a[1])
+				for bay in D.SETLIST:
+					var b: Array = _score_with(cfg[1], bay if String(id) != "wah" else 3)
+					out[id]["points"] = float(out[id]["points"]) + (b[0] - a[0]) / float(D.SETLIST)
+					out[id]["cash"] = float(out[id]["cash"]) + (b[1] - a[1]) / float(D.SETLIST)
 		for id in ids:
 			out[id]["points"] = float(out[id]["points"]) / maxf(1.0, float(done))
 			out[id]["cash"] = float(out[id]["cash"]) / maxf(1.0, float(done))

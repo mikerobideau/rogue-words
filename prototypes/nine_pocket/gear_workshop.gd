@@ -23,19 +23,24 @@ const PARAM_INFO := {
 }
 const WHENS: Array[String] = ["each", "first", "last", "gig_start", "gig_end", "turn_end"]
 const WHEN_NAMES := {"each": "Each song", "first": "The opener", "last": "The closing song", "gig_start": "Start of the gig", "gig_end": "End of the gig", "turn_end": "End of each turn"}
-const REQUIRES: Array[String] = ["none", "prev_same_era", "prev_earlier_era", "prev2_same_genre", "last_matches_first", "adjacent", "streak", "match_back", "full_set", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "sandwich", "era_ladder"]
-const REQUIRE_NAMES := {"none": "Nothing", "prev_same_era": "The song before shares its decade", "prev_earlier_era": "Its decade is later than the song before", "prev2_same_genre": "The last two songs share a genre", "last_matches_first": "It shares a genre or decade with the opener", "adjacent": "A neighbor on either side is a genre", "streak": "It is every Nth song in a row of its genre", "match_back": "It shares its genre with the song N back", "full_set": "All four slots are played", "all_genres_differ": "N or more songs, all different genres", "all_eras_differ": "N or more songs, all different decades", "switch_up": "N or more songs, no neighbors share a genre", "mirror": "N or more songs, genres read the same backwards", "sandwich": "It sits between two songs of one other genre", "era_ladder": "N or more songs, each decade later than the last"}
-const N_REQUIRES: Array[String] = ["streak", "match_back", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "era_ladder"]
-const PLAY_REQUIRES: Array[String] = ["none", "full_set", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "era_ladder"]
+const REQUIRES: Array[String] = ["none", "prev_same_era", "prev_earlier_era", "prev2_same_genre", "last_matches_first", "adjacent", "streak", "match_back", "full_set", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "sandwich", "era_ladder", "one_genre", "first_last_genre", "between", "one_other_same_genre"]
+const REQUIRE_NAMES := {"none": "Nothing", "prev_same_era": "The song before shares its decade", "prev_earlier_era": "Its decade is later than the song before", "prev2_same_genre": "The last two songs share a genre", "last_matches_first": "It shares a genre or decade with the opener", "adjacent": "A neighbor on either side is a genre", "streak": "It is every Nth song in a row of its genre", "match_back": "It shares its genre with the song N back", "full_set": "All four slots are played", "all_genres_differ": "N or more songs, all different genres", "all_eras_differ": "N or more songs, all different decades", "switch_up": "N or more songs, no neighbors share a genre", "mirror": "N or more songs, genres read the same backwards", "sandwich": "It sits between two songs of one other genre", "era_ladder": "N or more songs, each decade later than the last", "one_genre": "N songs, all the same genre", "first_last_genre": "The first and last songs share a genre", "between": "It sits between two songs of a genre", "one_other_same_genre": "Exactly one other song shares its genre"}
+const N_REQUIRES: Array[String] = ["streak", "match_back", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "era_ladder", "one_genre"]
+const PLAY_REQUIRES: Array[String] = ["none", "full_set", "all_genres_differ", "all_eras_differ", "switch_up", "mirror", "era_ladder", "one_genre", "first_last_genre"]
 const N_PERS: Array[String] = ["deck_genre", "hand_genres"]
+const R_PERS: Array[String] = ["hand_of_genre", "earlier_genre", "later_genre"]
+const ACTIVATES: Array[String] = ["song", "anywhere", "gig", "round_end", "button", "placed", "discard"]
+const ACT_NAMES := {"song": "Per song (when its tray is played)", "anywhere": "Anywhere (no tray needed, once per play)", "gig": "Once per gig (when its tray is played)", "round_end": "End of the round (no tray)", "button": "Button (always clickable)", "placed": "When placed in the rig", "discard": "When you discard (its tray holds a CD)"}
+const GROWS: Array[String] = ["", "play", "genre", "decade"]
+const GROW_NAMES := {"": "Never", "play": "Each play its tray is in", "genre": "Each song of a genre played", "decade": "Each song of a decade played"}
 const MOVE_KINDS: Array[String] = ["boo", "static", "cool", "demand", "block"]
 const APPLIES: Array[String] = ["any", "genre", "decade"]
 const APPLIES_NAMES := {"any": "Any song", "genre": "Songs of a genre", "decade": "Songs of a decade"}
 const EFFECTS: Array[String] = ["points", "mult", "flow", "flow_mult", "cash", "discards", "upgrade", "echo", "block"]
 const EFFECT_NAMES := {"points": "Add points", "mult": "Multiply the score", "flow": "Raise flow", "flow_mult": "Multiply flow", "cash": "Add cash", "discards": "Add discards", "upgrade": "Upgrade the CD (+base points, permanent)", "echo": "Trigger the CD's own effect again", "block": "Cancel a crowd move"}
-const PERS: Array[String] = ["none", "earlier_same_genre", "others_in_set", "units_left", "unused_discards", "empty_slots", "genres_in_play", "deck_genre", "hand_genres"]
-const PER_NAMES := {"none": "Nothing (once)", "earlier_same_genre": "Each earlier song of the same genre", "others_in_set": "Each other song of that genre in the set", "units_left": "Each unit to its left", "unused_discards": "Each unused discard", "empty_slots": "Each empty slot in the tray", "genres_in_play": "Each different genre in the play", "deck_genre": "Every N CDs of its genre in your deck", "hand_genres": "Each genre with N or more CDs in your hand"}
-const UTILITY: Array[String] = ["deep_library", "sneak_peek", "tuner", "audio", "gate", "request", "fog", "overdrive", "octave", "sax", "splitter", "cd_burner", "delay"]
+const PERS: Array[String] = ["none", "earlier_same_genre", "others_in_set", "units_left", "unused_discards", "empty_slots", "genres_in_play", "deck_genre", "hand_genres", "base_points", "stored", "hand_of_genre", "earlier_genre", "later_genre"]
+const PER_NAMES := {"none": "Nothing (once)", "earlier_same_genre": "Each earlier song of the same genre", "others_in_set": "Each other song of that genre in the set", "units_left": "Each unit to its left", "unused_discards": "Each unused discard", "empty_slots": "Each empty slot in the tray", "genres_in_play": "Each different genre in the play", "deck_genre": "Every N CDs of its genre in your deck", "hand_genres": "Each genre with N or more CDs in your hand", "base_points": "Each base point of the song", "stored": "Each point it has stored (grows over the run)", "hand_of_genre": "Each CD of a genre in your hand", "earlier_genre": "Each earlier song of a genre", "later_genre": "Each later song of a genre"}
+const UTILITY: Array[String] = ["deep_library", "sneak_peek", "tuner", "gate", "fog", "clone", "piggy", "cd_burner", "double_tap", "delay"]
 const NOTES := {
 	"genre_eq": "Random fader per genre, added to every song of that genre.",
 	"decade_eq": "Random fader per decade, added to every song of that decade.",
@@ -98,6 +103,7 @@ var f_name: LineEdit
 var f_text: TextEdit
 var f_size: OptionButton
 var f_price: SpinBox
+var f_act: OptionButton
 var f_look: OptionButton
 var f_kind: Label
 var f_note: Label
@@ -378,6 +384,9 @@ func _build_ui() -> void:
 	f_price.max_value = 30
 	f_price.value_changed.connect(_on_edit)
 	_row(g4, "Price ($)", f_price)
+	f_act = _opt(_named(ACTIVATES, ACT_NAMES))
+	f_act.item_selected.connect(_on_edit)
+	_row(g4, "Activates", f_act)
 	f_look = _opt(_named(LOOKS, LOOK_NAMES))
 	f_look.item_selected.connect(_on_edit)
 	_row(g4, "Panel look", f_look)
@@ -540,6 +549,7 @@ func _on_new() -> void:
 		"price": 5,
 		"look": "",
 		"active": false,
+		"activates": "song",
 		"params": {},
 		"rule": {"when": "each", "requires": "none", "rparam": "", "rn": 0, "applies": "any", "aparam": "", "effect": "points", "amount": 3, "per": "none", "cap": 0, "label": "New"},
 	})
@@ -669,6 +679,7 @@ func _load_form() -> void:
 	f_note.text = ("Built from a rule, set under Numbers and rule." if u.has("rule") else "Behavior (set in code): " + String(NOTES.get(String(u["id"]), "")))
 	f_size.select(SIZES.find(String(u["size"])))
 	f_price.value = float(u["price"])
+	f_act.select(maxi(0, ACTIVATES.find(String(u.get("activates", "song")))))
 	f_look.select(maxi(0, LOOKS.find(String(u["look"]))))
 	var params: Dictionary = u["params"]
 	if u.has("rule"):
@@ -772,6 +783,21 @@ func _build_rule_rows(r: Dictionary) -> void:
 	cap.value_changed.connect(_on_edit)
 	rule_widgets["cap"] = cap
 	_add_row("Count limit  {cap}  (0 = none)", cap)
+	rule_widgets["grow"] = _rule_opt(GROWS, GROW_NAMES, String(r.get("grow", "")))
+	_add_row("Grows (stored count)", rule_widgets["grow"])
+	var gpo := _opt(D.GENRES + D.ERAS)
+	gpo.select(maxi(0, (D.GENRES + D.ERAS).find(String(r.get("gparam", "")))))
+	gpo.item_selected.connect(_on_rule_changed)
+	rule_widgets["gparam"] = gpo
+	_add_row("  which one  {gparam}", gpo)
+	var gam := SpinBox.new()
+	gam.min_value = 1.0
+	gam.max_value = 20.0
+	gam.step = 1.0
+	gam.value = maxf(1.0, float(r.get("gamt", 1)))
+	gam.value_changed.connect(_on_edit)
+	rule_widgets["gamt"] = gam
+	_add_row("  grows by", gam)
 	var lab := LineEdit.new()
 	lab.text = String(r["label"])
 	lab.text_changed.connect(_on_edit)
@@ -784,7 +810,7 @@ func _build_rule_rows(r: Dictionary) -> void:
 func _sync_condition_rows() -> void:
 	var req: String = REQUIRES[(rule_widgets["requires"] as OptionButton).selected]
 	var per_k := PERS[(rule_widgets["per"] as OptionButton).selected] if rule_widgets.has("per") else "none"
-	(rule_widgets["rparam"] as OptionButton).disabled = req != "adjacent"
+	(rule_widgets["rparam"] as OptionButton).disabled = not (req in ["adjacent", "between"] or per_k in R_PERS)
 	(rule_widgets["rn"] as SpinBox).editable = req in N_REQUIRES or per_k in N_PERS
 
 func _sentence(r: Dictionary) -> String:
@@ -816,6 +842,14 @@ func _sentence(r: Dictionary) -> String:
 			cond = " if %d or more songs are all different genres" % n
 		"all_eras_differ":
 			cond = " if %d or more songs are all different decades" % n
+		"one_genre":
+			cond = " if %d songs share a genre" % maxi(2, n)
+		"first_last_genre":
+			cond = " if the first and last songs share a genre"
+		"between":
+			cond = " if it sits between two %s songs" % String(r.get("rparam", ""))
+		"one_other_same_genre":
+			cond = " if exactly one other song shares its genre"
 		"switch_up":
 			cond = " if %d or more songs are played and no neighbors share a genre" % maxi(3, n)
 		"mirror":
@@ -839,6 +873,8 @@ func _sentence(r: Dictionary) -> String:
 	if per != "none":
 		var per_text := String(PER_NAMES[per])
 		per_text = per_text.left(1).to_lower() + per_text.substr(1)
+		if per in R_PERS:
+			per_text = per_text.replace("a genre", "%s" % String(r.get("rparam", "")))
 		eff += " for " + per_text.replace("N ", "%d " % int(r.get("rn", 0)))
 	if when == "gig_start" or when == "gig_end" or when == "turn_end":
 		var lead := when_text.trim_prefix(" ")
@@ -875,13 +911,14 @@ func _read_form() -> void:
 	u["text"] = f_text.text
 	u["size"] = SIZES[f_size.selected]
 	u["price"] = int(f_price.value)
+	u["activates"] = ACTIVATES[f_act.selected]
 	u["look"] = LOOKS[f_look.selected]
 	if u.has("rule") and not rule_widgets.is_empty():
 		var r: Dictionary = u["rule"]
 		r["when"] = WHENS[(rule_widgets["when"] as OptionButton).selected]
 		r["requires"] = REQUIRES[(rule_widgets["requires"] as OptionButton).selected]
 		var ro: OptionButton = rule_widgets["rparam"]
-		r["rparam"] = ro.get_item_text(ro.selected) if r["requires"] == "adjacent" else ""
+		r["rparam"] = ro.get_item_text(ro.selected) if (r["requires"] in ["adjacent", "between"] or PERS[(rule_widgets["per"] as OptionButton).selected] in R_PERS) else ""
 		r["effect"] = EFFECTS[(rule_widgets["effect"] as OptionButton).selected]
 		r["applies"] = APPLIES[(rule_widgets["applies"] as OptionButton).selected]
 		var ao: OptionButton = rule_widgets["aparam"]
@@ -894,6 +931,16 @@ func _read_form() -> void:
 		r["rn"] = int((rule_widgets["rn"] as SpinBox).value) if r["requires"] in N_REQUIRES or r["per"] in N_PERS else 0
 		r["cap"] = int((rule_widgets["cap"] as SpinBox).value)
 		r["label"] = (rule_widgets["label"] as LineEdit).text
+		var gr_k: String = GROWS[(rule_widgets["grow"] as OptionButton).selected]
+		if gr_k == "":
+			r.erase("grow")
+			r.erase("gparam")
+			r.erase("gamt")
+		else:
+			r["grow"] = gr_k
+			var gpo: OptionButton = rule_widgets["gparam"]
+			r["gparam"] = gpo.get_item_text(gpo.selected) if gpo.item_count > 0 and gr_k != "play" else ""
+			r["gamt"] = int((rule_widgets["gamt"] as SpinBox).value)
 	var params: Dictionary = u["params"]
 	for key in param_widgets.keys():
 		var w: Control = param_widgets[key]
@@ -1026,7 +1073,7 @@ func _validate() -> Array:
 		var rule: Dictionary = u.get("rule", {})
 		var used := _placeholders(String(u["text"]))
 		for ph in used:
-			if not params.has(ph) and not (not rule.is_empty() and ph in ["amount", "cap", "aparam", "rparam", "rn"]):
+			if not params.has(ph) and not (not rule.is_empty() and ph in ["amount", "cap", "aparam", "rparam", "rn", "gparam"]):
 				out.append({"text": "%s: text uses {%s} but the unit has no such number" % [nm, ph], "idx": i})
 		if not rule.is_empty():
 			for pr in _rule_problems(u):
@@ -1089,7 +1136,7 @@ func _rule_problems(u: Dictionary) -> Array:
 		out.append("adding discards only works at the start of a gig")
 	if eff in ["mult", "flow_mult"] and float(r["amount"]) < 1.0:
 		out.append("a multiplier below 1 makes the result smaller")
-	if String(r["per"]) == "unused_discards" and when != "gig_end":
+	if String(r["per"]) == "unused_discards" and when != "gig_end" and String(u.get("activates", "song")) != "gig":
 		out.append("'each unused discard' only works at the end of a gig")
 	if (gig or turn) and String(r["per"]) in ["earlier_same_genre", "others_in_set", "units_left", "deck_genre", "genres_in_play", "hand_genres", "empty_slots"]:
 		out.append("that scaling needs songs, so it only works on song rules")
@@ -1111,8 +1158,10 @@ func _rule_problems(u: Dictionary) -> Array:
 		out.append("pick how many songs back to look")
 	if eff in ["mult", "flow_mult"] and String(r["per"]) != "none":
 		out.append("a multiplier ignores the scaling")
-	if eff == "echo" and String(r["requires"]) == "none":
-		out.append("an echo with no condition repeats every card, so add an 'only if'")
+	if String(r.get("per", "none")) in R_PERS and String(r.get("rparam", "")) == "":
+		out.append("pick which genre to count")
+	if String(r.get("per", "none")) == "stored" and String(r.get("grow", "")) == "":
+		out.append("a stored count needs a 'grows' setting")
 	if not gig and not turn and String(r["label"]).strip_edges() == "":
 		out.append("the label shown on the song is empty")
 	return out

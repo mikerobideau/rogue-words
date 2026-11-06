@@ -209,3 +209,13 @@ Shop services Burn (copy an album to a CD-R), Trade in and a Label Maker (change
 
 ## Gear rules (current vocabulary)
 All units are Half bays for now. Rule units are edited in the gear workshop. A rule has **when** (each song, the opener, the closing song, start or end of the gig, end of each turn), **only if** (the old song-to-song checks plus: its decade is later than the song before, all four slots played, N or more songs all different genres or decades, or whole-play shapes: no neighbors share a genre, genres read the same backwards, a song sandwiched between two of another genre, each decade later than the last), an **effect** (points, multiply score, flow, multiply flow, cash, discards, **upgrade** the CD's base points for the rest of the run, **echo** the CD's own effect, **block** a crowd move) and **multiplied by** (the old counts plus: empty slots, different genres in the play, every N CDs of its genre in the deck, genres with N or more CDs in hand). A Splitter beside a unit adds one extra copy of its numbers; an **Audio Interface** does the same for the unit on each side of it, and they add together. Special units that stay in code: Deep Library and Sneak Peek (buttons), Noise Gate (button, cancels this turn's crowd move), Octave, Saxophone, Splitter, Audio Interface, T Shirt Cannon, Vintage Amp, Big Bass and Piggy Bank. See GEAR.md for the full list.
+
+## Trays and gear (six trays, up to four played)
+
+The gig screen is one grid of six columns: gear on top, CD trays below, then the hand of six. Bay N sits over tray N. You can play at most four CDs, in any trays. The played CDs form the play order, left to right, and every neighbor, "N back", opener and closer rule reads that order and skips empty trays.
+
+A gear unit has an **activates** attribute: per song (it fires for the CD in its own tray), anywhere (once per play, no tray), once per gig (first time its tray is played), round end (no tray), button (always clickable), on placement (Clone Box), on discard (Tuner). A tray blocked by a heckler also turns its gear off. Fog Machine lifts the block while its own tray holds a CD.
+
+Gear shows only its name. The rule text appears in a tooltip. Scaling units (Swell, Tremolo 60s) store a count that grows when their tray is played. Clone Box turns into a copy of the unit to its right when placed. The sort UI is hidden by `SHOW_SORT := false` and the code is kept.
+
+The shop is centered on the screen: sign, rig, then work bench, records (two CDs and a pack) and gear (two units and a bundle). The pack screen fades to black and keeps only the rig visible.

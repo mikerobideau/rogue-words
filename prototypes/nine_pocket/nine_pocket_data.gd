@@ -74,8 +74,10 @@ const SLEEVE_DARK: Array[String] = ["72243E", "0C447C", "3C3489", "27500A"]
 const SLEEVE_LIGHT: Array[String] = ["FBEAF0", "E6F1FB", "EEEDFE", "EAF3DE"]
 
 const COLLECTION := 20
-const HAND := 8
+const HAND := 6
 const SETLIST := 4
+const TRAYS := 6
+const SHOW_SORT := false
 const TURNS := 4
 const TURN_BONUS := 1
 const COOL_NEED := 0.2
@@ -194,3 +196,4 @@ const SERVICES_MAX := 2
 const SERVICE_CHANCE := {"enhance": 0.45, "tweak": 0.5, "upgrade": 0.45}
 const TWEAK_PRICE := 3
 const UPGRADE_PRICE := 6
+const UPGRADE_POINTS := 2
