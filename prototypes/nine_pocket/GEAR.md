@@ -51,3 +51,8 @@ Every unit is a Half bay and sits above its own tray (bay 1 over tray 1, and so 
 - Swell and Tremolo 60s grow for the whole run. Tune or reset per gig if they snowball.
 - All numbers are first guesses, and gig targets need a pass now that starter decks are plain CDs.
 - The workshop balance check measures one unit in four trays, so anywhere and shape units read as weak.
+
+## Chain units
+
+Relay, Cascade, Tap Splitter and Daisy Chain react to the unit on their left. See DESIGN.md. In the gear workshop the new condition is "The unit on its left fired", the new per is "units_fired", and the new effect is "Fire the unit on its left again for this CD".
+

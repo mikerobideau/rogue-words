@@ -259,3 +259,15 @@ A run starts with $15 (a setting, 0 to 99) and 2 discards a gig (a setting, 1 to
 After you clear a gig, and before the shop, you choose 1 of 3 random albums (the black pack screen, with Skip). These never include the basic CDs. The last gig has no pick, since the run ends on the win screen.
 
 An echo (Double Tap, Y2K Delay) plays the whole CD again: its base points, its edition bonus and its card effect all trigger a second time. Gear numbers from other units still apply once.
+
+## Starter deck, genre traits, chain gear and cassette picks
+
+There is one starter deck (36 CDs): one of each of the 24 basics, plus three copies each of Rock Anthem, Boy Band, Radio Hip Hop and Smooth Jazz. You start with no gear, and Play on the title screen starts the run directly (the deck screen is skipped while only one deck exists).
+
+**Genre traits.** Every CD with a genre has a built-in trait, shown after its own ability in its tooltip and as the label on a plain CD. Rock: +0.25 flow if the CD before it is Rock. Hip-Hop: +1 point for each CD played before it. Pop: +$1 the first time each turn it follows a different genre. Jazz: banks +3 points for next turn if the CD before it is from an earlier decade. Echo replays the trait with the rest of the card. Tuning knobs: `TRAIT_ROCK_FLOW`, `TRAIT_HIPHOP_POINTS`, `TRAIT_POP_CASH`, `TRAIT_JAZZ_BANK`.
+
+**Chain gear.** The rule condition `left_fired` is true when the unit on the left in the rig (skipping empty bays) has fired earlier this turn, in tray order. Relay (+1 flow), Tap Splitter (+$2) and Cascade (+4 points for each unit to its left that fired) use it, and Daisy Chain fires the left unit's rule again for the CD in its own tray. Like all per-song gear they need their own tray played.
+
+**Cassettes.** Each has a rarity (common, uncommon, rare) weighted by `TAPE_WEIGHTS` and drifting toward rare as the run goes on. New: Master Tape (rare, +4 base points and an edition) and Overdrive (rare, flow x1.5 this turn). In a gig a CD cassette asks for a CD in your hand. In the shop it opens the collection browser: six random CDs from your deck (the same six until you use the tape). Tune-Up can also be used in the shop. The shop has a Tape Pack ($6, keep 1 of 3).
+
+**Picks after a gig.** After a normal gig you pick 1 of 3 albums, then 1 of 3 cassettes (a full inventory blocks taking one). After a headliner (gigs 3, 6, 9, 12) one Headliner reward replaces both: a rare CD with an edition, a gear unit (levelled to MK II when it supports levels) and a rare cassette.

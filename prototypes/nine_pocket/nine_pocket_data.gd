@@ -9,17 +9,17 @@ const BG_DIR := "res://prototypes/nine_pocket/background_music"
 const BG_DB := -8.0
 const BG_FADE_IN := 1.0
 const BG_FADE_OUT := 0.4
-const PACK_BUILD := 2.3
-const PACK_BURST_WAIT := 0.45
-const PACK_GAP := 0.85
-const PACK_ANIM := 1.1
+const PACK_BUILD := 0.7
+const PACK_BURST_WAIT := 0.1
+const PACK_GAP := 0.5
+const PACK_ANIM := 0.9
 const HOLD_TIME := 0.6
 const THUMB_DIR := "res://prototypes/nine_pocket/art/thumbs/"
 const THUMB_MAX := 768
 const PACK_RARITY := {
-	"common": {"glow": 0.12, "col": "ffffff", "damp": 7.5, "freq": 11.0, "pulse": 0.0, "speed": 0.0, "size": 0.9},
-	"uncommon": {"glow": 0.32, "col": "6fc8ee", "damp": 5.0, "freq": 12.0, "pulse": 0.08, "speed": 2.0, "size": 1.0},
-	"rare": {"glow": 0.5, "col": "c38bff", "damp": 3.2, "freq": 13.0, "pulse": 0.1, "speed": 2.0, "size": 1.3},
+	"common": {"glow": 0.12, "col": "ffffff", "damp": 5.0, "freq": 11.0, "pulse": 0.0, "speed": 0.0, "size": 0.9},
+	"uncommon": {"glow": 0.32, "col": "6fc8ee", "damp": 4.0, "freq": 12.0, "pulse": 0.08, "speed": 2.0, "size": 1.0},
+	"rare": {"glow": 0.5, "col": "c38bff", "damp": 3.0, "freq": 13.0, "pulse": 0.1, "speed": 2.0, "size": 1.3},
 }
 const AUDITION_DB := -4.0
 const TEXTURES := "res://prototypes/nine_pocket/art/textures/"
@@ -94,7 +94,7 @@ const DIG_PICK := false
 const CATALOG_DATA := preload("res://prototypes/nine_pocket/album_catalog.gd")
 
 const FLOW_MAX := 6
-const GIG_TARGETS: Array[int] = [65, 85, 110, 150, 200, 265, 350, 455, 595, 780, 1020, 1330, 1730, 2250, 2925]
+const GIG_TARGETS: Array[int] = [100, 130, 110, 200, 260, 265, 350, 455, 595, 780, 1020, 1330, 1730, 2250, 2925]
 const HEADLINER_MULT := 1.25
 const PURIST_MULT := 0.65
 const BOSSES := [
@@ -166,6 +166,10 @@ const PAY_DISCARD := 2
 const INTEREST_PER := 5
 const INTEREST_CAP := 0
 const USE_KITS := false
+const TRAIT_ROCK_FLOW := 0.25
+const TRAIT_HIPHOP_POINTS := 1
+const TRAIT_POP_CASH := 1
+const TRAIT_JAZZ_BANK := 3
 const REWARD_BASE := 5
 const PAY_BOOED := 2
 const PAY_BASE := 5
@@ -214,14 +218,20 @@ const TRADE_PRICE := 2
 const CONSUMABLE_SLOTS := 2
 const CONSUMABLE_OFFERS := 2
 const CONSUMABLES := {
-	"fast_forward": {"name": "Fast Forward", "text": "Move one CD in your hand a decade later, for good.", "target": "cd", "price": 3, "col": "2f9d8c"},
-	"rewind": {"name": "Rewind", "text": "Move one CD in your hand a decade earlier, for good.", "target": "cd", "price": 3, "col": "2f9d8c"},
-	"remix": {"name": "Remix", "text": "Change one CD in your hand to a random other genre, for good.", "target": "cd", "price": 3, "col": "2f9d8c"},
-	"polish": {"name": "Polish", "text": "One CD in your hand gains +2 base points, for good.", "target": "cd", "price": 5, "col": "2f9d8c"},
-	"dub": {"name": "Dub", "text": "Add a copy of one CD in your hand to your deck.", "target": "cd", "price": 5, "col": "2f9d8c"},
-	"press": {"name": "Press", "text": "Give one CD in your hand a random edition: holographic, signed, limited or mint.", "target": "cd", "price": 4, "col": "2f9d8c"},
-	"trade_in": {"name": "Trade In", "text": "Remove one CD in your hand from your deck for good.", "target": "cd", "price": 2, "col": "2f9d8c"},
-	"tune_up": {"name": "Tune-Up", "text": "Level up one gear unit that supports it, to MK II and then MK III.", "target": "gear", "price": 6, "col": "6b4fb8"},
-	"amp_up": {"name": "Amp Up", "text": "+1 flow for the rest of this turn.", "target": "", "price": 2, "col": "d9a62e"},
-	"quiet_down": {"name": "Quiet Down", "text": "Cancel this turn's crowd move.", "target": "", "price": 3, "col": "d9a62e"},
+	"fast_forward": {"name": "Fast Forward", "text": "Move one CD a decade later, for good.", "target": "cd", "price": 3, "rarity": "common", "col": "2f9d8c"},
+	"rewind": {"name": "Rewind", "text": "Move one CD a decade earlier, for good.", "target": "cd", "price": 3, "rarity": "common", "col": "2f9d8c"},
+	"remix": {"name": "Remix", "text": "Change one CD to a random other genre, for good.", "target": "cd", "price": 3, "rarity": "common", "col": "2f9d8c"},
+	"polish": {"name": "Polish", "text": "One CD gains +2 base points, for good.", "target": "cd", "price": 5, "rarity": "uncommon", "col": "2f9d8c"},
+	"dub": {"name": "Dub", "text": "Add a copy of one CD to your deck.", "target": "cd", "price": 5, "rarity": "uncommon", "col": "2f9d8c"},
+	"press": {"name": "Press", "text": "Give one CD a random edition: holographic, signed, limited or mint.", "target": "cd", "price": 4, "rarity": "uncommon", "col": "2f9d8c"},
+	"trade_in": {"name": "Trade In", "text": "Remove one CD from your deck for good.", "target": "cd", "price": 2, "rarity": "common", "col": "2f9d8c"},
+	"tune_up": {"name": "Tune-Up", "text": "Level up one gear unit that supports it, to MK II and then MK III.", "target": "gear", "price": 6, "rarity": "rare", "col": "6b4fb8"},
+	"amp_up": {"name": "Amp Up", "text": "+1 flow for the rest of this turn.", "target": "", "price": 2, "rarity": "common", "col": "d9a62e"},
+	"quiet_down": {"name": "Quiet Down", "text": "Cancel this turn's crowd move.", "target": "", "price": 3, "rarity": "uncommon", "col": "d9a62e"},
+	"master_tape": {"name": "Master Tape", "text": "One CD gains +4 base points and a random edition, if it has none.", "target": "cd", "price": 7, "col": "2f9d8c", "rarity": "rare"},
+	"overdrive": {"name": "Overdrive", "text": "Multiply your flow by 1.5 for the rest of this turn.", "target": "", "price": 6, "col": "d9a62e", "rarity": "rare"},
 }
+const TAPE_WEIGHTS := {"common": 60.0, "uncommon": 30.0, "rare": 10.0}
+const TAPE_PACK_PRICE := 6
+const TAPE_PACK_SHOW := 3
+const BROWSER_SHOW := 6
